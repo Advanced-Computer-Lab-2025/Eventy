@@ -1,0 +1,96 @@
+name: Monthly Line Count (cloc)
+
+on:
+  workflow_dispatch: # Allows manual triggering
+  schedule:
+    # Runs at 02:00 UTC on the 1st day of every month.
+    - cron: '0 2 1 * *'
+
+jobs:
+  generate-cloc-report:
+    name: Generate cloc Report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read # Needed for actions/checkout
+      # Caches also sometimes need actions:write for some scopes, but usually not for basic cache.
+      # If you encounter permission issues with cache, you might need to adjust.
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        # fetch-depth: 0 # Default is 1. If you need full history for other reasons, uncomment.
+                         # For just getting HEAD SHA, depth 1 is fine.
+
+      - name: Get current commit SHA
+        id: get_head_sha
+        run: echo "sha=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Restore last cloc-processed SHA from cache
+        id: cache-restore-last-sha
+        uses: actions/cache/restore@v4 # Explicitly use restore action
+        with:
+          path: .last_cloc_processed_sha.txt # File to store the SHA
+          # Key specific to this workflow and branch.
+          # We don't include the current SHA here because we want to restore the *previous* run's SHA.
+          key: cloc-processed-sha-${{ github.ref_name }} # e.g., cloc-processed-sha-main
+
+      - name: Decide if cloc needs to run
+        id: decide_run
+        run: |
+          CURRENT_SHA="${{ steps.get_head_sha.outputs.sha }}"
+          echo "Current HEAD SHA: $CURRENT_SHA"
+          RUN_CLOC="true" # Default to run
+          if [[ -f .last_cloc_processed_sha.txt ]]; then
+            LAST_PROCESSED_SHA=$(cat .last_cloc_processed_sha.txt)
+            echo "Last cloc-processed SHA: $LAST_PROCESSED_SHA"
+            if [[ "$CURRENT_SHA" == "$LAST_PROCESSED_SHA" ]]; then
+              echo "No new commits on ${{ github.ref_name }} since last cloc run. Skipping."
+              RUN_CLOC="false"
+            else
+              echo "New commits detected. Proceeding with cloc."
+            fi
+          else
+            echo "No previous cloc-processed SHA found in cache (first run or cache expired). Proceeding with cloc."
+          fi
+          echo "run_cloc=${RUN_CLOC}" >> $GITHUB_OUTPUT
+      - name: Install cloc
+        if: steps.decide_run.outputs.run_cloc == 'true'
+        run: sudo apt-get update && sudo apt-get install -y cloc
+
+      - name: Run cloc and generate report
+        if: steps.decide_run.outputs.run_cloc == 'true'
+        id: run_cloc_step # Give this step an ID
+        run: |
+          echo "Running cloc..."
+          REPORT_FILE="cloc_report_$(date +%Y-%m).txt"
+          
+          cloc . \
+            --exclude-dir=.git,.github,.gradle,build,out,dist,node_modules,vendor \
+            --report-file="$REPORT_FILE"
+            
+          echo "cloc report generated: $REPORT_FILE"
+          echo "--- cloc Report Start ---"
+          cat "$REPORT_FILE"
+          echo "--- cloc Report End ---"
+          
+          echo "REPORT_FILENAME=${REPORT_FILE}" >> $GITHUB_ENV
+          # Create/Update the SHA file for caching for the next run
+          echo "${{ steps.get_head_sha.outputs.sha }}" > .last_cloc_processed_sha.txt
+          echo "Updated .last_cloc_processed_sha.txt with current SHA: ${{ steps.get_head_sha.outputs.sha }}"
+      - name: Upload cloc Report Artifact
+        if: steps.decide_run.outputs.run_cloc == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cloc-monthly-report-${{ env.REPORT_FILENAME }}
+          path: ${{ env.REPORT_FILENAME }}
+          retention-days: 90
+
+      - name: Save last cloc-processed SHA to cache
+        # This step will only run if cloc was executed because .last_cloc_processed_sha.txt
+        # is only updated in the 'Run cloc and generate report' step, which is conditional.
+        # More robust: also make this step conditional on run_cloc == 'true'
+        if: steps.decide_run.outputs.run_cloc == 'true' && steps.run_cloc_step.outcome == 'success'
+        uses: actions/cache/save@v4 # Explicitly use save action
+        with:
+          path: .last_cloc_processed_sha.txt
+          key: cloc-processed-sha-${{ github.ref_name }} # Must match the restore keycloc_report.yml
