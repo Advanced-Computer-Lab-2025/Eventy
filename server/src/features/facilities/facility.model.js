@@ -63,30 +63,33 @@ const GymSession = mongoose.model("GymSession", gymSessionSchema);
 // CourtBooking Schema
 const courtBookingSchema = new mongoose.Schema(
   {
-    courtType: {
+      _id: {
+      type: mongoose.Schema.Types.ObjectId,
+      default: () => new mongoose.Types.ObjectId(),
+    },
+     courtType: {
       type: String,
-      enum: ["tennis", "basketball", "football", "squash", "volleyball"],
       required: true,
+      enum: ["basketball", "tennis", "football"],
     },
     date: {
       type: Date,
       required: true,
     },
-    timeSlot: {
+    startTime: {
       type: String,
-      required: true, // e.g. "10:00-11:00 AM"
+      required: true,
+    },
+     endTime: {
+      type: String,
+      required: true,
     },
     bookedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User", // who booked the court
       required: true,
     },
-    participants: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // optional, other players
-      },
-    ],
+    
     status: {
       type: String,
       enum: ["active", "cancelled", "completed"],
