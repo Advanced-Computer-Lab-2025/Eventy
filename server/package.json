@@ -1,7 +1,7 @@
 {
   "name": "server",
   "version": "1.0.0",
-  "description": "The backend server for the Everty project",
+  "description": "The backend server for the Eventy project",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
