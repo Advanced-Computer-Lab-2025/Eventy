@@ -6,7 +6,7 @@ const userSchema = new mongoose.Schema(
     firstName: { type: String, required: true },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true, index: true },
-    passwordHash: { type: String, required: true },
+    password: { type: String, required: true },
 
 
      studentStaffId: {
@@ -52,8 +52,6 @@ const userSchema = new mongoose.Schema(
     },
     verificationToken: { type: String },
 
-    favorites: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
-
     walletBalance: { type: Number, default: 0 },
 
     representatives: [
@@ -64,27 +62,7 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-
-    notifications: [{
-  message: String,
-  type: { type: String, enum: ["warning", "reminder", "info"] },
-  isRead: { type: Boolean, default: false },
-  createdAt: { type: Date, default: Date.now }
-    }],
-
-    vendorDetails: {
-    attendees: [{
-      name: String,
-      email: String
-     }],
-    attendeeIds: [String], 
-    loyaltyProgram: {
-      discountRate: Number,
-      promoCode: String,
-      terms: String,
-      active: { type: Boolean, default: false },
-    }, },
-
+   
     deletedAt: { type: Date, default: null },
 
 },
