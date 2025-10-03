@@ -18,6 +18,8 @@ const eventSchema = new Schema(
 
     status: {
       type: String,
+      required: true,
+      enum: ['pending', 'approved', 'rejected', 'needs_revision'],  
       default: 'pending'
     },
 
@@ -27,50 +29,67 @@ const eventSchema = new Schema(
 
     capacity: { type: Number },
 
+    bannerImage: { type: String }, // URL to the banner image
+
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true // professor or events office/admin
     },
 
-    deletedAt: { type: Date, default: null }, // soft delete
+    deletedAt: { type: Date, default: null }, // soft delete,
+    
+    price: {
+    type: Number,
+    required: function () {
+      return this.eventType === "trip";
+    },
   },
+  agenda: {
+    type: String,
+    required: function () {
+      return ["workshop", "conference"].includes(this.eventType);
+    },
+  },
+  requiredBudget: {
+    type: Number,
+    required: function () {
+      return ["workshop", "conference"].includes(this.eventType);
+    },
+  },
+  fundingSource: {
+    type: String,
+    enum: ["external", "guc"],
+    required: function () {
+      return ["workshop", "conference"].includes(this.eventType);
+    },
+  },
+  extraResources: { type: String },
+  faculty: {
+    type: String,
+    required: function () {
+      return this.eventType === "workshop";
+    },
+  },
+  professors: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: function () {
+        return this.eventType === "workshop";
+      },
+    },
+  ],
+  websiteUrl: {
+    type: String,
+    required: function () {
+      return this.eventType === "conference";
+    },
+  },
+},
   { timestamps: true }
 );
-// For Trips
-eventSchema.add({
-  price: { type: Number, required: function () { return this.eventType === 'trip'; } }
-});
 
-// For Workshops & Conferences
-eventSchema.add({
-  agenda: { type: String },
-  requiredBudget: { type: Number },
-  fundingSource: { type: String, enum: ['external', 'guc'] },
-  extraResources: { type: String }
-});
 
-// For Workshops only
-eventSchema.add({
-  faculty: { type: String }, // MET, IET, etc.
-  professors: [{ type: Schema.Types.ObjectId, ref: 'User' }]
-});
-
-// For Conferences only
-eventSchema.add({
-  websiteUrl: { type: String }
-});
-eventSchema.pre('save', function (next) {
-  if (this.eventType === 'trip' && this.price == null) {
-    return next(new Error('Trips must have a price.'));
-  }
-  if (this.eventType === 'workshop' && (!this.faculty || this.professors.length === 0)) {
-    return next(new Error('Workshops must have faculty and at least one professor.'));
-  }
-  if (this.eventType === 'conference' && !this.websiteUrl) {
-    return next(new Error('Conferences must include a websiteUrl.'));
-  }
-  next();
-});
 export const Event = mongoose.model('Event', eventSchema);
 
