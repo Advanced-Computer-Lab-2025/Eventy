@@ -11,17 +11,16 @@ const loyaltyPartnerSchema = new mongoose.Schema(
     vendorName: { type: String, required: true, trim: true }, // can be synced from User model
     
     status: { 
-        type: String, 
-        enum: ['pending', 'verified', 'rejected', 'cancelled'], 
-        default: 'pending' 
+      type: String, 
+      enum: ['pending', 'verified', 'rejected', 'cancelled'], 
+      default: 'pending' 
     },
-    
-    loyaltyProgram: {
-      discountRate: { type: Number, min: 0, max: 100, required: true },
-      promoCode: { type: String, trim: true, required: true, unique: true },
-      termsAndConditions: { type: String },
-      expiryDate: { type: Date }
-    },
+
+    // loyalty program fields as top-level
+    discountRate: { type: Number, min: 0, max: 100, required: true },
+    promoCode: { type: String, trim: true, required: true, unique: true },
+    termsAndConditions: { type: String },
+    expiryDate: { type: Date },
     
   },
   { timestamps: true }
