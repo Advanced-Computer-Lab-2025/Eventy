@@ -3,18 +3,34 @@ import mongoose from "mongoose";
 // GymSession Schema
 
 const gymSessionSchema = new mongoose.Schema(
-  {
-    title: {
+  { 
+    userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+
+    type: {
       type: String,
       required: true,
-      trim: true,
+      enum: [
+        "yoga",
+        "pilates",
+        "aerobics",
+        "zumba",
+        "cross_circuit",
+        "kick_boxing",
+      ],
     },
     date: {
       type: Date,
       required: true,
     },
-    duration: {
-      type: Number, // in minutes
+    startTime: {
+      type: String, // example: "10:00 AM"
+    },
+    durationMinutes: {
+      type: Number,
       required: true,
     },
     instructor: {
@@ -22,19 +38,15 @@ const gymSessionSchema = new mongoose.Schema(
       ref: "User", // trainer/instructor
       required: true,
     },
-    location: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    capacity: {
+    
+     maxParticipants: {
       type: Number,
-      default: 20,
+      default: 20, // optional default
     },
-    registeredUsers: [
+      attendees: [
       {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User", // users who joined
+        ref: "User",
       },
     ],
     status: {
