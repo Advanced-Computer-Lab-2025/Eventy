@@ -3,7 +3,6 @@ import mongoose from 'mongoose';
 const { Schema } = mongoose;
 const eventSchema = new Schema(
   {
-    id: { type: String },
     name: { type: String, required: true, trim: true },
     eventType: {
       type: String,
