@@ -2,7 +2,7 @@ import mongoose from 'mongoose';
 
 const loyaltyPartnerSchema = new mongoose.Schema(
   {
-    VendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
     vendorName: { type: String, required: true, trim: true }, // synced from User model if needed
     
     status: { 
