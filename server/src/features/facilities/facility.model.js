@@ -3,13 +3,7 @@ import mongoose from "mongoose";
 // GymSession Schema
 
 const gymSessionSchema = new mongoose.Schema(
-  { 
-    userId: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-
+  {
     type: {
       type: String,
       required: true,
@@ -38,12 +32,12 @@ const gymSessionSchema = new mongoose.Schema(
       ref: "User", // trainer/instructor
       required: true,
     },
-    
-     maxParticipants: {
+
+    maxParticipants: {
       type: Number,
       default: 20, // optional default
     },
-      attendees: [
+    attendees: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -54,6 +48,10 @@ const gymSessionSchema = new mongoose.Schema(
       enum: ["upcoming", "cancelled", "completed"],
       default: "upcoming",
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -63,11 +61,7 @@ const GymSession = mongoose.model("GymSession", gymSessionSchema);
 // CourtBooking Schema
 const courtBookingSchema = new mongoose.Schema(
   {
-      _id: {
-      type: mongoose.Schema.Types.ObjectId,
-      default: () => new mongoose.Types.ObjectId(),
-    },
-     courtType: {
+    courtType: {
       type: String,
       required: true,
       enum: ["basketball", "tennis", "football"],
@@ -80,7 +74,7 @@ const courtBookingSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-     endTime: {
+    endTime: {
       type: String,
       required: true,
     },
@@ -89,11 +83,15 @@ const courtBookingSchema = new mongoose.Schema(
       ref: "User", // who booked the court
       required: true,
     },
-    
+
     status: {
       type: String,
       enum: ["active", "cancelled", "completed"],
       default: "active",
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
     },
   },
   { timestamps: true }
