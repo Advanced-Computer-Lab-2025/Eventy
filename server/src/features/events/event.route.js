@@ -1,5 +1,5 @@
 import express from 'express';
-import  EventsController from './event.controller.js';
+import {EventsController} from './event.controller.js';
 import auth from "../../middlewares/auth.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 
@@ -7,10 +7,10 @@ const router = express.Router();
 const eventsController = new EventsController();
 
 // Accept workshop
-router.patch('/:id/accept', auth, role(['admin']), acceptWorkshop);
+router.patch('/:id/accept', auth, role(['admin']), eventsController.acceptWorkshop);
 
 // Reject workshop
-router.patch('/:id/reject', auth, role(['admin']), rejectWorkshop);
+router.patch('/:id/reject', auth, role(['admin']), eventsController.rejectWorkshop);
 
 // POST /api/admin/trips
 router.post(
@@ -32,7 +32,7 @@ router.post(
   "/admin/conferences",
   auth,
   role(["admin", "events_office"]),
-  createConferenceController
+  eventsController.createConferenceController
 );
 
 export default router;
