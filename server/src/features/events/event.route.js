@@ -1,5 +1,5 @@
 import express from 'express';
-import { EventsController, acceptWorkshop, rejectWorkshop, createConferenceController } from './event.controller.js';
+import  EventsController from './event.controller.js';
 import auth from "../../middlewares/auth.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 
