@@ -1,12 +1,31 @@
 import express from 'express';
-import { acceptWorkshop, rejectWorkshop } from './event.controller.js';
+import { EventsController, acceptWorkshop, rejectWorkshop } from './event.controller.js';
+import auth from "../../middlewares/auth.middleware.js";
+import role from "../../middlewares/role.middleware.js";
 
-export const router = express.Router();
+const router = express.Router();
+const eventsController = new EventsController();
 
 // Accept workshop
-router.patch('/:id/accept', acceptWorkshop);
+router.patch('/:id/accept', auth, role(['admin']), acceptWorkshop);
 
 // Reject workshop
-router.patch('/:id/reject', rejectWorkshop);
+router.patch('/:id/reject', auth, role(['admin']), rejectWorkshop);
 
-export default router;  
+// POST /api/admin/trips
+router.post(
+  "/admin/trips",
+  auth,
+  role(["admin", "events_office"]),
+  eventsController.createTrip.bind(eventsController)
+);
+
+// GET /api/events?type=bazaar
+router.get(
+  "/",
+  auth,
+  role(["vendor"]),
+  eventsController.getEvents.bind(eventsController)
+);
+
+export default router;
