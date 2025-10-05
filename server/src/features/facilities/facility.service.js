@@ -1,5 +1,4 @@
 import { CourtBooking, GymSession } from "./facility.model.js";
-import { createGymSessionSchema } from "./facility.validation.js";
 
 class FacilitiesServiceClass {
   /**
