@@ -10,7 +10,7 @@ router.get('/', (req, res) => {
 });
 
 // TODO: Add feature routes here later
-router.use('/', eventRoutes);     // Mount all event-related endpoints
+router.use('/events', eventRoutes);     // Mount all event-related endpoints
 // import authRoutes from '../features/auth/auth.route.js';
 // router.use('/auth', authRoutes);
 

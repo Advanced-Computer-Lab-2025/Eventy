@@ -1,16 +1,17 @@
-import express from 'express';
-import { createTrip } from './event.controller.js';
-import auth from '../../middlewares/auth.middleware.js';
-import role from '../../middlewares/role.middleware.js';
+import express from "express";
+import { EventsController } from "./event.controller.js";
+import auth from "../../middlewares/auth.middleware.js";
+import role from "../../middlewares/role.middleware.js";
 
 const router = express.Router();
+const eventsController = new EventsController();
 
 // POST /api/admin/trips
 router.post(
-  '/admin/trips',
+  "/admin/trips",
   auth,
-  role(['admin', 'events_office']),
-  createTrip
+  role(["admin", "events_office"]),
+  eventsController.createTrip.bind(eventsController)
 );
 
 export default router;
