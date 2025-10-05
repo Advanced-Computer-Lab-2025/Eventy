@@ -126,48 +126,33 @@ export const createWorkshopSchema = Joi.object({
 });
 
 export const updateBazaarSchema = Joi.object({
-  name: Joi.string().trim().required().messages({
-    "any.required": "Bazaar name is required",
+  name: Joi.string().trim().optional().messages({
     "string.base": "Bazaar name must be text",
   }),
 
-  eventType: Joi.string().valid("bazaar").default("bazaar").messages({
-    "any.only": "Event type must be 'bazaar'",
+  description: Joi.string().trim().optional().messages({
+    "string.base": "Bazaar description must be text",
   }),
 
-  description: Joi.string().trim().required().messages({
-    "any.required": "Bazaar description is required",
-    "string.base": "Description must be text",
+  location: Joi.string().trim().optional().messages({
+    "string.base": "Bazaar location must be text",
   }),
 
-  location: Joi.string().trim().required().messages({
-    "any.required": "Bazaar location is required",
-    "string.base": "Location must be text",
-  }),
-
-  startDate: Joi.date().required().messages({
-    "any.required": "Bazaar start date is required",
+  startDate: Joi.date().optional().messages({
     "date.base": "Invalid start date format",
   }),
 
-  endDate: Joi.date().greater(Joi.ref("startDate")).required().messages({
-    "any.required": "Bazaar end date is required",
+  endDate: Joi.date().optional().messages({
     "date.base": "Invalid end date format",
-    "date.greater": "End date must be after start date",
   }),
 
-  registrationDeadline: Joi.date()
-    .less(Joi.ref("startDate"))
-    .required()
-    .messages({
-      "any.required": "Registration deadline is required",
-      "date.base": "Invalid registration deadline format",
-      "date.less": "Registration deadline must be before start date",
-    }),
+  registrationDeadline: Joi.date().optional().messages({
+    "date.base": "Invalid registration deadline format",
+  }),
 
   status: Joi.string()
     .valid("pending", "approved", "rejected", "needs_revision")
-    .default("pending")
+    .optional()
     .messages({
       "any.only":
         "Status must be one of: pending, approved, rejected, or needs_revision",
@@ -186,8 +171,12 @@ export const updateBazaarSchema = Joi.object({
     "string.base": "Extra resources must be text",
   }),
 
-  registrationDeadline: Joi.date().required().messages({
-    "any.required": "Registration deadline is required",
-    "date.base": "Invalid registration deadline format",
-  }),
+  // Prevent fields that belong to other event types
+  price: Joi.forbidden(),
+  agenda: Joi.forbidden(),
+  requiredBudget: Joi.forbidden(),
+  fundingSource: Joi.forbidden(),
+  faculty: Joi.forbidden(),
+  professors: Joi.forbidden(),
+  websiteUrl: Joi.forbidden(),
 });
