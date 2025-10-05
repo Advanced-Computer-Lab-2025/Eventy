@@ -91,3 +91,15 @@ export const createConference = async (data, userId) => {
 export const getEvents = async (filter = {}) => {
   return Event.find(filter).sort({ startDate: 1 });
 };
+
+export const createWorkshop = async (workshopData, professorId) => {
+
+  const workshop = await Event.create({
+    ...workshopData,
+    eventType: "workshop",
+    createdBy: professorId,
+    status: "pending"
+  });
+
+  return workshop;
+};

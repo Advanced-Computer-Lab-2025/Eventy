@@ -1,10 +1,8 @@
-import { createTripSchema } from "./event.validation.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
 import { Event } from './event.model.js';
-import { workshopStatusSchema } from './event.validation.js';
-import { createConferenceSchema } from "./event.validation.js";
+import { createTripSchema, workshopStatusSchema, createWorkshopSchema, createConferenceSchema } from './event.validation.js';
 
 //Write your code in this class!!!
 
@@ -94,7 +92,26 @@ async getEvents(req, res, next) {
       next(err);
     }
   }
-  
+
+  async createWorkshop(req, res, next) {
+  try {
+    
+    if (req.user.role !== 'professor') {
+      return res.status(403).json({ message: 'Forbidden: Only professors can create workshops' });
+    }
+    
+    const { error } = createWorkshopSchema.validate(req.body);
+    if (error) throw new ApiError(400, error.details[0].message);
+    
+    const newWorkshop = await eventService.createWorkshop(req.body, req.user._id);
+
+    return res
+      .status(201)
+      .json(new ApiResponse(201, newWorkshop, "Workshop created successfully"));
+    } catch (err) {
+      next(err);
+  } 
+} 
 
 // Accept workshop
 async acceptWorkshop(req, res) {
@@ -148,13 +165,5 @@ async rejectWorkshop(req, res) {
   } catch (error) {
     res.status(500).json({ message: 'Error rejecting workshop', error });
   }
+ }
 }
-
-
-
-
-}
-
-
-
-
