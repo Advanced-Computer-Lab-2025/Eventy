@@ -22,6 +22,6 @@ export const applyToBazaarSchema = Joi.object({
       "any.required": "Staff details are required.",
     }),
   // Add other required fields from your form here
-  durationWeeks: Joi.number().integer().min(1).required(),
+  durationWeeks: Joi.number().integer().min(1).max(4).required(),
   locationPreference: Joi.string().optional().allow(""), // .allow('') makes it optional but not null
 });

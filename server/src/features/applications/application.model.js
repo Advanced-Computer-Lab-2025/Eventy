@@ -26,8 +26,8 @@ const applicationSchema = new mongoose.Schema(
     },
     staff: [
       {
-        name: { type: String },
-        email: { type: String },
+        name: { type: String, required: true },
+        email: { type: String, required: true },
         id: { type: String },
       },
     ],
