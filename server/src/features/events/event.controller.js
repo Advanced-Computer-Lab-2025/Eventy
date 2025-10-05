@@ -5,25 +5,24 @@ import * as eventService from "./event.service.js";
 import { Event } from './event.model.js';
 import { workshopStatusSchema } from './event.validation.js';
 
-export const createBazaar = async (req, res, next) => {
-  try {
-    // Extract the request data and the logged-in user
-    const data = req.body;
-    const user = req.user;
-
-    // Call the service function to create the bazaar
-    const bazaar = await eventService.createBazaar(data, user);
-
-    // Send response
-    return res.status(201).json(new ApiResponse(201, bazaar, 'Bazaar created successfully'));
-  } catch (err) {
-    console.error('Error in createBazaar controller:', err);
-    // Pass errors to global error handler
-    next(new ApiError(400, err.message));
-  }
-};
-
 export class EventsController {
+
+  async createBazaar(req, res, next) {
+    try {
+      const data = req.body;
+      const user = req.user;
+
+      const bazaar = await eventService.createBazaar(data, user);
+
+      return res
+        .status(201)
+        .json(new ApiResponse(201, bazaar, 'Bazaar created successfully'));
+    } catch (err) {
+      console.error('Error in createBazaar controller:', err);
+      next(new ApiError(400, err.message));
+    }
+  }
+
   async createTrip(req, res, next) {
     try {
       // 1️⃣ Validate request body
