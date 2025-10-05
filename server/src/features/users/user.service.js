@@ -10,9 +10,13 @@ export const createManagementAccount = async (data) => {
     throw new Error("Invalid role. Only admin or events_office accounts can be created using this endpoint.");
   }
 
-  //  Check for existing email
+  //  Check if email already exists
   const existingUser = await User.findOne({ email });
-  if (existingUser) throw new Error("Email already exists.");
+  if (existingUser) {
+    const error = new Error("Email already exists.");
+    error.code = 409; 
+    throw error;
+  }
 
   //  Hash password
   const hashedPassword = await bcrypt.hash(password, 10);

@@ -1,6 +1,5 @@
 import Joi from "joi";
-import { createManagementAccount as createManagementAccountService } from "./user.service.js";
-
+import { createManagementAccount } from "./user.service.js";
 
 // Validation schema
 const createManagementAccountSchema = Joi.object({
@@ -12,12 +11,18 @@ const createManagementAccountSchema = Joi.object({
 });
 
 // Controller to handle account creation
-export const createManagementAccount = async (req, res, next) => {
+export const createManagementAccountHandler  = async (req, res, next) => {
+    if (req.user.role !== 'admin') {
+        // Return HTTP 403 Forbidden if the user is not an admin
+        return res.status(403).json({ 
+        message: "Forbidden: Only Admin users can create management accounts." 
+        });
+     }
   try {
     const { value, error } = createManagementAccountSchema.validate(req.body);
     if (error) return res.status(400).json({ message: error.message });
 
-    const user = await createManagementAccountService(value);
+    const user = await createManagementAccount(value);
 
     res.status(201).json({
       message: "Management account created successfully",
@@ -30,7 +35,10 @@ export const createManagementAccount = async (req, res, next) => {
         status: user.status,
       },
     });
-  } catch (err) {
+  }catch (err) {
+    if (err.code === 409) {
+      return res.status(409).json({ message: err.message });
+    }
     next(err);
   }
 };

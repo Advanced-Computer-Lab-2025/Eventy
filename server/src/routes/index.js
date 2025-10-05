@@ -9,6 +9,6 @@ router.get('/', (req, res) => {
   res.json({ message: 'Welcome to the Eventy API!' });
 });
 
-router.use("/users", userRoutes);
+router.use("/admin/users", userRoutes);
 
 export default router;
