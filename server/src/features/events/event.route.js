@@ -17,10 +17,10 @@ router.post(
 );
 
 // Accept workshop
-router.patch('/:id/accept', auth, role(['admin']), eventsController.acceptWorkshop);
+router.patch('/:id/accept', auth, role(['events_office']), eventsController.acceptWorkshop);
 
 // Reject workshop
-router.patch('/:id/reject', auth, role(['admin']), eventsController.rejectWorkshop);
+router.patch('/:id/reject', auth, role(['events_office']), eventsController.rejectWorkshop);
 
 // POST /api/admin/trips
 router.post(
