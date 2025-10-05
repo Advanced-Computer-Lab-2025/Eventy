@@ -1,5 +1,5 @@
 import express from 'express';
-import { EventsController, acceptWorkshop, rejectWorkshop } from './event.controller.js';
+import { EventsController, acceptWorkshop, rejectWorkshop, createConferenceController } from './event.controller.js';
 import auth from "../../middlewares/auth.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 
@@ -26,6 +26,13 @@ router.get(
   auth,
   role(["vendor"]),
   eventsController.getEvents.bind(eventsController)
+);
+
+router.post(
+  "/admin/conferences",
+  auth,
+  role(["admin", "events_office"]),
+  createConferenceController
 );
 
 export default router;

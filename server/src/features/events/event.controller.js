@@ -4,6 +4,28 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
 import { Event } from './event.model.js';
 import { workshopStatusSchema } from './event.validation.js';
+import { createConferenceSchema } from "./event.validation.js";
+
+
+
+export const createConferenceController = async (req, res, next) => {
+  try {
+    // 🧩 Validate request body
+    const { error } = createConferenceSchema.validate(req.body);
+    if (error) throw new ApiError(400, error.details[0].message);
+
+    const userId = req.user.id;
+    const newConference = await eventService.createConference(req.body, userId);
+
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, newConference, "Conference created successfully")
+      );
+  } catch (error) {
+    next(error);
+  }
+};
 
 export class EventsController {
   async createTrip(req, res, next) {
