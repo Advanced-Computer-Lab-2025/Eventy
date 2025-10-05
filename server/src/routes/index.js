@@ -1,7 +1,6 @@
 import express from 'express';
-// ...existing code...
 import eventRoutes from '../features/events/event.route.js';
-// ...existing code...
+
 const PORT = process.env.PORT || 5000;
 
 
@@ -14,9 +13,5 @@ router.get('/', (req, res) => {
 
 // Events routes
 router.use('/events', eventRoutes);
-
-    // Mount all event-related endpoints
-// import authRoutes from '../features/auth/auth.route.js';
-// router.use('/auth', authRoutes);
 
 export default router;
