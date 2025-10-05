@@ -45,5 +45,8 @@ router.post(
   roleMiddleware(["admin", "events_office"]),
   eventsController.createConferenceController
 );
+//Rana (to be deleted later)
+//register for workshop/trip
+router.post('/:id/register', authMiddleware, roleMiddleware(['student', 'staff','ta','professor']), eventsController.registerForEvent.bind(eventsController));
 
 export default router;
