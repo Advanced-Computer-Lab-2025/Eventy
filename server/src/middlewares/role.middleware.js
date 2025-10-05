@@ -1,18 +1,16 @@
-// Role-based access control middleware
+// src/middlewares/role.middleware.js
+import ApiError from '../utils/ApiError.js';
 
-export default function roleMiddleware(requiredRole) {
+const role = (allowedRoles = []) => {
   return (req, res, next) => {
-    // If there's no authenticated user, block access
-    if (!req.user) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
+    if (!req.user || !req.user.role)
+      return next(new ApiError(401, 'Unauthorized: no user information found'));
 
-    // If the user's role doesn't match, block access
-    if (req.user.role !== requiredRole) {
-      return res.status(403).json({ message: 'Forbidden: Access denied' });
-    }
+    if (!allowedRoles.includes(req.user.role))
+      return next(new ApiError(403, 'Forbidden: insufficient permissions'));
 
-    // Otherwise, allow the request
     next();
   };
-}
+};
+
+export default role;

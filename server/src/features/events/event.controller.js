@@ -1,8 +1,11 @@
-import eventService from './event.service.js';
-import ApiResponse from '../../utils/ApiResponse.js';
-import ApiError from '../../utils/ApiError.js';
+import { createTripSchema } from "./event.validation.js";
+import ApiError from "../../utils/ApiError.js";
+import ApiResponse from "../../utils/ApiResponse.js";
+import * as eventService from "./event.service.js";
+import { Event } from './event.model.js';
+import { workshopStatusSchema } from './event.validation.js';
 
-const createBazaar = async (req, res, next) => {
+export const createBazaar = async (req, res, next) => {
   try {
     // Extract the request data and the logged-in user
     const data = req.body;
@@ -20,6 +23,102 @@ const createBazaar = async (req, res, next) => {
   }
 };
 
-export default {
-  createBazaar
+export class EventsController {
+  async createTrip(req, res, next) {
+    try {
+      // 1️⃣ Validate request body
+      const { error } = createTripSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      // 2️⃣ Call service
+      const newTrip = await eventService.createTrip(req.body, req.user.id);
+
+      // 3️⃣ Send success response
+      return res
+        .status(201)
+        .json(new ApiResponse(201, newTrip, "Trip created successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEvents(req, res, next) {
+    try {
+      // Only allow access to authenticated users with 'vendor' role
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+      if (req.user.role !== "vendor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only vendors can access this endpoint"
+        );
+      }
+
+      // Filter by type=bazaar if provided
+      const { type } = req.query;
+      let filter = {};
+      if (type === "bazaar") {
+        filter = {
+          eventType: "bazaar",
+          status: "approved",
+          startDate: { $gte: new Date() },
+        };
+      }
+
+      const events = await eventService.getEvents(filter);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Events fetched successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+}
+
+
+
+
+// Accept workshop
+export const acceptWorkshop = async (req, res) => {
+  try {
+    const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'approved' });
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { status: 'approved' },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
+
+    res.status(200).json({ message: 'Workshop accepted and published', event });
+  } catch (error) {
+    res.status(500).json({ message: 'Error accepting workshop', error });
+  }
+};
+
+// Reject workshop
+export const rejectWorkshop = async (req, res) => {
+  try {
+    const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'rejected' });
+    if (error) return res.status(400).json({ message: error.details[0].message });
+
+    const event = await Event.findByIdAndUpdate(
+      req.params.id,
+      { status: 'rejected' },
+      { new: true }
+    );
+
+    if (!event) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
+
+    res.status(200).json({ message: 'Workshop rejected', event });
+  } catch (error) {
+    res.status(500).json({ message: 'Error rejecting workshop', error });
+  }
 };
