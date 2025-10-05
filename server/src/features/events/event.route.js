@@ -13,7 +13,7 @@ router.post(
   '/bazaars',
   authMiddleware,                 // verifies JWT (mock for now)
   roleMiddleware('EventsOffice'), // only EventsOffice can access
-  eventController.createBazaar    // controller we created
+  eventsController.createBazaar    // controller we created
 );
 
 // Accept workshop
