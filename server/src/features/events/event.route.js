@@ -13,5 +13,11 @@ router.post(
   role(["admin", "events_office"]),
   eventsController.createTrip.bind(eventsController)
 );
-
+// GET /api/events?type=bazaar
+router.get(
+  "/",
+  auth,
+  role(["vendor"]),
+  eventsController.getEvents.bind(eventsController)
+);
 export default router;
