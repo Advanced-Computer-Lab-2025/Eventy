@@ -1,7 +1,5 @@
 import express from 'express';
 import {EventsController} from './event.controller.js';
-import auth from "../../middlewares/auth.middleware.js";
-import role from "../../middlewares/role.middleware.js";
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
 
@@ -16,32 +14,35 @@ router.post(
   eventsController.createBazaar    // controller we created
 );
 
+// Create workshop
+router.post('/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.createWorkshop.bind(eventsController));
+
 // Accept workshop
-router.patch('/:id/accept', auth, role(['events_office']), eventsController.acceptWorkshop);
+router.patch('/:id/accept', authMiddleware, roleMiddleware(['events_office']), eventsController.acceptWorkshop.bind(eventsController));
 
 // Reject workshop
-router.patch('/:id/reject', auth, role(['events_office']), eventsController.rejectWorkshop);
+router.patch('/:id/reject', authMiddleware, roleMiddleware(['events_office']), eventsController.rejectWorkshop.bind(eventsController));
 
 // POST /api/admin/trips
 router.post(
   "/admin/trips",
-  auth,
-  role(["admin", "events_office"]),
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
   eventsController.createTrip.bind(eventsController)
 );
 
 // GET /api/events?type=bazaar
 router.get(
   "/",
-  auth,
-  role(["vendor"]),
+  authMiddleware,
+  roleMiddleware(["vendor"]),
   eventsController.getEvents.bind(eventsController)
 );
 
 router.post(
   "/admin/conferences",
-  auth,
-  role(["admin", "events_office"]),
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
   eventsController.createConferenceController
 );
 
