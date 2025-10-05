@@ -103,3 +103,8 @@ export const createWorkshop = async (workshopData, professorId) => {
 
   return workshop;
 };
+
+export const getEventsByUser = async (userId) => {
+  const events = await Event.find({ attendees: userId });
+  return events;
+};

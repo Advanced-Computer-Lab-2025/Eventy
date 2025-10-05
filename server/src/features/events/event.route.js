@@ -46,4 +46,10 @@ router.post(
   eventsController.createConferenceController
 );
 
+router.get(
+  "/me/events",
+  authMiddleware, // user must be logged in
+  eventsController.getMyEvents.bind(eventsController)
+);
+
 export default router;
