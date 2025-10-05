@@ -2,9 +2,19 @@ import express from 'express';
 import {EventsController} from './event.controller.js';
 import auth from "../../middlewares/auth.middleware.js";
 import role from "../../middlewares/role.middleware.js";
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
 
 const router = express.Router();
 const eventsController = new EventsController();
+
+//create bazaar
+router.post(
+  '/bazaars',
+  authMiddleware,                 // verifies JWT (mock for now)
+  roleMiddleware('EventsOffice'), // only EventsOffice can access
+  eventController.createBazaar    // controller we created
+);
 
 // Accept workshop
 router.patch('/:id/accept', auth, role(['admin']), eventsController.acceptWorkshop);

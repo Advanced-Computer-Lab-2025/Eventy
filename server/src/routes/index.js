@@ -1,9 +1,8 @@
+
 import express from 'express';
-import eventRoutes from '../features/events/event.route.js';
+import eventRoutes from '../features/events/event.route.js'
 
 const PORT = process.env.PORT || 5000;
-
-
 const router = express.Router();
 
 // Placeholder route to confirm the API is working

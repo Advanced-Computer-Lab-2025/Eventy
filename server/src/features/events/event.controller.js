@@ -10,6 +10,21 @@ import { createConferenceSchema } from "./event.validation.js";
 
 export class EventsController {
 
+  async createBazaar(req, res, next) {
+    try {
+      const data = req.body;
+      const user = req.user;
+
+      const bazaar = await eventService.createBazaar(data, user);
+
+      return res
+        .status(201)
+        .json(new ApiResponse(201, bazaar, 'Bazaar created successfully'));
+    } catch (err) {
+      console.error('Error in createBazaar controller:', err);
+      next(new ApiError(400, err.message));
+    }
+  }
 async createConferenceController(req, res, next) {
   try {
     // 🧩 Validate request body
