@@ -25,3 +25,7 @@ export const applyToBazaarSchema = Joi.object({
   durationWeeks: Joi.number().integer().min(1).max(4).required(),
   locationPreference: Joi.string().optional().allow(""), // .allow('') makes it optional but not null
 });
+
+export const getMyApplicationsSchema = Joi.object({
+  status: Joi.string().valid("pending", "accepted", "rejected").optional(),
+});
