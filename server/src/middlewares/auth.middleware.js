@@ -1,13 +1,45 @@
-// src/middlewares/auth.middleware.js
+// Temporary mock authentication middleware for development/testing
+// Replace this later with real JWT-based authentication.
 
-// Temporary middleware for development (no token required)
-const auth = (req, res, next) => {
-  // Pretend this user is logged in
+export default (req, res, next) => {
+  // Simulate a logged-in user (you can change role depending on who's testing)
   req.user = {
-    id: '6700aa92fe2d3a8712f97b21',     // fake user ID
-    role: 'admin'            // or 'events_office'
+    _id: '66f123abc987de0012f9f999', // fake MongoDB ObjectId string
+    name: 'Test Professor User',
+    role: 'professor', // change to 'admin' if needed
   };
+
   next();
 };
 
-export default auth;
+/*
+Once real authentication is implemented, replace this middleware with one that:
+- Verifies the JWT token
+- Decodes it
+- Loads the real user from the database
+
+Example for later use:
+---------------------------------
+import jwt from 'jsonwebtoken';
+import User from '../features/users/user.model.js';
+
+export default async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    req.user = user;
+    next();
+  } catch (err) {
+    res.status(401).json({ message: 'Invalid or expired token' });
+  }
+};
+---------------------------------
+*/
