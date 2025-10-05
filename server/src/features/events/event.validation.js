@@ -125,7 +125,7 @@ export const createWorkshopSchema = Joi.object({
     }),
 });
 
-export const createBazaarSchema = Joi.object({
+export const updateBazaarSchema = Joi.object({
   name: Joi.string().trim().required().messages({
     "any.required": "Bazaar name is required",
     "string.base": "Bazaar name must be text",

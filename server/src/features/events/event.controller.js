@@ -7,6 +7,7 @@ import {
   workshopStatusSchema,
   createWorkshopSchema,
   createConferenceSchema,
+  updateBazaarSchema,
 } from "./event.validation.js";
 
 //Write your code in this class!!!
@@ -155,11 +156,9 @@ export class EventsController {
     try {
       // Extra role validation
       if (req.user.role !== "events_office") {
-        return res
-          .status(403)
-          .json({
-            message: "Forbidden: Only events office can accept workshops",
-          });
+        return res.status(403).json({
+          message: "Forbidden: Only events office can accept workshops",
+        });
       }
 
       const { error } = workshopStatusSchema.validate({
@@ -192,11 +191,9 @@ export class EventsController {
     try {
       // Extra role validation
       if (req.user.role !== "events_office") {
-        return res
-          .status(403)
-          .json({
-            message: "Forbidden: Only events office can reject workshops",
-          });
+        return res.status(403).json({
+          message: "Forbidden: Only events office can reject workshops",
+        });
       }
 
       const { error } = workshopStatusSchema.validate({
