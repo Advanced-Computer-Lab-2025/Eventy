@@ -84,6 +84,11 @@ async getEvents(req, res, next) {
 // Accept workshop
 async acceptWorkshop(req, res) {
   try {
+    // Extra role validation
+    if (req.user.role !== 'events_office') {
+      return res.status(403).json({ message: 'Forbidden: Only events office can accept workshops' });
+    }
+
     const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'approved' });
     if (error) return res.status(400).json({ message: error.details[0].message });
 
@@ -106,6 +111,11 @@ async acceptWorkshop(req, res) {
 // Reject workshop
 async rejectWorkshop(req, res) {
   try {
+    // Extra role validation
+    if (req.user.role !== 'events_office') {
+      return res.status(403).json({ message: 'Forbidden: Only events office can reject workshops' });
+    }
+
     const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'rejected' });
     if (error) return res.status(400).json({ message: error.details[0].message });
 
