@@ -22,7 +22,38 @@ export class EventsController {
     }
   }
 
-  // Add more controller methods here as needed
+  async getEvents(req, res, next) {
+    try {
+      // Only allow access to authenticated users with 'vendor' role
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+      if (req.user.role !== "vendor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only vendors can access this endpoint"
+        );
+      }
+
+      // Filter by type=bazaar if provided
+      const { type } = req.query;
+      let filter = {};
+      if (type === "bazaar") {
+        filter = {
+          eventType: "bazaar",
+          status: "approved",
+          startDate: { $gte: new Date() },
+        };
+      }
+
+      const events = await eventService.getEvents(filter);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Events fetched successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 export default EventsController;
