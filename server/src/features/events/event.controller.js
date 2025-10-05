@@ -7,6 +7,7 @@ import {
   workshopStatusSchema,
   createWorkshopSchema,
   createConferenceSchema,
+  createBazaarSchema,
 } from "./event.validation.js";
 
 //Write your code in this class!!!

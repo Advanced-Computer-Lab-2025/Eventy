@@ -4,9 +4,9 @@
 export default (req, res, next) => {
   // Simulate a logged-in user (you can change role depending on who's testing)
   req.user = {
-    _id: '66f123abc987de0012f9f999', // fake MongoDB ObjectId string
-    name: 'Test Professor User',
-    role: 'professor', // change to 'admin' if needed
+    _id: "66f123abc987de0012f9f999", // fake MongoDB ObjectId string
+    name: "Test Events Office User",
+    role: "EventsOffice", // change to 'admin' if needed
   };
 
   next();
