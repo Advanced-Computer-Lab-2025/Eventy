@@ -1,5 +1,6 @@
 import express from 'express';
 import eventRoutes from '../features/events/event.route.js';
+import userARoutes from '../features/users/user.route.js';
 
 const PORT = process.env.PORT || 5000;
 
@@ -13,5 +14,8 @@ router.get('/', (req, res) => {
 
 // Events routes
 router.use('/events', eventRoutes);
+router.use('/users', userARoutes);
+
+
 
 export default router;

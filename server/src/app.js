@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import allRoutes from './routes/index.js';
+import userRoutes from './features/users/user.route.js';
+
 import { errorMiddleware } from './middlewares/error.middleware.js';
 
 const app = express();
