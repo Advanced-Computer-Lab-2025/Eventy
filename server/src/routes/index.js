@@ -2,7 +2,7 @@
 import express from 'express';
 import eventRoutes from '../features/events/event.route.js'
 import applicationRoutes from '../features/applications/application.route.js';
-
+import facilityRoutes from '../features/facilities/facility.route.js';
 const PORT = process.env.PORT || 5000;
 const router = express.Router();
 
@@ -15,4 +15,6 @@ router.get('/', (req, res) => {
 router.use('/events', eventRoutes);
 // Applications routes
 router.use('/applications', applicationRoutes);
+//facilities routes
+router.use('/facilities', facilityRoutes);
 export default router;
