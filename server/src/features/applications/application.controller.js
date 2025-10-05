@@ -26,4 +26,23 @@ export class ApplicationController {
       next(error);
     }
   }
+  async getMyApplications(req, res, next) {
+    try {
+      const vendorId = req.user._id;
+      const filters = req.query; // Get filters from query string (e.g., ?status=accepted)
+
+      const applications = await ApplicationService.findVendorApplications(
+        vendorId,
+        filters
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Applications retrieved successfully.",
+        data: applications,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
