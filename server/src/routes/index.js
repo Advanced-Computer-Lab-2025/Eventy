@@ -1,14 +1,14 @@
 import express from 'express';
+import userRoutes from "../features/users/user.route.js";
+
 
 const router = express.Router();
 
 // Placeholder route to confirm the API is working
 router.get('/', (req, res) => {
-  res.json({ message: 'Welcome to the Everty API!' });
+  res.json({ message: 'Welcome to the Eventy API!' });
 });
 
-// TODO: Add feature routes here later
-// import authRoutes from '../features/auth/auth.route.js';
-// router.use('/auth', authRoutes);
+router.use("/users", userRoutes);
 
 export default router;
