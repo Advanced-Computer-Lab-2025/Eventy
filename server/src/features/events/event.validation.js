@@ -1,10 +1,10 @@
-import Joi from 'joi';
-import mongoose from 'mongoose';
+import Joi from "joi";
+import mongoose from "mongoose";
 
 // Custom ObjectId validator
 const objectId = (value, helpers) => {
   if (!mongoose.Types.ObjectId.isValid(value)) {
-    return helpers.error('any.invalid');
+    return helpers.error("any.invalid");
   }
   return value;
 };
@@ -17,7 +17,7 @@ export const createTripSchema = Joi.object({
   endDate: Joi.date().required(),
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
-  capacity: Joi.number().integer().min(1).optional()
+  capacity: Joi.number().integer().min(1).optional(),
 });
 
 export const createConferenceSchema = Joi.object({
@@ -32,14 +32,13 @@ export const createConferenceSchema = Joi.object({
   requiredBudget: Joi.number().positive().required(),
   fundingSource: Joi.string().valid("external", "guc").required(),
   extraResources: Joi.string().optional(),
-  agenda: Joi.string().optional()
+  agenda: Joi.string().optional(),
 });
-
 
 // Validation schema for workshop status update
 export const workshopStatusSchema = Joi.object({
   id: Joi.string().custom(objectId).required(),
-  status: Joi.string().valid('approved', 'rejected').required()
+  status: Joi.string().valid("approved", "rejected").required(),
 });
 
 export const createWorkshopSchema = Joi.object({
@@ -48,39 +47,30 @@ export const createWorkshopSchema = Joi.object({
     "string.base": "Workshop name must be text",
   }),
 
-  eventType: Joi.string()
-    .valid("workshop")
-    .default("workshop")
-    .messages({
-      "any.only": "Event type must be 'workshop'",
-    }),
+  eventType: Joi.string().valid("workshop").default("workshop").messages({
+    "any.only": "Event type must be 'workshop'",
+  }),
 
   description: Joi.string().required().messages({
     "any.required": "Workshop description is required",
     "string.base": "Description must be text",
   }),
 
-  location: Joi.string()
-    .valid("GUC Cairo", "GUC Berlin")
-    .required()
-    .messages({
-      "any.required": "Workshop location is required",
-      "any.only": "Location must be either 'GUC Cairo' or 'GUC Berlin'",
-    }),
+  location: Joi.string().valid("GUC Cairo", "GUC Berlin").required().messages({
+    "any.required": "Workshop location is required",
+    "any.only": "Location must be either 'GUC Cairo' or 'GUC Berlin'",
+  }),
 
   startDate: Joi.date().required().messages({
     "any.required": "Workshop start date is required",
     "date.base": "Invalid start date format",
   }),
 
-  endDate: Joi.date()
-    .greater(Joi.ref("startDate"))
-    .required()
-    .messages({
-      "any.required": "Workshop end date is required",
-      "date.base": "Invalid end date format",
-      "date.greater": "End date must be after start date",
-    }),
+  endDate: Joi.date().greater(Joi.ref("startDate")).required().messages({
+    "any.required": "Workshop end date is required",
+    "date.base": "Invalid end date format",
+    "date.greater": "End date must be after start date",
+  }),
 
   registrationDeadline: Joi.date()
     .less(Joi.ref("startDate"))
@@ -91,12 +81,9 @@ export const createWorkshopSchema = Joi.object({
       "date.less": "Registration deadline must be before start date",
     }),
 
-  status: Joi.string()
-    .valid("pending")
-    .default("pending")
-    .messages({
-      "any.only": "Status must be: pending",
-    }),
+  status: Joi.string().valid("pending").default("pending").messages({
+    "any.only": "Status must be: pending",
+  }),
 
   capacity: Joi.number().integer().min(1).optional().messages({
     "number.base": "Capacity must be a number",
@@ -113,13 +100,10 @@ export const createWorkshopSchema = Joi.object({
     "number.base": "Required budget must be a number",
   }),
 
-  fundingSource: Joi.string()
-    .valid("external", "guc")
-    .required()
-    .messages({
-      "any.required": "Funding source is required",
-      "any.only": "Funding source must be either 'external' or 'guc'",
-    }),
+  fundingSource: Joi.string().valid("external", "guc").required().messages({
+    "any.required": "Funding source is required",
+    "any.only": "Funding source must be either 'external' or 'guc'",
+  }),
 
   extraResources: Joi.string().optional().messages({
     "string.base": "Extra resources must be text",
@@ -139,4 +123,71 @@ export const createWorkshopSchema = Joi.object({
       "array.min": "Professors list must contain at least one ID",
       "string.hex": "Professor IDs must be valid ObjectIds",
     }),
+});
+
+export const createBazaarSchema = Joi.object({
+  name: Joi.string().trim().required().messages({
+    "any.required": "Bazaar name is required",
+    "string.base": "Bazaar name must be text",
+  }),
+
+  eventType: Joi.string().valid("bazaar").default("bazaar").messages({
+    "any.only": "Event type must be 'bazaar'",
+  }),
+
+  description: Joi.string().trim().required().messages({
+    "any.required": "Bazaar description is required",
+    "string.base": "Description must be text",
+  }),
+
+  location: Joi.string().trim().required().messages({
+    "any.required": "Bazaar location is required",
+    "string.base": "Location must be text",
+  }),
+
+  startDate: Joi.date().required().messages({
+    "any.required": "Bazaar start date is required",
+    "date.base": "Invalid start date format",
+  }),
+
+  endDate: Joi.date().greater(Joi.ref("startDate")).required().messages({
+    "any.required": "Bazaar end date is required",
+    "date.base": "Invalid end date format",
+    "date.greater": "End date must be after start date",
+  }),
+
+  registrationDeadline: Joi.date()
+    .less(Joi.ref("startDate"))
+    .required()
+    .messages({
+      "any.required": "Registration deadline is required",
+      "date.base": "Invalid registration deadline format",
+      "date.less": "Registration deadline must be before start date",
+    }),
+
+  status: Joi.string()
+    .valid("pending", "approved", "rejected", "needs_revision")
+    .default("pending")
+    .messages({
+      "any.only":
+        "Status must be one of: pending, approved, rejected, or needs_revision",
+    }),
+
+  capacity: Joi.number().integer().min(1).optional().messages({
+    "number.base": "Capacity must be a number",
+    "number.min": "Capacity must be at least 1",
+  }),
+
+  bannerImage: Joi.string().uri().optional().messages({
+    "string.uri": "Banner image must be a valid URL",
+  }),
+
+  extraResources: Joi.string().optional().messages({
+    "string.base": "Extra resources must be text",
+  }),
+
+  registrationDeadline: Joi.date().required().messages({
+    "any.required": "Registration deadline is required",
+    "date.base": "Invalid registration deadline format",
+  }),
 });
