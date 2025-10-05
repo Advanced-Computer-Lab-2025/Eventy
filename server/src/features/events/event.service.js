@@ -44,6 +44,49 @@ export const createTrip = async (tripData, createdBy) => {
 
   return newTrip;
 };
+
+
+export const createConference = async (data, userId) => {
+  const {
+    name,
+    startDate,
+    endDate,
+    description,
+    websiteUrl,
+    requiredBudget,
+    fundingSource,
+    extraResources,
+    agenda
+  } = data;
+
+  // Validate required fields
+  if (!name || !startDate || !endDate || !description)
+    throw new ApiError(400, "Missing required fields");
+
+  if (!requiredBudget || !fundingSource)
+    throw new ApiError(400, "Conference must include requiredBudget and fundingSource");
+
+  const event = await Event.create({
+    name,
+    eventType: "conference",
+    startDate,
+    endDate,
+    description,
+    location: "TBD",
+    registrationDeadline: startDate, // placeholder
+    requiredBudget,
+    fundingSource,
+    extraResources,
+    agenda,
+    websiteUrl,
+    createdBy: userId,
+  });
+
+  return event;
+};
+
+
+
 // Get events with optional filter (e.g., for bazaar, published, upcoming)
 export const getEvents = async (filter = {}) => {
   return Event.find(filter).sort({ startDate: 1 });

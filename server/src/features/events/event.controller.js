@@ -4,6 +4,9 @@ import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
 import { Event } from './event.model.js';
 import { workshopStatusSchema } from './event.validation.js';
+import { createConferenceSchema } from "./event.validation.js";
+
+//Write your code in this class!!!
 
 export class EventsController {
 
@@ -22,8 +25,26 @@ export class EventsController {
       next(new ApiError(400, err.message));
     }
   }
+async createConferenceController(req, res, next) {
+  try {
+    // 🧩 Validate request body
+    const { error } = createConferenceSchema.validate(req.body);
+    if (error) throw new ApiError(400, error.details[0].message);
 
-  async createTrip(req, res, next) {
+    const userId = req.user.id;
+    const newConference = await eventService.createConference(req.body, userId);
+
+    res
+      .status(201)
+      .json(
+        new ApiResponse(201, newConference, "Conference created successfully")
+      );
+  } catch (error) {
+    next(error);
+  }
+};
+
+async createTrip(req, res, next) {
     try {
       // 1️⃣ Validate request body
       const { error } = createTripSchema.validate(req.body);
@@ -41,7 +62,7 @@ export class EventsController {
     }
   }
 
-  async getEvents(req, res, next) {
+async getEvents(req, res, next) {
     try {
       // Only allow access to authenticated users with 'vendor' role
       if (!req.user) {
@@ -73,13 +94,10 @@ export class EventsController {
       next(err);
     }
   }
-}
-
-
-
+  
 
 // Accept workshop
-export const acceptWorkshop = async (req, res) => {
+async acceptWorkshop(req, res) {
   try {
     const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'approved' });
     if (error) return res.status(400).json({ message: error.details[0].message });
@@ -98,10 +116,10 @@ export const acceptWorkshop = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error accepting workshop', error });
   }
-};
+}
 
 // Reject workshop
-export const rejectWorkshop = async (req, res) => {
+async rejectWorkshop(req, res) {
   try {
     const { error } = workshopStatusSchema.validate({ id: req.params.id, status: 'rejected' });
     if (error) return res.status(400).json({ message: error.details[0].message });
@@ -120,4 +138,13 @@ export const rejectWorkshop = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Error rejecting workshop', error });
   }
-};
+}
+
+
+
+
+}
+
+
+
+

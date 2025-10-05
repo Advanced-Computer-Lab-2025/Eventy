@@ -20,6 +20,21 @@ export const createTripSchema = Joi.object({
   capacity: Joi.number().integer().min(1).optional()
 });
 
+export const createConferenceSchema = Joi.object({
+  name: Joi.string().trim().required(),
+  startDate: Joi.date().required(),
+  endDate: Joi.date().required(),
+  description: Joi.string().trim().required(),
+  websiteUrl: Joi.string()
+    .uri()
+    .message("Invalid website URL format")
+    .optional(),
+  requiredBudget: Joi.number().positive().required(),
+  fundingSource: Joi.string().valid("external", "guc").required(),
+  extraResources: Joi.string().optional(),
+  agenda: Joi.string().optional()
+});
+
 
 // Validation schema for workshop status update
 export const workshopStatusSchema = Joi.object({
