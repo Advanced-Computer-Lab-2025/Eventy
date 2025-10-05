@@ -1,5 +1,5 @@
 import express from "express";
-import { createManagementAccountHandler  } from "./user.controller.js";
+import UserControllerInstance from "./user.controller.js"; 
 import role from "../../middlewares/role.middleware.js"; 
 import auth from "../../middlewares/auth.middleware.js";
 
@@ -10,6 +10,6 @@ router.post(
     "/create-management-account", 
     auth,    // 1. Populates req.user
     role(['admin']), // 2. Checks if req.user.role is 'admin' 
-    createManagementAccountHandler 
+    UserControllerInstance.createManagementAccount
 );
 export default router;
