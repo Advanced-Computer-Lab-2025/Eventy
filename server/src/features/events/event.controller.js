@@ -309,4 +309,26 @@ async registerForEvent(req, res) {
     return res.status(500).json({ message: 'Internal server error' });
   }
 };
+ // Get all events the logged-in user registered for
+async getMyEvents(req, res, next) {
+  try {
+    // Ensure user is authenticated
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    // Get the user ID from auth middleware
+    const userId = req.user._id;
+
+    // Fetch events the user is registered for
+    const events = await eventService.getEventsByUser(userId);
+
+    // Send response
+    return res
+      .status(200)
+      .json(new ApiResponse(200, events, "Registered events fetched successfully"));
+  } catch (err) {
+    next(err);
+  }
+};
 }

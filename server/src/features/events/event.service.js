@@ -155,3 +155,9 @@ export const registerUserToEvent = async (user, eventId) => {
 
   return { message: 'Successfully registered for the event.' };
 };
+
+
+export const getEventsByUser = async (userId) => {
+  const events = await Event.find({ attendees: userId });
+  return events;
+};

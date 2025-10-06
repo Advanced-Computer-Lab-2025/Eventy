@@ -75,4 +75,10 @@ router.post(
 //register for workshop/trip
 router.post('/:id/register', authMiddleware, roleMiddleware(['student', 'staff','ta','professor']), eventsController.registerForEvent.bind(eventsController));
 
+router.get(
+  "/me/events",
+  authMiddleware, // user must be logged in
+  eventsController.getMyEvents.bind(eventsController)
+);
+
 export default router;
