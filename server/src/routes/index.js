@@ -17,6 +17,7 @@ router.use("/admin/users", userRoutes);
 
 // Events routes
 router.use('/events', eventRoutes);
+router.use('/users', userARoutes);
 // Applications routes
 router.use('/applications', applicationRoutes);
 //facilities routes

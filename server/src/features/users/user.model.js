@@ -37,13 +37,12 @@ const userSchema = new mongoose.Schema(
        return this.role === "vendor";
        } 
     },
-
-    role: {
-      type: String,
-      required: true,
-      enum: ["student", "staff", "ta", "professor", "vendor", "admin", "events_office"],
-    },
-
+role: {
+    type: String,
+    required: false,  
+    enum: ["student", "staff", "ta", "professor", "vendor", "admin", "events_office"],
+    default: null     
+},
     status: {
       type: String,
       required: true,
