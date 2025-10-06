@@ -94,6 +94,14 @@ router.post(
   eventsController.createConferenceController
 );
 
+router.patch(
+  "/admin/conferences/:conferenceId",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.updateConferenceController.bind(eventsController)
+);
+
+
 router.get(
   "/upcoming",
   authMiddleware,

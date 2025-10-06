@@ -35,6 +35,19 @@ export const createConferenceSchema = Joi.object({
   agenda: Joi.string().optional(),
 });
 
+export const updateConferenceSchema = Joi.object({
+  name: Joi.string().optional(),
+  description: Joi.string().optional(),
+  startDate: Joi.date().optional(),
+  endDate: Joi.date().optional(),
+  websiteUrl: Joi.string().uri().optional(),
+  requiredBudget: Joi.number().positive().optional(),
+  fundingSource: Joi.string().valid("external", "guc").optional(),
+  extraResources: Joi.string().optional(),
+  agenda: Joi.string().optional(),
+}).min(1);
+
+
 // Validation schema for workshop status update
 export const workshopStatusSchema = Joi.object({
   id: Joi.string().custom(objectId).required(),
