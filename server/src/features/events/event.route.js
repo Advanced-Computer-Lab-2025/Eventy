@@ -26,7 +26,8 @@ router.patch(
 // DELETE /api/admin/events/:eventId - Delete an event
 router.delete(
   "/admin/events/:eventId",
-  roleMiddleware("events_office", "admin"),
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
   eventsController.deleteEvent.bind(eventsController)
 );
 
