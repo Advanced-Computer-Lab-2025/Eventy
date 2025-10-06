@@ -140,3 +140,14 @@ export const createWorkshopSchema = Joi.object({
       "string.hex": "Professor IDs must be valid ObjectIds",
     }),
 });
+
+export const updateTripSchema = Joi.object({
+  name: Joi.string(),
+  description: Joi.string(),
+  location: Joi.string(),
+  startDate: Joi.date().greater("now"),
+  endDate: Joi.date(),
+  registrationDeadline: Joi.date(),
+  capacity: Joi.number(),
+  price: Joi.number().positive(),
+}).min(1);

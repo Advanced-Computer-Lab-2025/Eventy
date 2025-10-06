@@ -14,6 +14,14 @@ router.post(
   eventsController.createBazaar    // controller we created
 );
 
+// PATCH /api/admin/trips/:tripId
+router.patch(
+  "/admin/trips/:tripId",
+  authMiddleware,
+  roleMiddleware("admin", "events_office"),
+  eventsController.updateTripController
+);
+
 // Create workshop
 router.post('/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.createWorkshop.bind(eventsController));
 
