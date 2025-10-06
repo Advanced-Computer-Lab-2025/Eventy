@@ -22,6 +22,14 @@ router.patch(
   eventsController.editBazaar.bind(eventsController)
 );
 
+// PATCH /api/admin/trips/:tripId
+router.patch(
+  "/admin/trips/:tripId",
+  authMiddleware,
+  roleMiddleware("admin", "events_office"),
+  eventsController.updateTripController
+);
+
 // Create workshop
 router.post(
   "/workshops",

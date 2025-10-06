@@ -125,6 +125,16 @@ export const createWorkshopSchema = Joi.object({
     }),
 });
 
+export const updateTripSchema = Joi.object({
+  name: Joi.string(),
+  description: Joi.string(),
+  location: Joi.string(),
+  startDate: Joi.date().greater("now"),
+  endDate: Joi.date(),
+  registrationDeadline: Joi.date(),
+  capacity: Joi.number(),
+  price: Joi.number().positive(),
+}).min(1);
 export const createBazaarSchema = Joi.object({
   name: Joi.string().trim().required().messages({
     "any.required": "Bazaar name is required",

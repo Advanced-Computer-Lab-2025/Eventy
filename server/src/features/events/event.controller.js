@@ -32,6 +32,21 @@ export class EventsController {
       next(new ApiError(400, err.message));
     }
   }
+
+
+async updateTripController(req, res, next) {
+  try {
+    const { tripId } = req.params;
+    const updatedTrip = await eventService.updateTripService(tripId, req.body, req.user);
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, updatedTrip, "Trip updated successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
+
   async editBazaar(req, res, next) {
     try {
       const { id } = req.params;
@@ -84,7 +99,7 @@ export class EventsController {
       if (error) throw new ApiError(400, error.details[0].message);
 
       // 2️⃣ Call service
-      const newTrip = await eventService.createTrip(req.body, req.user.id);
+      const newTrip = await eventService.createTrip(req.body, req.user._id);
 
       // 3️⃣ Send success response
       return res

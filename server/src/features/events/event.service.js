@@ -122,6 +122,32 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
+
+export const updateTripService = async (tripId, updateData, user) => {
+  // 1. Fetch trip
+  const trip = await Event.findById(tripId);
+  if (!trip || trip.eventType !== "trip") {
+    throw new ApiError(404, "Trip not found");
+  }
+
+  // 2. Prevent editing if start date passed
+  const now = new Date();
+  if (trip.startDate <= now) {
+    throw new ApiError(403, "Cannot edit a trip that has already started");
+  }
+
+  // 3. Apply updates dynamically
+  Object.keys(updateData).forEach((key) => {
+    trip[key] = updateData[key];
+  });
+
+  // 4. Validate before saving (Mongoose validation will run)
+  await trip.validate();
+
+  // 5. Save updated trip
+  const savedTrip = await trip.save();
+  return savedTrip;
+};
 /**
  * Register an authenticated user (Student, Staff, TA, or Professor)
  * to a workshop or trip event.
