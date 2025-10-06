@@ -1,9 +1,9 @@
-import express from 'express';
-import { getUpcomingEventsController } from './event.controller.js';
-import {EventsController} from './event.controller.js';
-import authMiddleware from '../../middlewares/auth.middleware.js';
-import roleMiddleware from '../../middlewares/role.middleware.js';
-import * as eventController from './event.controller.js';
+import express from "express";
+import { getUpcomingEventsController } from "./event.controller.js";
+import { EventsController } from "./event.controller.js";
+import authMiddleware from "../../middlewares/auth.middleware.js";
+import roleMiddleware from "../../middlewares/role.middleware.js";
+import * as eventController from "./event.controller.js";
 
 const router = express.Router();
 const eventsController = new EventsController();
@@ -12,8 +12,8 @@ const eventsController = new EventsController();
 router.post(
   "/bazaars",
   authMiddleware, // verifies JWT (mock for now)
-  roleMiddleware("events_office"), // only EventsOffice can access
-  eventsController.createBazaar // controller we created
+  roleMiddleware("events_office"),
+  eventsController.createBazaar
 );
 
 // PATCH /api/bazaars/:id - Edit bazaar details
@@ -22,6 +22,12 @@ router.patch(
   authMiddleware,
   roleMiddleware(["events_office"]),
   eventsController.editBazaar.bind(eventsController)
+);
+// DELETE /api/admin/events/:eventId - Delete an event
+router.delete(
+  "/admin/events/:eventId",
+  roleMiddleware("events_office", "admin"),
+  eventsController.deleteEvent.bind(eventsController)
 );
 
 // PATCH /api/admin/trips/:tripId
@@ -41,7 +47,12 @@ router.post(
 );
 
 //  Get my workshops
-router.get('/me/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.getMyWorkshops.bind(eventsController));
+router.get(
+  "/me/workshops",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.getMyWorkshops.bind(eventsController)
+);
 
 // Accept workshop
 router.patch(
@@ -83,11 +94,10 @@ router.post(
 );
 
 router.get(
-  '/upcoming',
+  "/upcoming",
   authMiddleware,
-  roleMiddleware(['vendor']),
+  roleMiddleware(["vendor"]),
   getUpcomingEventsController
 );
-
 
 export default router;
