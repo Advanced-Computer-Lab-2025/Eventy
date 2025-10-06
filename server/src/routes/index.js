@@ -1,4 +1,5 @@
 import express from 'express';
+import authRoutes from '../features/auth/auth.route.js';
 
 const router = express.Router();
 
@@ -9,6 +10,6 @@ router.get('/', (req, res) => {
 
 // TODO: Add feature routes here later
 // import authRoutes from '../features/auth/auth.route.js';
-// router.use('/auth', authRoutes);
+router.use('/auth', authRoutes);
 
 export default router;

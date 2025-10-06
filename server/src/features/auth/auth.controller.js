@@ -1,25 +1,13 @@
-import express from "express";
-import { authAdmin } from "./firebaseAdmin.js";
+import { signUpUser } from "./auth.service.js";
 
-const router = express.Router();
-
-router.post("/signup", async (req, res) => {
-  const { email, password } = req.body;
-
-  if (!email.endsWith("@guc.edu.eg")) {
-    return res.status(400).json({ message: "Only university emails allowed" });
-  }
-
+export const signUp = async (req, res) => {
   try {
-    const userRecord = await authAdmin.createUser({
-      email,
-      password,
-    });
-
-    res.status(201).json({ message: "User created", uid: userRecord.uid });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+    const result = await signUpUser(req.body);
+    res.status(201).json({ message: "Sign up successful", user: result });
+  } catch (error) {
+    res.status(400).json({ message: "you already have account" });
   }
-});
+};
 
-export default router;
+
+
