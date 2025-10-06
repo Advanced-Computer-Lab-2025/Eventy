@@ -287,4 +287,26 @@ export class EventsController {
       res.status(500).json({ message: "Error rejecting workshop", error });
     }
   }
+//Rana (to be deleted later)
+//Register for event (workshop/trip)
+async registerForEvent(req, res) {
+  try {
+    if (!req.user) return res.status(401).json({ message: 'Unauthorized' });
+
+    const user = req.user; // expects at least { _id, role, ... }
+    const eventId = req.params.id;
+
+    await eventService.registerUserToEvent(user, eventId);
+
+    return res.status(200).json({ message: 'Successfully registered for the event.' });
+  } catch (err) {
+    // If the service threw an error object with statusCode, use it
+    if (err && err.statusCode) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
+    // General fallback
+    console.error('registerForEvent error:', err);
+    return res.status(500).json({ message: 'Internal server error' });
+  }
+};
 }
