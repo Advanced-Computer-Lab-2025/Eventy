@@ -125,6 +125,25 @@ export const createWorkshopSchema = Joi.object({
     }),
 });
 
+export const createBazaarSchema = Joi.object({
+  name: Joi.string().trim().required().messages({
+    "any.required": "Bazaar name is required",
+    "string.base": "Bazaar name must be text",
+  }),
+  eventType: Joi.string().valid("bazaar").default("bazaar"),
+  description: Joi.string().trim().required().messages({
+    "any.required": "Bazaar description is required",
+  }),
+  location: Joi.string().trim().required().messages({
+    "any.required": "Bazaar location is required",
+  }),
+  startDate: Joi.date().required(),
+  endDate: Joi.date().greater(Joi.ref("startDate")).required(),
+  registrationDeadline: Joi.date().less(Joi.ref("startDate")).required(),
+  capacity: Joi.number().integer().min(1).optional(),
+  bannerImage: Joi.string().uri().optional(),
+  extraResources: Joi.string().optional(),
+}).unknown(false);
 export const updateBazaarSchema = Joi.object({
   name: Joi.string().trim().optional().messages({
     "string.base": "Bazaar name must be text",
