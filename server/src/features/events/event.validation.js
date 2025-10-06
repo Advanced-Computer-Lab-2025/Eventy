@@ -144,3 +144,58 @@ export const createBazaarSchema = Joi.object({
   bannerImage: Joi.string().uri().optional(),
   extraResources: Joi.string().optional(),
 }).unknown(false);
+export const updateBazaarSchema = Joi.object({
+  name: Joi.string().trim().optional().messages({
+    "string.base": "Bazaar name must be text",
+  }),
+
+  description: Joi.string().trim().optional().messages({
+    "string.base": "Bazaar description must be text",
+  }),
+
+  location: Joi.string().trim().optional().messages({
+    "string.base": "Bazaar location must be text",
+  }),
+
+  startDate: Joi.date().optional().messages({
+    "date.base": "Invalid start date format",
+  }),
+
+  endDate: Joi.date().optional().messages({
+    "date.base": "Invalid end date format",
+  }),
+
+  registrationDeadline: Joi.date().optional().messages({
+    "date.base": "Invalid registration deadline format",
+  }),
+
+  status: Joi.string()
+    .valid("pending", "approved", "rejected", "needs_revision")
+    .optional()
+    .messages({
+      "any.only":
+        "Status must be one of: pending, approved, rejected, or needs_revision",
+    }),
+
+  capacity: Joi.number().integer().min(1).optional().messages({
+    "number.base": "Capacity must be a number",
+    "number.min": "Capacity must be at least 1",
+  }),
+
+  bannerImage: Joi.string().uri().optional().messages({
+    "string.uri": "Banner image must be a valid URL",
+  }),
+
+  extraResources: Joi.string().optional().messages({
+    "string.base": "Extra resources must be text",
+  }),
+
+  // Prevent fields that belong to other event types
+  price: Joi.forbidden(),
+  agenda: Joi.forbidden(),
+  requiredBudget: Joi.forbidden(),
+  fundingSource: Joi.forbidden(),
+  faculty: Joi.forbidden(),
+  professors: Joi.forbidden(),
+  websiteUrl: Joi.forbidden(),
+});

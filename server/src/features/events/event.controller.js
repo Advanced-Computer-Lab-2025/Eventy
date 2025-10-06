@@ -8,6 +8,7 @@ import {
   createWorkshopSchema,
   createConferenceSchema,
   createBazaarSchema,
+  updateBazaarSchema,
 } from "./event.validation.js";
 
 //Write your code in this class!!!
@@ -29,6 +30,28 @@ export class EventsController {
     } catch (err) {
       console.error("Error in createBazaar controller:", err);
       next(new ApiError(400, err.message));
+    }
+  }
+  async editBazaar(req, res, next) {
+    try {
+      const { id } = req.params;
+
+      // Validate input
+      const { error } = updateBazaarSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.message);
+
+      // Update bazaar via service
+      const updatedBazaar = await eventService.editBazaar(id, req.body);
+
+      // Send response
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, updatedBazaar, "Bazaar updated successfully")
+        );
+    } catch (err) {
+      console.error("Error editing bazaar:", err);
+      next(err);
     }
   }
 
@@ -107,10 +130,15 @@ export class EventsController {
 
   async createWorkshop(req, res, next) {
     try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
       if (req.user.role !== "professor") {
-        return res
-          .status(403)
-          .json({ message: "Forbidden: Only professors can create workshops" });
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can create workshops"
+        );
       }
 
       const { error } = createWorkshopSchema.validate(req.body);
@@ -128,6 +156,67 @@ export class EventsController {
         );
     } catch (err) {
       next(err);
+    }
+  }
+
+  // Accept workshop
+  async acceptWorkshop(req, res) {
+    try {
+      // Extra role validation
+      if (req.user.role !== "events_office") {
+        return res.status(403).json({
+          message: "Forbidden: Only events office can accept workshops",
+        });
+      }
+
+      const { error } = workshopStatusSchema.validate({
+        id: req.params.id,
+        status: "approved",
+      });
+      if (error)
+        return res.status(400).json({ message: error.details[0].message });
+
+      const event = await Event.findByIdAndUpdate(
+        req.params.id,
+        { status: "approved" },
+        { new: true }
+      );
+
+      if (!event) {
+        return res.status(404).json({ message: "Workshop not found" });
+      }
+
+      res
+        .status(200)
+        .json({ message: "Workshop accepted and published", event });
+    } catch (error) {
+      res.status(500).json({ message: "Error accepting workshop", error });
+    }
+  }
+
+  async getMyWorkshops(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "professor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can view their workshops"
+        );
+      }
+
+      const events = await eventService.getEvents({
+        eventType: "workshop",
+        createdBy: req.user._id,
+      });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Workshops fetched successfully"));
+    } catch (error) {
+      next(error);
     }
   }
 
