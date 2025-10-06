@@ -4,14 +4,23 @@
 export default (req, res, next) => {
   // Simulate a logged-in user (you can change role depending on who's testing)
   req.user = {
-    _id: '66f123abc987de0012f9f999', // fake MongoDB ObjectId string
-     id: "66f123abc987de0012f9f999", // add this line
-    name: 'Test Professor User',
-    role: 'student', // change to 'admin' if needed
+    _id: "66f123abc987de0012f9f999", // fake MongoDB ObjectId string
+    id: "66f123abc987de0012f9f999", // add this line
+    name: "Test Professor User",
+    role: "student", // change to 'admin' if needed
   };
 
   next();
 };
+
+export function authorizeRoles(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.user || !allowedRoles.includes(req.user.role)) {
+      return res.status(403).json({ message: "Forbidden" });
+    }
+    next();
+  };
+}
 
 /*
 Once real authentication is implemented, replace this middleware with one that:
