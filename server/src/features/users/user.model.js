@@ -3,8 +3,12 @@ import bcrypt from 'bcryptjs';
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    firstName: { type: String,  required: function () {
+        return ["student", "staff", "ta", "professor"].includes(this.role);
+      }, },
+    lastName: { type: String,  required: function () {
+        return ["student", "staff", "ta", "professor"].includes(this.role);
+      }, },
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
 
@@ -26,16 +30,10 @@ const userSchema = new mongoose.Schema(
     },
     companyLogoUrl: { 
     type: String, 
-    required: function () {
-       return this.role === "vendor";
-       } 
      },
 
     taxCardUrl: { 
      type: String, 
-      required: function () {
-       return this.role === "vendor";
-       } 
     },
 
     role: {
@@ -70,7 +68,7 @@ const userSchema = new mongoose.Schema(
 );
 
 userSchema.methods.comparePassword = async function (password) {
-  return bcrypt.compare(password, this.passwordHash);
+  return bcrypt.compare(password, this.password);
 };
 
 export const User = mongoose.model('User', userSchema);
