@@ -12,7 +12,7 @@ const eventsController = new EventsController();
 router.post(
   "/bazaars",
   authMiddleware, // verifies JWT (mock for now)
-  roleMiddleware("EventsOffice"), // only EventsOffice can access
+  roleMiddleware("events_office"), // only EventsOffice can access
   eventsController.createBazaar // controller we created
 );
 
@@ -20,7 +20,7 @@ router.post(
 router.patch(
   "/bazaars/:id",
   authMiddleware,
-  roleMiddleware(["EventsOffice"]),
+  roleMiddleware(["events_office"]),
   eventsController.editBazaar.bind(eventsController)
 );
 

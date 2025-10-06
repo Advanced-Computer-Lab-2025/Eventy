@@ -4,7 +4,7 @@ import { User } from '../users/user.model.js';
 
 export async function createBazaar(data, user) {
   // Check user role
-  if (user.role !== "EventsOffice") {
+  if (user.role !== "events_office") {
     throw new Error("Only Events Office can create bazaars");
   }
 
