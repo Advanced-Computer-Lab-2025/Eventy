@@ -7,7 +7,7 @@ export default (req, res, next) => {
     _id: '66f123abc987de0012f9f999', // fake MongoDB ObjectId string
      id: "66f123abc987de0012f9f999", // add this line
     name: 'Test Professor User',
-    role: 'student', // change to 'admin' if needed
+    role: 'events_office', // change to 'admin' if needed
   };
 
   next();

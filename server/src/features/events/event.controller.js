@@ -9,6 +9,7 @@ import {
   createConferenceSchema,
   createBazaarSchema,
   updateBazaarSchema,
+  updateConferenceSchema,
 } from "./event.validation.js";
 
 //Write your code in this class!!!
@@ -91,6 +92,28 @@ async updateTripController(req, res, next) {
       next(error);
     }
   }
+
+
+  async updateConferenceController(req, res, next) {
+  try {
+    const { error } = updateConferenceSchema.validate(req.body);
+    if (error) throw new ApiError(400, error.details[0].message);
+
+    const { conferenceId } = req.params;
+    const updatedConference = await eventService.updateConferenceService(
+      conferenceId,
+      req.body,
+      req.user
+    );
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, updatedConference, "Conference updated successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
+
 
   async createTrip(req, res, next) {
     try {
