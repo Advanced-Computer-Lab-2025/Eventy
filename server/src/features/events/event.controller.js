@@ -127,10 +127,15 @@ export class EventsController {
 
   async createWorkshop(req, res, next) {
     try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
       if (req.user.role !== "professor") {
-        return res
-          .status(403)
-          .json({ message: "Forbidden: Only professors can create workshops" });
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can create workshops"
+        );
       }
 
       const { error } = createWorkshopSchema.validate(req.body);
@@ -151,14 +156,42 @@ export class EventsController {
     }
   }
 
+  async getMyWorkshops(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "professor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can view their workshops"
+        );
+      }
+
+      const events = await eventService.getEvents({
+        eventType: "workshop",
+        createdBy: req.user._id,
+      });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Workshops fetched successfully"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
   // Accept workshop
   async acceptWorkshop(req, res) {
     try {
       // Extra role validation
       if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can accept workshops",
-        });
+        return res
+          .status(403)
+          .json({
+            message: "Forbidden: Only events office can accept workshops",
+          });
       }
 
       const { error } = workshopStatusSchema.validate({

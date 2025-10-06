@@ -30,6 +30,9 @@ router.post(
   eventsController.createWorkshop.bind(eventsController)
 );
 
+//  Get my workshops
+router.get('/me/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.getMyWorkshops.bind(eventsController));
+
 // Accept workshop
 router.patch(
   "/:id/accept",
