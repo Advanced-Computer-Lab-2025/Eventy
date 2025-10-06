@@ -6,7 +6,7 @@ export default (req, res, next) => {
   req.user = {
     _id: "66f123abc987de0012f9f999",
     name: "Test Events Office User",
-    role: "user",
+    role: "user", // Change role as needed for testing
   };
 
   next();
