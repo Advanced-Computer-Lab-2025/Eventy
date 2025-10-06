@@ -6,7 +6,7 @@ export default (req, res, next) => {
   req.user = {
     _id: "66f123abc987de0012f9f999",
     name: "Test Events Office User",
-    role: "events_office",
+    role: "user",
   };
 
   next();
@@ -15,7 +15,10 @@ export default (req, res, next) => {
 export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({ message: "Forbidden" });
+      return res.status(403).json({
+        status: "fail",
+        message: "Unauthorized user",
+      });
     }
     next();
   };
