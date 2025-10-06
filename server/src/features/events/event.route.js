@@ -1,27 +1,63 @@
 import express from 'express';
+import { getUpcomingEventsController } from './event.controller.js';
 import {EventsController} from './event.controller.js';
 import authMiddleware from '../../middlewares/auth.middleware.js';
 import roleMiddleware from '../../middlewares/role.middleware.js';
+import * as eventController from './event.controller.js';
 
 const router = express.Router();
 const eventsController = new EventsController();
 
-//create bazaar
+// Create bazaar /events/bazaars
 router.post(
-  '/bazaars',
-  authMiddleware,                 // verifies JWT (mock for now)
-  roleMiddleware('EventsOffice'), // only EventsOffice can access
-  eventsController.createBazaar    // controller we created
+  "/bazaars",
+  authMiddleware, // verifies JWT (mock for now)
+  roleMiddleware("EventsOffice"), // only EventsOffice can access
+  eventsController.createBazaar // controller we created
+);
+
+// PATCH /api/bazaars/:id - Edit bazaar details
+router.patch(
+  "/bazaars/:id",
+  authMiddleware,
+  roleMiddleware(["EventsOffice"]),
+  eventsController.editBazaar.bind(eventsController)
+);
+
+// PATCH /api/admin/trips/:tripId
+router.patch(
+  "/admin/trips/:tripId",
+  authMiddleware,
+  roleMiddleware("admin", "events_office"),
+  eventsController.updateTripController
 );
 
 // Create workshop
-router.post('/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.createWorkshop.bind(eventsController));
+router.post(
+  "/workshops",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.createWorkshop.bind(eventsController)
+);
+
+//  Get my workshops
+router.get('/me/workshops', authMiddleware, roleMiddleware(['professor']), eventsController.getMyWorkshops.bind(eventsController));
 
 // Accept workshop
-router.patch('/:id/accept', authMiddleware, roleMiddleware(['events_office']), eventsController.acceptWorkshop.bind(eventsController));
+router.patch(
+  "/:id/accept",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.acceptWorkshop.bind(eventsController)
+);
 
 // Reject workshop
-router.patch('/:id/reject', authMiddleware, roleMiddleware(['events_office']), eventsController.rejectWorkshop.bind(eventsController));
+router.patch(
+  "/:id/reject",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.rejectWorkshop.bind(eventsController)
+);
 
 // POST /api/admin/trips
 router.post(
@@ -45,5 +81,13 @@ router.post(
   roleMiddleware(["admin", "events_office"]),
   eventsController.createConferenceController
 );
+
+router.get(
+  '/upcoming',
+  authMiddleware,
+  roleMiddleware(['vendor']),
+  getUpcomingEventsController
+);
+
 
 export default router;
