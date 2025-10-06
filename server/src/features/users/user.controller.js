@@ -5,25 +5,33 @@ import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes
 export default class UserController {
-    createManagementAccount  = async (req, res, next) => {
+    static async createManagementAccount(req, res) {
     try {
-        const userData = req.body; 
-        const user = await UserService.createManagementAccount(userData); 
+      const userData = req.body;
 
-        
-        res.status(201).json({
+      // Validate incoming data
+      const { error } = UserValidation.createManagementAccount.validate(userData);
+      if (error) {
+        return res.status(400).json({ success: false, message: error.details[0].message });
+      }
+
+      // Create the account
+      const user = await UserService.createManagementAccount(userData);
+
+      return res.status(201).json({
+        success: true,
         message: "Management account created successfully",
-        user: {
-            id: user._id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            role: user.role,
-            status: user.status,
+        data: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          status: user.status,
         },
-        });
-    }catch (err) {
-        next(err);
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
     };
   // GET /api/users/pending --> The users that are not assigned a role yet
