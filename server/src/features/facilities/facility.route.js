@@ -18,6 +18,7 @@ router.get(
   )
 );
 
+router.get("/gym/sessions", authMiddleware, facilitiesController.getGymSessions.bind(facilitiesController));
 /**
  * @route   POST /api/facilities/admin/gym/sessions
  * @desc    Create a new gym session (Admin or Events Office only)

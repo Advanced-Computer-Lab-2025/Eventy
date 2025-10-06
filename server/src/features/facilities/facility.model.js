@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import "../users/user.model.js";
 
 // GymSession Schema
 

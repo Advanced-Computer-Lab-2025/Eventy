@@ -43,6 +43,33 @@ class FacilitiesServiceClass {
 
     return structuredSchedule;
   }
+  
+    /**
+   * @route   GET /api/facilities/gym/sessions
+   * @desc    Get all gym sessions for a specific month and year.
+   * @access  Private (All authenticated users)
+   * @query   month (1–12), year (4-digit)
+   * @success 200 OK - Returns { success, message, data: [sessionObjects] }
+   * @error   401 Unauthorized
+   */
+  async getGymSessions(month, year) {
+    if (!month || !year) {
+      throw new Error("Month and year parameters are required");
+    }
+
+    const startOfMonth = new Date(year, month - 1, 1);
+    const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
+
+    const sessions = await GymSession.find({
+      date: { $gte: startOfMonth, $lte: endOfMonth },
+      deletedAt: null,
+    })
+      .populate("instructor", "name email role")
+      .sort({ date: 1, startTime: 1 });
+
+    return sessions;
+  }
+}
 
   /**
    * Creates a new gym session.
