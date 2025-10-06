@@ -1,5 +1,6 @@
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
+import { User } from '../users/user.model.js';
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -185,5 +186,20 @@ export const registerUserToEvent = async (user, eventId) => {
 
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({ attendees: userId });
+  return events;
+};
+
+
+export const getUpcomingEventsService = async () => {
+  const now = new Date();
+
+  const events = await Event.find({
+    status: 'approved',
+    startDate: { $gte: now },
+  })
+    .populate('professors', 'name email') // now Mongoose knows User schema
+    .populate('createdBy', 'name email')
+    .lean();
+
   return events;
 };

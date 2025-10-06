@@ -347,3 +347,18 @@ async getMyEvents(req, res, next) {
   }
 };
 }
+
+
+export const getUpcomingEventsController = async (req, res, next) => {
+  try {
+    const events = await eventService.getUpcomingEventsService();
+    res.status(200).json({
+      statusCode: 200,
+      data: events,
+      message: 'Upcoming events fetched successfully.',
+    });
+  } catch (err) {
+    console.error('Error in getUpcomingEventsController:', err);
+    next(err);
+  }
+};

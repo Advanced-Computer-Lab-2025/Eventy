@@ -1,7 +1,9 @@
-import express from "express";
-import { EventsController } from "./event.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
-import roleMiddleware from "../../middlewares/role.middleware.js";
+import express from 'express';
+import { getUpcomingEventsController } from './event.controller.js';
+import {EventsController} from './event.controller.js';
+import authMiddleware from '../../middlewares/auth.middleware.js';
+import roleMiddleware from '../../middlewares/role.middleware.js';
+import * as eventController from './event.controller.js';
 
 const router = express.Router();
 const eventsController = new EventsController();
@@ -79,14 +81,13 @@ router.post(
   roleMiddleware(["admin", "events_office"]),
   eventsController.createConferenceController
 );
-//Rana (to be deleted later)
-//register for workshop/trip
-router.post('/:id/register', authMiddleware, roleMiddleware(['student', 'staff','ta','professor']), eventsController.registerForEvent.bind(eventsController));
 
 router.get(
-  "/me/events",
-  authMiddleware, // user must be logged in
-  eventsController.getMyEvents.bind(eventsController)
+  '/upcoming',
+  authMiddleware,
+  roleMiddleware(['vendor']),
+  getUpcomingEventsController
 );
+
 
 export default router;
