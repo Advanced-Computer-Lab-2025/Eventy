@@ -1,4 +1,4 @@
-import { CourtBooking } from "./facility.model.js";
+import { CourtBooking, GymSession } from "./facility.model.js";
 
 class FacilitiesServiceClass {
   /**
@@ -43,6 +43,26 @@ class FacilitiesServiceClass {
 
     return structuredSchedule;
   }
-}
 
+  /**
+   * Creates a new gym session.
+   * @param {Object} data - Validated gym session data
+   * @param {Object} user - Authenticated user
+   */
+  async createGymSession(data) {
+  const { date, time, duration, type, instructorId, maxParticipants } = data;
+
+  const newSession = new GymSession({
+    date,
+    startTime: time,
+    durationMinutes: duration,
+    type,
+    instructor: instructorId,
+    maxParticipants: maxParticipants
+  });
+
+  await newSession.save();
+  return newSession;
+}
+}
 export const FacilitiesService = new FacilitiesServiceClass();

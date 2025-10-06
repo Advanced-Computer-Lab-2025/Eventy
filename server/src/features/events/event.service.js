@@ -1,10 +1,10 @@
-import { Event } from './event.model.js'; // adjust path if needed
+import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 
 export async function createBazaar(data, user) {
   // Check user role
-  if (user.role !== 'EventsOffice') {
-    throw new Error('Only Events Office can create bazaars');
+  if (user.role !== "EventsOffice") {
+    throw new Error("Only Events Office can create bazaars");
   }
 
   // Prepare bazaar data
@@ -15,12 +15,31 @@ export async function createBazaar(data, user) {
     startDate: data.startDate,
     endDate: data.endDate,
     registrationDeadline: data.registrationDeadline,
-    eventType: 'bazaar',
+    eventType: "bazaar",
     createdBy: user._id,
   };
 
   // Save to database
   const bazaar = await Event.create(bazaarData);
+  return bazaar;
+}
+
+export async function editBazaar(id, updates) {
+  const bazaar = await Event.findById(id);
+  if (!bazaar) throw new ApiError(404, "Bazaar not found");
+
+  if (bazaar.eventType !== "bazaar")
+    throw new ApiError(400, "This event is not a bazaar");
+
+  // Check if the bazaar has already started
+  const now = new Date();
+  if (new Date(bazaar.startDate) <= now)
+    throw new ApiError(400, "Cannot edit a bazaar that has already started");
+
+  // Apply updates and save
+  Object.assign(bazaar, updates);
+  await bazaar.save();
+
   return bazaar;
 }
 
@@ -45,7 +64,6 @@ export const createTrip = async (tripData, createdBy) => {
   return newTrip;
 };
 
-
 export const createConference = async (data, userId) => {
   const {
     name,
@@ -56,7 +74,7 @@ export const createConference = async (data, userId) => {
     requiredBudget,
     fundingSource,
     extraResources,
-    agenda
+    agenda,
   } = data;
 
   // Validate required fields
@@ -64,7 +82,10 @@ export const createConference = async (data, userId) => {
     throw new ApiError(400, "Missing required fields");
 
   if (!requiredBudget || !fundingSource)
-    throw new ApiError(400, "Conference must include requiredBudget and fundingSource");
+    throw new ApiError(
+      400,
+      "Conference must include requiredBudget and fundingSource"
+    );
 
   const event = await Event.create({
     name,
@@ -85,20 +106,17 @@ export const createConference = async (data, userId) => {
   return event;
 };
 
-
-
 // Get events with optional filter (e.g., for bazaar, published, upcoming)
 export const getEvents = async (filter = {}) => {
   return Event.find(filter).sort({ startDate: 1 });
 };
 
 export const createWorkshop = async (workshopData, professorId) => {
-
   const workshop = await Event.create({
     ...workshopData,
     eventType: "workshop",
     createdBy: professorId,
-    status: "pending"
+    status: "pending",
   });
 
   return workshop;
@@ -129,4 +147,43 @@ export const updateTripService = async (tripId, updateData, user) => {
   // 5. Save updated trip
   const savedTrip = await trip.save();
   return savedTrip;
+};
+/**
+ * Register an authenticated user (Student, Staff, TA, or Professor)
+ * to a workshop or trip event.
+ */
+export const registerUserToEvent = async (user, eventId) => {
+  // 1️⃣ Validate allowed roles
+  const allowedRoles = ['student', 'staff', 'ta', 'professor'];
+  if (!allowedRoles.includes(user.role.toLowerCase())) {
+    throw new ApiError(403, 'You are not allowed to register for this event');
+  }
+
+  // 2️⃣ Find the event by ID
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, 'Event not found');
+  }
+
+  // 3️⃣ Prevent duplicate registrations
+  if (event.attendees && event.attendees.includes(user._id)) {
+    throw new ApiError(409, 'You are already registered for this event');
+  }
+
+  // 4️⃣ Check if event has reached its capacity (if it has a limit)
+  if (event.capacity && event.attendees.length >= event.capacity) {
+    throw new ApiError(409, 'Event is full');
+  }
+
+  // 5️⃣ Register the user
+  event.attendees.push(user._id);
+  await event.save();
+
+  return { message: 'Successfully registered for the event.' };
+};
+
+
+export const getEventsByUser = async (userId) => {
+  const events = await Event.find({ attendees: userId });
+  return events;
 };
