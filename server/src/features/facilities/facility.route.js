@@ -18,4 +18,6 @@ router.get(
   )
 );
 
+router.get("/gym/sessions", authMiddleware, facilitiesController.getGymSessions.bind(facilitiesController));
+
 export default router;
