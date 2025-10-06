@@ -47,6 +47,8 @@ export class FacilitiesController {
     next(error);
   }
 }
+
+  /**
    * Handles the request to create a new gym session.
    */
   async createGymSession(req, res, next) {

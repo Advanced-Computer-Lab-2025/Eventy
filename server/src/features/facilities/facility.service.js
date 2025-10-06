@@ -69,7 +69,6 @@ class FacilitiesServiceClass {
 
     return sessions;
   }
-}
 
   /**
    * Creates a new gym session.
