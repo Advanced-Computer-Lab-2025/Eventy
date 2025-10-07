@@ -1,6 +1,6 @@
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
-import { User } from '../users/user.model.js';
+import { User } from "../users/user.model.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -145,7 +145,6 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
-
 export const updateTripService = async (tripId, updateData, user) => {
   // 1. Fetch trip
   const trip = await Event.findById(tripId);
@@ -177,51 +176,64 @@ export const updateTripService = async (tripId, updateData, user) => {
  */
 export const registerUserToEvent = async (user, eventId) => {
   // 1️⃣ Validate allowed roles
-  const allowedRoles = ['student', 'staff', 'ta', 'professor'];
+  const allowedRoles = ["student", "staff", "ta", "professor"];
   if (!allowedRoles.includes(user.role.toLowerCase())) {
-    throw new ApiError(403, 'You are not allowed to register for this event');
+    throw new ApiError(403, "You are not allowed to register for this event");
   }
 
   // 2️⃣ Find the event by ID
   const event = await Event.findById(eventId);
   if (!event) {
-    throw new ApiError(404, 'Event not found');
+    throw new ApiError(404, "Event not found");
   }
 
   // 3️⃣ Prevent duplicate registrations
   if (event.attendees && event.attendees.includes(user._id)) {
-    throw new ApiError(409, 'You are already registered for this event');
+    throw new ApiError(409, "You are already registered for this event");
   }
 
   // 4️⃣ Check if event has reached its capacity (if it has a limit)
   if (event.capacity && event.attendees.length >= event.capacity) {
-    throw new ApiError(409, 'Event is full');
+    throw new ApiError(409, "Event is full");
   }
 
   // 5️⃣ Register the user
   event.attendees.push(user._id);
   await event.save();
 
-  return { message: 'Successfully registered for the event.' };
+  return { message: "Successfully registered for the event." };
 };
-
 
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({ attendees: userId });
   return events;
 };
 
-
 export const getUpcomingEventsService = async () => {
   const now = new Date();
 
   const events = await Event.find({
-    status: 'approved',
+    status: "approved",
     startDate: { $gte: now },
   })
-    .populate('professors', 'name email') // now Mongoose knows User schema
-    .populate('createdBy', 'name email')
+    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("createdBy", "name email")
     .lean();
 
   return events;
 };
+
+export async function deleteEvent(eventId, user) {
+  // Ensure event exists
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  // Check if anyone is registered
+  if (event.attendees && event.attendees.length > 0) {
+    throw new ApiError(409, "Cannot delete event with registered users.");
+  }
+
+  // Proceed with deletion
+  await Event.findByIdAndDelete(eventId);
+  return true;
+}
