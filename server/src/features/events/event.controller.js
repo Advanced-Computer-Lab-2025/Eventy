@@ -328,6 +328,66 @@ export class EventsController {
       res.status(500).json({ message: "Error rejecting workshop", error });
     }
   }
+
+  // Request edits for workshop (changes status from pending to needs_revision)
+async requestEdits(req, res) {
+  try {
+    // Role validation
+    if (req.user.role !== 'events_office') {
+      return res.status(403).json({ 
+        message: 'Forbidden: Only events office can request edits' 
+      });
+    }
+
+    const { revisionComments } = req.body;
+
+    // Validate that revision comments are provided
+    if (!revisionComments || revisionComments.trim().length === 0) {
+      return res.status(400).json({ 
+        message: 'Comments are required to specify what needs to be edited' 
+      });
+    }
+
+    // Find the event first
+    const event = await Event.findById(req.params.id);
+
+    if (!event) {
+      return res.status(404).json({ message: 'Workshop not found' });
+    }
+
+    // Check if it's a workshop
+    if (event.eventType !== 'workshop') {
+      return res.status(400).json({ 
+        message: 'This endpoint is only for workshops' 
+      });
+    }
+
+    // Check if workshop is in pending status
+    if (event.status !== 'pending') {
+      return res.status(400).json({ 
+        message: `Cannot request edits. Workshop status is already ${event.status}` 
+      });
+    }
+
+    // Update status and add revision comments
+    event.status = 'needs_revision';
+    event.revisionComments = revisionComments.trim();
+    await event.save();
+
+    res.status(200).json({ 
+      message: 'Edit request sent successfully', 
+      event 
+    });
+
+  } catch (error) {
+    res.status(500).json({ 
+      message: 'Error requesting edits', 
+      error: error.message 
+    });
+  }
+}
+
+
   //Rana (to be deleted later)
   //Register for event (workshop/trip)
   async registerForEvent(req, res) {

@@ -22,6 +22,18 @@ const eventSchema = new Schema(
       default: 'pending'
     },
 
+     revisionComments: {
+      type: String,
+      required: function() {
+        return this.status === 'needs_revision';
+      },
+      validate: {
+        validator: function(value) {
+          return this.status !== 'needs_revision' || (value && value.trim().length > 0);
+        },
+        message: 'Please mention what needs to be edited'
+      }
+    },
     attendees: [
       { type: Schema.Types.ObjectId, ref: 'User' } // Students/Staff who registered
     ],

@@ -2,16 +2,13 @@
 // Replace this later with real JWT-based authentication.
 
 export default (req, res, next) => {
-  // Simulate a logged-in user (you can change role depending on who's testing)
   req.user = {
-    _id: "66f123abc987de0012f9f999",
-    name: "Test Events Office User",
-    role: "user", // Change role as needed for testing
+    _id: "68e1bc6a877a0f6d1f281418",  // Add an ID
+    role: "events_office",
+    // Add any other fields your app might need
   };
-
   next();
 };
-
 export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
     if (!req.user || !allowedRoles.includes(req.user.role)) {
