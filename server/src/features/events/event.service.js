@@ -229,7 +229,7 @@ export async function deleteEvent(eventId, user) {
   if (!event) throw new ApiError(404, "Event not found");
 
   // Check if anyone is registered
-  if (event.registeredUsers && event.registeredUsers.length > 0) {
+  if (event.attendees && event.attendees.length > 0) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
