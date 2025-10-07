@@ -145,6 +145,43 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
+/**
+ * Allows a professor to edit their own workshop if it needs revision.
+ * @param {string} workshopId - The ID of the workshop to edit.
+ * @param {object} updateData - The fields to update.
+ * @param {object} user - The authenticated professor user.
+ * @returns {Promise<Document>} The updated workshop document.
+ */
+export async function editWorkshop(workshopId, updateData, user) {
+  const workshop = await Event.findById(workshopId);
+  if (!workshop) {
+    throw new ApiError(404, "Workshop not found");
+  }
+
+  if (workshop.eventType !== "workshop") {
+    throw new ApiError(400, "This event is not a workshop");
+  }
+
+  if (workshop.createdBy.toString() !== user._id.toString()) {
+    throw new ApiError(403, "Forbidden: You can only edit your own workshops");
+  }
+
+  if (workshop.status !== "needs_revision") {
+    throw new ApiError(
+      403,
+      "Forbidden: Workshop can only be edited if its status is 'needs_revision'"
+    );
+  }
+
+  Object.assign(workshop, updateData);
+
+  workshop.status = "pending";
+
+  await workshop.save();
+
+  return workshop;
+}
+
 export const updateTripService = async (tripId, updateData, user) => {
   // 1. Fetch trip
   const trip = await Event.findById(tripId);
