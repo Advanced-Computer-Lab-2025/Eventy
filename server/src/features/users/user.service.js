@@ -35,5 +35,27 @@ class UserService {
 
         return newUser;
     };
+async deleteManagementAccount(currentAdminId, targetUserId) {
+  if (currentAdminId.toString() === targetUserId.toString()) {
+    throw new ApiError(403, "You cannot delete your own account.");
+  }
+
+  const targetUser = await User.findById(targetUserId);
+  if (!targetUser) throw new ApiError(404, "Target user not found.");
+
+  const allowedRoles = ["admin", "events_office"];
+  if (!allowedRoles.includes(targetUser.role)) {
+    throw new ApiError(403, "Cannot delete non-management accounts using this endpoint.");
+  }
+
+  if (!targetUser.deletedAt) {
+    targetUser.deletedAt = new Date();
+    targetUser.status = "blocked";
+    await targetUser.save();
+  }
+
+  return targetUser;
+}
+
 }
 export default new UserService();

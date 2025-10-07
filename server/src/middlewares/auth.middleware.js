@@ -1,16 +1,18 @@
 // Temporary mock authentication middleware for development/testing
 // Replace this later with real JWT-based authentication.
 
-export default (req, res, next) => {
-  // Simulate a logged-in user (you can change role depending on who's testing)
-  req.user = {
-    _id: "66f123abc987de0012f9f999",
-    name: "Test Events Office User",
-    role: "user", // Change role as needed for testing
-  };
+// export default (req, res, next) => {
+//   // Simulate a logged-in user (you can change role depending on who's testing)
+//   req.user = {
+//     _id: "66f123abc987de0012f9f999",
+//     name: "Test Events Office User",
+//     role: "user", // Change role as needed for testing
+//   };
 
-  next();
-};
+//   next();
+// };
+
+
 
 export function authorizeRoles(...allowedRoles) {
   return (req, res, next) => {
@@ -23,6 +25,19 @@ export function authorizeRoles(...allowedRoles) {
     next();
   };
 }
+
+
+export default (req, res, next) => {
+  // Simulate a logged-in user
+  req.user = {
+    _id: "66f123abc987de0012f9f999",
+    name: "Test Admin User",
+    // ✅ FIX: Change the role to 'admin'
+    role: "admin", 
+  };
+
+  next();
+};
 
 /*
 Once real authentication is implemented, replace this middleware with one that:
