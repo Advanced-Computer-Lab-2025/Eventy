@@ -35,27 +35,55 @@ class UserService {
 
         return newUser;
     };
-async deleteManagementAccount(currentAdminId, targetUserId) {
-  if (currentAdminId.toString() === targetUserId.toString()) {
-    throw new ApiError(403, "You cannot delete your own account.");
+    async deleteManagementAccount(currentAdminId, targetUserId) {
+    if (currentAdminId.toString() === targetUserId.toString()) {
+        throw new ApiError(403, "You cannot delete your own account.");
+    }
+
+    const targetUser = await User.findById(targetUserId);
+    if (!targetUser) throw new ApiError(404, "Target user not found.");
+
+    const allowedRoles = ["admin", "events_office"];
+    if (!allowedRoles.includes(targetUser.role)) {
+        throw new ApiError(403, "Cannot delete non-management accounts using this endpoint.");
+    }
+
+    if (!targetUser.deletedAt) {
+        targetUser.deletedAt = new Date();
+        targetUser.status = "blocked";
+        await targetUser.save();
+    }
+
+    return targetUser;
+    }
+
+
+  // 🧩 Get all users (Admin only)
+  async getAllUsers(req) {
+    try {
+      // Ensure only admins can access this
+      if (!req.user || req.user.role !== "admin") {
+        throw new ApiError(403, "Access denied. Admins only.");
+      }
+
+      const users = await User.find(
+      { status: { $in: ["active", "blocked"] } }, // ✅ Filter condition
+      "-password" // Exclude password
+     )  // exclude password
+        .sort({ createdAt: -1 })                    // newest first
+        .select("firstName lastName email role status deletedAt createdAt updatedAt");
+
+      if (!users || users.length === 0) {
+        throw new ApiError(404, "No users found.");
+      }
+
+      return users;
+
+    } catch (err) {
+      // Re-throw known ApiErrors, wrap others
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(500, `Error retrieving users: ${err.message}`);
+    }
   }
-
-  const targetUser = await User.findById(targetUserId);
-  if (!targetUser) throw new ApiError(404, "Target user not found.");
-
-  const allowedRoles = ["admin", "events_office"];
-  if (!allowedRoles.includes(targetUser.role)) {
-    throw new ApiError(403, "Cannot delete non-management accounts using this endpoint.");
-  }
-
-  if (!targetUser.deletedAt) {
-    targetUser.deletedAt = new Date();
-    targetUser.status = "blocked";
-    await targetUser.save();
-  }
-
-  return targetUser;
-}
-
 }
 export default new UserService();

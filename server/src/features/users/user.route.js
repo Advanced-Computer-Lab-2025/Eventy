@@ -3,16 +3,11 @@ import express from 'express';
 import UserController from './user.controller.js';
 import auth from '../../middlewares/auth.middleware.js';
 import role from '../../middlewares/role.middleware.js';import authMiddleware from '../../middlewares/auth.middleware.js';
-import validate from '../../middlewares/validate.middleware.js';
-import { deleteUserSchema } from './user.validation.js';
 
 const router = express.Router();
 
 // GET pending users (admin only)
 router.get('/pending', auth, role(['admin']), UserController.getPendingUsers);
-
-// PATCH assign role (admin only)
-router.patch('/:id/assign-role', auth, role(['admin']), UserController.assignRole);
 
 // POST /api/admin/users/create-management-account
 router.post(
@@ -22,13 +17,19 @@ router.post(
     UserController.createManagementAccount
 );
 
+
+// ✅ GET /api/admin/users — List all users
+router.get("/getusers", auth, role(["admin"]), UserController.getAllUsers);
+
+// PATCH assign role (admin only)
+router.patch('/:id/assign-role', auth, role(['admin']), UserController.assignRole);
+
 // DELETE /api/admin/users/:id
 router.delete(
-    "/:id", // The ID of the user to be deleted is a route parameter
+    "/:id/delete", // The ID of the user to be deleted is a route parameter
     auth, // Authenticate the user
     role(['admin']), // Only Admins are authorized
-    validate(deleteUserSchema, 'params'),  // Validate the ID from the route parameters
     UserController.deleteManagementAccount
-    
 );
+
 export default router;
