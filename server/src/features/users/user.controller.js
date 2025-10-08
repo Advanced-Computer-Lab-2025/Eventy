@@ -1,4 +1,4 @@
-import { User } from './user.model.js';
+import { User } from './users/user.model.js';
 import { UserValidation } from './user.validation.js';
 import UserService from "./user.service.js";
 
