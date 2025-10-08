@@ -71,6 +71,14 @@ router.patch(
   eventsController.rejectWorkshop.bind(eventsController)
 );
 
+// Edit a workshop that needs revision
+router.patch(
+  "/workshops/:workshopId",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.editWorkshop.bind(eventsController)
+);
+
 // POST /api/admin/trips
 router.post(
   "/admin/trips",

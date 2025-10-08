@@ -138,6 +138,36 @@ export const createWorkshopSchema = Joi.object({
     }),
 });
 
+export const updateWorkshopSchema = Joi.object({
+  name: Joi.string().trim().optional(),
+  description: Joi.string().optional(),
+  location: Joi.string().valid("GUC Cairo", "GUC Berlin").optional(),
+  startDate: Joi.date().optional(),
+  endDate: Joi.date().when('startDate', {
+    is: Joi.exist(),
+    then: Joi.date().greater(Joi.ref("startDate")),
+    otherwise: Joi.date().optional()
+  }),
+  registrationDeadline: Joi.date().when('startDate', {
+    is: Joi.exist(),
+    then: Joi.date().less(Joi.ref("startDate")),
+    otherwise: Joi.date().optional()
+  }),
+  capacity: Joi.number().integer().min(1).optional(),
+  agenda: Joi.string().optional(),
+  requiredBudget: Joi.number().positive().optional(),
+  fundingSource: Joi.string().valid("external", "guc").optional(),
+  extraResources: Joi.string().optional(),
+  faculty: Joi.string().optional(),
+  professors: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .min(1)
+    .optional(),
+
+  price: Joi.forbidden(),
+  websiteUrl: Joi.forbidden(),
+}).min(1);
+
 export const updateTripSchema = Joi.object({
   name: Joi.string(),
   description: Joi.string(),
