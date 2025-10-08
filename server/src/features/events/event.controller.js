@@ -391,18 +391,56 @@ export class EventsController {
       next(err);
     }
   }
-}
-
-export const getUpcomingEventsController = async (req, res, next) => {
+  async getUpcomingEvents(req, res, next) {
   try {
     const events = await eventService.getUpcomingEventsService();
-    res.status(200).json({
-      statusCode: 200,
-      data: events,
-      message: "Upcoming events fetched successfully.",
-    });
+    return res
+      .status(200)
+      .json(new ApiResponse(200, events, "Upcoming events fetched successfully."));
   } catch (err) {
-    console.error("Error in getUpcomingEventsController:", err);
     next(err);
   }
-};
+}
+//search events by name and type
+//  Search events by name (event/professor) or type
+async searchEvents(req, res, next) {
+  try {
+    const { name, type } = req.query;
+
+    // Ensure at least one search parameter is provided
+    if (!name && !type) {
+      throw new ApiError(400, "Please provide a name or type to search.");
+    }
+
+    // Build a flexible filter
+    const filter = { status: "approved" };
+
+    // Filter by event type if given
+    if (type) {
+      filter.eventType = type.toLowerCase();
+    }
+
+    // Add name-based search (event name or professor/vendor name)
+    if (name) {
+      filter.$or = [
+        { name: { $regex: name, $options: "i" } },
+        { "createdBy.name": { $regex: name, $options: "i" } },
+      ];
+    }
+
+    // Fetch results from service
+    const events = await eventService.searchEvents(filter);
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, events, "Events search successful"));
+  } catch (err) {
+    next(err);
+  }
+}
+
+
+
+}
+
+

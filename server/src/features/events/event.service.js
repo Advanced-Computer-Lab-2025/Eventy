@@ -237,3 +237,10 @@ export async function deleteEvent(eventId, user) {
   await Event.findByIdAndDelete(eventId);
   return true;
 }
+// 🔍 Search events service
+export const searchEvents = async (filter) => {
+  return await Event.find(filter)
+    .populate("createdBy", "name role") // populate to access professor/vendor name
+    .sort({ startDate: 1 });
+};
+
