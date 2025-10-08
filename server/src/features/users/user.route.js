@@ -32,15 +32,15 @@ router.post(
 
 
 // ✅ GET /api/admin/users — List all users
-router.get("/getusers", auth, role(["admin"]), UserController.getAllUsers);
+router.get("/getusers", authMiddleware, role(["admin"]), UserController.getAllUsers);
 
 // PATCH assign role (admin only)
-router.patch('/:id/assign-role', auth, role(['admin']), UserController.assignRole);
+router.patch('/:id/assign-role', authMiddleware, role(['admin']), UserController.assignRole);
 
 // DELETE /api/admin/users/:id
 router.delete(
     "/:id/delete", // The ID of the user to be deleted is a route parameter
-    auth, // Authenticate the user
+    authMiddleware, // Authenticate the user
     role(['admin']), // Only Admins are authorized
     UserController.deleteManagementAccount
 );

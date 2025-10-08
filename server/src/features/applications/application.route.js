@@ -5,6 +5,7 @@ import validate from "../../middlewares/validate.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import validateQuery from "../../middlewares/validateQuery.middleware.js";
+import { ApplicationService } from "./application.service.js";  
 
 const router = express.Router();
 const applicationController = new ApplicationController();
@@ -25,4 +26,19 @@ router.get(
   validateQuery(getMyApplicationsSchema), // Use the new middleware here
   applicationController.getMyApplications.bind(applicationController)
 );
+
+/**
+ * @route   GET /api/admin/bazaars/:bazaarId/applications
+ * @desc    Get all vendor applications for a specific bazaar
+ * @access  Admin / Events Office
+ */
+router.get(
+  "/api/admin/bazaars/:bazaarId/applications",
+  authMiddleware,
+  role(["admin", "events_office"]),
+  ApplicationController.getBazaarApplications
+);
+
+
+
 export default router;

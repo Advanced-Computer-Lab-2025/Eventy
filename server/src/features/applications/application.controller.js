@@ -45,4 +45,22 @@ export class ApplicationController {
       next(error);
     }
   }
+
+  static async getBazaarApplications(req, res, next) {
+  try {
+    const { bazaarId } = req.params;
+
+    // ✅ Use the service you already have
+    const applications = await ApplicationService.getApplicationsForBazaar(bazaarId);
+
+    res.status(200).json({
+      success: true,
+      message: "Applications fetched successfully",
+      data: applications,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 }
