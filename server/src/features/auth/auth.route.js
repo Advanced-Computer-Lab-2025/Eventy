@@ -2,7 +2,16 @@ import express from "express";
 import jwt from "jsonwebtoken";
 import { User } from "../users/user.model.js"; // adjust the path if needed
 
+import { signUp } from "./auth.controller.js";
+import { login, logout } from "./auth.controller.js";
+
 const router = express.Router();
+
+router.post("/signup", signUp);
+
+router.post("/login", login);
+
+router.post("/logout", logout);
 
 router.get("/verify", async (req, res) => {
   try {
