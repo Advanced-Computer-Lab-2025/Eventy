@@ -1,14 +1,8 @@
 import express from "express";
-import { signUp } from "./auth.controller.js";
-import { login, logout } from "./auth.controller.js";
+import jwt from "jsonwebtoken";
+import { User } from "../users/user.model.js"; // adjust the path if needed
 
 const router = express.Router();
-
-router.post("/signup", signUp);
-
-router.post("/login", login);
-
-router.post("/logout", logout);
 
 router.get("/verify", async (req, res) => {
   try {
@@ -21,15 +15,20 @@ router.get("/verify", async (req, res) => {
     }
 
     // Decode JWT
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(
+      token,
+      process.env.JWT_SECRET || "supersecretkey"
+    );
 
+    // Find the user
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(404).json({ message: "User not found." });
     }
 
     // Mark user as verified
-    user.status = "active";
+    user.isVerified = true;
+    user.status = "active"; // optional: activate the account
     await user.save();
 
     // Redirect to frontend login page

@@ -110,9 +110,6 @@ export const signUpUser = async (data) => {
   }
 };
 
-/**
- * LOGIN FUNCTION (for all users)
- */
 export const loginUser = async (data) => {
   let { email, password } = data;
 

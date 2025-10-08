@@ -1,5 +1,6 @@
 import { User } from "./user.model.js";
 import { UserValidation } from "./user.validation.js";
+import { sendVerificationEmail } from "../auth/email.service.js";
 import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes
@@ -81,6 +82,7 @@ export default class UserController {
 
       user.role = role;
       await user.save();
+      await sendVerificationEmail(user);
 
       return res.status(200).json({
         success: true,
