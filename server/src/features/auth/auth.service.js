@@ -6,7 +6,6 @@ import {
 } from "./auth.validation.js";
 import jwt from "jsonwebtoken";
 
-
 export const signUpUser = async (data) => {
   const { role } = data;
 
@@ -19,7 +18,9 @@ export const signUpUser = async (data) => {
   } else if (normalizedRole === "vendor") {
     validateVendorSignUp(data);
   } else {
-    throw new Error("Invalid role. Only students, staff, TAs, professors, and vendors can sign up.");
+    throw new Error(
+      "Invalid role. Only students, staff, TAs, professors, and vendors can sign up."
+    );
   }
 
   // ✅ Step 3: Check for duplicate email
@@ -28,16 +29,21 @@ export const signUpUser = async (data) => {
 
   // ✅ Step 4: Additional duplicate checks
   if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
-    const existingId = await User.findOne({ studentStaffId: data.studentStaffId });
-    if (existingId) throw new Error("This Student/Staff ID is already registered.");
+    const existingId = await User.findOne({
+      studentStaffId: data.studentStaffId,
+    });
+    if (existingId)
+      throw new Error("This Student/Staff ID is already registered.");
   } else if (normalizedRole === "vendor") {
-    const existingCompany = await User.findOne({ companyName: data.companyName });
-    if (existingCompany) throw new Error("A company with this name already exists.");
+    const existingCompany = await User.findOne({
+      companyName: data.companyName,
+    });
+    if (existingCompany)
+      throw new Error("A company with this name already exists.");
   }
 
   // ✅ Step 5: Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
-
 
   // ✅ Step 5.5: Determine initial verification status
   let status = "active"; // default for student/vendor
@@ -50,8 +56,10 @@ export const signUpUser = async (data) => {
     ...data,
     password: hashedPassword,
     status,
-  isVerified: ["staff", "ta", "professor"].includes(normalizedRole) ? false : true,
-  roleVerifiedByAdmin: false,
+    isVerified: ["staff", "ta", "professor"].includes(normalizedRole)
+      ? false
+      : true,
+    roleVerifiedByAdmin: false,
   };
 
   // ✅ Step 7: Create and save user
@@ -72,7 +80,7 @@ export const signUpUser = async (data) => {
     };
   }
 
-    if (["staff", "ta", "professor"].includes(normalizedRole)) {
+  if (["staff", "ta", "professor"].includes(normalizedRole)) {
     return {
       message:
         status === "pending"
@@ -89,8 +97,6 @@ export const signUpUser = async (data) => {
     };
   }
 
-
-
   if (normalizedRole === "vendor") {
     return {
       message: `Welcome ${user.companyName}! 🏢 Your vendor account has been created successfully.`,
@@ -104,9 +110,6 @@ export const signUpUser = async (data) => {
   }
 };
 
-/**
- * LOGIN FUNCTION (for all users)
- */
 export const loginUser = async (data) => {
   let { email, password } = data;
 
@@ -125,15 +128,15 @@ export const loginUser = async (data) => {
   }
 
   // ✅ Step 3: GUC email check (for non-vendor users)
- if (
-  user.role !== "vendor" &&
-  !(
-    normalizedEmail.endsWith("@guc.edu.eg") ||
-    normalizedEmail.endsWith("@student.guc.edu.eg")
-  )
-) {
-  throw new Error("Please use your GUC email to log in.");
-}
+  if (
+    user.role !== "vendor" &&
+    !(
+      normalizedEmail.endsWith("@guc.edu.eg") ||
+      normalizedEmail.endsWith("@student.guc.edu.eg")
+    )
+  ) {
+    throw new Error("Please use your GUC email to log in.");
+  }
 
   // ✅ Step 3.5: Ensure verified before login (NEW REQUIREMENT)
   if (
@@ -144,7 +147,6 @@ export const loginUser = async (data) => {
       "Your account has not been verified yet. Please check your email for the verification link."
     );
   }
-
 
   // ✅ Step 4: Compare passwords
   const isMatch = await bcrypt.compare(password, user.password);
@@ -160,12 +162,13 @@ export const loginUser = async (data) => {
       email: user.email,
     },
     process.env.JWT_SECRET || "supersecretkey",
-    { expiresIn: "2h" }
+    { expiresIn: "30d" }
   );
-
+  //////////////////////////////////////////////////////////////note : frontend stores the token not backend /////////////////////////////////////////////////
   // ✅ Step 6: Personalized welcome message
   let welcomeMessage = `Welcome back, ${user.firstName || "User"}!`;
-  if (user.role === "vendor") welcomeMessage = `Welcome back, ${user.companyName || "Vendor"}!`;
+  if (user.role === "vendor")
+    welcomeMessage = `Welcome back, ${user.companyName || "Vendor"}!`;
 
   return {
     message: welcomeMessage,
@@ -178,7 +181,6 @@ export const loginUser = async (data) => {
   };
 };
 
-
 /**
  * LOGOUT FUNCTION
  * Simply invalidates token on frontend (no DB storage needed here)
@@ -187,7 +189,6 @@ export const logoutUser = async () => {
   // In JWT, logout is handled on client side by removing token.
   return { message: "Logged out successfully." };
 };
-
 
 export const confirmEmailVerification = async (token) => {
   try {

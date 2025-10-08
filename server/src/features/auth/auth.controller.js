@@ -2,7 +2,6 @@ import { signUpUser } from "./auth.service.js";
 import { loginUser } from "./auth.service.js";
 import { logoutUser } from "./auth.service.js";
 
-
 export const signUp = async (req, res) => {
   try {
     const result = await signUpUser(req.body);
@@ -13,8 +12,10 @@ export const signUp = async (req, res) => {
       let message = "Duplicate value detected.";
 
       if (field === "email") message = "This email is already registered.";
-      else if (field === "studentStaffId") message = "This Student/Staff ID is already registered.";
-      else if (field === "companyName") message = "A company with this name already exists.";
+      else if (field === "studentStaffId")
+        message = "This Student/Staff ID is already registered.";
+      else if (field === "companyName")
+        message = "A company with this name already exists.";
 
       return res.status(400).json({ message });
     }
@@ -22,9 +23,6 @@ export const signUp = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
-
-
-
 
 export const login = async (req, res) => {
   try {
@@ -35,8 +33,6 @@ export const login = async (req, res) => {
   }
 };
 
-
-
 export const logout = async (req, res) => {
   try {
     const result = await logoutUser();
@@ -45,5 +41,3 @@ export const logout = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
-
-

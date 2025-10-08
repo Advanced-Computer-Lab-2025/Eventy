@@ -24,7 +24,9 @@ export const validateAcademicSignUp = (data) => {
   }
 
   if (!studentStaffId || !/^[0-9]+$/.test(studentStaffId)) {
-    throw new Error("A valid Student/Staff ID is required.");
+    throw new Error(
+      "A valid Student/Staff ID is required (ID has to be only numbers)."
+    );
   }
 
   // Save normalized email back to data
@@ -70,7 +72,6 @@ export const validateVendorSignUp = (data) => {
 
   return true;
 };
-
 
 export const validateLogin = (data) => {
   const { email, password } = data;
