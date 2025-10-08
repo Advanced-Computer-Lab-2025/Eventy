@@ -6,35 +6,70 @@ import {
 } from "./auth.validation.js";
 
 export const signUpUser = async (data) => {
-  let { role, password, email } = data;
+  const { role } = data;
 
-  // Normalize email
-  email = email.toLowerCase().trim();
-  data.email = email;
+  // ✅ Step 1: Normalize role
+  const normalizedRole = role.toLowerCase();
 
-  // Check if user already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    throw new Error("you already have account");
-  }
-
-  // Validate
-  if (role.toLowerCase() === "vendor") {
+  // ✅ Step 2: Validate based on role
+  if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
+    validateAcademicSignUp(data);
+  } else if (normalizedRole === "vendor") {
     validateVendorSignUp(data);
   } else {
-    validateAcademicSignUp(data);
+    throw new Error("Invalid role. Only students, staff, TAs, professors, and vendors can sign up.");
   }
 
-  // Hash password
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // ✅ Step 3: Check for duplicate email
+  const existingUser = await User.findOne({ email: data.email });
+  if (existingUser) throw new Error("This email is already registered.");
 
-  // Save in MongoDB
-  const newUser = new User({ ...data, password: hashedPassword });
-  await newUser.save();
+  // ✅ Step 4: Additional duplicate checks
+  if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
+    const existingId = await User.findOne({ studentStaffId: data.studentStaffId });
+    if (existingId) throw new Error("This Student/Staff ID is already registered.");
+  } else if (normalizedRole === "vendor") {
+    const existingCompany = await User.findOne({ companyName: data.companyName });
+    if (existingCompany) throw new Error("A company with this name already exists.");
+  }
 
-  return {
-    id: newUser._id,
-    email: newUser.email,
-    role: newUser.role,
+  // ✅ Step 5: Hash password
+  const hashedPassword = await bcrypt.hash(data.password, 10);
+
+  // ✅ Step 6: Build user data
+  const userData = {
+    ...data,
+    password: hashedPassword,
+    status: "active",
   };
+
+  // ✅ Step 7: Create and save user
+  const user = new User(userData);
+  await user.save();
+
+  // ✅ Step 8: Prepare clean response
+  if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
+    return {
+      message: `Welcome ${user.firstName}! 🎉 Your ${user.role} account has been created successfully.`,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
+
+  if (normalizedRole === "vendor") {
+    return {
+      message: `Welcome ${user.companyName}! 🏢 Your vendor account has been created successfully.`,
+      user: {
+        _id: user._id,
+        companyName: user.companyName,
+        email: user.email,
+        role: user.role,
+      },
+    };
+  }
 };

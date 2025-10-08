@@ -70,3 +70,17 @@ export const validateVendorSignUp = (data) => {
 
   return true;
 };
+
+
+export const validateLogin = (data) => {
+  const { email, password } = data;
+
+  if (!email || !password) {
+    throw new Error("Email and password are required");
+  }
+
+  // Optional: normalize email
+  data.email = email.toLowerCase().trim();
+
+  return true;
+};
