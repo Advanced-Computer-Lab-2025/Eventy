@@ -1,27 +1,86 @@
-import { User } from "../users/User.model.js";
-import { sendVerificationEmail } from "../auth/email.service.js";
+import { User } from './users/user.model.js';
+import { UserValidation } from './user.validation.js';
+import UserService from "./user.service.js";
 
-export const verifyStaffByAdmin = async (req, res) => {
-  try {
-    const { userId } = req.params;
 
-    const user = await User.findById(userId);
-    if (!user) return res.status(404).json({ message: "User not found" });
+// Controller class — import this and call its static methods in routes
+export default class UserController {
+    static async createManagementAccount(req, res) {
+    try {
+      const userData = req.body;
 
-    // Only Staff, TA, or Professor
-    if (!["staff", "ta", "professor"].includes(user.role)) {
-      return res.status(400).json({ message: "Only staff, TA, or professor can be verified by admin." });
+      // Validate incoming data
+      const { error } = UserValidation.createManagementAccount.validate(userData);
+      if (error) {
+        return res.status(400).json({ success: false, message: error.details[0].message });
+      }
+
+      // Create the account
+      const user = await UserService.createManagementAccount(userData);
+
+      return res.status(201).json({
+        success: true,
+        message: "Management account created successfully",
+        data: {
+          id: user._id,
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          role: user.role,
+          status: user.status,
+        },
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
     }
-
-    // Mark as admin-verified (user still needs to click email)
-    user.roleVerifiedByAdmin = true;
-    await user.save();
-
-    // Send verification email with JWT
-    await sendVerificationEmail(user);
-
-    res.json({ message: `Verification email sent to ${user.email}` });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
+    };
+  // GET /api/users/pending --> The users that are not assigned a role yet
+  static async getPendingUsers(req, res) {
+    try {
+      const pending = await User.find({ status: 'pending', role: null }).select('-password');
+      return res.status(200).json({ success: true, data: pending });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
   }
-};
+
+  // PATCH /api/users/:id/assign-role
+  static async assignRole(req, res) {
+    try {
+      const payload = {
+        ...req.body,
+        userId: req.params.id,
+      };
+      const { error } = UserValidation.assignRole.validate(payload);
+      if (error) {
+        return res.status(400).json({ success: false, message: error.details[0].message });
+      }
+
+      const { role } = req.body;
+      const userId = req.params.id;
+
+      const user = await User.findById(userId);
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      if (!(user.status === 'pending' && user.role === null)) {
+        return res.status(400).json({
+          success: false,
+          message: 'User cannot be assigned a role at this stage (must be pending & unassigned)',
+        });
+      }
+
+      user.role = role;
+      await user.save();
+
+      return res.status(200).json({
+        success: true,
+        message: `Role '${role}' assigned successfully`,
+        data: { userId: user._id, role: user.role }
+      });
+    } catch (err) {
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+}
+
+

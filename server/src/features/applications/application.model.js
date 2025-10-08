@@ -1,4 +1,5 @@
-const mongoose = require("mongoose");
+
+import mongoose from "mongoose";
 
 const applicationSchema = new mongoose.Schema(
   {
@@ -26,8 +27,8 @@ const applicationSchema = new mongoose.Schema(
     },
     staff: [
       {
-        name: { type: String },
-        email: { type: String },
+        name: { type: String, required: true },
+        email: { type: String, required: true },
         id: { type: String },
       },
     ],
@@ -56,4 +57,7 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-module.exports = mongoose.model("Application", applicationSchema);
+
+const Application = mongoose.model("Application", applicationSchema);
+export default Application;
+

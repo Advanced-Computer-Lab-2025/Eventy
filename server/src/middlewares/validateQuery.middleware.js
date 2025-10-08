@@ -1,11 +1,10 @@
-// src/middlewares/validate.middleware.js
 import ApiError from '../utils/ApiError.js';
 
-const validate = (schema) => {
+const validateQuery = (schema) => {
   return (req, res, next) => {
     if (!schema) return next();
 
-    const { error } = schema.validate(req.body, { abortEarly: true });
+    const { error } = schema.validate(req.query, { abortEarly: true });
     if (error) {
       return next(new ApiError(400, error.details[0].message));
     }
@@ -13,4 +12,4 @@ const validate = (schema) => {
   };
 };
 
-export default validate;
+export default validateQuery;
