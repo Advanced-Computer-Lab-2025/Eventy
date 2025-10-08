@@ -29,4 +29,20 @@ router.post(
   role(["admin"]), // 2. Checks if req.user.role is 'admin'
   UserController.createManagementAccount
 );
+
+
+// ✅ GET /api/admin/users — List all users
+router.get("/getusers", auth, role(["admin"]), UserController.getAllUsers);
+
+// PATCH assign role (admin only)
+router.patch('/:id/assign-role', auth, role(['admin']), UserController.assignRole);
+
+// DELETE /api/admin/users/:id
+router.delete(
+    "/:id/delete", // The ID of the user to be deleted is a route parameter
+    auth, // Authenticate the user
+    role(['admin']), // Only Admins are authorized
+    UserController.deleteManagementAccount
+);
+
 export default router;

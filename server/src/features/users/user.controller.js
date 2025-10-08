@@ -93,4 +93,33 @@ export default class UserController {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
+
+  // make this static so routes can call UserController.deleteManagementAccount
+  static async deleteManagementAccount(req, res, next) {
+    try {
+      const targetUserId = req.params.id;
+      const currentAdminId = req.user._id;
+
+      // Service will throw ApiError(403) for self-delete or ApiError(404) for not found.
+      await UserService.deleteManagementAccount(currentAdminId, targetUserId);
+
+      // 204 No Content is the appropriate response for successful deletion
+      return res.status(204).send();
+    } catch (err) {
+      // Pass errors to the central error middleware
+      return next(err);
+    }
+  }
+    // GET /api/admin/users — List all users (Admin only)
+   static async getAllUsers(req, res, next) {
+        try {
+            const users = await UserService.getAllUsers(req); // ✅ Pass req here
+            res.status(200).json({ status: "success", data: users });
+        } catch (err) {
+            next(err);
+        }
+    }
+
 }
+
+
