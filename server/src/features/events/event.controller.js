@@ -261,132 +261,66 @@ export class EventsController {
     }
   }
 
-  // Accept workshop
-  async acceptWorkshop(req, res) {
-    try {
-      // Extra role validation
-      if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can accept workshops",
-        });
-      }
+// ...existing code...
 
-      const { error } = workshopStatusSchema.validate({
-        id: req.params.id,
-        status: "approved",
-      });
-      if (error)
-        return res.status(400).json({ message: error.details[0].message });
-
-      const event = await Event.findByIdAndUpdate(
-        req.params.id,
-        { status: "approved" },
-        { new: true }
-      );
-
-      if (!event) {
-        return res.status(404).json({ message: "Workshop not found" });
-      }
-
-      res
-        .status(200)
-        .json({ message: "Workshop accepted and published", event });
-    } catch (error) {
-      res.status(500).json({ message: "Error accepting workshop", error });
-    }
-  }
-
-  // Reject workshop
-  async rejectWorkshop(req, res) {
-    try {
-      // Extra role validation
-      if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can reject workshops",
-        });
-      }
-
-      const { error } = workshopStatusSchema.validate({
-        id: req.params.id,
-        status: "rejected",
-      });
-      if (error)
-        return res.status(400).json({ message: error.details[0].message });
-
-      const event = await Event.findByIdAndUpdate(
-        req.params.id,
-        { status: "rejected" },
-        { new: true }
-      );
-
-      if (!event) {
-        return res.status(404).json({ message: "Workshop not found" });
-      }
-
-      res.status(200).json({ message: "Workshop rejected", event });
-    } catch (error) {
-      res.status(500).json({ message: "Error rejecting workshop", error });
-    }
-  }
-
-  // Request edits for workshop (changes status from pending to needs_revision)
-async requestEdits(req, res) {
+async acceptWorkshop(req, res, next) {
   try {
-    // Role validation
-    if (req.user.role !== 'events_office') {
-      return res.status(403).json({ 
-        message: 'Forbidden: Only events office can request edits' 
-      });
+    if (req.user.role !== "events_office") {
+      throw new ApiError(403, "Forbidden: Only events office can accept workshops");
     }
 
-    const { revisionComments } = req.body;
-
-    // Validate that revision comments are provided
-    if (!revisionComments || revisionComments.trim().length === 0) {
-      return res.status(400).json({ 
-        message: 'Comments are required to specify what needs to be edited' 
-      });
-    }
-
-    // Find the event first
-    const event = await Event.findById(req.params.id);
-
-    if (!event) {
-      return res.status(404).json({ message: 'Workshop not found' });
-    }
-
-    // Check if it's a workshop
-    if (event.eventType !== 'workshop') {
-      return res.status(400).json({ 
-        message: 'This endpoint is only for workshops' 
-      });
-    }
-
-    // Check if workshop is in pending status
-    if (event.status !== 'pending') {
-      return res.status(400).json({ 
-        message: `Cannot request edits. Workshop status is already ${event.status}` 
-      });
-    }
-
-    // Update status and add revision comments
-    event.status = 'needs_revision';
-    event.revisionComments = revisionComments.trim();
-    await event.save();
-
-    res.status(200).json({ 
-      message: 'Edit request sent successfully', 
-      event 
+    const { error } = workshopStatusSchema.validate({
+      id: req.params.id,
+      status: "approved",
     });
+    if (error) throw new ApiError(400, error.details[0].message);
 
+    const event = await eventService.acceptWorkshop(req.params.id);
+    
+    res.status(200).json(new ApiResponse(200, event, "Workshop accepted and published"));
   } catch (error) {
-    res.status(500).json({ 
-      message: 'Error requesting edits', 
-      error: error.message 
-    });
+    next(error);
   }
 }
 
+async rejectWorkshop(req, res, next) {
+  try {
+    if (req.user.role !== "events_office") {
+      throw new ApiError(403, "Forbidden: Only events office can reject workshops");
+    }
+
+    const { error } = workshopStatusSchema.validate({
+      id: req.params.id,
+      status: "rejected",
+    });
+    if (error) throw new ApiError(400, error.details[0].message);
+
+    const event = await eventService.rejectWorkshop(req.params.id);
+    
+    res.status(200).json(new ApiResponse(200, event, "Workshop rejected"));
+  } catch (error) {
+    next(error);
+  }
+}
+
+async requestEdits(req, res, next) {
+  try {
+    if (req.user.role !== 'events_office') {
+      throw new ApiError(403, "Forbidden: Only events office can request edits");
+    }
+
+    const { revisionComments } = req.body;
+    if (!revisionComments?.trim()) {
+      throw new ApiError(400, "Comments are required to specify what needs to be edited");
+    }
+
+    const event = await eventService.requestWorkshopEdits(req.params.id, revisionComments);
+    
+    res.status(200).json(new ApiResponse(200, event, "Edit request sent successfully"));
+  } catch (error) {
+    next(error);
+  }
+}
 
   //Rana (to be deleted later)
   //Register for event (workshop/trip)
