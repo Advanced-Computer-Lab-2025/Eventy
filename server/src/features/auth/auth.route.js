@@ -1,9 +1,6 @@
 import express from "express";
 import { signUp } from "./auth.controller.js";
 import { login, logout } from "./auth.controller.js";
-import { confirmEmailVerification } from "./auth.service.js"; 
-import {verifyStaffByAdmin} from "../users/user.controller.js";
-
 
 const router = express.Router();
 
@@ -13,13 +10,14 @@ router.post("/login", login);
 
 router.post("/logout", logout);
 
-
 router.get("/verify", async (req, res) => {
   try {
     const { token } = req.query; // JWT from email link
 
     if (!token) {
-      return res.status(400).json({ message: "Verification token is missing." });
+      return res
+        .status(400)
+        .json({ message: "Verification token is missing." });
     }
 
     // Decode JWT
@@ -40,10 +38,5 @@ router.get("/verify", async (req, res) => {
     res.status(400).json({ message: "Invalid or expired verification link." });
   }
 });
-
- 
-router.patch("/verify/:userId", verifyStaffByAdmin);
-
-
 
 export default router;

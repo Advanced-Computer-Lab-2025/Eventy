@@ -1,18 +1,20 @@
-import { User } from './users/user.model.js';
-import { UserValidation } from './user.validation.js';
+import { User } from "./user.model.js";
+import { UserValidation } from "./user.validation.js";
 import UserService from "./user.service.js";
-
 
 // Controller class — import this and call its static methods in routes
 export default class UserController {
-    static async createManagementAccount(req, res) {
+  static async createManagementAccount(req, res) {
     try {
       const userData = req.body;
 
       // Validate incoming data
-      const { error } = UserValidation.createManagementAccount.validate(userData);
+      const { error } =
+        UserValidation.createManagementAccount.validate(userData);
       if (error) {
-        return res.status(400).json({ success: false, message: error.details[0].message });
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
       }
 
       // Create the account
@@ -33,11 +35,13 @@ export default class UserController {
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });
     }
-    };
+  }
   // GET /api/users/pending --> The users that are not assigned a role yet
   static async getPendingUsers(req, res) {
     try {
-      const pending = await User.find({ status: 'pending', role: null }).select('-password');
+      const pending = await User.find({ status: "pending", role: null }).select(
+        "-password"
+      );
       return res.status(200).json({ success: true, data: pending });
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });
@@ -53,19 +57,25 @@ export default class UserController {
       };
       const { error } = UserValidation.assignRole.validate(payload);
       if (error) {
-        return res.status(400).json({ success: false, message: error.details[0].message });
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
       }
 
       const { role } = req.body;
       const userId = req.params.id;
 
       const user = await User.findById(userId);
-      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+      if (!user)
+        return res
+          .status(404)
+          .json({ success: false, message: "User not found" });
 
-      if (!(user.status === 'pending' && user.role === null)) {
+      if (!(user.status === "pending" && user.role === null)) {
         return res.status(400).json({
           success: false,
-          message: 'User cannot be assigned a role at this stage (must be pending & unassigned)',
+          message:
+            "User cannot be assigned a role at this stage (must be pending & unassigned)",
         });
       }
 
@@ -75,12 +85,10 @@ export default class UserController {
       return res.status(200).json({
         success: true,
         message: `Role '${role}' assigned successfully`,
-        data: { userId: user._id, role: user.role }
+        data: { userId: user._id, role: user.role },
       });
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
 }
-
-
