@@ -38,11 +38,20 @@ export const signUpUser = async (data) => {
   // ✅ Step 5: Hash password
   const hashedPassword = await bcrypt.hash(data.password, 10);
 
+
+  // ✅ Step 5.5: Determine initial verification status
+  let status = "active"; // default for student/vendor
+  if (["staff", "ta", "professor"].includes(normalizedRole)) {
+    status = "pending"; // requires admin approval + email verification
+  }
+
   // ✅ Step 6: Build user data
   const userData = {
     ...data,
     password: hashedPassword,
-    status: "active",
+    status,
+  isVerified: ["staff", "ta", "professor"].includes(normalizedRole) ? false : true,
+  roleVerifiedByAdmin: false,
   };
 
   // ✅ Step 7: Create and save user
@@ -50,7 +59,7 @@ export const signUpUser = async (data) => {
   await user.save();
 
   // ✅ Step 8: Prepare clean response
-  if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
+  if (["student"].includes(normalizedRole)) {
     return {
       message: `Welcome ${user.firstName}! 🎉 Your ${user.role} account has been created successfully.`,
       user: {
@@ -62,6 +71,25 @@ export const signUpUser = async (data) => {
       },
     };
   }
+
+    if (["staff", "ta", "professor"].includes(normalizedRole)) {
+    return {
+      message:
+        status === "pending"
+          ? `Account created successfully! Please wait for admin verification.`
+          : `Welcome ${user.firstName}! 🎉 Your ${user.role} account has been created successfully.`,
+      user: {
+        _id: user._id,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        role: user.role,
+        status: user.status,
+      },
+    };
+  }
+
+
 
   if (normalizedRole === "vendor") {
     return {
@@ -107,6 +135,16 @@ export const loginUser = async (data) => {
   throw new Error("Please use your GUC email to log in.");
 }
 
+  // ✅ Step 3.5: Ensure verified before login (NEW REQUIREMENT)
+  if (
+    ["staff", "ta", "professor"].includes(user.role.toLowerCase()) &&
+    user.status !== "active"
+  ) {
+    throw new Error(
+      "Your account has not been verified yet. Please check your email for the verification link."
+    );
+  }
+
 
   // ✅ Step 4: Compare passwords
   const isMatch = await bcrypt.compare(password, user.password);
@@ -148,4 +186,21 @@ export const loginUser = async (data) => {
 export const logoutUser = async () => {
   // In JWT, logout is handled on client side by removing token.
   return { message: "Logged out successfully." };
+};
+
+
+export const confirmEmailVerification = async (token) => {
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    const user = await User.findById(decoded.id);
+    if (!user) throw new Error("User not found");
+
+    user.isVerified = true;
+    await user.save();
+
+    return { message: "Email verified successfully" };
+  } catch (error) {
+    throw new Error("Invalid or expired verification link");
+  }
 };

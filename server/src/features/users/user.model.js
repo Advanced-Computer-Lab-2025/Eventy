@@ -46,9 +46,9 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ["pending", "active", "blocked"],
-      default: "pending",
+      default: "active",
     },
-    verificationToken: { type: String },
+
 
     walletBalance: { type: Number, default: 0 },
 
@@ -59,6 +59,10 @@ const userSchema = new mongoose.Schema(
         idCardUrl: String,
       },
     ],
+
+    // ✅ New fields for verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page"
+  isVerified: { type: Boolean, default: false },
+  verificationToken: { type: String },
 
    
     deletedAt: { type: Date, default: null },
