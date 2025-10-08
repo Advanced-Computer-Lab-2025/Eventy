@@ -39,6 +39,24 @@ class ApplicationServiceClass {
 
     return applications;
   }
+  /**
+ * Updates the status of an application by its ID.
+ * @param {string} applicationId - The ID of the application.
+ * @param {string} status - The new status ("accepted" or "rejected").
+ * @returns {Promise<Document|null>} The updated application.
+ */
+async updateApplicationStatus(applicationId, status) {
+  const application = await Application.findById(applicationId);
+  if (!application) {
+    throw new Error("Application not found");
+  }
+
+  application.status = status;
+  await application.save();
+
+  return application;
+}
+
 }
 
 export const ApplicationService = new ApplicationServiceClass();

@@ -1,4 +1,3 @@
-
 import mongoose from "mongoose";
 
 const applicationSchema = new mongoose.Schema(
@@ -57,7 +56,5 @@ const applicationSchema = new mongoose.Schema(
   }
 );
 
-
 const Application = mongoose.model("Application", applicationSchema);
 export default Application;
-
