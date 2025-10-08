@@ -166,10 +166,10 @@ export async function editWorkshop(workshopId, updateData, user) {
     throw new ApiError(403, "Forbidden: You can only edit your own workshops");
   }
 
-  if (workshop.status !== "needs_revision") {
+  if (workshop.status !== "pending" && workshop.status !== "needs_revision") {
     throw new ApiError(
       403,
-      "Forbidden: Workshop can only be edited if its status is 'needs_revision'"
+      "Forbidden: Workshop can only be edited if its status is 'pending' or 'needs_revision'"
     );
   }
 
