@@ -4,6 +4,8 @@ import {
   validateAcademicSignUp,
   validateVendorSignUp,
 } from "./auth.validation.js";
+import jwt from "jsonwebtoken";
+
 
 export const signUpUser = async (data) => {
   const { role } = data;
@@ -72,4 +74,78 @@ export const signUpUser = async (data) => {
       },
     };
   }
+};
+
+/**
+ * LOGIN FUNCTION (for all users)
+ */
+export const loginUser = async (data) => {
+  let { email, password } = data;
+
+  // ✅ Step 0: Validate input fields exist
+  if (!email || !password) {
+    throw new Error("Email and password are required.");
+  }
+
+  // ✅ Step 1: Normalize email safely
+  const normalizedEmail = email.toLowerCase().trim();
+
+  // ✅ Step 2: Find the user by normalized email
+  const user = await User.findOne({ email: normalizedEmail });
+  if (!user) {
+    throw new Error("No account found with this email.");
+  }
+
+  // ✅ Step 3: GUC email check (for non-vendor users)
+ if (
+  user.role !== "vendor" &&
+  !(
+    normalizedEmail.endsWith("@guc.edu.eg") ||
+    normalizedEmail.endsWith("@student.guc.edu.eg")
+  )
+) {
+  throw new Error("Please use your GUC email to log in.");
+}
+
+
+  // ✅ Step 4: Compare passwords
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    throw new Error("Invalid password. Please try again.");
+  }
+
+  // ✅ Step 5: Create JWT Token
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+    },
+    process.env.JWT_SECRET || "supersecretkey",
+    { expiresIn: "2h" }
+  );
+
+  // ✅ Step 6: Personalized welcome message
+  let welcomeMessage = `Welcome back, ${user.firstName || "User"}!`;
+  if (user.role === "vendor") welcomeMessage = `Welcome back, ${user.companyName || "Vendor"}!`;
+
+  return {
+    message: welcomeMessage,
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+    },
+    token,
+  };
+};
+
+
+/**
+ * LOGOUT FUNCTION
+ * Simply invalidates token on frontend (no DB storage needed here)
+ */
+export const logoutUser = async () => {
+  // In JWT, logout is handled on client side by removing token.
+  return { message: "Logged out successfully." };
 };

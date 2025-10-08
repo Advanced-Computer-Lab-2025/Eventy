@@ -1,5 +1,6 @@
 import { signUpUser } from "./auth.service.js";
-//import { loginUser } from "./auth.service.js";
+import { loginUser } from "./auth.service.js";
+import { logoutUser } from "./auth.service.js";
 
 
 export const signUp = async (req, res) => {
@@ -25,17 +26,22 @@ export const signUp = async (req, res) => {
 
 
 
- export const login = async (req, res) => {
+export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    // Simple login validation
-    if (!email || !password) {
-      return res.status(400).json({ message: "Email and password are required" });
-    } 
+    const result = await loginUser(req.body);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
 
-    const user = await loginUser(email, password);
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(400).json({ message: err.message });
+
+
+export const logout = async (req, res) => {
+  try {
+    const result = await logoutUser();
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

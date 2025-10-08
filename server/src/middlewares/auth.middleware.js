@@ -1,18 +1,26 @@
-import admin from "../config/firebaseAdmin.js";
+import jwt from "jsonwebtoken";
 
-export const verifyFirebaseToken = async (req, res, next) => {
-  const authHeader = req.headers.authorization || "";
-  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
-
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
-
+/**
+ * Middleware to verify JWT token for protected routes
+ */
+export const verifyToken = (req, res, next) => {
   try {
-    const decodedToken = await admin.auth().verifyIdToken(token);
-    req.user = decodedToken; // contains uid, email, etc.
+    // Get token from the "Authorization" header
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({ message: "Access denied. No token provided." });
+    }
+
+    const token = authHeader.split(" ")[1];
+
+    // Verify token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || "supersecretkey");
+
+    // Attach user data to request for later use
+    req.user = decoded;
     next();
-  } catch (err) {
-    return res.status(401).json({ error: "Invalid or expired token" });
+  } catch (error) {
+    res.status(401).json({ message: "Invalid or expired token. Please log in again." });
   }
 };
