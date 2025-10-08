@@ -1,72 +1,29 @@
-// Temporary mock authentication middleware for development/testing
-// Replace this later with real JWT-based authentication.
-
-// export default (req, res, next) => {
-//   // Simulate a logged-in user (you can change role depending on who's testing)
-//   req.user = {
-//     _id: "66f123abc987de0012f9f999",
-//     name: "Test Events Office User",
-//     role: "user", // Change role as needed for testing
-//   };
-
-//   next();
-// };
-
-
-
-export function authorizeRoles(...allowedRoles) {
-  return (req, res, next) => {
-    if (!req.user || !allowedRoles.includes(req.user.role)) {
-      return res.status(403).json({
-        status: "fail",
-        message: "Unauthorized user",
-      });
-    }
-    next();
-  };
-}
-
-
-export default (req, res, next) => {
-  // Simulate a logged-in user
-  req.user = {
-    _id: "66f123abc987de0012f9f999",
-    name: "Test Admin User",
-    // ✅ FIX: Change the role to 'admin'
-    role: "admin", 
-  };
-
-  next();
-};
-
-/*
-Once real authentication is implemented, replace this middleware with one that:
-- Verifies the JWT token
-- Decodes it
-- Loads the real user from the database
-
-Example for later use:
----------------------------------
-import jwt from 'jsonwebtoken';
-import User from '../features/users/user.model.js';
-
-export default async (req, res, next) => {
+import jwt from "jsonwebtoken";
+export const validateToken = (token) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ message: 'No token provided' });
-    }
-
-    const token = authHeader.split(' ')[1];
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    req.user = user;
-    next();
+    return jwt.verify(token, process.env.JWT_SECRET);
   } catch (err) {
-    res.status(401).json({ message: 'Invalid or expired token' });
+    return null;
   }
 };
----------------------------------
-*/
+const authMiddleware = (req, res, next) => {
+  const authHeader = req.headers["authorization"];
+  if (!authHeader) {
+    return res.status(401).json({ message: "Authorization header missing" });
+  }
+
+  const token = authHeader.split(" ")[1];
+  if (!token) {
+    return res.status(401).json({ message: "Token missing" });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ message: "Invalid or expired token" });
+  }
+};
+
+export default authMiddleware;
