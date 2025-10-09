@@ -18,6 +18,15 @@ class ApplicationServiceClass {
       throw new Error(`Could not create application: ${error.message}`);
     }
   }
+async getAllApplications() {
+  return Application.find({ deletedAt: null })
+    .populate({
+      path: "createdBy",
+      select: "companyName email companyLogoUrl taxCardUrl status",
+    })
+    .sort({ createdAt: -1 });
+}
+
   /**
    * Finds all applications for a specific vendor, with optional filtering and population.
    * @param {string} vendorId - The ID of the authenticated vendor.

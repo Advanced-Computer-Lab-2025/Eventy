@@ -83,4 +83,22 @@ export class ApplicationController {
   }
 }
 
+  static async getAllApplications(req, res, next) {
+    try {
+      // Optional: Only allow Events Office or Admin
+      if (!req.user || !["events_office", "admin"].includes(req.user.role)) {
+        return res.status(403).json({ success: false, message: "Forbidden" });
+      }
+
+      const applications = await ApplicationService.getAllApplications();
+
+      res.status(200).json({
+        success: true,
+        message: "All applications fetched successfully",
+        data: applications,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
