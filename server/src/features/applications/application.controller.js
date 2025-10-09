@@ -45,25 +45,43 @@ export class ApplicationController {
       next(error);
     }
   }
+  async updateApplicationStatus(req, res, next) {
+  try {
+    const { applicationId } = req.params;
+    const { status } = req.body;
 
-  static async getBazaarApplications(req, res, next) {
-    try {
-      const { bazaarId } = req.params;
-
-      // ✅ Use the service you already have
-      const applications = await ApplicationService.getApplicationsForBazaar(
-        bazaarId
-      );
-
-      res.status(200).json({
-        success: true,
-        message: "Applications fetched successfully",
-        data: applications,
+    // Only allow 'accepted' or 'rejected'
+    if (!["accepted", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status value. Must be 'accepted' or 'rejected'.",
       });
-    } catch (error) {
-      next(error);
     }
+
+    const updatedApplication = await ApplicationService.updateApplicationStatus(
+      applicationId,
+      status
+    );
+
+    if (!updatedApplication) {
+      return res.status(404).json({
+        success: false,
+        message: "Application not found.",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Application status updated to ${status}.`,
+      data: updatedApplication,
+    });
+  } catch (error) {
+    if (error.message === "Application not found") {
+      return res.status(404).json({ success: false, message: error.message });
+    }
+    next(error);
   }
+}
 
   static async getAllApplications(req, res, next) {
     try {

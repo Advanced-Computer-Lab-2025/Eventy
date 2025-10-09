@@ -26,6 +26,14 @@ router.get(
   validateQuery(getMyApplicationsSchema), // Use the new middleware here
   applicationController.getMyApplications.bind(applicationController)
 );
+// PATCH /api/admin/applications/:applicationId/status
+router.patch(
+  "/:applicationId/status",
+  authMiddleware,
+  role(["admin", "eventsOffice"]),
+  applicationController.updateApplicationStatus.bind(applicationController)
+);
+
 
 /**
  * @route   GET /api/admin/bazaars/:bazaarId/applications
