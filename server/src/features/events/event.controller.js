@@ -97,27 +97,31 @@ export class EventsController {
     }
   }
 
-
   async updateConferenceController(req, res, next) {
-  try {
-    const { error } = updateConferenceSchema.validate(req.body);
-    if (error) throw new ApiError(400, error.details[0].message);
+    try {
+      const { error } = updateConferenceSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
 
-    const { conferenceId } = req.params;
-    const updatedConference = await eventService.updateConferenceService(
-      conferenceId,
-      req.body,
-      req.user
-    );
+      const { conferenceId } = req.params;
+      const updatedConference = await eventService.updateConferenceService(
+        conferenceId,
+        req.body,
+        req.user
+      );
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, updatedConference, "Conference updated successfully"));
-  } catch (error) {
-    next(error);
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            updatedConference,
+            "Conference updated successfully"
+          )
+        );
+    } catch (error) {
+      next(error);
+    }
   }
-}
-
 
   async createTrip(req, res, next) {
     try {
@@ -440,18 +444,37 @@ export class EventsController {
       next(err);
     }
   }
-}
-
-export const getUpcomingEventsController = async (req, res, next) => {
-  try {
-    const events = await eventService.getUpcomingEventsService();
-    res.status(200).json({
-      statusCode: 200,
-      data: events,
-      message: "Upcoming events fetched successfully.",
-    });
-  } catch (err) {
-    console.error("Error in getUpcomingEventsController:", err);
-    next(err);
+  async getUpcomingEvents(req, res, next) {
+    try {
+      const events = await eventService.getUpcomingEventsService();
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Upcoming events fetched successfully.")
+        );
+    } catch (err) {
+      next(err);
+    }
   }
-};
+  //search events by name and type
+  //  Search events by name (event/professor) or type
+  async searchEvents(req, res, next) {
+    try {
+      const { name, type } = req.query;
+
+      // Ensure at least one search parameter is provided
+      if (!name && !type) {
+        throw new ApiError(400, "Please provide a name or type to search.");
+      }
+
+      // Delegate filter construction and search to the service
+      const events = await eventService.searchEvents({ name, type });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Events search successful"));
+    } catch (err) {
+      next(err);
+    }
+  }
+}

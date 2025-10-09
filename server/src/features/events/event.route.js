@@ -1,9 +1,8 @@
 import express from "express";
-import { getUpcomingEventsController } from "./event.controller.js";
 import { EventsController } from "./event.controller.js";
 import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
-import * as eventController from "./event.controller.js";
+
 
 const router = express.Router();
 const eventsController = new EventsController();
@@ -109,11 +108,27 @@ router.patch(
   eventsController.updateConferenceController.bind(eventsController)
 );
 
+
 router.get(
   "/upcoming",
   authMiddleware,
   roleMiddleware(["vendor"]),
-  getUpcomingEventsController
+  eventsController.getUpcomingEvents.bind(eventsController)
 );
 
+
+// Search events (✅ new feature)
+router.get(
+  "/search",
+  authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
+  eventsController.searchEvents.bind(eventsController)
+);
 export default router;

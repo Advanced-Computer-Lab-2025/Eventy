@@ -107,8 +107,11 @@ export const createConference = async (data, userId) => {
   return event;
 };
 
-
-export const updateConferenceService = async (conferenceId, updateData, user) => {
+export const updateConferenceService = async (
+  conferenceId,
+  updateData,
+  user
+) => {
   const conference = await Event.findById(conferenceId);
 
   if (!conference) throw new ApiError(404, "Conference not found");
@@ -117,7 +120,10 @@ export const updateConferenceService = async (conferenceId, updateData, user) =>
 
   // Only events office or admin can edit
   if (!["events_office", "admin"].includes(user.role)) {
-    throw new ApiError(403, "Forbidden: Only Events Office or Admin can edit conferences");
+    throw new ApiError(
+      403,
+      "Forbidden: Only Events Office or Admin can edit conferences"
+    );
   }
 
   // Update only provided fields
@@ -274,3 +280,25 @@ export async function deleteEvent(eventId, user) {
   await Event.findByIdAndDelete(eventId);
   return true;
 }
+// 🔍 Search events service
+export const searchEvents = async ({ name, type }) => {
+  // Build a flexible filter
+  const filter = { status: "approved" };
+
+  // Filter by event type if given
+  if (type) {
+    filter.eventType = type.toLowerCase();
+  }
+
+  // Add name-based search (event name or professor/vendor name)
+  if (name) {
+    filter.$or = [
+      { name: { $regex: name, $options: "i" } },
+      { "createdBy.name": { $regex: name, $options: "i" } },
+    ];
+  }
+
+  return await Event.find(filter)
+    .populate("createdBy", "name role")
+    .sort({ startDate: 1 });
+};
