@@ -18,6 +18,15 @@ class ApplicationServiceClass {
       throw new Error(`Could not create application: ${error.message}`);
     }
   }
+async getAllApplications() {
+  return Application.find({ deletedAt: null })
+    .populate({
+      path: "createdBy",
+      select: "companyName email companyLogoUrl taxCardUrl status",
+    })
+    .sort({ createdAt: -1 });
+}
+
   /**
    * Finds all applications for a specific vendor, with optional filtering and population.
    * @param {string} vendorId - The ID of the authenticated vendor.
@@ -39,6 +48,24 @@ class ApplicationServiceClass {
 
     return applications;
   }
+  /**
+ * Updates the status of an application by its ID.
+ * @param {string} applicationId - The ID of the application.
+ * @param {string} status - The new status ("accepted" or "rejected").
+ * @returns {Promise<Document|null>} The updated application.
+ */
+async updateApplicationStatus(applicationId, status) {
+  const application = await Application.findById(applicationId);
+  if (!application) {
+    throw new Error("Application not found");
+  }
+
+  application.status = status;
+  await application.save();
+
+  return application;
+}
+
 }
 
 export const ApplicationService = new ApplicationServiceClass();

@@ -10,6 +10,7 @@ import {
   createBazaarSchema,
   updateBazaarSchema,
   updateConferenceSchema,
+  updateWorkshopSchema
 } from "./event.validation.js";
 
 //Write your code in this class!!!
@@ -332,6 +333,54 @@ export class EventsController {
       res.status(500).json({ message: "Error rejecting workshop", error });
     }
   }
+
+  /**
+   * Controller to handle editing a workshop.
+   */
+  async editWorkshop(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "professor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can edit workshops"
+        );
+      }
+      // Get the workshop ID from URL parameters
+      const { workshopId } = req.params;
+
+      // Validate the request body against the schema
+      const { error } = updateWorkshopSchema.validate(req.body);
+      if (error) {
+        throw new ApiError(400, error.details[0].message);
+      }
+
+      // Call the service to perform the update logic
+      const updatedWorkshop = await eventService.editWorkshop(
+        workshopId,
+        req.body,
+        req.user
+      );
+
+      // Send a successful response
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            updatedWorkshop,
+            "Workshop updated successfully and is now pending re-approval"
+          )
+        );
+    } catch (err) {
+      // Pass errors to the central error handler
+      next(err);
+    }
+  }
+
   //Rana (to be deleted later)
   //Register for event (workshop/trip)
   async registerForEvent(req, res) {

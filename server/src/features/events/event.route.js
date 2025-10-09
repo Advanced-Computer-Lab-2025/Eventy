@@ -1,6 +1,6 @@
 import express from "express";
 import { EventsController } from "./event.controller.js";
-import authMiddleware from "../../middlewares/auth.middleware.js";
+import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 
@@ -70,6 +70,14 @@ router.patch(
   eventsController.rejectWorkshop.bind(eventsController)
 );
 
+// Edit a workshop that needs revision
+router.patch(
+  "/workshops/:workshopId",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.editWorkshop.bind(eventsController)
+);
+
 // POST /api/admin/trips
 router.post(
   "/admin/trips",
@@ -100,7 +108,7 @@ router.patch(
   eventsController.updateConferenceController.bind(eventsController)
 );
 
-// Upcoming events
+
 router.get(
   "/upcoming",
   authMiddleware,

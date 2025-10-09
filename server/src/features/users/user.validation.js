@@ -26,3 +26,11 @@ export const createManagementAccountSchema = Joi.object({
   password: Joi.string().min(6).required(),
   role: Joi.string().valid("admin", "events_office").required(),
 });
+
+export const deleteUserSchema = Joi.object({
+  id: Joi.string().hex().length(24).required().messages({
+    'string.hex': 'User ID must be a valid MongoDB ID.',
+    'string.length': 'User ID must be 24 characters long.',
+    'any.required': 'User ID is required.'
+  }),
+});
