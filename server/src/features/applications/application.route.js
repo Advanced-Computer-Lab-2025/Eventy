@@ -1,11 +1,14 @@
 import express from "express";
 import { ApplicationController } from "./application.controller.js";
-import { applyToBazaarSchema , getMyApplicationsSchema} from "./application.validation.js";
+import {
+  applyToBazaarSchema,
+  getMyApplicationsSchema,
+} from "./application.validation.js";
 import validate from "../../middlewares/validate.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import validateQuery from "../../middlewares/validateQuery.middleware.js";
-import { ApplicationService } from "./application.service.js";  
+import { ApplicationService } from "./application.service.js";
 
 const router = express.Router();
 const applicationController = new ApplicationController();
@@ -34,7 +37,6 @@ router.patch(
   applicationController.updateApplicationStatus.bind(applicationController)
 );
 
-
 /**
  * @route   GET /api/admin/bazaars/:bazaarId/applications
  * @desc    Get all vendor applications for a specific bazaar
@@ -47,6 +49,16 @@ router.get(
   ApplicationController.getAllApplications
 );
 
+router.post(
+  "/bazaars/:eventId/apply",
+  authMiddleware,
+  applicationController.applyToBazaar.bind(applicationController)
+);
 
+router.post(
+  "/booths/apply",
+  authMiddleware,
+  applicationController.applyToBooth.bind(applicationController)
+);
 
 export default router;
