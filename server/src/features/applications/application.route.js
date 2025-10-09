@@ -33,10 +33,10 @@ router.get(
  * @access  Admin / Events Office
  */
 router.get(
-  "/api/admin/bazaars/:bazaarId/applications",
+  "/",
   authMiddleware,
-  role(["admin", "events_office"]),
-  ApplicationController.getBazaarApplications
+  role(["events_office", "admin"]),
+  ApplicationController.getAllApplications
 );
 
 
