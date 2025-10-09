@@ -1,15 +1,24 @@
 import { ApplicationService } from "./application.service.js";
+import {
+  validateBazaarApplication,
+  validateBoothApplication,
+} from "./application.validation.js";
 
 export class ApplicationController {
   async applyToBazaar(req, res, next) {
     try {
-      // Get the vendor's ID from the mock auth middleware.
-      // Your real auth middleware should also provide req.user._id.
       const vendorId = req.user._id;
+      // Validate input
+      const { error } = validateBazaarApplication(req.body);
+      if (error)
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
 
       const applicationDetails = {
         ...req.body,
         vendorId,
+        type: "bazaar",
       };
 
       const newApplication = await ApplicationService.createApplication(
@@ -18,14 +27,44 @@ export class ApplicationController {
 
       res.status(201).json({
         success: true,
-        message: "Application submitted successfully!",
+        message: "Bazaar application submitted successfully!",
         data: newApplication,
       });
     } catch (error) {
-      // Pass any errors from the service to the centralized errorMiddleware
       next(error);
     }
   }
+
+  async applyToBooth(req, res, next) {
+    try {
+      const vendorId = req.user._id;
+      // Validate input
+      const { error } = validateBoothApplication(req.body);
+      if (error)
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
+
+      const applicationDetails = {
+        ...req.body,
+        vendorId,
+        type: "booth",
+      };
+
+      const newApplication = await ApplicationService.createApplication(
+        applicationDetails
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Booth application submitted successfully!",
+        data: newApplication,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getMyApplications(req, res, next) {
     try {
       const vendorId = req.user._id;
@@ -46,42 +85,40 @@ export class ApplicationController {
     }
   }
   async updateApplicationStatus(req, res, next) {
-  try {
-    const { applicationId } = req.params;
-    const { status } = req.body;
+    try {
+      const { applicationId } = req.params;
+      const { status } = req.body;
 
-    // Only allow 'accepted' or 'rejected'
-    if (!["accepted", "rejected"].includes(status)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid status value. Must be 'accepted' or 'rejected'.",
+      // Only allow 'accepted' or 'rejected'
+      if (!["accepted", "rejected"].includes(status)) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid status value. Must be 'accepted' or 'rejected'.",
+        });
+      }
+
+      const updatedApplication =
+        await ApplicationService.updateApplicationStatus(applicationId, status);
+
+      if (!updatedApplication) {
+        return res.status(404).json({
+          success: false,
+          message: "Application not found.",
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        message: `Application status updated to ${status}.`,
+        data: updatedApplication,
       });
+    } catch (error) {
+      if (error.message === "Application not found") {
+        return res.status(404).json({ success: false, message: error.message });
+      }
+      next(error);
     }
-
-    const updatedApplication = await ApplicationService.updateApplicationStatus(
-      applicationId,
-      status
-    );
-
-    if (!updatedApplication) {
-      return res.status(404).json({
-        success: false,
-        message: "Application not found.",
-      });
-    }
-
-    res.status(200).json({
-      success: true,
-      message: `Application status updated to ${status}.`,
-      data: updatedApplication,
-    });
-  } catch (error) {
-    if (error.message === "Application not found") {
-      return res.status(404).json({ success: false, message: error.message });
-    }
-    next(error);
   }
-}
 
   static async getAllApplications(req, res, next) {
     try {
