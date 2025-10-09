@@ -8,7 +8,9 @@ export class ApplicationController {
   async applyToBazaar(req, res, next) {
     try {
       const vendorId = req.user._id;
-      // Validate input
+      const eventId = req.params.eventId; // Get eventId from the path
+
+      // Validate input (body should NOT include event)
       const { error } = validateBazaarApplication(req.body);
       if (error)
         return res
@@ -18,6 +20,7 @@ export class ApplicationController {
       const applicationDetails = {
         ...req.body,
         vendorId,
+        event: eventId, // Set event from path param
         type: "bazaar",
       };
 
