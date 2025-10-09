@@ -78,6 +78,14 @@ router.patch(
   eventsController.editWorkshop.bind(eventsController)
 );
 
+// Request edits for workshop
+router.patch(
+  "/:id/request-edits",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.requestEdits.bind(eventsController)
+);
+
 // POST /api/admin/trips
 router.post(
   "/admin/trips",

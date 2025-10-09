@@ -302,3 +302,50 @@ export const searchEvents = async ({ name, type }) => {
     .populate("createdBy", "name role")
     .sort({ startDate: 1 });
 };
+
+// ...existing code...
+
+export const acceptWorkshop = async (workshopId) => {
+  const event = await Event.findByIdAndUpdate(
+    workshopId,
+    { status: "approved" },
+    { new: true }
+  );
+  if (!event) {
+    throw new ApiError(404, "Workshop not found");
+  }
+  return event;
+};
+
+export const rejectWorkshop = async (workshopId) => {
+  const event = await Event.findByIdAndUpdate(
+    workshopId,
+    { status: "rejected" },
+    { new: true }
+  );
+  if (!event) {
+    throw new ApiError(404, "Workshop not found");
+  }
+  return event;
+};
+
+export const requestWorkshopEdits = async (workshopId, revisionComments) => {
+  const event = await Event.findById(workshopId);
+  if (!event) {
+    throw new ApiError(404, "Workshop not found");
+  }
+
+  if (event.eventType !== 'workshop') {
+    throw new ApiError(400, "This endpoint is only for workshops");
+  }
+
+  if (event.status !== 'pending') {
+    throw new ApiError(400, `Cannot request edits. Workshop status is already ${event.status}`);
+  }
+
+  event.status = 'needs_revision';
+  event.revisionComments = revisionComments.trim();
+  await event.save();
+  
+  return event;
+};
