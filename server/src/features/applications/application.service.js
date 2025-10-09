@@ -18,36 +18,13 @@ class ApplicationServiceClass {
       throw new Error(`Could not create application: ${error.message}`);
     }
   }
-
-/**
- * Fetch all applications for a specific bazaar
- * @param {string} bazaarId
- * @returns {Promise<Array>} applications
- */
-async getApplicationsForBazaar(bazaarId) {
-  // Check if the bazaar exists and is of type 'bazaar'
-  const bazaar = await Event.findOne({
-    _id: bazaarId,
-    eventType: "bazaar",
-    deletedAt: null,
-  });
-
-  if (!bazaar) {
-    throw new ApiError(404, "Bazaar not found");
-  }
-
-  // Fetch all applications for this bazaar
-  const applications = await Application.find({
-    bazaarId,
-    deletedAt: null,
-  })
+async getAllApplications() {
+  return Application.find({ deletedAt: null })
     .populate({
-      path: "vendorId",
+      path: "createdBy",
       select: "companyName email companyLogoUrl taxCardUrl status",
     })
     .sort({ createdAt: -1 });
-
-  return applications;
 }
 
   /**
