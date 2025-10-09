@@ -10,6 +10,7 @@ import {
   createBazaarSchema,
   updateBazaarSchema,
   updateConferenceSchema,
+  updateWorkshopSchema,
 } from "./event.validation.js";
 
 //Write your code in this class!!!
@@ -96,27 +97,31 @@ export class EventsController {
     }
   }
 
-
   async updateConferenceController(req, res, next) {
-  try {
-    const { error } = updateConferenceSchema.validate(req.body);
-    if (error) throw new ApiError(400, error.details[0].message);
+    try {
+      const { error } = updateConferenceSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
 
-    const { conferenceId } = req.params;
-    const updatedConference = await eventService.updateConferenceService(
-      conferenceId,
-      req.body,
-      req.user
-    );
+      const { conferenceId } = req.params;
+      const updatedConference = await eventService.updateConferenceService(
+        conferenceId,
+        req.body,
+        req.user
+      );
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, updatedConference, "Conference updated successfully"));
-  } catch (error) {
-    next(error);
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            updatedConference,
+            "Conference updated successfully"
+          )
+        );
+    } catch (error) {
+      next(error);
+    }
   }
-}
-
 
   async createTrip(req, res, next) {
     try {
@@ -261,66 +266,132 @@ export class EventsController {
     }
   }
 
-// ...existing code...
+  // ...existing code...
 
-async acceptWorkshop(req, res, next) {
-  try {
-    if (req.user.role !== "events_office") {
-      throw new ApiError(403, "Forbidden: Only events office can accept workshops");
+  async acceptWorkshop(req, res, next) {
+    try {
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can accept workshops"
+        );
+      }
+
+      const { error } = workshopStatusSchema.validate({
+        id: req.params.id,
+        status: "approved",
+      });
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      const event = await eventService.acceptWorkshop(req.params.id);
+
+      res
+        .status(200)
+        .json(new ApiResponse(200, event, "Workshop accepted and published"));
+    } catch (error) {
+      next(error);
     }
-
-    const { error } = workshopStatusSchema.validate({
-      id: req.params.id,
-      status: "approved",
-    });
-    if (error) throw new ApiError(400, error.details[0].message);
-
-    const event = await eventService.acceptWorkshop(req.params.id);
-    
-    res.status(200).json(new ApiResponse(200, event, "Workshop accepted and published"));
-  } catch (error) {
-    next(error);
   }
-}
 
-async rejectWorkshop(req, res, next) {
-  try {
-    if (req.user.role !== "events_office") {
-      throw new ApiError(403, "Forbidden: Only events office can reject workshops");
+  async rejectWorkshop(req, res, next) {
+    try {
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can reject workshops"
+        );
+      }
+
+      const { error } = workshopStatusSchema.validate({
+        id: req.params.id,
+        status: "rejected",
+      });
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      const event = await eventService.rejectWorkshop(req.params.id);
+
+      res.status(200).json(new ApiResponse(200, event, "Workshop rejected"));
+    } catch (error) {
+      next(error);
     }
-
-    const { error } = workshopStatusSchema.validate({
-      id: req.params.id,
-      status: "rejected",
-    });
-    if (error) throw new ApiError(400, error.details[0].message);
-
-    const event = await eventService.rejectWorkshop(req.params.id);
-    
-    res.status(200).json(new ApiResponse(200, event, "Workshop rejected"));
-  } catch (error) {
-    next(error);
   }
-}
 
-async requestEdits(req, res, next) {
-  try {
-    if (req.user.role !== 'events_office') {
-      throw new ApiError(403, "Forbidden: Only events office can request edits");
+  async requestEdits(req, res, next) {
+    try {
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can request edits"
+        );
+      }
+
+      const { revisionComments } = req.body;
+      if (!revisionComments?.trim()) {
+        throw new ApiError(
+          400,
+          "Comments are required to specify what needs to be edited"
+        );
+      }
+
+      const event = await eventService.requestWorkshopEdits(
+        req.params.id,
+        revisionComments
+      );
+
+      res
+        .status(200)
+        .json(new ApiResponse(200, event, "Edit request sent successfully"));
+    } catch (error) {
+      next(error);
     }
-
-    const { revisionComments } = req.body;
-    if (!revisionComments?.trim()) {
-      throw new ApiError(400, "Comments are required to specify what needs to be edited");
-    }
-
-    const event = await eventService.requestWorkshopEdits(req.params.id, revisionComments);
-    
-    res.status(200).json(new ApiResponse(200, event, "Edit request sent successfully"));
-  } catch (error) {
-    next(error);
   }
-}
+
+  /**
+   * Controller to handle editing a workshop.
+   */
+  async editWorkshop(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "professor") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors can edit workshops"
+        );
+      }
+      // Get the workshop ID from URL parameters
+      const { workshopId } = req.params;
+
+      // Validate the request body against the schema
+      const { error } = updateWorkshopSchema.validate(req.body);
+      if (error) {
+        throw new ApiError(400, error.details[0].message);
+      }
+
+      // Call the service to perform the update logic
+      const updatedWorkshop = await eventService.editWorkshop(
+        workshopId,
+        req.body,
+        req.user
+      );
+
+      // Send a successful response
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            updatedWorkshop,
+            "Workshop updated successfully and is now pending re-approval"
+          )
+        );
+    } catch (err) {
+      // Pass errors to the central error handler
+      next(err);
+    }
+  }
 
   //Rana (to be deleted later)
   //Register for event (workshop/trip)
@@ -385,18 +456,37 @@ async requestEdits(req, res, next) {
       next(err);
     }
   }
-}
-
-export const getUpcomingEventsController = async (req, res, next) => {
-  try {
-    const events = await eventService.getUpcomingEventsService();
-    res.status(200).json({
-      statusCode: 200,
-      data: events,
-      message: "Upcoming events fetched successfully.",
-    });
-  } catch (err) {
-    console.error("Error in getUpcomingEventsController:", err);
-    next(err);
+  async getUpcomingEvents(req, res, next) {
+    try {
+      const events = await eventService.getUpcomingEventsService();
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Upcoming events fetched successfully.")
+        );
+    } catch (err) {
+      next(err);
+    }
   }
-};
+  //search events by name and type
+  //  Search events by name (event/professor) or type
+  async searchEvents(req, res, next) {
+    try {
+      const { name, type } = req.query;
+
+      // Ensure at least one search parameter is provided
+      if (!name && !type) {
+        throw new ApiError(400, "Please provide a name or type to search.");
+      }
+
+      // Delegate filter construction and search to the service
+      const events = await eventService.searchEvents({ name, type });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Events search successful"));
+    } catch (err) {
+      next(err);
+    }
+  }
+}

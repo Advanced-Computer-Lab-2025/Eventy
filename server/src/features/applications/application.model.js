@@ -1,60 +1,48 @@
 import mongoose from "mongoose";
 
+const attendeeSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true },
+});
+
 const applicationSchema = new mongoose.Schema(
   {
-    vendorId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    bazaarId: {
+    event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: true,
+    },
+    type: {
+      type: String,
+      enum: ["bazaar", "booth"],
+      required: true,
+    },
+    attendees: {
+      type: [attendeeSchema],
+      validate: [
+        (arr) => arr.length > 0 && arr.length <= 5,
+        "Must have 1-5 attendees",
+      ],
     },
     boothSize: {
       type: String,
       enum: ["2x2", "4x4"],
       required: true,
     },
-    durationWeeks: {
-      type: Number,
-      required: true,
-    },
-    locationPreference: {
-      type: String,
-    },
-    staff: [
-      {
-        name: { type: String, required: true },
-        email: { type: String, required: true },
-        id: { type: String },
-      },
-    ],
+    durationWeeks: { type: Number, min: 1, max: 4 }, // Only for booth
+    locationPreference: { type: String }, // Only for booth
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
+      enum: ["pending", "approved", "rejected"],
       default: "pending",
+    },
+    createdBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
       required: true,
-    },
-    paymentStatus: {
-      type: String,
-      enum: ["unpaid", "paid"],
-      default: "unpaid",
-      required: true,
-    },
-    qrCodeUrl: {
-      type: String,
-    },
-    deletedAt: {
-      type: Date,
-      default: null, // null means application is active
     },
   },
-  {
-    timestamps: true, // automatically adds createdAt & updatedAt
-  }
+  { timestamps: true }
 );
 
-const Application = mongoose.model("Application", applicationSchema);
-export default Application;
+export default mongoose.model("Application", applicationSchema);

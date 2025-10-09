@@ -1,15 +1,24 @@
-import mongoose from 'mongoose';
-import bcrypt from 'bcryptjs';
+import mongoose from "mongoose";
+import bcrypt from "bcryptjs";
 
 const userSchema = new mongoose.Schema(
   {
-    firstName: { type: String, required: true },
-    lastName: { type: String, required: true },
+    firstName: {
+      type: String,
+      required: function () {
+        return ["student", "staff", "ta", "professor"].includes(this.role);
+      },
+    },
+    lastName: {
+      type: String,
+      required: function () {
+        return ["student", "staff", "ta", "professor"].includes(this.role);
+      },
+    },
     email: { type: String, required: true, unique: true, index: true },
     password: { type: String, required: true },
 
-
-     studentStaffId: {
+    studentStaffId: {
       type: String,
       unique: true,
       sparse: true,
@@ -17,39 +26,40 @@ const userSchema = new mongoose.Schema(
         return ["student", "staff", "ta", "professor"].includes(this.role);
       },
     },
-    
-     companyName: {
+
+    companyName: {
       type: String,
       required: function () {
         return this.role === "vendor";
       },
     },
-    companyLogoUrl: { 
-    type: String, 
-    required: function () {
-       return this.role === "vendor";
-       } 
-     },
-
-    taxCardUrl: { 
-     type: String, 
-      required: function () {
-       return this.role === "vendor";
-       } 
+    companyLogoUrl: {
+      type: String,
     },
-role: {
-    type: String,
-    required: false,  
-    enum: ["student", "staff", "ta", "professor", "vendor", "admin", "events_office"],
-    default: null     
-},
+
+    taxCardUrl: {
+      type: String,
+    },
+    role: {
+      type: String,
+      required: false,
+      enum: [
+        "student",
+        "staff",
+        "ta",
+        "professor",
+        "vendor",
+        "admin",
+        "events_office",
+      ],
+      default: null,
+    },
     status: {
       type: String,
       required: true,
       enum: ["pending", "active", "blocked"],
-      default: "pending",
+      default: "active",
     },
-    verificationToken: { type: String },
 
     walletBalance: { type: Number, default: 0 },
 
@@ -61,15 +71,17 @@ role: {
       },
     ],
 
-   
-    deletedAt: { type: Date, default: null },
+    // ✅ New fields for verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page"
+    isVerified: { type: Boolean, default: false },
+    verificationToken: { type: String },
 
-},
+    deletedAt: { type: Date, default: null },
+  },
   { timestamps: true }
 );
 
 userSchema.methods.comparePassword = async function (password) {
-  return bcrypt.compare(password, this.passwordHash);
+  return bcrypt.compare(password, this.password);
 };
 
-export const User = mongoose.model('User', userSchema);
+export const User = mongoose.models.User || mongoose.model("User", userSchema);
