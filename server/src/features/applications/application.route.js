@@ -1,23 +1,17 @@
 import express from "express";
 import { ApplicationController } from "./application.controller.js";
-import { applyToBazaarSchema , getMyApplicationsSchema} from "./application.validation.js";
+import {
+  validateBazaarApplication,
+  validateBoothApplication,
+  getMyApplicationsSchema
+} from "./application.validation.js";
 import validate from "../../middlewares/validate.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import validateQuery from "../../middlewares/validateQuery.middleware.js";
-import { ApplicationService } from "./application.service.js";  
 
 const router = express.Router();
 const applicationController = new ApplicationController();
-
-// POST /api/applications
-router.post(
-  "/",
-  authMiddleware,
-  role(["vendor"]),
-  validate(applyToBazaarSchema),
-  applicationController.applyToBazaar.bind(applicationController)
-);
 
 router.get(
   "/me",
@@ -34,7 +28,6 @@ router.patch(
   applicationController.updateApplicationStatus.bind(applicationController)
 );
 
-
 /**
  * @route   GET /api/admin/bazaars/:bazaarId/applications
  * @desc    Get all vendor applications for a specific bazaar
@@ -47,6 +40,18 @@ router.get(
   ApplicationController.getAllApplications
 );
 
+router.post(
+  "/bazaars/:eventId/apply",
+  authMiddleware,
+  validate(validateBazaarApplication),
+  applicationController.applyToBazaar.bind(applicationController)
+);
 
+router.post(
+  "/booths/apply",
+  authMiddleware,
+  validate(validateBoothApplication),
+  applicationController.applyToBooth.bind(applicationController)
+);
 
 export default router;
