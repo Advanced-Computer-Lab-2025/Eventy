@@ -6,7 +6,6 @@ export const getMyApplicationsSchema = Joi.object({
 
 export const validateBazaarApplication = (data) =>
   Joi.object({
-    event: Joi.string().hex().length(24).required(),
     attendees: Joi.array()
       .items(
         Joi.object({
