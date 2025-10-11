@@ -1,5 +1,4 @@
 {
-<<<<<<< HEAD
   "name": "rest-express",
   "version": "1.0.0",
   "type": "module",
@@ -104,9 +103,5 @@
   },
   "optionalDependencies": {
     "bufferutil": "^4.0.8"
-=======
-  "dependencies": {
-    "joi": "^18.0.1"
->>>>>>> origin/main
   }
 }
