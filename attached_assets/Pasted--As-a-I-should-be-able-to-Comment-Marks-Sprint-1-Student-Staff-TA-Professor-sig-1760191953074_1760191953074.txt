@@ -1,0 +1,91 @@
+	As a 	I should be able to	Comment	Marks	Sprint																			
+1	Student/Staff/TA/Professor	sign up with my email, password, First name, Last name and student/staff id	"Eveyone should use their GUC email while signing up 
+Admins and Event offices donnot sign up"	2.5	1																			
+2	Vendor	sign up with an email, password, company name		2	1																			
+3	Vendor	upload tax card and logo to prove company validity		2	2																			
+4	Student	receive a verification email after registration 	"The verification mail should contain a verification link that automatically redirects me to the login page
+If I didnot click on the link I shouldnt be verified hence the login should fail"	2	2																			
+5	Admin	insert the correct role for each of Staff/ TA/ Professor after receiving their request to register and then sends a verification mail		2	1																			
+6	Staff/ TA/ Professor	receive a verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page
+If I did not click on the link I shouldn't be verified, hence the login should fail"	3	1																			
+7	Admin	create other admin/Event Office accounts including the admin name, email and password		2	1																			
+8	Admin	delete other admin/Event Office accounts		2	1																			
+9	Student/Staff/ Events Office/TA/ Professor/ Admin	login with my email and password	Eveyone should use their GUC email except Companies and Vendors	3	1																			
+10	Student/Staff/ Events Office/TA/ Professor/ Admin	logout from my account successfully		3	1																			
+11	Student/Staff/ Events Office/TA/ Professor/ Admin	view all availabe events that are coming up and all their details including the vendors that will participate (for bazaars and booths)	Events are workshops, trips, bazaars, booths in platform, conferences	3	1																			
+12	Student/Staff/ Events Office/TA/ Professor/ Admin	search the events by a specific name(Professor name/Event name) or type		3	1																			
+13	Student/Staff/ Events Office/TA/ Professor/ Admin	filter the events by a specific name(Professor name incase of a workshop or a conference), location, type or date		3	2																			
+14	Student/Staff/ Events Office/TA/ Professor/ Admin	sort the events by date		3	2																			
+15	Student/Staff/ TA/ Professor	rate an event that i attended 		2	2																			
+16	Student/Staff/TA/ Professor	comment on an event that i attended		2	2																			
+17	Student/Staff/ Events Office/TA/ Professor/ Admin	view all ratings and comments on any event		3	2																			
+18	Admin	delete any inappropriate comments		2	2																			
+19	Admin	block any user		2	2																			
+20	Admin	view a list of all users along with their details and status (active/blocked)		4	1																			
+21	Student/Staff/ Events Office/TA/ Professor	receive a warning email if any of my comments were deleted for being inappropriate		5	2																			
+22	Student/Staff/TA/Professor	add an event to their favorites list		4	2																			
+23	Student/Staff/TA/Professor	view my favorites list		4	2																			
+24	Student/Staff/TA/Professor	register for a workshop/trip using name, mail, student/staff id		4	1																			
+25	Student/Staff/TA/Professor	pay for the workshop/trip he/she registered for using credit card/ debit card (using Stripe) or from wallet if available		4	2																			
+26	Student/Staff/TA/Professor	receive a payment receipt via email upon paying		4	2																			
+27	Student/Staff/TA/Professor	view a list of my registered events	Upcoming and past events	4	1																			
+28	Student/Staff/TA/Professor	cancel the registration and refund the amount paid on my wallet	cancellation can only be accepted if there are still 2 weeks for the event	4	2																			
+29	Student/Staff/TA/Professor	view amount refunded in my wallet		4	2																			
+30	Student/Staff/TA/Professor	receive a certificate of attendance upon finishing workshop via email		4	2																			
+31	Events Office	create bazaars by adding the bazaar name, start and end date and time, location, short description and registration deadline		2	1																			
+32	Events Office	edit any of the bazaar details entered	Only if the bazar hasn't started yet	2	1																			
+33	Events Office	create trips by adding the trip name, location, price, start and end date and time, short description, capacity, registeration deadline		2	1																			
+34	Events Office	edit any of the trip details	Only if trip start date hasn't passed yet	2	1																			
+35	 Professor	create workshops by adding the workshop name, location (GUC Cairo or GUC Berlin), start and end dates and times, short description, full agenda, faculty responsible (MET, IET, etc..), professor(s) participating, required budget, funding source (external or GUC), extra required resources, capacity, registeration deadline		2	1																			
+36	Professor	edit any of the workshop details entered		2	1																			
+37	Professor	view a list of all workshops that i created 		2	1																			
+38	Professor	view a list of participants in a workshop that i created and the number of remaining spots		2	2																			
+39	Events Office	receive notifications on the system when doctors submit workshop requests		2	2																			
+40	Events Office	accept and publish workshop created by a professor 		2	1																			
+41	Events Office	reject workshop 		2	1																			
+42	Events Office	request edits in workshop details		2	1																			
+43	Professor	view status and any requested edits of my submitted workshops		2	2																			
+44	Professor	receive a notification on the system if my workshop has been accepted/rejected		2	2																			
+45	Events Office	create conferences by adding the conference name, start and end dates and times, short description, full agenda, conference website link, required budget, source of funding (extrernal or GUC), extra required resources	the conference website will contain all the conference's details. Each conference usually has a landing page so there will be no need to add ALL the info to the event on the system	2	1																			
+46	Events Office	edit any of the conference details		2	1																			
+47	Events Office	archive events that have already passed	this applies to ALL kinds of events on the system	2	2																			
+48	Events Office/Admin	delete any event	if no one registered for it yet	2	1																			
+49	Events Office 	export names of those registered for any event (except conferences) in a .xlxs sheet		2	2																			
+50	Events Office	restrict events to specific users	means i can choose if this workshop is only available for students for example	2	2																			
+51	Events Office	generate QR codes for external visitors to bazaars and career fairs		2	2																			
+52	Events Office/Admin	view a report containing the total number of attendees in events 		2	2																			
+53	Events Office/Admin	filter the report of total number of attendees in events by event name/event type/date		2	2																			
+54	Events Office/Admin	view a sales report containing all the revenue from different events		2	2																			
+55	Events Office/Admin	filter sales report based on event type and/or date		2	2																			
+56	Events Office/Admin	sort sales report by revenue (least to greatest or greatest to least)		2	2																			
+57	Student/Staff/ Events Office/TA/ Professor	receive notifications on the system for any new added events		5	2																			
+58	Student/Staff/ Events Office/TA/ Professor	receive reminders as notifications on the system for any events i registered for 1 day and 1 hour prior		5	2																			
+59	Vendor	view a list of upcoming bazaars 		2	1																			
+60	Vendor	apply to join a bazaar from the list of bazaars by filling in a form with the following details: names and emails of a max of 5 individuals attending, booth size 	booth size can be 2x2 or 4x4	2	1																			
+61	Vendor	apply for a booth in platform by filling in a form with the following details: names and emails of a max of 5 individuals attending, duration of booth set up, location of booth setup, booth size 	duration can be 1 week - 4 weeks and location in platform will be selected according to a map of the platform and booth size can be 2x2 or 4x4	2	1																			
+62	Vendor	upload IDs of individuals attending for the entire duration of bazaar or booth set up in platform		2	2																			
+63	Vendor	receive an email notification if my request to apply to join a bazaar or apply for a booth has been accepted/rejected		2	2																			
+64	Vendor	pay participation fees for bazaar/booth upon acceptance of the request	for booth: based on duration and location, for bazaar, based on location and booth size. Deadline for payment for vendor must be 3 days after receiving the acceptance email	2	2																			
+65	Vendor	receive a payment receipt via email upon paying		2	2																			
+66	Vendor	receive QR code for all registered visitors coming to the bazaar/booth via email		2	2																			
+67	Vendor	cancel my participation request	this can only happen if the vendor has not paid yet	2	2																			
+68	Vendor	view all upcoming bazaars or booth set ups I am participating in (accepted requests only)		2	1																			
+69	Vendor	view all requests for upcoming bazaars or booth set ups I want to participate in (pending or rejected)		2	1																			
+70	Vendor	apply to participate in GUC loyalty program by filling form that includes discount rate,promo code, terms and conditions		2	2																			
+71	Vendor	cancel my participation in GUC loyalty program		2	2																			
+72	Student/Staff/TA/Professor/ Events Office/Admin	view a list of all vendors that are partners in GUC loyalty program along with discount rates,promo code, terms and conditions		4	2																			
+73	Student/Staff/TA/Professor	receive notifications on the system for newly added partners in GUC loyalty program 		4	2																			
+74	Events Office/Admin	receive notifications on the system for pending vendor requests		2	2																			
+75	Events Office/Admin	view the details of vendor participation requests in bazaars or booths		2	1																			
+76	Events Office/Admin	view/ download uploaded documents		2	2																			
+77	Events Office/Admin	accept /reject vendors participation requests		2	1																			
+78	Student	view all the courts on campus (basketball/tennis/football) and their availability dates and times		2	1																			
+79	Student	reserve a court (basketball/ tennis/ football) by choosing from the free dates and times	reservation should automatially include the student's name and GUC ID number	2	2																			
+80	Student/Staff/ Events Office/TA/ Professor	view the gym schedule for each month's sessions (e.g. yoga, pilates, aerobics, Zumba, cross circuit, kick-boxing)		2.5	1																			
+81	Student/Staff/TA/Professor	register to attend a session		4	2																			
+82	Events Office	create a poll with different vendors requesting to set up booths in the platform during the same durations		2	2																			
+83	Student/Staff/TA/Professor	vote for a vendor to come and set up a booth in the platform based on the poll		4	2																			
+84	Events Office	create a gym session with the following details: date, time, duration, type (e.g. yoga, pilates, aerobics, Zumba, cross circuit, kick-boxing), max number of participants		2	1																			
+85	Events Office	cancel a gym session		2	2																			
+86	Events Office	edit a gym session	date, time, duration only can be edited	2	2																			
+87	Student/Staff/TA/Professor	receive an email notification if a gym session I registered to attend was cancelled or edited		4	2	

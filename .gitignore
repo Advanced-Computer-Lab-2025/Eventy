@@ -1,3 +1,11 @@
+<<<<<<< HEAD
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+=======
 # Logs
 logs
 *.log
@@ -142,3 +150,4 @@ vite.config.ts.timestamp-*
 # Firebase service account key
 src/config/firebaseServiceAccount.json
 server/config/firebaseServiceAccount.json
+>>>>>>> origin/main
