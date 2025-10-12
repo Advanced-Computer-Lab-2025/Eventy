@@ -28,6 +28,10 @@ export default function MyEvents() {
             Authorization: `Bearer ${getToken()}`,
           },
         });
+        if (!res.ok) {
+          setRegisteredEvents([]);
+          return;
+        }
         const data = await res.json();
         setRegisteredEvents(data.data || []);
       } catch (err) {
