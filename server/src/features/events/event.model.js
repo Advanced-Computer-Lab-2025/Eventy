@@ -7,7 +7,7 @@ const eventSchema = new Schema(
     eventType: {
       type: String,
       required: true,
-      enum: ['bazaar', 'trip', 'workshop', 'conference']
+      enum: ['bazaar', 'trip', 'workshop', 'conference', 'platform_booth']
     },
     description: { type: String, required: true },
     location: { type: String, required: true },
