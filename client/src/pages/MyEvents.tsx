@@ -19,7 +19,11 @@ export default function MyEvents() {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const res = await fetch("http://localhost:4000/api/events/me/events", {
+        const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
+        if (!apiBaseUrl) {
+          throw new Error("REACT_APP_API_BASE_URL environment variable is not set");
+        }
+        const res = await fetch(`${apiBaseUrl}/api/events/me/events`, {
           headers: {
             Authorization: `Bearer ${getToken()}`,
           },
