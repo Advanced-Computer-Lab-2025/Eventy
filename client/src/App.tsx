@@ -17,6 +17,7 @@ import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
+import UpcomingBazaars from "@/pages/UpcomingBazaars";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
+      <Route path="/bazaars" component={UpcomingBazaars} />
       <Route component={NotFound} />
     </Switch>
   );

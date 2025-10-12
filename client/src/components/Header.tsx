@@ -1,14 +1,17 @@
-import { Search, Bell, LayoutGrid, User } from "lucide-react";
+import { Search, Bell, LayoutGrid, User, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+import { useLocation } from "wouter";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
 }
 
 export default function Header({ onSearch }: HeaderProps) {
+  const [, setLocation] = useLocation();
+
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
@@ -50,6 +53,12 @@ export default function Header({ onSearch }: HeaderProps) {
           <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-career">Career</Button>
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-bazaars"
+            onClick={() => setLocation("/bazaars")}
+          >
+            <Store className="h-4 w-4" />
+            Bazaars
+          </Button>
         </div>
       </div>
     </header>
