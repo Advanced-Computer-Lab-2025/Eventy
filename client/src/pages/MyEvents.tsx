@@ -108,7 +108,13 @@ export default function MyEvents() {
                         <div className="flex items-center gap-1">
                           <Clock className="h-3 w-3" />
                           {event.time ||
-                            `${event.startTime || ""} - ${event.endTime || ""}`}
+                            (event.startTime && event.endTime
+                              ? `${event.startTime} - ${event.endTime}`
+                              : event.startTime
+                              ? event.startTime
+                              : event.endTime
+                              ? event.endTime
+                              : "Time not specified")}
                         </div>
                         <div className="flex items-center gap-1">
                           <MapPin className="h-3 w-3" />
