@@ -1,13 +1,14 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { userStore, type User as UserType } from "@/lib/mockData";
-import { Calendar, Mail, Lock, User, Building2, IdCard } from "lucide-react";
+import { Mail, Lock, User, Building2, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import Logo from "@/components/Logo";
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
@@ -93,12 +94,7 @@ export default function SignUp() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              UniEvents
-            </span>
+            <Logo size="lg" />
           </div>
           <CardTitle className="text-3xl">Create Account</CardTitle>
           <CardDescription>Join our university event management platform</CardDescription>

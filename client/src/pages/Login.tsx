@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Calendar, Mail, Lock } from "lucide-react";
+import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Logo from "@/components/Logo";
 
 export default function Login() {
   const [, setLocation] = useLocation();
@@ -25,12 +26,7 @@ export default function Login() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-secondary flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-white" />
-            </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              UniEvents
-            </span>
+            <Logo size="lg" />
           </div>
           <CardTitle className="text-3xl">Welcome Back</CardTitle>
           <CardDescription>Sign in to your account to continue</CardDescription>
