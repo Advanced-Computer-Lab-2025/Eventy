@@ -1,7 +1,7 @@
 import { useTheme } from "./ThemeProvider";
 
 interface LogoProps {
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl" | "xxl";
   showText?: boolean;
   className?: string;
 }
@@ -10,9 +10,11 @@ export default function Logo({ size = "md", showText = false, className = "" }: 
   const { theme } = useTheme();
   
   const sizeClasses = {
-    sm: "h-6 w-6",
-    md: "h-8 w-8", 
-    lg: "h-10 w-10"
+    sm: "h-20 w-20",
+    md: "h-24 w-24", 
+    lg: "h-32 w-32",
+    xl: "h-32 w-32",
+    xxl: "h-40 w-40"
   };
   
   const logoPath = theme === "dark" ? "/images/logo-dark.png" : "/images/logo-light.png";

@@ -94,7 +94,7 @@ export default function SignUp() {
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-2">
-            <Logo size="lg" />
+            <Logo size="xxl" />
           </div>
           <CardTitle className="text-3xl">Create Account</CardTitle>
           <CardDescription>Join our university event management platform</CardDescription>
