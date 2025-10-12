@@ -5,7 +5,7 @@ import userRoutes from "../features/users/user.route.js";
 import eventRoutes from "../features/events/event.route.js";
 import applicationRoutes from "../features/applications/application.route.js";
 import facilityRoutes from "../features/facilities/facility.route.js";
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 4000;
 const router = express.Router();
 
 // Placeholder route to confirm the API is working
