@@ -25,7 +25,7 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="flex items-center justify-center gap-2 mt-4">
             <Logo size="xxl" />
           </div>
           <CardTitle className="text-3xl">Welcome Back</CardTitle>

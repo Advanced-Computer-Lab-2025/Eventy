@@ -14,7 +14,7 @@ export default function Logo({ size = "md", showText = false, className = "" }: 
     md: "h-24 w-24", 
     lg: "h-32 w-32",
     xl: "h-32 w-32",
-    xxl: "h-40 w-40"
+    xxl: "w-40"
   };
   
   // Different size adjustments for light vs dark logos
