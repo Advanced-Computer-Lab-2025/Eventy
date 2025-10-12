@@ -17,6 +17,9 @@ export default function Logo({ size = "md", showText = false, className = "" }: 
     xxl: "h-40 w-40"
   };
   
+  // Different size adjustments for light vs dark logos
+  const themeSizeAdjustment = theme === "dark" ? "scale-107" : ""; // Slightly larger for dark mode
+  
   const logoPath = theme === "dark" ? "/images/logo-dark.png" : "/images/logo-light.png";
   
   return (
@@ -24,7 +27,7 @@ export default function Logo({ size = "md", showText = false, className = "" }: 
       <img 
         src={logoPath}
         alt="Eventy Logo"
-        className={`${sizeClasses[size]} object-contain`}
+        className={`${sizeClasses[size]} object-contain ${themeSizeAdjustment}`}
       />
     </div>
   );
