@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Store, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -16,13 +16,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import BazaarList, { Bazaar } from "@/components/BazaarList";
+import { bazaarApiService } from "@/lib/bazaarApi";
+import { useToast } from "@/hooks/use-toast";
 
-//todo: remove mock functionality
-const upcomingBazaars = [
-  { id: "1", name: "Spring Festival Bazaar", date: "April 15, 2024", location: "University Courtyard", deadline: "April 1, 2024" },
-  { id: "2", name: "Tech Expo Bazaar", date: "May 20, 2024", location: "Engineering Building", deadline: "May 5, 2024" },
-];
-
+// Mock data for participations and pending requests (to be replaced with real API calls)
 const myParticipations = [
   { id: "1", name: "Spring Festival Bazaar", date: "April 15, 2024", status: "accepted", boothSize: "4x4" },
 ];
@@ -39,6 +37,34 @@ export default function VendorDashboard() {
     emails: "",
     boothSize: "2x2",
   });
+  const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Fetch upcoming bazaars
+  const fetchUpcomingBazaars = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const bazaars = await bazaarApiService.getUpcomingBazaars();
+      setUpcomingBazaars(bazaars);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to fetch bazaars";
+      setError(errorMessage);
+      toast({
+        title: "Error",
+        description: "Failed to load upcoming bazaars. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchUpcomingBazaars();
+  }, []);
 
   const handleApply = (bazaar: any) => {
     setSelectedBazaar(bazaar);
@@ -49,6 +75,52 @@ export default function VendorDashboard() {
     e.preventDefault();
     console.log("Application submitted:", { bazaar: selectedBazaar, ...applicationForm });
     setShowApplyDialog(false);
+    toast({
+      title: "Application Submitted",
+      description: `Your application for ${selectedBazaar?.name} has been submitted successfully!`,
+    });
+  };
+
+  const handleRegister = async (bazaarId: string) => {
+    try {
+      await bazaarApiService.registerForBazaar(bazaarId);
+      toast({
+        title: "Success",
+        description: "Successfully registered for the bazaar!",
+      });
+      // Refresh the list to update attendee count
+      fetchUpcomingBazaars();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to register";
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleSave = (bazaarId: string) => {
+    toast({
+      title: "Saved",
+      description: "Bazaar saved to your favorites!",
+    });
+  };
+
+  const handleShare = (bazaarId: string) => {
+    if (navigator.share) {
+      navigator.share({
+        title: "Check out this bazaar!",
+        text: "I found an interesting bazaar at GUC",
+        url: window.location.href,
+      });
+    } else {
+      navigator.clipboard.writeText(window.location.href);
+      toast({
+        title: "Link copied",
+        description: "Bazaar link copied to clipboard!",
+      });
+    }
   };
 
   return (
@@ -80,41 +152,27 @@ export default function VendorDashboard() {
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {upcomingBazaars.map((bazaar) => (
-                <Card key={bazaar.id} data-testid={`card-bazaar-${bazaar.id}`}>
-                  <CardHeader>
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <CardTitle className="text-xl mb-2">{bazaar.name}</CardTitle>
-                        <div className="space-y-1 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {bazaar.date}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Store className="h-3 w-3" />
-                            {bazaar.location}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Application deadline: {bazaar.deadline}
-                    </p>
-                    <Button 
-                      onClick={() => handleApply(bazaar)} 
-                      className="w-full"
-                      data-testid={`button-apply-${bazaar.id}`}
-                    >
-                      Apply to Join
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            {loading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+                <p className="text-muted-foreground">Loading upcoming bazaars...</p>
+              </div>
+            ) : error ? (
+              <div className="text-center py-12">
+                <p className="text-red-600 mb-4">{error}</p>
+                <Button onClick={fetchUpcomingBazaars} variant="outline">
+                  Try Again
+                </Button>
+              </div>
+            ) : (
+              <BazaarList
+                bazaars={upcomingBazaars}
+                onRegister={handleRegister}
+                onSave={handleSave}
+                onShare={handleShare}
+                showFilters={true}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="participating" className="space-y-4">

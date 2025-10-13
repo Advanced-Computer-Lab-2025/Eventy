@@ -11,7 +11,11 @@ dotenv.config();
 const app = express();
 
 // Global Middlewares
-app.use(cors()); // Enable Cross-Origin Resource Sharing
+app.use(cors({
+    origin: "http://localhost:5000",
+    credentials: true,
+  }));
+  
 app.use(express.json()); // Parse JSON request bodies
 
 // Mount all API routes from routes/index.js under the /api path
