@@ -259,8 +259,8 @@ export const getUpcomingEventsService = async () => {
     status: "approved",
     startDate: { $gte: now },
   })
-    //.populate("professors", "name email") // now Mongoose knows User schema
-    //.populate("createdBy", "name email")
+    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("createdBy", "name email")
     .lean();
 
   return events;
