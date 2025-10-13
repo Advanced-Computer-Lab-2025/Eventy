@@ -4,7 +4,13 @@ import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import Logo from "@/components/Logo";
 
 export default function Login() {
@@ -14,11 +20,31 @@ export default function Login() {
     password: "",
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Login:", formData);
-    // Simulate login - redirect to home
-    setLocation("/");
+
+    try {
+      const res = await fetch("http://localhost:4000/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || "Login failed");
+
+      // ✅ Store token securely in localStorage
+      localStorage.setItem("token", data.token);
+
+      // ✅ Optionally store user data
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      // ✅ Redirect after successful login
+      setLocation("/");
+    } catch (err: any) {
+      alert(err.message);
+    }
   };
 
   return (
@@ -43,7 +69,9 @@ export default function Login() {
                   placeholder="your.email@guc.edu.eg"
                   className="pl-10"
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, email: e.target.value })
+                  }
                   data-testid="input-email"
                   required
                 />
@@ -59,7 +87,9 @@ export default function Login() {
                   type="password"
                   className="pl-10"
                   value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
                   data-testid="input-password"
                   required
                 />
@@ -73,7 +103,11 @@ export default function Login() {
 
           <div className="mt-6 text-center text-sm">
             Don't have an account?{" "}
-            <Link href="/signup" className="text-primary hover:underline" data-testid="link-signup">
+            <Link
+              href="/signup"
+              className="text-primary hover:underline"
+              data-testid="link-signup"
+            >
               Sign up
             </Link>
           </div>
