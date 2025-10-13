@@ -53,11 +53,11 @@ export default function Header({ onSearch }: HeaderProps) {
           <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-career">Career</Button>
-          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-bazaars"
-            onClick={() => setLocation("/bazaars")}
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-vendor-dashboard"
+            onClick={() => setLocation("/vendor/dashboard")}
           >
             <Store className="h-4 w-4" />
-            Bazaars
+            Vendor Dashboard
           </Button>
         </div>
       </div>
