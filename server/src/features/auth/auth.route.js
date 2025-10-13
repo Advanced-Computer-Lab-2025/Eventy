@@ -41,7 +41,7 @@ router.get("/verify", async (req, res) => {
     await user.save();
 
     // Redirect to frontend login page
-    res.redirect("http://localhost:3000/login");
+    res.redirect("http://localhost:5000/login");
   } catch (error) {
     res.status(400).json({ message: "Invalid or expired verification link." });
   }

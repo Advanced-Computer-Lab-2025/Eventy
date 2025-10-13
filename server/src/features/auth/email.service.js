@@ -12,7 +12,7 @@ export const sendVerificationEmail = async (user) => {
     from: "onboarding@resend.dev",
     to: email,
     subject: "Verify Your Account",
-    html: `<p>Hi ${name}, please verify your email by clicking this link: <a href="http://localhost:3000/verify?token=${user.verificationToken}">Verify Email</a></p>`,
+    html: `<p>Hi ${name}, please verify your email by clicking this link: <a href="http://localhost:4000/verify?token=${user.verificationToken}">Verify Email</a></p>`,
   });
 
   return true;
