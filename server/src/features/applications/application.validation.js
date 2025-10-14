@@ -4,19 +4,20 @@ export const getMyApplicationsSchema = Joi.object({
   status: Joi.string().valid("pending", "accepted", "rejected").optional(),
 });
 
-export const validateBazaarApplication = Joi.object({
-  attendees: Joi.array()
-    .items(
-      Joi.object({
-        name: Joi.string().required(),
-        email: Joi.string().email().required(),
-      })
-    )
-    .min(1)
-    .max(5)
-    .required(),
-  boothSize: Joi.string().valid("2x2", "4x4").required(),
-});
+export const validateBazaarApplication = (data) =>
+  Joi.object({
+    attendees: Joi.array()
+      .items(
+        Joi.object({
+          name: Joi.string().required(),
+          email: Joi.string().email().required(),
+        })
+      )
+      .min(1)
+      .max(5)
+      .required(),
+    boothSize: Joi.string().valid("2x2", "4x4").required(),
+  }).validate(data);
 
 export const validateBoothApplication = (data) =>
   Joi.object({

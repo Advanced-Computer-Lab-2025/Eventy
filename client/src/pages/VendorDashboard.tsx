@@ -5,8 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BazaarList, { Bazaar } from "@/components/BazaarList";
-import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -21,7 +31,12 @@ const pendingRequests = [
 
 export default function VendorDashboard() {
   const [showApplyDialog, setShowApplyDialog] = useState(false);
-  const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
+  const [selectedBazaar, setSelectedBazaar] = useState<any>(null);
+  const [applicationForm, setApplicationForm] = useState({
+    attendees: "",
+    emails: "",
+    boothSize: "2x2",
+  });
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,11 +66,37 @@ export default function VendorDashboard() {
     fetchUpcomingBazaars();
   }, []);
 
-  const handleRegister = (bazaarId: string) => {
-    const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
-    if (bazaar) {
-      setSelectedBazaar(bazaar);
-      setShowApplyDialog(true);
+  const handleApply = (bazaar: any) => {
+    setSelectedBazaar(bazaar);
+    setShowApplyDialog(true);
+  };
+
+  const handleSubmitApplication = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log("Application submitted:", { bazaar: selectedBazaar, ...applicationForm });
+    setShowApplyDialog(false);
+    toast({
+      title: "Application Submitted",
+      description: `Your application for ${selectedBazaar?.name} has been submitted successfully!`,
+    });
+  };
+
+  const handleRegister = async (bazaarId: string) => {
+    try {
+      await bazaarApiService.registerForBazaar(bazaarId);
+      toast({
+        title: "Success",
+        description: "Successfully registered for the bazaar!",
+      });
+      // Refresh the list to update attendee count
+      fetchUpcomingBazaars();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to register";
+      toast({
+        title: "Registration Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
     }
   };
 
@@ -193,14 +234,71 @@ export default function VendorDashboard() {
         </Tabs>
       </main>
 
-      {selectedBazaar && (
-        <VendorApplicationDialog
-          open={showApplyDialog}
-          onOpenChange={setShowApplyDialog}
-          bazaarId={selectedBazaar._id}
-          bazaarName={selectedBazaar.name}
-        />
-      )}
+      <Dialog open={showApplyDialog} onOpenChange={setShowApplyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Apply to Join Bazaar</DialogTitle>
+            <DialogDescription>
+              Fill in the details to apply for {selectedBazaar?.name}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleSubmitApplication} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="attendees">Names of Attendees (max 5)</Label>
+              <Input
+                id="attendees"
+                placeholder="John Doe, Jane Smith..."
+                value={applicationForm.attendees}
+                onChange={(e) => setApplicationForm({ ...applicationForm, attendees: e.target.value })}
+                data-testid="input-attendees"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emails">Email Addresses</Label>
+              <Input
+                id="emails"
+                placeholder="john@example.com, jane@example.com..."
+                value={applicationForm.emails}
+                onChange={(e) => setApplicationForm({ ...applicationForm, emails: e.target.value })}
+                data-testid="input-emails"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="boothSize">Booth Size</Label>
+              <Select
+                value={applicationForm.boothSize}
+                onValueChange={(value) => setApplicationForm({ ...applicationForm, boothSize: value })}
+              >
+                <SelectTrigger id="boothSize" data-testid="select-booth-size">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="2x2">2x2</SelectItem>
+                  <SelectItem value="4x4">4x4</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowApplyDialog(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" data-testid="button-submit-application">
+                Submit Application
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
