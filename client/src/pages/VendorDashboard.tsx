@@ -17,17 +17,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BazaarList, { Bazaar } from "@/components/BazaarList";
-import { bazaarApiService } from "@/lib/bazaarApi";
+import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
-
-// Mock data for participations and pending requests (to be replaced with real API calls)
-const myParticipations = [
-  { id: "1", name: "Spring Festival Bazaar", date: "April 15, 2024", status: "accepted", boothSize: "4x4" },
-];
-
-const pendingRequests = [
-  { id: "2", name: "Summer Market", date: "June 10, 2024", status: "pending", boothSize: "2x2" },
-];
 
 export default function VendorDashboard() {
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -38,6 +29,9 @@ export default function VendorDashboard() {
     boothSize: "2x2",
   });
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
+  const [pendingApplications, setPendingApplications] = useState<Application[]>([]);
+  const [rejectedApplications, setRejectedApplications] = useState<Application[]>([]);
+  const [approvedApplications, setApprovedApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -62,8 +56,31 @@ export default function VendorDashboard() {
     }
   };
 
+  // Fetch applications data
+  const fetchApplicationsData = async () => {
+    try {
+      const [pending, rejected, approved] = await Promise.all([
+        bazaarApiService.getPendingApplications(),
+        bazaarApiService.getRejectedApplications(),
+        bazaarApiService.getApprovedApplications(),
+      ]);
+      
+      setPendingApplications(pending);
+      setRejectedApplications(rejected);
+      setApprovedApplications(approved);
+    } catch (err) {
+      console.error("Error fetching applications:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load applications data.",
+        variant: "destructive",
+      });
+    }
+  };
+
   useEffect(() => {
     fetchUpcomingBazaars();
+    fetchApplicationsData();
   }, []);
 
   const handleApply = (bazaar: any) => {
@@ -149,6 +166,10 @@ export default function VendorDashboard() {
               <Clock className="h-4 w-4 mr-2" />
               Pending Requests
             </TabsTrigger>
+            <TabsTrigger value="rejected" data-testid="tab-rejected">
+              <XCircle className="h-4 w-4 mr-2" />
+              Rejected Requests
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4">
@@ -177,58 +198,135 @@ export default function VendorDashboard() {
 
           <TabsContent value="participating" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {myParticipations.map((participation) => (
-                <Card key={participation.id} data-testid={`card-participation-${participation.id}`}>
-                  <CardHeader>
-                    <CardTitle className="text-xl mb-2">{participation.name}</CardTitle>
-                    <Badge className="bg-green-500 hover:bg-green-600 w-fit">Accepted</Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {participation.date}
+              {approvedApplications.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No approved applications yet</p>
+                </div>
+              ) : (
+                approvedApplications.map((application) => (
+                  <Card key={application._id} data-testid={`card-participation-${application._id}`}>
+                    <CardHeader>
+                      <CardTitle className="text-xl mb-2">{application.bazaarId.name}</CardTitle>
+                      <Badge className="bg-green-500 hover:bg-green-600 w-fit">Approved</Badge>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(application.bazaarId.startDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Store className="h-3 w-3" />
+                          Booth Size: {application.boothSize}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">📍</span>
+                          {application.bazaarId.location}
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Store className="h-3 w-3" />
-                        Booth Size: {participation.boothSize}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pendingRequests.map((request) => (
-                <Card key={request.id} data-testid={`card-request-${request.id}`}>
-                  <CardHeader>
-                    <CardTitle className="text-xl mb-2">{request.name}</CardTitle>
-                    <Badge variant="outline" className="w-fit">Pending Review</Badge>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2 text-sm mb-4">
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Calendar className="h-3 w-3" />
-                        {request.date}
+              {pendingApplications.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No pending applications</p>
+                </div>
+              ) : (
+                pendingApplications.map((application) => (
+                  <Card key={application._id} data-testid={`card-request-${application._id}`}>
+                    <CardHeader>
+                      <CardTitle className="text-xl mb-2">{application.bazaarId.name}</CardTitle>
+                      <Badge variant="outline" className="w-fit">Pending Review</Badge>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm mb-4">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(application.bazaarId.startDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Store className="h-3 w-3" />
+                          Booth Size: {application.boothSize}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">📍</span>
+                          {application.bazaarId.location}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">👥</span>
+                          {application.attendees.length} attendee(s)
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1 text-muted-foreground">
-                        <Store className="h-3 w-3" />
-                        Booth Size: {request.boothSize}
+                      <Button 
+                        variant="destructive" 
+                        className="w-full"
+                        data-testid={`button-cancel-${application._id}`}
+                      >
+                        Cancel Request
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="rejected" className="space-y-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {rejectedApplications.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">No rejected applications</p>
+                </div>
+              ) : (
+                rejectedApplications.map((application) => (
+                  <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
+                    <CardHeader>
+                      <CardTitle className="text-xl mb-2">{application.bazaarId.name}</CardTitle>
+                      <Badge variant="destructive" className="w-fit">Rejected</Badge>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 text-sm mb-4">
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Calendar className="h-3 w-3" />
+                          {new Date(application.bazaarId.startDate).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <Store className="h-3 w-3" />
+                          Booth Size: {application.boothSize}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">📍</span>
+                          {application.bazaarId.location}
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">👥</span>
+                          {application.attendees.length} attendee(s)
+                        </div>
+                        <div className="flex items-center gap-1 text-muted-foreground">
+                          <span className="h-3 w-3">📅</span>
+                          Applied: {new Date(application.createdAt).toLocaleDateString()}
+                        </div>
                       </div>
-                    </div>
-                    <Button 
-                      variant="destructive" 
-                      className="w-full"
-                      data-testid={`button-cancel-${request.id}`}
-                    >
-                      Cancel Request
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
+                      <Button 
+                        variant="outline" 
+                        className="w-full"
+                        data-testid={`button-reapply-${application._id}`}
+                      >
+                        Reapply
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </TabsContent>
         </Tabs>
