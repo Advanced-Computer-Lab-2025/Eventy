@@ -2,6 +2,8 @@ import { Calendar, MapPin, Users, Bookmark, Share2, Store } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
+import VendorApplicationDialog from "./VendorApplicationDialog";
 
 export interface BazaarCardProps {
   id: string;
@@ -36,6 +38,7 @@ export default function BazaarCard({
   onSave,
   onShare,
 }: BazaarCardProps) {
+  const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   // Format dates for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -73,6 +76,14 @@ export default function BazaarCard({
 
   // Check if registration is still open
   const isRegistrationOpen = new Date(registrationDeadline) > new Date();
+
+  const handleRegister = () => {
+    if (onRegister) {
+      onRegister();
+    } else {
+      setIsApplicationDialogOpen(true);
+    }
+  };
 
   return (
     <Card 
@@ -144,7 +155,7 @@ export default function BazaarCard({
 
         <div className="flex gap-2 pt-2">
           <Button 
-            onClick={onRegister} 
+            onClick={handleRegister} 
             className="flex-1"
             disabled={!isRegistrationOpen}
             data-testid={`button-register-${id}`}
@@ -169,6 +180,13 @@ export default function BazaarCard({
           </Button>
         </div>
       </CardContent>
+      
+      <VendorApplicationDialog
+        open={isApplicationDialogOpen}
+        onOpenChange={setIsApplicationDialogOpen}
+        bazaarId={id}
+        bazaarName={name}
+      />
     </Card>
   );
 }

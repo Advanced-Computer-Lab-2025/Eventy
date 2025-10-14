@@ -127,18 +127,9 @@ class BazaarApiService {
 
   async registerForBazaar(bazaarId: string): Promise<void> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/events/${bazaarId}/register`, {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const apiResponse: ApiResponse<any> = await response.json();
-      return apiResponse.data;
+      // This method is deprecated - use applyToBazaar instead
+      console.warn("registerForBazaar is deprecated. Use applyToBazaar with proper application data.");
+      throw new Error("Please use the vendor application form instead of direct registration.");
     } catch (error) {
       console.error("Error registering for bazaar:", error);
       throw error;
@@ -180,6 +171,34 @@ class BazaarApiService {
 
   async getApprovedApplications(): Promise<Application[]> {
     return this.getApplicationsByStatus("accepted");
+  }
+
+  async applyToBazaar(bazaarId: string, applicationData: {
+    attendees: Array<{ name: string; email: string }>;
+    boothSize: "2x2" | "4x4";
+  }): Promise<Application> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications`, {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({
+          bazaarId,
+          type: "booth",
+          ...applicationData,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiResponse: ApiResponse<Application> = await response.json();
+      return apiResponse.data;
+    } catch (error) {
+      console.error("Error applying to bazaar:", error);
+      throw error;
+    }
   }
 }
 
