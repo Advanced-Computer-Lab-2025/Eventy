@@ -182,12 +182,8 @@ class BazaarApiService {
         method: "POST",
         headers: this.getAuthHeaders(),
         credentials: "include",
-        body: JSON.stringify({
-          bazaarId,
-          type: "booth",
-          ...applicationData,
-        }),
-      });
+        body: JSON.stringify(applicationData),
+      });      
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
