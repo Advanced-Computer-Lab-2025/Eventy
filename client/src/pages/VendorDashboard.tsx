@@ -59,15 +59,36 @@ export default function VendorDashboard() {
   // Fetch applications data
   const fetchApplicationsData = async () => {
     try {
+      console.log("=== Starting application fetch ===");
+      
+      console.log("Fetching applications by status...");
       const [pending, rejected, approved] = await Promise.all([
         bazaarApiService.getPendingApplications(),
         bazaarApiService.getRejectedApplications(),
         bazaarApiService.getApprovedApplications(),
       ]);
       
+      console.log("Pending applications:", pending);
+      console.log("Rejected applications:", rejected);
+      console.log("Approved applications:", approved);
+      
+      const totalApplications = pending.length + rejected.length + approved.length;
+      console.log("Total applications found:", totalApplications);
+      
+      if (totalApplications === 0) {
+        console.log("No applications found in database for this user");
+        toast({
+          title: "Info",
+          description: "No applications found. You may need to apply to a bazaar first.",
+          variant: "default",
+        });
+      }
+      
       setPendingApplications(pending);
       setRejectedApplications(rejected);
       setApprovedApplications(approved);
+      
+      console.log("=== Application fetch completed ===");
     } catch (err) {
       console.error("Error fetching applications:", err);
       toast({
