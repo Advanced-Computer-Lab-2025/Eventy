@@ -178,7 +178,7 @@ class BazaarApiService {
     boothSize: "2x2" | "4x4";
   }): Promise<Application> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/applications`, {
+      const response = await fetch(`${API_BASE_URL}/api/applications/bazaars/${bazaarId}/apply`, {
         method: "POST",
         headers: this.getAuthHeaders(),
         credentials: "include",
