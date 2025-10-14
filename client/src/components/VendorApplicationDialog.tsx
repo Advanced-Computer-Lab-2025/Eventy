@@ -232,8 +232,8 @@ export default function VendorApplicationDialog({
                 <SelectValue placeholder="Select booth size" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="2x2">2x2 meters</SelectItem>
-                <SelectItem value="4x4">4x4 meters</SelectItem>
+                <SelectItem value="2x2">2x2</SelectItem>
+                <SelectItem value="4x4">4x4</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
