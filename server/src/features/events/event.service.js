@@ -17,7 +17,7 @@ export async function createBazaar(data, user) {
     endDate: data.endDate,
     registrationDeadline: data.registrationDeadline,
     eventType: "bazaar",
-    createdBy: user._id,
+    createdBy: user.id,
   };
 
   // Save to database
