@@ -9,6 +9,8 @@ import Dashboard from "@/pages/Dashboard";
 import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import CreateConference from "@/pages/CreateConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
 import CreateTrip from "@/pages/CreateTrip";
 import CreateBazaar from "@/pages/CreateBazaar";
@@ -26,6 +28,8 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin" component={AdminDashboardPage} />
+      <Route path="/admin/create/conference" component={CreateConference} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
       <Route path="/create/trip" component={CreateTrip} />
