@@ -1,17 +1,43 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin, Users, DollarSign, FileText } from "lucide-react";
+import { Calendar, Users, DollarSign } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+// ✅ Define types for your form fields
+interface WorkshopFormData {
+  name: string;
+  location: string;
+  startDate: string;
+  startTime: string;
+  endDate: string;
+  endTime: string;
+  description: string;
+  agenda: string;
+  faculty: string;
+  professor: string;
+  budget: string;
+  fundingSource: string;
+  resources: string;
+  capacity: string;
+  deadline: string;
+}
 
 export default function CreateWorkshop() {
   const [, setLocation] = useLocation();
-  const [formData, setFormData] = useState({
+
+  const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
     location: "",
     startDate: "",
@@ -29,25 +55,84 @@ export default function CreateWorkshop() {
     deadline: "",
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  // ✅ Handle submit
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("Workshop created:", formData);
-    setLocation("/dashboard");
+    setLoading(true);
+    setErrorMsg("");
+
+    try {
+      // Prepare data for backend
+      const workshopData = {
+        name: formData.name,
+        location: formData.location,
+        startDate: formData.startDate,
+        startTime: formData.startTime,
+        endDate: formData.endDate,
+        endTime: formData.endTime,
+        description: formData.description,
+        agenda: formData.agenda,
+        faculty: formData.faculty,
+        professors: formData.professor,
+        requiredBudget: Number(formData.budget),
+        fundingSource: formData.fundingSource,
+        extraResources: formData.resources,
+        capacity: Number(formData.capacity),
+        registrationDeadline: formData.deadline,
+      };
+
+      // Get JWT token (from login)
+      const token = localStorage.getItem("token");
+      if (!token) throw new Error("Not authenticated. Please log in first.");
+
+      // Send request to backend
+      const res = await fetch("http://localhost:5000/api/events/workshops", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(workshopData),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to create workshop");
+      }
+
+      alert("✅ Workshop created successfully and sent for approval!");
+      setLocation("/dashboard");
+    } catch (error) {
+      console.error(error);
+      if (error instanceof Error) {
+        setErrorMsg(error.message);
+      } else {
+        setErrorMsg("An unexpected error occurred");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Create Workshop</h1>
           <p className="text-muted-foreground">
             Fill in the details to create a new workshop
           </p>
+          {errorMsg && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
         </div>
 
         <form onSubmit={handleSubmit}>
+          {/* --- Basic Information --- */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Basic Information</CardTitle>
@@ -59,8 +144,9 @@ export default function CreateWorkshop() {
                   id="name"
                   placeholder="e.g., Advanced Machine Learning"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  data-testid="input-workshop-name"
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -70,9 +156,11 @@ export default function CreateWorkshop() {
                   <Label htmlFor="location">Location</Label>
                   <Select
                     value={formData.location}
-                    onValueChange={(value) => setFormData({ ...formData, location: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, location: value })
+                    }
                   >
-                    <SelectTrigger id="location" data-testid="select-location">
+                    <SelectTrigger id="location">
                       <SelectValue placeholder="Select location" />
                     </SelectTrigger>
                     <SelectContent>
@@ -86,9 +174,11 @@ export default function CreateWorkshop() {
                   <Label htmlFor="faculty">Faculty Responsible</Label>
                   <Select
                     value={formData.faculty}
-                    onValueChange={(value) => setFormData({ ...formData, faculty: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, faculty: value })
+                    }
                   >
-                    <SelectTrigger id="faculty" data-testid="select-faculty">
+                    <SelectTrigger id="faculty">
                       <SelectValue placeholder="Select faculty" />
                     </SelectTrigger>
                     <SelectContent>
@@ -111,8 +201,9 @@ export default function CreateWorkshop() {
                       type="date"
                       className="pl-10"
                       value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                      data-testid="input-start-date"
+                      onChange={(e) =>
+                        setFormData({ ...formData, startDate: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -124,8 +215,9 @@ export default function CreateWorkshop() {
                     id="startTime"
                     type="time"
                     value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
-                    data-testid="input-start-time"
+                    onChange={(e) =>
+                      setFormData({ ...formData, startTime: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -141,8 +233,9 @@ export default function CreateWorkshop() {
                       type="date"
                       className="pl-10"
                       value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                      data-testid="input-end-date"
+                      onChange={(e) =>
+                        setFormData({ ...formData, endDate: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -154,8 +247,9 @@ export default function CreateWorkshop() {
                     id="endTime"
                     type="time"
                     value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
-                    data-testid="input-end-time"
+                    onChange={(e) =>
+                      setFormData({ ...formData, endTime: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -163,6 +257,7 @@ export default function CreateWorkshop() {
             </CardContent>
           </Card>
 
+          {/* --- Description, Agenda, Professors --- */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Details & Agenda</CardTitle>
@@ -175,8 +270,9 @@ export default function CreateWorkshop() {
                   placeholder="Brief overview of the workshop..."
                   rows={3}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  data-testid="input-description"
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -188,8 +284,9 @@ export default function CreateWorkshop() {
                   placeholder="Detailed workshop agenda..."
                   rows={5}
                   value={formData.agenda}
-                  onChange={(e) => setFormData({ ...formData, agenda: e.target.value })}
-                  data-testid="input-agenda"
+                  onChange={(e) =>
+                    setFormData({ ...formData, agenda: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -200,14 +297,16 @@ export default function CreateWorkshop() {
                   id="professor"
                   placeholder="e.g., Dr. Ahmed Hassan, Dr. Sara Mohamed"
                   value={formData.professor}
-                  onChange={(e) => setFormData({ ...formData, professor: e.target.value })}
-                  data-testid="input-professor"
+                  onChange={(e) =>
+                    setFormData({ ...formData, professor: e.target.value })
+                  }
                   required
                 />
               </div>
             </CardContent>
           </Card>
 
+          {/* --- Budget & Resources --- */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Budget & Resources</CardTitle>
@@ -224,8 +323,9 @@ export default function CreateWorkshop() {
                       placeholder="5000"
                       className="pl-10"
                       value={formData.budget}
-                      onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                      data-testid="input-budget"
+                      onChange={(e) =>
+                        setFormData({ ...formData, budget: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -235,9 +335,11 @@ export default function CreateWorkshop() {
                   <Label htmlFor="fundingSource">Funding Source</Label>
                   <Select
                     value={formData.fundingSource}
-                    onValueChange={(value) => setFormData({ ...formData, fundingSource: value })}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, fundingSource: value })
+                    }
                   >
-                    <SelectTrigger id="fundingSource" data-testid="select-funding">
+                    <SelectTrigger id="fundingSource">
                       <SelectValue placeholder="Select source" />
                     </SelectTrigger>
                     <SelectContent>
@@ -255,13 +357,15 @@ export default function CreateWorkshop() {
                   placeholder="e.g., Projector, Laptops, Lab equipment..."
                   rows={3}
                   value={formData.resources}
-                  onChange={(e) => setFormData({ ...formData, resources: e.target.value })}
-                  data-testid="input-resources"
+                  onChange={(e) =>
+                    setFormData({ ...formData, resources: e.target.value })
+                  }
                 />
               </div>
             </CardContent>
           </Card>
 
+          {/* --- Registration Details --- */}
           <Card className="mb-6">
             <CardHeader>
               <CardTitle>Registration Details</CardTitle>
@@ -278,8 +382,9 @@ export default function CreateWorkshop() {
                       placeholder="50"
                       className="pl-10"
                       value={formData.capacity}
-                      onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                      data-testid="input-capacity"
+                      onChange={(e) =>
+                        setFormData({ ...formData, capacity: e.target.value })
+                      }
                       required
                     />
                   </div>
@@ -291,8 +396,9 @@ export default function CreateWorkshop() {
                     id="deadline"
                     type="date"
                     value={formData.deadline}
-                    onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                    data-testid="input-deadline"
+                    onChange={(e) =>
+                      setFormData({ ...formData, deadline: e.target.value })
+                    }
                     required
                   />
                 </div>
@@ -300,17 +406,23 @@ export default function CreateWorkshop() {
             </CardContent>
           </Card>
 
+          {/* --- Buttons --- */}
           <div className="flex gap-4">
             <Button
               type="button"
               variant="outline"
               onClick={() => setLocation("/dashboard")}
               className="flex-1"
+              disabled={loading}
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" data-testid="button-submit-workshop">
-              Submit Workshop for Approval
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={loading}
+            >
+              {loading ? "Submitting..." : "Submit Workshop for Approval"}
             </Button>
           </div>
         </form>
