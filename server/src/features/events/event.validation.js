@@ -127,15 +127,14 @@ export const createWorkshopSchema = Joi.object({
     "string.base": "Faculty must be text",
   }),
 
-  professors: Joi.array()
-    .items(Joi.string().hex().length(24))
-    .min(1)
-    .required()
-    .messages({
-      "any.required": "At least one professor is required",
-      "array.min": "Professors list must contain at least one ID",
-      "string.hex": "Professor IDs must be valid ObjectIds",
-    }),
+  professor: Joi.string()
+  .hex()
+  .length(24)
+  .required()
+  .messages({
+    "any.required": "Professor ID is required",
+    "string.hex": "Professor ID must be a valid ObjectId",
+  }),
 });
 
 export const updateWorkshopSchema = Joi.object({
@@ -159,10 +158,7 @@ export const updateWorkshopSchema = Joi.object({
   fundingSource: Joi.string().valid("external", "guc").optional(),
   extraResources: Joi.string().optional(),
   faculty: Joi.string().optional(),
-  professors: Joi.array()
-    .items(Joi.string().hex().length(24))
-    .min(1)
-    .optional(),
+  professor: Joi.string().hex().length(24).optional(),
 
   price: Joi.forbidden(),
   websiteUrl: Joi.forbidden(),
@@ -249,6 +245,6 @@ export const updateBazaarSchema = Joi.object({
   requiredBudget: Joi.forbidden(),
   fundingSource: Joi.forbidden(),
   faculty: Joi.forbidden(),
-  professors: Joi.forbidden(),
+  professor: Joi.forbidden(),
   websiteUrl: Joi.forbidden(),
 });

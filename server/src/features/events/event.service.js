@@ -144,6 +144,7 @@ export const createWorkshop = async (workshopData, professorId) => {
   const workshop = await Event.create({
     ...workshopData,
     eventType: "workshop",
+    professor: professorId,
     createdBy: professorId,
     status: "pending",
   });
@@ -259,7 +260,7 @@ export const getUpcomingEventsService = async () => {
     status: "approved",
     startDate: { $gte: now },
   })
-    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("professor", "name email")
     .populate("createdBy", "name email")
     .lean();
 

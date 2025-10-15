@@ -82,15 +82,13 @@ const eventSchema = new Schema(
       return this.eventType === "workshop";
     },
   },
-  professors: [
-    {
+  professor:{
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: function () {
         return this.eventType === "workshop";
       },
     },
-  ],
   websiteUrl: {
     type: String,
     required: function () {
