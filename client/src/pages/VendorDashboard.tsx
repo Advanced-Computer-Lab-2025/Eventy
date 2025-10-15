@@ -1,14 +1,22 @@
 import { useState, useEffect } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BazaarList, { Bazaar } from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
+
+interface Attendee {
+  name: string;
+  email: string;
+}
 
 export default function VendorDashboard() {
   const [showApplyDialog, setShowApplyDialog] = useState(false);
@@ -19,6 +27,17 @@ export default function VendorDashboard() {
   const [approvedApplications, setApprovedApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Platform booth form state
+  const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
+    { name: "", email: "" }
+  ]);
+  const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
+  const [durationWeeks, setDurationWeeks] = useState<number>(1);
+  const [locationPreference, setLocationPreference] = useState<string>("");
+  const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
+  const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] = useState(false);
+  
   const { toast } = useToast();
 
   // Fetch upcoming bazaars
@@ -100,6 +119,99 @@ export default function VendorDashboard() {
   const handleApplicationSubmitted = () => {
     // Refresh applications data after successful submission
     fetchApplicationsData();
+  };
+
+  // Platform booth form helpers
+  const addPlatformBoothAttendee = () => {
+    if (platformBoothAttendees.length < 5) {
+      setPlatformBoothAttendees([...platformBoothAttendees, { name: "", email: "" }]);
+    }
+  };
+
+  const removePlatformBoothAttendee = (index: number) => {
+    if (platformBoothAttendees.length > 1) {
+      setPlatformBoothAttendees(platformBoothAttendees.filter((_, i) => i !== index));
+    }
+  };
+
+  const updatePlatformBoothAttendee = (index: number, field: keyof Attendee, value: string) => {
+    const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
+      i === index ? { ...attendee, [field]: value } : attendee
+    );
+    setPlatformBoothAttendees(updatedAttendees);
+  };
+
+  const validatePlatformBoothForm = () => {
+    const validAttendees = platformBoothAttendees.filter(attendee => 
+      attendee.name.trim() && attendee.email.trim()
+    );
+    
+    if (validAttendees.length === 0) {
+      toast({
+        title: "Validation Error",
+        description: "At least one attendee with name and email is required.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    for (const attendee of validAttendees) {
+      if (!emailRegex.test(attendee.email)) {
+        toast({
+          title: "Validation Error",
+          description: `Invalid email format for ${attendee.name || 'attendee'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    return true;
+  };
+
+  const handlePlatformBoothSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validatePlatformBoothForm()) {
+      return;
+    }
+
+    setIsSubmittingPlatformBooth(true);
+    
+    try {
+      const validAttendees = platformBoothAttendees.filter(attendee => 
+        attendee.name.trim() && attendee.email.trim()
+      );
+
+      // TODO: Replace with actual API call when backend is ready
+      console.log("Platform booth application data:", {
+        attendees: validAttendees,
+        boothSize,
+        durationWeeks,
+        selectedMapLocation
+      });
+
+      toast({
+        title: "Application Submitted",
+        description: "Your platform booth application has been submitted successfully!",
+      });
+
+      // Reset form
+      setPlatformBoothAttendees([{ name: "", email: "" }]);
+      setBoothSize("2x2");
+      setDurationWeeks(1);
+      setSelectedMapLocation("");
+    } catch (error) {
+      console.error("Error submitting platform booth application:", error);
+      toast({
+        title: "Application Failed",
+        description: "Failed to submit your application. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmittingPlatformBooth(false);
+    }
   };
 
   const handleSave = (bazaarId: string) => {
@@ -185,11 +297,169 @@ export default function VendorDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="platform-booths" className="space-y-4">
-            <div className="text-center py-12">
-              <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <p className="text-muted-foreground">Platform booth applications coming soon</p>
-            </div>
+          <TabsContent value="platform-booths" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Store className="h-5 w-5" />
+                  Apply for Platform Booth
+                </CardTitle>
+                <p className="text-muted-foreground">
+                  Fill in the details to apply for a platform booth. You can register up to 5 individuals.
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form onSubmit={handlePlatformBoothSubmit} className="space-y-6">
+                  {/* Attendees Section */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-base font-semibold">Attendees ({platformBoothAttendees.length}/5)</Label>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addPlatformBoothAttendee}
+                        disabled={platformBoothAttendees.length >= 5}
+                        className="flex items-center gap-2"
+                      >
+                        <Plus className="h-4 w-4" />
+                        Add Attendee
+                      </Button>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {platformBoothAttendees.map((attendee, index) => (
+                        <Card key={index}>
+                          <CardContent className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-sm font-medium text-muted-foreground">
+                                Attendee {index + 1}
+                              </span>
+                              {platformBoothAttendees.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removePlatformBoothAttendee(index)}
+                                  className="text-red-600 hover:text-red-700"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <Label htmlFor={`platform-name-${index}`}>Name</Label>
+                                <Input
+                                  id={`platform-name-${index}`}
+                                  placeholder="Full name"
+                                  value={attendee.name}
+                                  onChange={(e) => updatePlatformBoothAttendee(index, "name", e.target.value)}
+                                  required={index === 0}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor={`platform-email-${index}`}>Email</Label>
+                                <Input
+                                  id={`platform-email-${index}`}
+                                  type="email"
+                                  placeholder="email@example.com"
+                                  value={attendee.email}
+                                  onChange={(e) => updatePlatformBoothAttendee(index, "email", e.target.value)}
+                                  required={index === 0}
+                                />
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Booth Size Section */}
+                  <div className="space-y-2">
+                    <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
+                    <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
+                      <SelectTrigger id="platform-boothSize">
+                        <SelectValue placeholder="Select booth size" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="2x2">2x2</SelectItem>
+                        <SelectItem value="4x4">4x4</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Choose the size of your booth space. Larger booths may have additional fees.
+                    </p>
+                  </div>
+
+                  {/* Duration Section */}
+                  <div className="space-y-2">
+                    <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
+                    <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
+                      <SelectTrigger id="platform-duration">
+                        <SelectValue placeholder="Select duration" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 week</SelectItem>
+                        <SelectItem value="2">2 weeks</SelectItem>
+                        <SelectItem value="3">3 weeks</SelectItem>
+                        <SelectItem value="4">4 weeks</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-sm text-muted-foreground">
+                      Select how long you want to set up your booth (1-4 weeks).
+                    </p>
+                  </div>
+
+
+                  {/* Dummy Map Section */}
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Platform Map - Select Preferred Location</Label>
+                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center bg-muted/10">
+                      <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-2">Platform Map</p>
+                      <p className="text-sm text-muted-foreground">
+                        Click on the map to select your preferred booth location
+                      </p>
+                      <div className="mt-4 grid grid-cols-4 gap-2 max-w-md mx-auto">
+                        {Array.from({ length: 16 }, (_, i) => (
+                          <button
+                            key={i}
+                            type="button"
+                            className={`h-8 border rounded text-xs ${
+                              selectedMapLocation === `location-${i}` 
+                                ? 'bg-primary text-primary-foreground border-primary' 
+                                : 'bg-background border-muted-foreground hover:bg-muted'
+                            }`}
+                            onClick={() => setSelectedMapLocation(`location-${i}`)}
+                          >
+                            {i + 1}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedMapLocation && (
+                        <p className="text-sm text-primary mt-2">
+                          Selected: {selectedMapLocation.replace('location-', 'Booth ')}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Submit Button */}
+                  <div className="flex justify-end">
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmittingPlatformBooth}
+                      className="min-w-[160px]"
+                    >
+                      {isSubmittingPlatformBooth ? "Submitting..." : "Submit Application"}
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           <TabsContent value="participating" className="space-y-4">
