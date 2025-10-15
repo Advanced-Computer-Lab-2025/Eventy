@@ -45,13 +45,36 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
         {/* Right vertical path  Mcarona */}
         <image href="/images/pathV.png" x="567" y="290" width="20" height="150" />
 
-         {/* --- NEW VERTICAL CENTER PATHS --- */}
+        {/* --- NEW VERTICAL CENTER PATHS --- */}
 
         {/* Top vertical path (center top) */}
         <image href="/images/pathV.png" x="290" y="-20" width="20" height="120" />
 
         {/* Bottom vertical path (center bottom) */}
         <image href="/images/pathV.png" x="290" y="300" width="20" height="120" />
+
+         {/* --- TABLES SCATTERED IN THE MIDDLE --- */}
+         <image href="/images/tables.png" x="200" y="120" width="100" height="80" />
+         
+         {/* Additional tables scattered around */}
+         <image href="/images/tables.png" x="60" y="160" width="100" height="80" />
+         <image href="/images/tables.png" x="440" y="160" width="100" height="80" />
+         
+        
+         <image href="/images/tables.png" x="130" y="220" width="100" height="80" />
+         <image href="/images/tables.png" x="250" y="220" width="100" height="80" />
+         
+         <image href="/images/tables.png" x="380" y="220" width="100" height="80" />
+     
+         <image href="/images/tables.png" x="300" y="150" width="100" height="80" />
+
+         <image href="/images/tables.png" x="80" y="90" width="100" height="80" />
+         <image href="/images/tables.png" x="400" y="90" width="100" height="80" />
+                       {/* More scattered tables 
+         {/* Even more tables 
+         <image href="/images/tables.png" x="460" y="200" width="100" height="80" />
+         <image href="/images/tables.png" x="140" y="280" width="100" height="80" />
+         <image href="/images/tables.png" x="360" y="280" width="100" height="80" />*/}
       </svg>
 
       {/* --- Four Corner Booths --- */}
