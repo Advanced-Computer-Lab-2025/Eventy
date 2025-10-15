@@ -31,6 +31,7 @@ const recentEvents = [
 ];
 
 export default function Dashboard() {
+  const [events, setEvents] = useState(recentEvents);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   return (
@@ -77,15 +78,17 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle>Recent Events</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {recentEvents.map((event) => (
-                  <EventListItem
-                    key={event.id}
-                    {...event}
-                    onClick={() => console.log("Event clicked:", event.title)}
-                  />
-                ))}
-              </CardContent>
+             <CardContent className="space-y-3">
+      {events.map((event) => (
+        <EventListItem
+          key={event.id}
+          {...event}
+          canDelete={true}
+          onDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
+          onClick={() => console.log("Event clicked:", event.title)}
+        />
+      ))}
+    </CardContent>
             </Card>
 
             <Card>

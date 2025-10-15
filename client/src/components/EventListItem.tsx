@@ -1,6 +1,25 @@
-import { Calendar, MapPin, ChevronRight } from "lucide-react";
+import { Calendar, MapPin, ChevronRight,Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
+import { Button } from "@/components/ui/button";
+
+async function deleteEvent(eventId: string) {
+  const response = await fetch(`/api/admin/events/${eventId}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (response.status === 409) {
+    const data = await response.json();
+    throw new Error(data.message || "Cannot delete event with registered users.");
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to delete event");
+  }
+
+  return true;
+}
 
 interface EventListItemProps {
   id: string;
@@ -11,6 +30,8 @@ interface EventListItemProps {
   location: string;
   image: string;
   onClick?: () => void;
+  onDelete?: (id: string) => void; // ✅ new prop
+  canDelete?: boolean; // ✅ controls visibility (admin/events office only)
 }
 
 export default function EventListItem({
@@ -22,6 +43,8 @@ export default function EventListItem({
   location,
   image,
   onClick,
+   onDelete,
+  canDelete = false,
 }: EventListItemProps) {
   return (
     <Card 
@@ -44,6 +67,7 @@ export default function EventListItem({
               <h3 className="font-semibold line-clamp-1" data-testid={`text-event-title-${id}`}>
                 {title}
               </h3>
+              
               <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
             </div>
             
@@ -61,6 +85,29 @@ export default function EventListItem({
                 <span className="line-clamp-1">{location}</span>
               </div>
             </div>
+             {/* Show delete button only for admins/events office */}
+             {canDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async (e) => {
+                    e.stopPropagation(); // prevents triggering card click
+                    if (!confirm("Are you sure you want to delete this event?")) return;
+
+                    try {
+                      await deleteEvent(id);
+                      alert("Event deleted successfully ✅");
+                      onDelete?.(id); // remove from parent list
+                    } catch (err: any) {
+                      alert(err.message || "Failed to delete event ❌");
+                    }
+                  }}
+                 data-testid={`button-delete-event-${id}`}
+               >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                   Delete
+               </Button>
+                )}
           </div>
         </div>
       </CardContent>

@@ -18,6 +18,7 @@ import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import NotFound from "@/pages/not-found";
+import EventListPage from "@/pages/EventListPage";
 
 function Router() {
   return (
@@ -35,6 +36,8 @@ function Router() {
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
+      <Route path="/events" component={EventListPage} />
+
       <Route component={NotFound} />
     </Switch>
   );
