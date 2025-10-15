@@ -13,7 +13,6 @@ router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Eventy API!" });
 });
 
-router.use("/admin/users", userRoutes);
 // import authRoutes from '../features/auth/auth.route.js';
 router.use("/auth", authRoutes);
 
