@@ -1,112 +1,104 @@
 import React from "react";
-import { motion } from "framer-motion";
 
 interface PlatformMapProps {
   selectedLocation: string;
   onLocationSelect: (location: string) => void;
 }
 
-const PlatformMap: React.FC<PlatformMapProps> = ({ selectedLocation, onLocationSelect }) => {
+const PlatformMap: React.FC<PlatformMapProps> = ({
+  selectedLocation,
+  onLocationSelect,
+}) => {
   return (
-    <div className="relative w-full max-w-3xl mx-auto bg-[#FFF8E1] border-4 border-[#F2C57C] rounded-2xl shadow-md overflow-hidden">
-      {/* Background hills & curved road */}
-      <svg viewBox="0 0 600 400" className="w-full h-[400px]">
-        {/* grass area */}
-        <path
-          d="M0,250 Q150,200 300,250 T600,250 L600,400 L0,400 Z"
-          fill="#DFF0D8"
-        />
-        {/* main road */}
-        <path
-          d="M40,310 Q200,250 350,290 T560,320"
-          stroke="#A66E4A"
-          strokeWidth="22"
-          fill="none"
-          strokeLinecap="round"
-        />
-        {/* smaller path */}
-        <path
-          d="M150,100 Q300,180 420,140"
-          stroke="#C9975E"
-          strokeWidth="10"
-          fill="none"
-          strokeLinecap="round"
-        />
+    <div className="relative w-full max-w-3xl mx-auto bg-[#FFF8E1] border-4 border-[#F2C57C] rounded-2xl shadow-md overflow-hidden h-[400px]">
+      <svg
+        viewBox="0 0 600 400"
+        className="w-full h-full"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        {/* Background */}
+        <rect width="600" height="400" fill="#FFF8E1" />
+
+        {/* --- HORIZONTAL PATHS (under/above booths) --- */}
+
+        {/* Below Pronto (top-left) */}
+        <image href="/images/path.png" x="-110" y="95" width="120" height="20" />
+
+        {/* Below Lroma (top-right) */}
+        <image href="/images/path.png" x="580" y="95" width="120" height="20" />
+
+        {/* Above Friends (bottom-left) */}
+        <image href="/images/path.png" x="-110" y="295" width="120" height="20" />
+
+        {/* Above Mcarona (bottom-right) */}
+        <image href="/images/path.png" x="580" y="305" width="120" height="20" />
+
+        {/* --- VERTICAL SIDE PATHS beside booths --- */}
+
+        {/* Left vertical path  Pronto */}
+        <image href="/images/pathV.png" x="5" y="-25" width="20" height="150" />
+        {/* Left vertical path  friends */}
+        <image href="/images/pathV.png" x="5" y="285" width="20" height="150" />
+
+        {/* Right vertical path connecting Lroma ↕ Mcarona */}
+        <image href="/images/pathV.png" x="567" y="-25" width="20" height="150" />
+        {/* Right vertical path  Mcarona */}
+        <image href="/images/pathV.png" x="567" y="290" width="20" height="150" />
+
+         {/* --- NEW VERTICAL CENTER PATHS --- */}
+
+        {/* Top vertical path (center top) */}
+        <image href="/images/pathV.png" x="290" y="-20" width="20" height="120" />
+
+        {/* Bottom vertical path (center bottom) */}
+        <image href="/images/pathV.png" x="290" y="300" width="20" height="120" />
       </svg>
 
-      {/* Cafeteria - Top Left */}
-      <div className="absolute top-2 left-2 flex flex-col items-center">
-        <img src="/images/pronto.jpg" alt="Pronto" width={60} height={60} />
-        <button
-          onClick={() => onLocationSelect("pronto")}
-          className={`mt-1 text-xs font-semibold px-2 py-1 rounded-md transition-all duration-200 ${
-            selectedLocation === "pronto"
-              ? "bg-orange-600 text-white scale-105 shadow-lg"
-              : "bg-white/80 text-orange-700 hover:bg-orange-200"
-          }`}
-        >
-          Pronto
-        </button>
+      {/* --- Four Corner Booths --- */}
+
+      {/* Pronto - Top Left */}
+      <div className="absolute top-4 left-4">
+        <img
+          src="/images/pronto.jpg"
+          alt="Pronto"
+          width={70}
+          height={70}
+          className="rounded-md shadow-md"
+        />
       </div>
 
-      {/* Library - Top Right */}
-      <div className="absolute top-2 right-2 flex flex-col items-center">
-        <img src="/images/lroma.jpg" alt="Lroma" width={60} height={60} />
-        <button
-          onClick={() => onLocationSelect("lroma")}
-          className={`mt-1 text-xs font-semibold px-2 py-1 rounded-md transition-all duration-200 ${
-            selectedLocation === "lroma"
-              ? "bg-orange-600 text-white scale-105 shadow-lg"
-              : "bg-white/80 text-orange-700 hover:bg-orange-200"
-          }`}
-        >
-          Lroma
-        </button>
+      {/* Lroma - Top Right */}
+      <div className="absolute top-4 right-4">
+        <img
+          src="/images/lroma.jpg"
+          alt="Lroma"
+          width={70}
+          height={70}
+          className="rounded-md shadow-md"
+        />
       </div>
 
-      {/* Food Court - Bottom Left */}
-      <div className="absolute bottom-2 left-2 flex flex-col items-center">
-        <img src="/images/friends.png" alt="Friends" width={60} height={60} />
-        <button
-          onClick={() => onLocationSelect("friends")}
-          className={`mt-1 text-xs font-semibold px-2 py-1 rounded-md transition-all duration-200 ${
-            selectedLocation === "friends"
-              ? "bg-orange-600 text-white scale-105 shadow-lg"
-              : "bg-white/80 text-orange-700 hover:bg-orange-200"
-          }`}
-        >
-          Friends
-        </button>
+      {/* Friends - Bottom Left */}
+      <div className="absolute bottom-4 left-4">
+        <img
+          src="/images/friends.png"
+          alt="Friends"
+          width={70}
+          height={70}
+          className="rounded-md shadow-md"
+        />
       </div>
 
-      {/* Student Center - Bottom Right */}
-      <div className="absolute bottom-2 right-2 flex flex-col items-center">
-        <img src="/images/mcarona.jpg" alt="Mcarona" width={60} height={60} />
-        <button
-          onClick={() => onLocationSelect("mcarona")}
-          className={`mt-1 text-xs font-semibold px-2 py-1 rounded-md transition-all duration-200 ${
-            selectedLocation === "mcarona"
-              ? "bg-orange-600 text-white scale-105 shadow-lg"
-              : "bg-white/80 text-orange-700 hover:bg-orange-200"
-          }`}
-        >
-          Mcarona
-        </button>
+      {/* Mcarona - Bottom Right */}
+      <div className="absolute bottom-4 right-4">
+        <img
+          src="/images/mcarona.jpg"
+          alt="Mcarona"
+          width={70}
+          height={70}
+          className="rounded-md shadow-md"
+        />
       </div>
-
-      {/* Selected Label */}
-      {selectedLocation && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-[#FFB74D] text-white font-semibold px-4 py-2 rounded-xl shadow-lg"
-        >
-          Selected:{" "}
-          {selectedLocation
-            .replace("-", " ")
-            .replace(/\b\w/g, (c) => c.toUpperCase())}
-        </motion.div>
-      )}
     </div>
   );
 };
