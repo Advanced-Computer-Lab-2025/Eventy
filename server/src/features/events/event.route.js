@@ -144,4 +144,13 @@ router.get(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.getMyEvents.bind(eventsController)
 );
+
+// Get event by ID (vendor only)
+router.get(
+  "/:eventId",
+  authMiddleware,
+  roleMiddleware(["vendor", "student", "staff", "ta", "professor"]),
+  eventsController.getEventById.bind(eventsController)
+);
+
 export default router;
