@@ -7,12 +7,17 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "seed:pending": "node src/seed.js"
+    "seed:pending": "node src/seed.js",
+    "seed:professors": "node src/seed/professor.seed.js",
+    "seed:workshops": "node src/seed/workshop.seed.js",
+    "seed:eventsoffice": "node src/seed/eventsoffice.seed.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.12.2",
+    "bcrypt": "^6.0.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
@@ -27,6 +32,7 @@
     "resend": "^6.1.2"
   },
   "devDependencies": {
+    "@types/axios": "^0.9.36",
     "nodemon": "^3.1.0"
   }
 }

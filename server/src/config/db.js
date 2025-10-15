@@ -7,6 +7,7 @@ const maskCredentials = (uri) => {
     return uri;
   }
 };
+mongoose.set("strictPopulate", false);
 
 const appendAuthSourceAdmin = (uri) => {
   if (/authSource=/i.test(uri)) return uri;

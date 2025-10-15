@@ -38,4 +38,5 @@ router.use("/users", userRoutes);
 router.use("/applications", applicationRoutes);
 //facilities routes
 router.use("/facilities", facilityRoutes);
+
 export default router;

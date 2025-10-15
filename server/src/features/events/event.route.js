@@ -139,4 +139,13 @@ router.get(
   ]),
   eventsController.searchEvents.bind(eventsController)
 );
+
+router.get(
+  "/allworkshops",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.viewAllWorkshops.bind(eventsController)
+);
+
+
 export default router;

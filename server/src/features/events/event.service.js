@@ -151,6 +151,29 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
+// Get all workshops - Admin or EventsOffice only
+export const getAllWorkshopsService = async (userRole) => {
+  // Only Admin or EventsOffice can view all workshops
+  if (userRole !== "admin" && userRole !== "events_office") {
+    const err = new Error("Forbidden: You are not allowed to view workshops.");
+    err.statusCode = 403;
+    throw err;
+  }
+
+  try {
+    const workshops = await Event.find({ eventType: "workshop" })
+  .populate("professor", "name email") // if you have a professor ref
+  .sort({ createdAt: -1 });
+
+
+    return workshops;
+  } catch (error) {
+    const err = new Error("Error fetching workshops: " + error.message);
+    err.statusCode = 500;
+    throw err;
+  }
+};
+
 /**
  * Allows a professor to edit their own workshop if it needs revision.
  * @param {string} workshopId - The ID of the workshop to edit.

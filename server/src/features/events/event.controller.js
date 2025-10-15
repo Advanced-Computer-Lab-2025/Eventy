@@ -205,6 +205,37 @@ export class EventsController {
     }
   }
 
+  async viewAllWorkshops(req, res, next) {
+  try {
+    // ✅ 1. Check authentication
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    // ✅ 2. Allow only Admin or Events Office roles
+    if (req.user.role !== "admin" && req.user.role !== "events_office") {
+      throw new ApiError(
+        403,
+        "Forbidden: Only Admin or Events Office can view all workshops"
+      );
+    }
+
+    // ✅ 3. Call service layer
+    const workshops = await eventService.getAllWorkshopsService(req.user.role);
+
+    // ✅ 4. Return success response
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, workshops, "Workshops retrieved successfully")
+      );
+  } catch (err) {
+    // ✅ 5. Pass errors to global handler
+    next(err);
+  }
+}
+
+
   // Accept workshop
   async acceptWorkshop(req, res) {
     try {
