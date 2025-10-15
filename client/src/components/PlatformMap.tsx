@@ -93,7 +93,19 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
         <image href="/images/ubeige.png" x="60" y="305" width="100" height="80" />
         <image href="/images/uorange.png" x="160" y="290" width="100" height="80" />
 
-        <image href="/images/tree1.png" x="-150" y="340" width="100" height="80" />
+        <image href="/images/palm2.png" x="-140" y="340" width="100" height="80" />
+        <image href="/images/palm2.png" x="-140" y="80" width="100" height="80" />
+        <image href="/images/screen.png" x="-140" y="200" width="100" height="80" />
+
+        <image href="/images/palmr.png" x="-40" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="220" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="280" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="530" y="-10" width="100" height="80" />
+
+        <image href="/images/palm.png" x="-40" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="220" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="280" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="530" y="430" width="100" height="80" />
 
         {/* All Booths */}
         <Booths

@@ -42,7 +42,7 @@ const Booths: React.FC<BoothsProps> = ({
       {/* Right top */}
       <Booth
         id="booth-right-top"
-        x={340}
+        x={350}
         y={20}
         width={80}
         height={50}
@@ -54,7 +54,7 @@ const Booths: React.FC<BoothsProps> = ({
       {/* Right bottom */}
       <Booth
         id="booth-right-bottom"
-        x={460}
+        x={470}
         y={20}
         width={80}
         height={50}
@@ -88,7 +88,7 @@ const Booths: React.FC<BoothsProps> = ({
 
       <Booth
         id="booth-right-top-bottom"
-        x={340}
+        x={350}
         y={430}
         width={80}
         height={50}
@@ -99,7 +99,7 @@ const Booths: React.FC<BoothsProps> = ({
 
       <Booth
         id="booth-right-bottom-bottom"
-        x={460}
+        x={470}
         y={430}
         width={80}
         height={50}
