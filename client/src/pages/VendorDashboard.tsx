@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BazaarList, { Bazaar } from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
+import PlatformMap from "@/components/PlatformMap";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 
@@ -417,34 +418,10 @@ export default function VendorDashboard() {
                   {/* Dummy Map Section */}
                   <div className="space-y-2">
                     <Label className="text-base font-semibold">Platform Map - Select Preferred Location</Label>
-                    <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-8 text-center bg-muted/10">
-                      <MapPin className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground mb-2">Platform Map</p>
-                      <p className="text-sm text-muted-foreground">
-                        Click on the map to select your preferred booth location
-                      </p>
-                      <div className="mt-4 grid grid-cols-4 gap-2 max-w-md mx-auto">
-                        {Array.from({ length: 16 }, (_, i) => (
-                          <button
-                            key={i}
-                            type="button"
-                            className={`h-8 border rounded text-xs ${
-                              selectedMapLocation === `location-${i}` 
-                                ? 'bg-primary text-primary-foreground border-primary' 
-                                : 'bg-background border-muted-foreground hover:bg-muted'
-                            }`}
-                            onClick={() => setSelectedMapLocation(`location-${i}`)}
-                          >
-                            {i + 1}
-                          </button>
-                        ))}
-                      </div>
-                      {selectedMapLocation && (
-                        <p className="text-sm text-primary mt-2">
-                          Selected: {selectedMapLocation.replace('location-', 'Booth ')}
-                        </p>
-                      )}
-                    </div>
+                    <PlatformMap 
+                      selectedLocation={selectedMapLocation}
+                      onLocationSelect={setSelectedMapLocation}
+                    />
                   </div>
 
                   {/* Submit Button */}
