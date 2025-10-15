@@ -3,7 +3,6 @@ import { EventsController } from "./event.controller.js";
 import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-
 const router = express.Router();
 const eventsController = new EventsController();
 
@@ -116,14 +115,12 @@ router.patch(
   eventsController.updateConferenceController.bind(eventsController)
 );
 
-
 router.get(
   "/upcoming",
   authMiddleware,
   roleMiddleware(["vendor"]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
-
 
 // Search events (✅ new feature)
 router.get(
@@ -138,5 +135,13 @@ router.get(
     "admin",
   ]),
   eventsController.searchEvents.bind(eventsController)
+);
+
+// Get all events the logged-in user registered for
+router.get(
+  "/me/events",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.getMyEvents.bind(eventsController)
 );
 export default router;
