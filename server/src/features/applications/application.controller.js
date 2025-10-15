@@ -9,6 +9,7 @@ export class ApplicationController {
     try {
       const vendorId = req.user._id;
       const eventId = req.params.eventId; // Get eventId from the path
+      const user = req.user;
 
       // Validate input (body should NOT include event)
       const { error } = validateBazaarApplication.validate(req.body);
@@ -22,7 +23,7 @@ export class ApplicationController {
         vendorId,
         event: eventId, // Set event from path param
         type: "bazaar",
-        createdBy: user._id,
+        createdBy: user.id,
       };
 
       const newApplication = await ApplicationService.createApplication(
