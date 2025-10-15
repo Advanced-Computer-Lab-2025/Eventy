@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CategoryBadge from "@/components/CategoryBadge";
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -14,6 +15,9 @@ export default function MyEvents() {
   const [registeredEvents, setRegisteredEvents] = useState<any[]>([]);
   const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     const fetchEvents = async () => {
@@ -49,11 +53,35 @@ export default function MyEvents() {
   }, []);
 
   const handleCancelRegistration = (eventId: string) => {
-    alert(`Registration cancelled for event ${eventId}. Amount will be refunded.`);
+    alert(
+      `Registration cancelled for event ${eventId}. Amount will be refunded.`
+    );
   };
 
   const handleRemoveFavorite = (eventId: string) => {
     alert(`Removed event ${eventId} from favorites.`);
+  };
+
+  // Fetch full event details by ID
+  const handleCardClick = async (eventId: string) => {
+    setDetailsLoading(true);
+    setDialogOpen(true);
+    try {
+      const apiBaseUrl = "http://localhost:4000";
+      const res = await fetch(`${apiBaseUrl}/api/events/${eventId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${getToken()}`,
+        },
+      });
+      if (!res.ok) throw new Error("Failed to fetch event details");
+      const data = await res.json();
+      setSelectedEvent(data.data);
+    } catch (err) {
+      setSelectedEvent(null);
+    } finally {
+      setDetailsLoading(false);
+    }
   };
 
   return (
@@ -90,53 +118,49 @@ export default function MyEvents() {
             ) : (
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {registeredEvents.map((event) => {
-                  const startDate = new Date(event.startDate).toLocaleDateString();
+                  const startDate = new Date(
+                    event.startDate
+                  ).toLocaleDateString();
                   const endDate = new Date(event.endDate).toLocaleDateString();
 
                   return (
-                    <Card
+                    <div
                       key={event._id}
-                      className="overflow-hidden"
-                      data-testid={`card-registered-${event._id}`}
+                      className="cursor-pointer"
+                      onClick={() => handleCardClick(event._id)}
                     >
-                      <div className="relative aspect-[16/9] bg-muted">
-                        <img
-                          src={event.bannerImage || "/placeholder.jpg"}
-                          alt={event.name}
-                          className="w-full h-full object-cover"
-                        />
-                        <div className="absolute top-3 left-3">
-                          <CategoryBadge category={event.eventType} />
-                        </div>
-                      </div>
-                      <CardContent className="p-4 space-y-3">
-                        <h3 className="text-xl font-bold">{event.name}</h3>
-
-                        <div className="space-y-2 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {startDate} → {endDate}
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <MapPin className="h-3 w-3" />
-                            {event.location}
+                      <Card
+                        className="overflow-hidden"
+                        data-testid={`card-registered-${event._id}`}
+                      >
+                        <div className="relative aspect-[16/9] bg-muted">
+                          <img
+                            src={event.bannerImage}
+                            alt={event.name}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-3 left-3">
+                            <CategoryBadge category={event.eventType} />
                           </div>
                         </div>
-
-                        <Badge className="bg-green-500 hover:bg-green-600">
-                          Registered
-                        </Badge>
-
-                        <Button
-                          variant="destructive"
-                          className="w-full"
-                          onClick={() => handleCancelRegistration(event._id)}
-                          data-testid={`button-cancel-${event._id}`}
-                        >
-                          Cancel Registration
-                        </Button>
-                      </CardContent>
-                    </Card>
+                        <CardContent className="p-4 space-y-3">
+                          <h3 className="text-xl font-bold">{event.name}</h3>
+                          <div className="space-y-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {startDate} → {endDate}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              {event.location}
+                            </div>
+                          </div>
+                          <Badge className="bg-green-500 hover:bg-green-600">
+                            Registered
+                          </Badge>
+                        </CardContent>
+                      </Card>
+                    </div>
                   );
                 })}
               </div>
@@ -202,6 +226,16 @@ export default function MyEvents() {
             )}
           </TabsContent>
         </Tabs>
+
+        <EventDetailsDialog
+          open={dialogOpen}
+          onOpenChange={(open) => {
+            setDialogOpen(open);
+            if (!open) setSelectedEvent(null);
+          }}
+          event={selectedEvent}
+          loading={detailsLoading}
+        />
       </main>
     </div>
   );
