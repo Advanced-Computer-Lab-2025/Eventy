@@ -1,6 +1,7 @@
 import { useState } from "react";
 import Header from "@/components/Header";
 import CreateEventForm, { CreateEventFormValues } from "@/components/CreateEventForm";
+import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -19,9 +20,10 @@ export default function CreateConference() {
         startDate: `${values.startDate}T${values.startTime}:00.000Z`,
         endDate: `${values.endDate}T${values.endTime}:00.000Z`,
         description: values.description,
-        websiteUrl: values.websiteUrl || undefined,
-        requiredBudget: values.requiredBudget ? Number(values.requiredBudget) : undefined,
-        fundingSource: values.fundingSource,
+        websiteUrl: values.websiteUrl || "https://example.com",
+        requiredBudget: values.requiredBudget ? Number(values.requiredBudget) : 1000,
+        fundingSource: values.fundingSource || "guc",
+        agenda: values.agenda || "Conference agenda to be determined",
       };
 
       const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
@@ -37,7 +39,7 @@ export default function CreateConference() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to create conference");
 
-      setLocation("/dashboard");
+      setLocation("/admin");
     } catch (err: any) {
       alert(err.message || "Something went wrong");
     } finally {
@@ -50,7 +52,12 @@ export default function CreateConference() {
       <Header />
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Create Conference</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-4xl font-bold">Create Conference</h1>
+            <Button variant="outline" onClick={() => setLocation("/admin")}>
+              Back to Admin
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             Create a new conference. The conference website will contain all the conference's details.
           </p>
@@ -61,6 +68,7 @@ export default function CreateConference() {
           submitting={submitting}
           includeWebsiteUrl
           includeBudgetAndFunding
+          includeAgenda
           submitLabel="Create Conference"
           title="Conference Information"
         />

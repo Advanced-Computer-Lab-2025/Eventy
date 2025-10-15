@@ -107,6 +107,20 @@ export const createConference = async (data, userId) => {
   return event;
 };
 
+export const getConferences = async () => {
+  return Event.find({ eventType: "conference" }).sort({ startDate: -1 });
+};
+
+export const getConferenceById = async (conferenceId) => {
+  const conference = await Event.findById(conferenceId);
+
+  if (!conference) throw new ApiError(404, "Conference not found");
+  if (conference.eventType !== "conference")
+    throw new ApiError(400, "This event is not a conference");
+
+  return conference;
+};
+
 export const updateConferenceService = async (
   conferenceId,
   updateData,

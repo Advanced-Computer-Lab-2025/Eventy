@@ -108,6 +108,20 @@ router.post(
   eventsController.createConferenceController
 );
 
+router.get(
+  "/admin/conferences",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getConferencesController.bind(eventsController)
+);
+
+router.get(
+  "/admin/conferences/:conferenceId",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getConferenceByIdController.bind(eventsController)
+);
+
 router.patch(
   "/admin/conferences/:conferenceId",
   authMiddleware,

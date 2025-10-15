@@ -15,6 +15,7 @@ export interface CreateEventFormValues {
   websiteUrl?: string;
   requiredBudget?: string;
   fundingSource?: "external" | "guc";
+  agenda?: string;
 }
 
 interface CreateEventFormProps {
@@ -22,8 +23,10 @@ interface CreateEventFormProps {
   submitting?: boolean;
   includeWebsiteUrl?: boolean;
   includeBudgetAndFunding?: boolean;
+  includeAgenda?: boolean;
   submitLabel?: string;
   title?: string;
+  initialValues?: Partial<CreateEventFormValues>;
 }
 
 export default function CreateEventForm({
@@ -31,19 +34,22 @@ export default function CreateEventForm({
   submitting = false,
   includeWebsiteUrl = true,
   includeBudgetAndFunding = true,
+  includeAgenda = true,
   submitLabel = "Create",
   title = "Event Information",
+  initialValues = {},
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
-    name: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
-    description: "",
-    websiteUrl: "",
-    requiredBudget: "",
-    fundingSource: undefined,
+    name: initialValues.name || "",
+    startDate: initialValues.startDate || "",
+    startTime: initialValues.startTime || "",
+    endDate: initialValues.endDate || "",
+    endTime: initialValues.endTime || "",
+    description: initialValues.description || "",
+    websiteUrl: initialValues.websiteUrl || "",
+    requiredBudget: initialValues.requiredBudget || "",
+    fundingSource: initialValues.fundingSource || undefined,
+    agenda: initialValues.agenda || "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -65,6 +71,10 @@ export default function CreateEventForm({
       } catch {
         nextErrors.websiteUrl = "Enter a valid URL (including protocol)";
       }
+    }
+
+    if (includeAgenda && !values.agenda?.trim()) {
+      nextErrors.agenda = "Agenda is required";
     }
 
     if (includeBudgetAndFunding) {
@@ -174,16 +184,34 @@ export default function CreateEventForm({
 
           {includeWebsiteUrl && (
             <div className="space-y-2">
-              <Label htmlFor="websiteUrl">Conference Website URL (optional)</Label>
+              <Label htmlFor="websiteUrl">Conference Website URL</Label>
               <Input
                 id="websiteUrl"
                 type="url"
                 placeholder="https://example.org"
                 value={values.websiteUrl || ""}
                 onChange={(e) => setValues({ ...values, websiteUrl: e.target.value })}
+                required
               />
               {errors.websiteUrl && (
                 <p className="text-sm text-red-500">{errors.websiteUrl}</p>
+              )}
+            </div>
+          )}
+
+          {includeAgenda && (
+            <div className="space-y-2">
+              <Label htmlFor="agenda">Agenda</Label>
+              <Textarea
+                id="agenda"
+                placeholder="Provide a detailed agenda for the conference..."
+                rows={4}
+                value={values.agenda || ""}
+                onChange={(e) => setValues({ ...values, agenda: e.target.value })}
+                required
+              />
+              {errors.agenda && (
+                <p className="text-sm text-red-500">{errors.agenda}</p>
               )}
             </div>
           )}
