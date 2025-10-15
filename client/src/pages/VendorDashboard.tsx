@@ -143,6 +143,10 @@ export default function VendorDashboard() {
               <Calendar className="h-4 w-4 mr-2" />
               Upcoming Bazaars
             </TabsTrigger>
+            <TabsTrigger value="platform-booths" data-testid="tab-platform-booths">
+              <Store className="h-4 w-4 mr-2" />
+              Platform Booths
+            </TabsTrigger>
             <TabsTrigger value="participating" data-testid="tab-participating">
               <CheckCircle className="h-4 w-4 mr-2" />
               My Participations
@@ -179,6 +183,13 @@ export default function VendorDashboard() {
                 showFilters={true}
               />
             )}
+          </TabsContent>
+
+          <TabsContent value="platform-booths" className="space-y-4">
+            <div className="text-center py-12">
+              <Store className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Platform booth applications coming soon</p>
+            </div>
           </TabsContent>
 
           <TabsContent value="participating" className="space-y-4">
