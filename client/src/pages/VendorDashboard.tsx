@@ -13,6 +13,7 @@ import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
+import { useLocation } from "wouter";
 
 interface Attendee {
   name: string;
@@ -20,6 +21,7 @@ interface Attendee {
 }
 
 export default function VendorDashboard() {
+  const [location, setLocation] = useLocation();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
@@ -40,6 +42,22 @@ export default function VendorDashboard() {
   const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] = useState(false);
   
   const { toast } = useToast();
+
+  // Get current tab from URL hash or default to 'upcoming'
+  const getCurrentTab = () => {
+    const hash = window.location.hash;
+    const validTabs = ['upcoming', 'platform-booths', 'participating', 'pending', 'rejected'];
+    const tabFromHash = hash.replace('#', '');
+    return validTabs.includes(tabFromHash) ? tabFromHash : 'upcoming';
+  };
+
+  const [activeTab, setActiveTab] = useState(getCurrentTab);
+
+  // Update URL hash when tab changes
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    window.location.hash = value;
+  };
 
   // Fetch upcoming bazaars
   const fetchUpcomingBazaars = async () => {
@@ -107,6 +125,16 @@ export default function VendorDashboard() {
   useEffect(() => {
     fetchUpcomingBazaars();
     fetchApplicationsData();
+  }, []);
+
+  // Listen for hash changes to update active tab
+  useEffect(() => {
+    const handleHashChange = () => {
+      setActiveTab(getCurrentTab());
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
   const handleRegister = (bazaarId: string) => {
@@ -250,7 +278,7 @@ export default function VendorDashboard() {
           </p>
         </div>
 
-        <Tabs defaultValue="upcoming" className="space-y-6">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
           <TabsList>
             <TabsTrigger value="upcoming" data-testid="tab-upcoming">
               <Calendar className="h-4 w-4 mr-2" />
