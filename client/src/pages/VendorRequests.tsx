@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useState } from "react";
 import {
   Table,
   TableBody,
@@ -11,6 +12,83 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+async function updateVendorStatus(requestId: string, status: "accepted" | "rejected") {
+  try {
+    const response = await fetch(`http://localhost:4000/api/admin/applications/${requestId}/status`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ status }),
+    });
+
+    // CRITICAL FIX 1: Check Content-Type header before trying to parse the body.
+    const contentType = response.headers.get("content-type");
+    if (!contentType || !contentType.includes("application/json")) {
+      const text = await response.text();
+      // Throw an informative error if the server didn't return JSON.
+      throw new Error(
+        `Server Error: Expected JSON, but received non-JSON (Status: ${response.status}). Preview: ${text.substring(0, 50)}...`
+      );
+    }
+    
+    // CRITICAL FIX 2: Only parse JSON if we know it's JSON.
+    const data = await response.json();
+
+    // CRITICAL FIX 3: Check response status after successfully parsing the body.
+    if (!response.ok) {
+      throw new Error(data.message || "Failed to update status");
+    }
+
+    return data.data; // updated application
+  } catch (err: any) {
+    console.error(err);
+    alert(err.message);
+  }
+}
+
+// async function updateVendorStatus(
+//   requestId: string,
+//   status: "accepted" | "rejected"
+// ) {
+//   try {
+//     // Replace with your backend URL and port
+//     const backendUrl = "http://localhost:4000";
+
+//     const response = await fetch(
+//       `${backendUrl}/api/admin/applications/${requestId}/status`,
+//       {
+//         method: "PATCH",
+//         headers: {
+//           "Content-Type": "application/json",
+//         },
+//         body: JSON.stringify({ status }),
+//       }
+//     );
+
+//     // If the response is HTML instead of JSON, throw an error
+//     const contentType = response.headers.get("content-type");
+//     if (!contentType || !contentType.includes("application/json")) {
+//       const text = await response.text();
+//       throw new Error(
+//         `Expected JSON, but received: ${text.substring(0, 200)}...`
+//       );
+//     }
+
+//     const data = await response.json();
+
+//     if (!response.ok) {
+//       throw new Error(data.message || "Failed to update application status");
+//     }
+
+//     return data.data; // updated application
+//   } catch (err: any) {
+//     console.error("Error updating vendor status:", err);
+//     alert(err.message);
+//   }
+// }
+
 
 //todo: remove mock functionality
 const vendorRequests = [
@@ -33,20 +111,34 @@ const vendorRequests = [
 ];
 
 export default function VendorRequests() {
-  const handleApprove = (requestId: string) => {
-    console.log("Approve request:", requestId);
-    alert("Vendor request approved! Notification sent.");
-  };
+  const [requests, setRequests] = useState(vendorRequests);
 
-  const handleReject = (requestId: string) => {
-    console.log("Reject request:", requestId);
-    alert("Vendor request rejected. Notification sent.");
-  };
+  const handleApprove = async (requestId: string) => {
+  const updatedApp = await updateVendorStatus(requestId, "accepted");
+  if (updatedApp) {
+    setRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, status: "accepted" } : r))
+    );
+    alert("Vendor request approved!");
+  }
+};
+
+  const handleReject = async (requestId: string) => {
+  const updatedApp = await updateVendorStatus(requestId, "rejected");
+  if (updatedApp) {
+    setRequests((prev) =>
+      prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
+    );
+    alert("Vendor request rejected.");
+  }
+};
 
   const handleViewDocuments = (requestId: string) => {
     console.log("View documents:", requestId);
     alert("Viewing uploaded documents...");
   };
+
+  
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,9 +175,12 @@ export default function VendorRequests() {
                     <TableCell>{request.bazaar}</TableCell>
                     <TableCell>{request.boothSize}</TableCell>
                     <TableCell>{request.attendees}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">Pending</Badge>
-                    </TableCell>
+                   <TableCell>
+                  <Badge variant={request.status === "pending" ? "outline" : request.status === "accepted" ? "default" : "destructive"}>
+                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
+                  </Badge>
+                </TableCell>
+
                     <TableCell>
                       <div className="flex justify-end gap-2">
                         <Button
@@ -99,6 +194,8 @@ export default function VendorRequests() {
                         <Button
                           size="sm"
                           onClick={() => handleApprove(request.id)}
+                           disabled={request.status !== "pending"}
+
                           data-testid={`button-approve-${request.id}`}
                         >
                           <CheckCircle className="h-4 w-4" />
@@ -107,6 +204,7 @@ export default function VendorRequests() {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleReject(request.id)}
+                            disabled={request.status !== "pending"}
                           data-testid={`button-reject-${request.id}`}
                         >
                           <XCircle className="h-4 w-4" />
