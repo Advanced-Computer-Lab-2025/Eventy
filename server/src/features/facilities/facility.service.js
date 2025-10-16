@@ -1,49 +1,68 @@
 import { CourtBooking, GymSession } from "./facility.model.js";
 
 class FacilitiesServiceClass {
-  /**
-   * Fetches all upcoming court bookings and structures them by court type.
-   * @returns {Promise<Object>} A structured object with court types as keys.
-   */
-  async getCourtSchedules() {
-    // Get the start of today to only fetch future and current-day bookings
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+async getCourtSchedules() {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
 
-    // Find all active bookings from today onwards
-    const activeBookings = await CourtBooking.find({
-      status: "active",
-      date: { $gte: today },
-    }).sort({ date: 1, startTime: 1 }); // Sort by date and time
+  const weekAhead = new Date(today);
+  weekAhead.setDate(today.getDate() + 6);
 
-    // Initialize the structure to ensure all court types are present in the response
-    const initialSchedule = {
-      basketball: [],
-      tennis: [],
-      football: [],
-    };
+  const activeBookings = await CourtBooking.find({
+    status: "active",
+    date: { $gte: today, $lte: weekAhead },
+  }).sort({ date: 1, startTime: 1 });
 
-    // Use reduce to group the flat array of bookings into the desired structure
-    const structuredSchedule = activeBookings.reduce((acc, booking) => {
-      // Create a clean schedule entry object
-      const scheduleEntry = {
-        date: booking.date,
-        startTime: booking.startTime,
-        endTime: booking.endTime,
-        status: booking.status, // Use the real status from the DB
-      };
+  const courtTypes = ["basketball", "tennis", "football"];
+  const startHour = 10;
+  const endHour = 17;
 
-      // Push the entry into the correct array based on its courtType
-      if (acc[booking.courtType]) {
-        acc[booking.courtType].push(scheduleEntry);
-      }
+  const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => ({
+    startTime: `${(startHour + i).toString().padStart(2, "0")}:00`,
+    endTime: `${(startHour + i + 1).toString().padStart(2, "0")}:00`,
+  }));
 
-      return acc;
-    }, initialSchedule);
+  // ✅ use local date strings instead of UTC
+  const getLocalDateString = (d) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
-    return structuredSchedule;
+  const dates = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    return getLocalDateString(d);
+  });
+
+  const schedules = {};
+  courtTypes.forEach((type) => {
+    schedules[type] = dates.map((date) => ({
+      date,
+      slots: timeSlots.map((slot) => ({
+        ...slot,
+        status: "available",
+      })),
+    }));
+  });
+
+  for (const booking of activeBookings) {
+    const { courtType, startTime, date } = booking;
+    const bookingDate = getLocalDateString(new Date(date));
+    const courtSchedule = schedules[courtType];
+    if (!courtSchedule) continue;
+
+    const dayEntry = courtSchedule.find((d) => d.date === bookingDate);
+    if (!dayEntry) continue;
+
+    const slot = dayEntry.slots.find((s) => s.startTime === startTime);
+    if (slot) slot.status = "booked";
   }
-  
+
+  return schedules;
+}
+
     /**
    * @route   GET /api/facilities/gym/sessions
    * @desc    Get all gym sessions for a specific month and year.

@@ -5,6 +5,8 @@ import userRoutes from "../features/users/user.route.js";
 import eventRoutes from "../features/events/event.route.js";
 import applicationRoutes from "../features/applications/application.route.js";
 import facilityRoutes from "../features/facilities/facility.route.js";
+import notificationRoutes from "../features/notifications/notification.route.js";
+
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
 
@@ -13,7 +15,6 @@ router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Eventy API!" });
 });
 
-router.use("/admin/users", userRoutes);
 // import authRoutes from '../features/auth/auth.route.js';
 router.use("/auth", authRoutes);
 
@@ -38,4 +39,7 @@ router.use("/users", userRoutes);
 router.use("/applications", applicationRoutes);
 //facilities routes
 router.use("/facilities", facilityRoutes);
+// notifications routes
+router.use("/notifications", notificationRoutes);
+
 export default router;

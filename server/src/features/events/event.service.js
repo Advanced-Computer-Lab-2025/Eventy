@@ -17,7 +17,7 @@ export async function createBazaar(data, user) {
     endDate: data.endDate,
     registrationDeadline: data.registrationDeadline,
     eventType: "bazaar",
-    createdBy: user._id,
+    createdBy: user.id,
   };
 
   // Save to database
@@ -105,6 +105,20 @@ export const createConference = async (data, userId) => {
   });
 
   return event;
+};
+
+export const getConferences = async () => {
+  return Event.find({ eventType: "conference" }).sort({ startDate: -1 });
+};
+
+export const getConferenceById = async (conferenceId) => {
+  const conference = await Event.findById(conferenceId);
+
+  if (!conference) throw new ApiError(404, "Conference not found");
+  if (conference.eventType !== "conference")
+    throw new ApiError(400, "This event is not a conference");
+
+  return conference;
 };
 
 export const updateConferenceService = async (
@@ -248,7 +262,10 @@ export const registerUserToEvent = async (user, eventId) => {
 };
 
 export const getEventsByUser = async (userId) => {
-  const events = await Event.find({ attendees: userId });
+  const events = await Event.find({
+    attendees: userId,
+    status: "approved", // Only fetch approved events
+  }).populate("attendees", "name email role");
   return events;
 };
 
@@ -303,8 +320,6 @@ export const searchEvents = async ({ name, type }) => {
     .sort({ startDate: 1 });
 };
 
-// ...existing code...
-
 export const acceptWorkshop = async (workshopId) => {
   const event = await Event.findByIdAndUpdate(
     workshopId,
@@ -335,17 +350,30 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
     throw new ApiError(404, "Workshop not found");
   }
 
-  if (event.eventType !== 'workshop') {
+  if (event.eventType !== "workshop") {
     throw new ApiError(400, "This endpoint is only for workshops");
   }
 
-  if (event.status !== 'pending') {
-    throw new ApiError(400, `Cannot request edits. Workshop status is already ${event.status}`);
+  if (event.status !== "pending") {
+    throw new ApiError(
+      400,
+      `Cannot request edits. Workshop status is already ${event.status}`
+    );
   }
 
-  event.status = 'needs_revision';
+  event.status = "needs_revision";
   event.revisionComments = revisionComments.trim();
   await event.save();
-  
+
+  return event;
+};
+
+export const getEventById = async (eventId) => {
+  const event = await Event.findById(eventId)
+    .populate("attendees", "name email role")
+    .populate("createdBy", "name email role");
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
   return event;
 };
