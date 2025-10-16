@@ -466,16 +466,6 @@ export default function VendorDashboard() {
                     />
                   </div>
 
-                  {/* Submit Button */}
-                  <div className="flex justify-end">
-                    <Button 
-                      type="submit" 
-                      disabled={isSubmittingPlatformBooth}
-                      className="min-w-[160px]"
-                    >
-                      {isSubmittingPlatformBooth ? "Submitting..." : "Submit Application"}
-                    </Button>
-                  </div>
                 </form>
               </CardContent>
             </Card>
