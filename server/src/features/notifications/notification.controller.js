@@ -1,17 +1,39 @@
 import NotificationService from "./notification.service.js";
+import { createNotificationSchema } from "./notification.validation.js";
 
 class NotificationController {
   static async getAllNotificationsByUserId(req, res) {
     try {
-      // Get userId from the authenticated user (set by authMiddleware)
       const userId = req.user && (req.user.id || req.user._id);
       if (!userId) {
-        return res.status(401).json({ success: false, message: "Unauthorized: user id not found" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized: user id not found" });
       }
       const notifications = await NotificationService.getNotificationsByUserId(
         userId
       );
       res.json({ success: true, data: notifications });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ success: false, message: "Server error", error: err.message });
+    }
+  }
+
+  static async createNotification(req, res) {
+    try {
+      const { error, value } = createNotificationSchema.validate(req.body);
+      if (error) {
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
+      }
+
+      // Create a single notification with all recipients
+      const notification = await NotificationService.createNotification(value);
+
+      res.status(201).json({ success: true, data: notification });
     } catch (err) {
       res
         .status(500)
