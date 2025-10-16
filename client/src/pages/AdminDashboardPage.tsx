@@ -319,38 +319,7 @@ export default function EventsOfficeDashboard() {
               </CardContent>
             </Card>
 
-            {/* Existing Bazaars */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Existing Bazaars</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingBazaars ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading bazaars...
-                  </div>
-                ) : bazaars.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No bazaars found.
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {bazaars.map((b) => (
-                      <div key={b._id} className="border rounded-lg p-4">
-                        <div className="font-semibold">{b.name}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">
-                          {b.description}
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {new Date(b.startDate).toLocaleString()} -{" "}
-                          {new Date(b.endDate).toLocaleString()} • {b.location}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            
 
             {/* Upcoming Events Section */}
             <Card>
@@ -399,10 +368,8 @@ export default function EventsOfficeDashboard() {
                         }
                         location={event.location || "Unknown location"}
                         attendees={event.attendeesCount || 0}
-                        image={
-                          event.image ||
-                          "https://via.placeholder.com/400x250?text=Event+Image"
-                        }
+                        image={event.image}
+                        showActions={false}
                         onRegister={() =>
                           console.log("Register:", event.name)
                         }

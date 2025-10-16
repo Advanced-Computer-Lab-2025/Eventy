@@ -406,11 +406,14 @@ export default function EventsOfficeDashboard() {
             />
             <Card>
               <CardHeader>
-                <CardTitle>Tips</CardTitle>
+                <CardTitle>Guidelines</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                - Ensure dates and times are correct before submitting.
-                <br />- Vendors will see approved bazaars and can apply before the registration deadline.
+              <CardContent>
+                <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  <li>Review dates and times carefully before publishing.</li>
+                  <li>Vendor applications close at the specified registration deadline.</li>
+                  <li>Provide a concise description and accurate location details.</li>
+                </ul>
               </CardContent>
             </Card>
           </div>
