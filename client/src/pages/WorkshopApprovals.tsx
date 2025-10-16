@@ -56,7 +56,7 @@ export default function WorkshopApprovals() {
 
   const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
 
-  const faculties = ["MET", "IET", "EMS", "Pharmacy & Biotechnology",, "Dentistry", "BI", "Management", "Applied Arts"];
+  const faculties = ["MET", "IET", "EMS", "Pharmacy & Biotechnology", "Dentistry", "BI", "Management", "Applied Arts"];
 
   // Fetch all workshops
   const fetchAllWorkshops = async () => {
@@ -263,11 +263,13 @@ export default function WorkshopApprovals() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Faculties</SelectItem>
-                {faculties.map((faculty) => (
-                  <SelectItem key={faculty} value={faculty}>
-                    {faculty}
-                  </SelectItem>
-                ))}
+                {faculties
+                  .filter((faculty): faculty is string => typeof faculty === "string")
+                  .map((faculty) => (
+                    <SelectItem key={faculty} value={faculty}>
+                      {faculty}
+                    </SelectItem>
+                  ))}
               </SelectContent>
             </Select>
           </div>
