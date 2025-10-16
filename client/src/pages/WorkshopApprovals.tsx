@@ -1,8 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import { CheckCircle, XCircle, Info, Edit } from "lucide-react";
+
+// top-level components (from components folder)
 import Header from "@/components/Header";
+import EventCard from "@/components/EventCard";
+import EventListItem from "@/components/EventListItem";
+import CategoryBadge from "@/components/CategoryBadge";
+
+// UI primitives (from components/ui)
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,107 +32,164 @@ import {
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function WorkshopApprovals() {
-  const [workshops, setWorkshops] = useState<any[]>([]);
+  const [allWorkshops, setAllWorkshops] = useState<any[]>([]);
+  const [filteredWorkshops, setFilteredWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [facultyFilter, setFacultyFilter] = useState("all");
   const [selectedWorkshop, setSelectedWorkshop] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditRequestDialog, setShowEditRequestDialog] = useState(false);
   const [revisionComments, setRevisionComments] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchTimerRef = useRef<number | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
 
-  // ✅ Fetch all workshops from backend
-  const fetchWorkshops = async () => {
+  const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+
+  const faculties = ["MET", "IET", "EMS", "Pharmacy & Biotechnology",, "Dentistry", "BI", "Management", "Applied Arts"];
+
+  // Fetch all workshops
+  const fetchAllWorkshops = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      console.log("DEBUG: token from localStorage ->", token);
-
       if (!token) {
-        console.warn("No token found in localStorage.");
-        setWorkshops([]);
+        setAllWorkshops([]);
+        setFilteredWorkshops([]);
         setLoading(false);
         return;
       }
 
-      const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
       const url = `${apiBase}/api/events/allworkshops`;
-      console.log("DEBUG: requesting", url);
-
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log("Fetched workshops response:", res.status, res.data);
-      setWorkshops(res.data?.data ?? res.data ?? []);
+      const workshops = res.data?.data ?? res.data ?? [];
+      setAllWorkshops(workshops);
+      applyFilters(workshops, statusFilter, facultyFilter);
     } catch (err: any) {
-      console.error("Full error fetching workshops:", err);
-      console.error("err.response:", err?.response);
-      alert("❌ Failed to fetch workshops — check console/network tab for details");
-      setWorkshops([]);
+      console.error("Error fetching workshops:", err);
+      setAllWorkshops([]);
+      setFilteredWorkshops([]);
     } finally {
       setLoading(false);
     }
   };
 
+  // Client-side search
+  const performSearch = (query: string, workshopsToSearch: any[]) => {
+    if (!query.trim()) {
+      return workshopsToSearch;
+    }
+
+    const lowerQuery = query.toLowerCase();
+    return workshopsToSearch.filter((w) => {
+      const nameMatch = w.name?.toLowerCase().includes(lowerQuery);
+      const creatorMatch = `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
+        .toLowerCase()
+        .includes(lowerQuery);
+      return nameMatch || creatorMatch;
+    });
+  };
+
+  // Apply status, faculty filters, and search to workshops
+  const applyFilters = (workshops: any[], status: string, faculty: string, search: string = "") => {
+    let filtered = workshops.filter((w) => {
+      const statusMatch = status === "all" || w.status === status;
+      const facultyMatch = faculty === "all" || w.faculty === faculty;
+      return statusMatch && facultyMatch;
+    });
+
+    // Apply search filter
+    if (search.trim()) {
+      filtered = performSearch(search, filtered);
+    }
+
+    setFilteredWorkshops(filtered);
+  };
+
+  // Initial load
   useEffect(() => {
-    fetchWorkshops();
+    fetchAllWorkshops();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ Filter workshops by status
-  const filteredWorkshops =
-    statusFilter === "all"
-      ? workshops
-      : workshops.filter((w) => w.status === statusFilter);
+  // Debounced search - applies search on top of existing filters
+  useEffect(() => {
+    if (searchTimerRef.current) {
+      window.clearTimeout(searchTimerRef.current);
+    }
 
-  // ✅ Approve workshop
+    searchTimerRef.current = window.setTimeout(() => {
+      applyFilters(allWorkshops, statusFilter, facultyFilter, searchInput);
+    }, 500);
+
+    return () => {
+      if (searchTimerRef.current) {
+        window.clearTimeout(searchTimerRef.current);
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchInput, allWorkshops, statusFilter, facultyFilter]);
+
+  // Handle status filter change
+  const handleStatusFilterChange = (newStatus: string) => {
+    setStatusFilter(newStatus);
+    applyFilters(allWorkshops, newStatus, facultyFilter, searchInput);
+  };
+
+  // Handle faculty filter change
+  const handleFacultyFilterChange = (newFaculty: string) => {
+    setFacultyFilter(newFaculty);
+    applyFilters(allWorkshops, statusFilter, newFaculty, searchInput);
+  };
+
+  // Approve workshop
   const handleApprove = async (workshopId: string) => {
     try {
       const token = localStorage.getItem("token");
-      const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
-      
       await axios.patch(
         `${apiBase}/api/events/${workshopId}/accept`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      alert("✅ Workshop approved successfully!");
       setShowDetailsDialog(false);
-      fetchWorkshops();
+      fetchAllWorkshops();
     } catch (err: any) {
       console.error("Error approving workshop:", err.response?.data || err.message);
       alert("❌ Failed to approve workshop");
     }
   };
 
-  // ✅ Reject workshop
+  // Reject workshop
   const handleReject = async (workshopId: string) => {
     try {
       const token = localStorage.getItem("token");
-      const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
-      
       await axios.patch(
         `${apiBase}/api/events/${workshopId}/reject`,
         {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      alert("🚫 Workshop rejected successfully!");
       setShowDetailsDialog(false);
-      fetchWorkshops();
+      fetchAllWorkshops();
     } catch (err: any) {
       console.error("Error rejecting workshop:", err.response?.data || err.message);
       alert("❌ Failed to reject workshop");
     }
   };
 
-  // ✅ Request edits
+  // Request edits
   const handleRequestEdits = async () => {
     if (!revisionComments.trim()) {
       alert("⚠️ Please provide comments for the edit request");
@@ -133,28 +198,23 @@ export default function WorkshopApprovals() {
 
     try {
       const token = localStorage.getItem("token");
-      const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
-      
       await axios.patch(
         `${apiBase}/api/events/${selectedWorkshop._id}/request-edits`,
         { revisionComments },
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
+        { headers: { Authorization: `Bearer ${token}` } }
       );
-      
-      alert("✅ Edit request sent successfully!");
       setShowEditRequestDialog(false);
       setShowDetailsDialog(false);
       setRevisionComments("");
-      fetchWorkshops();
+      handleStatusFilterChange("needs_revision");
+      fetchAllWorkshops();
     } catch (err: any) {
       console.error("Error requesting edits:", err.response?.data || err.message);
       alert("❌ Failed to request edits");
     }
   };
 
-  // ✅ View full workshop details
+  // View details
   const handleViewDetails = (workshop: any) => {
     setSelectedWorkshop(workshop);
     setShowDetailsDialog(true);
@@ -165,20 +225,55 @@ export default function WorkshopApprovals() {
     setShowEditRequestDialog(true);
   };
 
-  if (loading) return <p className="p-8">Loading workshops...</p>;
+  if (loading && allWorkshops.length === 0) return <p className="p-8">Loading workshops...</p>;
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
+        <div className="mb-6">
           <h1 className="text-4xl font-bold mb-2">Workshop Management</h1>
           <p className="text-muted-foreground">
             View, filter, and manage workshop approvals
           </p>
         </div>
 
-        <Tabs defaultValue="all" onValueChange={setStatusFilter}>
+        {/* Search and Filter Bar */}
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end">
+          <div className="flex-1">
+            <Label htmlFor="search" className="mb-2 block text-sm font-medium">
+              Search Workshops
+            </Label>
+            <Input
+              id="search"
+              placeholder="Search by workshop name or creator..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full"
+            />
+           
+          </div>
+          <div className="w-full md:w-48">
+            <Label htmlFor="faculty-filter" className="mb-2 block text-sm font-medium">
+              Filter by Faculty
+            </Label>
+            <Select value={facultyFilter} onValueChange={handleFacultyFilterChange}>
+              <SelectTrigger id="faculty-filter">
+                <SelectValue placeholder="Select Faculty" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Faculties</SelectItem>
+                {faculties.map((faculty) => (
+                  <SelectItem key={faculty} value={faculty}>
+                    {faculty}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Tabs value={statusFilter} onValueChange={handleStatusFilterChange}>
           <TabsList className="mb-6">
             <TabsTrigger value="all">All</TabsTrigger>
             <TabsTrigger value="pending">Pending</TabsTrigger>
@@ -243,8 +338,8 @@ export default function WorkshopApprovals() {
                                   : ""
                               }
                             >
-                              {workshop.status === "needs_revision" 
-                                ? "edits requested" 
+                              {workshop.status === "needs_revision"
+                                ? "edits requested"
                                 : workshop.status}
                             </Badge>
                           </TableCell>
@@ -258,7 +353,7 @@ export default function WorkshopApprovals() {
                               >
                                 <Info className="h-4 w-4" />
                               </Button>
-                              {(workshop.status === "pending" ) && (
+                              {workshop.status === "pending" && (
                                 <>
                                   <Button
                                     size="sm"
@@ -310,18 +405,45 @@ export default function WorkshopApprovals() {
 
           {selectedWorkshop && (
             <div className="space-y-3">
-              <p><strong>Faculty:</strong> {selectedWorkshop.faculty}</p>
-              <p><strong>Description:</strong> {selectedWorkshop.description}</p>
-              <p><strong>Location:</strong> {selectedWorkshop.location}</p>
-              <p><strong>Start:</strong> {new Date(selectedWorkshop.startDate).toLocaleString()}</p>
-              <p><strong>End:</strong> {new Date(selectedWorkshop.endDate).toLocaleString()}</p>
-              <p><strong>Budget:</strong> {selectedWorkshop.requiredBudget}</p>
-              <p><strong>Funding:</strong> {selectedWorkshop.fundingSource}</p>
-              <p><strong>Status:</strong> {selectedWorkshop.status === "needs_revision" ? "Edits Requested" : selectedWorkshop.status}</p>
-              <p><strong>Created By:</strong> {selectedWorkshop.createdBy?.firstName} {selectedWorkshop.createdBy?.lastName}</p>
+              <p>
+                <strong>Faculty:</strong> {selectedWorkshop.faculty}
+              </p>
+              <p>
+                <strong>Description:</strong> {selectedWorkshop.description}
+              </p>
+              <p>
+                <strong>Location:</strong> {selectedWorkshop.location}
+              </p>
+              <p>
+                <strong>Start:</strong>{" "}
+                {new Date(selectedWorkshop.startDate).toLocaleString()}
+              </p>
+              <p>
+                <strong>End:</strong>{" "}
+                {new Date(selectedWorkshop.endDate).toLocaleString()}
+              </p>
+              <p>
+                <strong>Budget:</strong> {selectedWorkshop.requiredBudget}
+              </p>
+              <p>
+                <strong>Funding:</strong> {selectedWorkshop.fundingSource}
+              </p>
+              <p>
+                <strong>Status:</strong>{" "}
+                {selectedWorkshop.status === "needs_revision"
+                  ? "Edits Requested"
+                  : selectedWorkshop.status}
+              </p>
+              <p>
+                <strong>Created By:</strong>{" "}
+                {selectedWorkshop.createdBy?.firstName}{" "}
+                {selectedWorkshop.createdBy?.lastName}
+              </p>
               {selectedWorkshop.revisionComments && (
                 <div className="mt-4 p-3 bg-muted rounded-md">
-                  <p><strong>Revision Comments:</strong></p>
+                  <p>
+                    <strong>Revision Comments:</strong>
+                  </p>
                   <p className="mt-1 text-sm">{selectedWorkshop.revisionComments}</p>
                 </div>
               )}

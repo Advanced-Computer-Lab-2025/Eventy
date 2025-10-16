@@ -235,42 +235,6 @@ export class EventsController {
   }
 }
 
-
-  // Accept workshop
-  async acceptWorkshop(req, res) {
-    try {
-      // Extra role validation
-      if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can accept workshops",
-        });
-      }
-
-      const { error } = workshopStatusSchema.validate({
-        id: req.params.id,
-        status: "approved",
-      });
-      if (error)
-        return res.status(400).json({ message: error.details[0].message });
-
-      const event = await Event.findByIdAndUpdate(
-        req.params.id,
-        { status: "approved" },
-        { new: true }
-      );
-
-      if (!event) {
-        return res.status(404).json({ message: "Workshop not found" });
-      }
-
-      res
-        .status(200)
-        .json({ message: "Workshop accepted and published", event });
-    } catch (error) {
-      res.status(500).json({ message: "Error accepting workshop", error });
-    }
-  }
-
   async getMyWorkshops(req, res, next) {
     try {
       if (!req.user) {
