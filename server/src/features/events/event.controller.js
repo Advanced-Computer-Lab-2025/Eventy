@@ -277,9 +277,10 @@ export class EventsController {
         );
       }
 
+      const userId = req.user._id || req.user.id;
       const events = await eventService.getEvents({
         eventType: "workshop",
-        createdBy: req.user._id,
+        createdBy: userId,
       });
 
       return res
