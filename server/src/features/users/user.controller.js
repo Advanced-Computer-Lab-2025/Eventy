@@ -110,16 +110,13 @@ export default class UserController {
       return next(err);
     }
   }
-    // GET /api/admin/users — List all users (Admin only)
-   static async getAllUsers(req, res, next) {
-        try {
-            const users = await UserService.getAllUsers(req); // ✅ Pass req here
-            res.status(200).json({ status: "success", data: users });
-        } catch (err) {
-            next(err);
-        }
+  // GET /api/admin/users — List all users (Admin only)
+  static async getAllUsers(req, res, next) {
+    try {
+      const users = await UserService.getAllUsers(req); // ✅ Pass req here
+      res.status(200).json({ status: "success", data: users });
+    } catch (err) {
+      next(err);
     }
-
+  }
 }
-
-
