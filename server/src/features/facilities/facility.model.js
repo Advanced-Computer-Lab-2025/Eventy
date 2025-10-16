@@ -29,8 +29,7 @@ const gymSessionSchema = new mongoose.Schema(
       required: true,
     },
     instructor: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User", // trainer/instructor
+      type: String, // instructor name
       required: true,
     },
 
