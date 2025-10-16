@@ -1,26 +1,13 @@
 import { useState, useEffect } from "react";
-import { Calendar, Clock, Dumbbell, ChevronLeft, ChevronRight } from "lucide-react";
+import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import GymScheduleViewer from "@/components/GymScheduleViewer";
+import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 
-const gymSessions = [
-  { id: "1", type: "Yoga", date: "March 15, 2024", time: "9:00 AM - 10:00 AM", capacity: 20, enrolled: 15 },
-  { id: "2", type: "Pilates", date: "March 16, 2024", time: "5:00 PM - 6:00 PM", capacity: 15, enrolled: 12 },
-  { id: "3", type: "Zumba", date: "March 17, 2024", time: "6:00 PM - 7:00 PM", capacity: 25, enrolled: 20 },
-  { id: "4", type: "CrossFit", date: "March 18, 2024", time: "7:00 AM - 8:00 AM", capacity: 15, enrolled: 10 },
-  { id: "5", type: "Kickboxing", date: "March 19, 2024", time: "5:00 PM - 6:00 PM", capacity: 20, enrolled: 18 },
-];
 
 type Slot = {
   startTime: string;
@@ -57,10 +44,25 @@ export default function SportsFacilities() {
   });
   const [loading, setLoading] = useState(true);
   const [currentDayIndex, setCurrentDayIndex] = useState(0);
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(undefined);
 
   useEffect(() => {
-    setLoading(true);
+    // Fetch user role from token
     const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split(".")[1]));
+        setUserRole(payload.role);
+      } catch (error) {
+        console.error("Failed to decode token:", error);
+      }
+    }
+
+    // Fetch court schedules
+    setLoading(true);
     fetch("http://localhost:4000/api/facilities/courts", {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -85,8 +87,11 @@ export default function SportsFacilities() {
     alert(`${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`);
   };
 
-  const handleJoinSession = (session: any) => {
-    alert(`Registered for ${session.type} on ${session.date}`);
+  const handleCreateSuccess = (createdDate: Date) => {
+    // Navigate to the month of the created session
+    setNavigateToDate(createdDate);
+    // Trigger refresh of gym schedule by updating key
+    setRefreshKey((prev) => prev + 1);
   };
 
   const getSchedulesForDay = (dayIndex: number) => {
@@ -143,29 +148,30 @@ export default function SportsFacilities() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Centered Date Navigation — now below the tabs */}
-          <div className="flex items-center justify-center gap-4 my-6">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
-              disabled={currentDayIndex === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-            </Button>
-            <div className="text-lg font-semibold min-w-[250px] text-center">
-              {formattedDate}
-            </div>
-            <Button
-              variant="outline"
-              onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
-              disabled={currentDayIndex === 6}
-            >
-              Next <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </div>
-
           {/* COURT SCHEDULES */}
           <TabsContent value="courts">
+            {/* Centered Date Navigation — for courts only */}
+            <div className="flex items-center justify-center gap-4 my-6">
+              <Button
+                variant="outline"
+                onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
+                disabled={currentDayIndex === 0}
+              >
+                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+              </Button>
+              <div className="text-lg font-semibold min-w-[250px] text-center">
+                {formattedDate}
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
+                disabled={currentDayIndex === 6}
+              >
+                Next <ChevronRight className="h-4 w-4 ml-1" />
+              </Button>
+            </div>
+
+
             {loading ? (
               <div className="text-center text-muted-foreground">
                 Loading court schedules...
@@ -226,59 +232,22 @@ export default function SportsFacilities() {
 
           {/* GYM SCHEDULES */}
           <TabsContent value="gym" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Monthly Gym Sessions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Session Type</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Time</TableHead>
-                      <TableHead>Capacity</TableHead>
-                      <TableHead>Action</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {gymSessions.map((session) => (
-                      <TableRow key={session.id}>
-                        <TableCell className="font-medium">{session.type}</TableCell>
-                        <TableCell>{session.date}</TableCell>
-                        <TableCell>{session.time}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {session.enrolled}/{session.capacity}
-                            </span>
-                            {session.enrolled >= session.capacity ? (
-                              <Badge variant="destructive">Full</Badge>
-                            ) : (
-                              <Badge className="bg-green-500 hover:bg-green-600">
-                                Available
-                              </Badge>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            size="sm"
-                            disabled={session.enrolled >= session.capacity}
-                            onClick={() => handleJoinSession(session)}
-                          >
-                            Register
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <GymScheduleViewer
+              key={refreshKey}
+              userRole={userRole || undefined}
+              onCreateClick={() => setIsCreateDialogOpen(true)}
+              navigateToDate={navigateToDate}
+            />
           </TabsContent>
         </Tabs>
       </main>
+
+      {/* Create Gym Session Dialog */}
+      <CreateGymSessionDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onSuccess={handleCreateSuccess}
+      />
     </div>
   );
 }
