@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import BazaarList, { Bazaar } from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
+import BoothApplicationDialog from "@/components/BoothApplicationDialog";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -41,7 +42,17 @@ export default function VendorDashboard() {
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
   const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] = useState(false);
   
+  // Booth application dialog state
+  const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
+  const [selectedBooth, setSelectedBooth] = useState<{id: string, number: number | string} | null>(null);
+  
   const { toast } = useToast();
+
+  // Handle booth application
+  const handleBoothApplication = (boothId: string, boothNumber: number | string) => {
+    setSelectedBooth({ id: boothId, number: boothNumber });
+    setBoothApplicationOpen(true);
+  };
 
   // Get current tab from URL hash or default to 'upcoming'
   const getCurrentTab = () => {
@@ -449,6 +460,9 @@ export default function VendorDashboard() {
                     <PlatformMap 
                       selectedLocation={selectedMapLocation}
                       onLocationSelect={setSelectedMapLocation}
+                      attendees={platformBoothAttendees}
+                      boothSize={boothSize}
+                      onBoothApplication={handleBoothApplication}
                     />
                   </div>
 
@@ -609,6 +623,19 @@ export default function VendorDashboard() {
           onOpenChange={setShowApplyDialog}
           bazaarId={selectedBazaar._id}
           bazaarName={selectedBazaar.name}
+        />
+      )}
+
+      {/* Booth Application Dialog */}
+      {selectedBooth && (
+        <BoothApplicationDialog
+          open={boothApplicationOpen}
+          onOpenChange={setBoothApplicationOpen}
+          boothId={selectedBooth.id}
+          boothNumber={selectedBooth.number}
+          attendees={platformBoothAttendees}
+          boothSize={boothSize}
+          durationWeeks={durationWeeks}
         />
       )}
     </div>

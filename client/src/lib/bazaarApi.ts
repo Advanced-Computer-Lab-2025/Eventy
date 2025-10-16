@@ -196,6 +196,32 @@ class BazaarApiService {
       throw error;
     }
   }
+
+  async applyToBooth(boothId: string, applicationData: {
+    attendees: Array<{ name: string; email: string }>;
+    boothSize: "2x2" | "4x4";
+    durationWeeks: number;
+    locationPreference: string;
+  }): Promise<Application> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications/booths/apply`, {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify(applicationData),
+      });      
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiResponse: ApiResponse<Application> = await response.json();
+      return apiResponse.data;
+    } catch (error) {
+      console.error("Error applying to booth:", error);
+      throw error;
+    }
+  }
 }
 
 export const bazaarApiService = new BazaarApiService();

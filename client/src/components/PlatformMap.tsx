@@ -1,37 +1,65 @@
-import React from "react";
+import React, { useState } from "react";
 import Booths from "./Booths";
 import { useToast } from "@/hooks/use-toast";
 
 interface PlatformMapProps {
   selectedLocation: string;
   onLocationSelect: (location: string) => void;
+  attendees: Array<{ name: string; email: string }>;
+  boothSize: "2x2" | "4x4";
+  onBoothApplication: (boothId: string, boothNumber: number | string) => void;
 }
 
 const PlatformMap: React.FC<PlatformMapProps> = ({
   selectedLocation,
   onLocationSelect,
+  attendees,
+  boothSize,
+  onBoothApplication,
 }) => {
   const { toast } = useToast();
 
   const handleBoothClick = (id: string, number: number | string) => {
+    // Skip Special Needs Shop
+    if (id === "booth-special-needs-shop") {
+      return;
+    }
+    
+    // Show selection toast
     toast({
       title: "Booth Selected",
       description: `Booth ${number} selected`,
     });
+    
+    // Update selected location for visual feedback
     onLocationSelect(selectedLocation === id ? "" : id);
+    
+    // Call the parent component's booth application handler
+    onBoothApplication(id, number);
   };
 
   const handleBoothClickSpecial = (id: string, number: number | string) => {
+    // Skip Special Needs Shop
+    if (id === "booth-special-needs-shop") {
+      return;
+    }
+    
+    // Show selection toast
     toast({
       title: "Booth Selected",
       description: `Booth ${number} selected`,
     });
-    console.log(`Special booth ${id} clicked!`);
+    
+    // Update selected location for visual feedback
     onLocationSelect(selectedLocation === id ? "" : id);
+    
+    // Call the parent component's booth application handler
+    onBoothApplication(id, number);
   };
 
   return (
-    <div className="relative w-full max-w-6xl mx-auto bg-[#FFF8E1] border-4 border-[#F2C57C] rounded-2xl shadow-md overflow-hidden h-[700px]">
+    <>
+      <div className="relative w-full max-w-6xl mx-auto bg-[#FFF8E1] border-4 border-[#F2C57C] rounded-2xl shadow-md overflow-hidden h-[700px]">
       <svg
         viewBox="0 0 600 500"
         className="w-full h-full"
@@ -140,6 +168,7 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
         <img src="/images/mcarona.jpg" alt="Mcarona" width={100} height={100} className="rounded-md shadow-md" />
       </div>
     </div>
+  </>
   );
 };
 

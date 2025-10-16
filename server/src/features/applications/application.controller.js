@@ -43,6 +43,8 @@ export class ApplicationController {
   async applyToBooth(req, res, next) {
     try {
       const vendorId = req.user._id;
+      const user = req.user;
+
       // Validate input
       const { error } = validateBoothApplication.validate(req.body);
       if (error)
@@ -53,7 +55,9 @@ export class ApplicationController {
       const applicationDetails = {
         ...req.body,
         vendorId,
+        event: null, // Platform booths don't need a specific event reference
         type: "booth",
+        createdBy: user.id,
       };
 
       const newApplication = await ApplicationService.createApplication(
