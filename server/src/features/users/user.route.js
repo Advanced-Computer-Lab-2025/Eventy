@@ -1,6 +1,7 @@
 // server/src/features/users/user.admin.route.js
 import express from "express";
 import UserController from "./user.controller.js";
+import UserPublicController from "./user.public.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import role from "../../middlewares/role.middleware.js";
 
@@ -13,6 +14,9 @@ router.get(
   role(["admin"]),
   UserController.getPendingUsers
 );
+
+// Public (auth) route to list professors for selection in forms
+router.get("/professors", authMiddleware, UserPublicController.getProfessors);
 
 // PATCH assign role (admin only)
 router.patch(
