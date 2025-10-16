@@ -7,7 +7,10 @@ class NotificationService {
    * @returns {Promise<Array>} Array of notification documents.
    */
   static async getNotificationsByUserId(userId) {
-    return Notification.find({ recipients: { $in: [userId] } }).sort({
+    return Notification.find({
+      recipients: { $in: [userId] },
+      deletedAt: null,
+    }).sort({
       createdAt: -1,
     });
   }
@@ -31,6 +34,19 @@ class NotificationService {
     return Notification.findByIdAndUpdate(notificationId, updateData, {
       new: true,
     });
+  }
+
+  /**
+   * Soft delete a notification by setting deletedAt to now.
+   * @param {string} notificationId
+   * @returns {Promise<Object|null>}
+   */
+  static async softDeleteNotification(notificationId) {
+    return Notification.findByIdAndUpdate(
+      notificationId,
+      { deletedAt: new Date() },
+      { new: true }
+    );
   }
 }
 

@@ -40,4 +40,12 @@ router.patch(
   NotificationController.updateNotification
 );
 
+// DELETE /api/notifications/:id (soft delete)
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(allRoles),
+  NotificationController.deleteNotification
+);
+
 export default router;

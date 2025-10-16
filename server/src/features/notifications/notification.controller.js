@@ -69,6 +69,26 @@ class NotificationController {
         .json({ success: false, message: "Server error", error: err.message });
     }
   }
+
+  // Soft delete: set deletedAt to now
+  static async deleteNotification(req, res) {
+    try {
+      const notificationId = req.params.id;
+      const deleted = await NotificationService.softDeleteNotification(
+        notificationId
+      );
+      if (!deleted) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Notification not found" });
+      }
+      res.json({ success: true, data: deleted });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ success: false, message: "Server error", error: err.message });
+    }
+  }
 }
 
 export default NotificationController;
