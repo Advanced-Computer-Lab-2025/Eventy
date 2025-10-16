@@ -1,7 +1,7 @@
 import { useState,useEffect } from "react";
 import axios from "axios";
 import { Plus, Search, MoreVertical, Shield, UserX, UserCheck } from "lucide-react";
-import Header from "@/components/Header";
+import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -175,7 +175,7 @@ export default function AdminUsers() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <AdminHeader />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">

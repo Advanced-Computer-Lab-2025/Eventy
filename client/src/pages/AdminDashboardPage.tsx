@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -226,6 +226,17 @@ export default function AdminDashboardPage() {
                 >
                   <Settings className="h-4 w-4 mr-2" />
                   Settings
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Manage Workshops</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Button className="w-full" variant="outline" onClick={() => setLocation("/approvals/workshops")}> 
+                  Go to Workshop Approvals
                 </Button>
               </CardContent>
             </Card>
