@@ -21,7 +21,7 @@ export interface Bazaar {
 
 export interface Application {
   _id: string;
-  bazaarId: {
+  event?: {
     _id: string;
     name: string;
     description: string;
