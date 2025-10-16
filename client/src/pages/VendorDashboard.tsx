@@ -26,7 +26,7 @@ export default function VendorDashboard() {
     try {
       setLoading(true);
       setError(null);
-      const bazaars = await bazaarApiService.getUpcomingBazaars();
+      const bazaars = await bazaarApiService.getEvents("bazaar");
       setUpcomingBazaars(bazaars);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Failed to fetch bazaars";
