@@ -229,18 +229,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </CardContent>
             </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Manage Workshops</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Button className="w-full" variant="outline" onClick={() => setLocation("/approvals/workshops")}> 
-                  Go to Workshop Approvals
-                </Button>
-              </CardContent>
-            </Card>
-
+            
             <Card>
               <CardHeader>
                 <CardTitle>Conference Stats</CardTitle>
