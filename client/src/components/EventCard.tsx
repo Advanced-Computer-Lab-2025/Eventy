@@ -3,6 +3,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
 
+interface Vendor {
+  name: string
+  booth: string
+}
+
 export interface EventCardProps {
   id: string;
   title: string;
@@ -12,6 +17,7 @@ export interface EventCardProps {
   location: string;
   attendees: number;
   image: string;
+  vendors: Vendor[]
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
@@ -26,6 +32,7 @@ export default function EventCard({
   location,
   attendees,
   image,
+  vendors,
   onRegister,
   onSave,
   onShare,
@@ -68,6 +75,20 @@ export default function EventCard({
             <span>{attendees}</span>
           </div>
         </div>
+
+        {/* Vendor section */}
+        {vendors && vendors.length > 0 && (
+          <div>
+            <div className="font-semibold text-sm mb-1">Participating Vendors:</div>
+            <ul className="list-disc list-inside text-sm text-muted-foreground">
+              {vendors.map((vendor, idx) => (
+                <li key={idx}>
+                  {vendor.name} {vendor.booth && <span className="text-xs text-muted-foreground">(Booth {vendor.booth})</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         <div className="flex gap-2 pt-2">
           <Button 

@@ -132,7 +132,11 @@ router.patch(
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware(["vendor"]),
+  roleMiddleware(["student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
