@@ -110,10 +110,25 @@ const Booths: React.FC<BoothsProps> = ({
 
       {/* --- NEW BIG RIGHT-SIDE BOOTHS (9–16) --- */}
 
-      {/* Top vertical booth (9–12) */}
-      {[0, 1, 2, 3].map((i) => {
-        const id = `booth-vertical-top-${i + 9}`;
-        const y = 100 + i * 35;
+      {/* Special Needs Shop - Merged booth 9-10 */}
+      <Booth
+        id="booth-special-needs-shop"
+        x={630}
+        y={100}
+        width={50}
+        height={65}
+        number="Special Needs Shop"
+        isSelected={selectedLocation === "booth-special-needs-shop"}
+        onClick={() => {}} // Disabled click functionality
+        fontSize={11}
+        textY={135}
+        verticalText={true}
+      />
+
+      {/* Middle vertical booth (11–12) */}
+      {[0, 1].map((i) => {
+        const id = `booth-vertical-middle-${i + 11}`;
+        const y = 170 + i * 35;
         return (
           <Booth
             key={id}
@@ -122,7 +137,7 @@ const Booths: React.FC<BoothsProps> = ({
             y={y}
             width={50}
             height={30}
-            number={i + 9}
+            number={i + 11}
             isSelected={selectedLocation === id}
             onClick={onBoothClickSpecial}
             fontSize={13}
