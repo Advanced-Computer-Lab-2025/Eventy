@@ -1,5 +1,5 @@
 import { User } from "./user.model.js";
-import { UserValidation } from "./user.validation.js";
+import { UserValidation, createManagementAccountSchema } from "./user.validation.js";
 import { sendVerificationEmail } from "../auth/email.service.js";
 import UserService from "./user.service.js";
 
@@ -10,8 +10,7 @@ export default class UserController {
       const userData = req.body;
 
       // Validate incoming data
-      const { error } =
-        UserValidation.createManagementAccount.validate(userData);
+      const { error } = createManagementAccountSchema.validate(userData);
       if (error) {
         return res
           .status(400)

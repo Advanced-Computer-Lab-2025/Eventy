@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import CreatePrivilegedUserForm from "@/components/CreatePrivilegedUserForm";
 
 
 import {
@@ -26,12 +27,9 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertDialog, AlertDialogContent, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
 
 
@@ -54,13 +52,7 @@ export default function AdminUsers() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [assigningRole, setAssigningRole] = useState<string | null>(null);
-  const [newAdmin, setNewAdmin] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "admin",
-  });
-   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const currentUserId = localStorage.getItem('userId'); // Get logged in user's ID
 
   const handleDeleteUser = async (userId: string) => {
@@ -149,12 +141,6 @@ export default function AdminUsers() {
     } finally {
       setAssigningRole(null);
     }
-  };
-
-  const handleCreateAdmin = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Create admin:", newAdmin);
-    setShowCreateDialog(false);
   };
 
   // Move loading/error checks BEFORE using filteredUsers
@@ -261,24 +247,19 @@ export default function AdminUsers() {
                             </DropdownMenuItem>
                           )}
 
-  {(user._id !== currentUserId) && (user.role === 'admin' || user.role === 'events_office') && (
-    <DropdownMenuItem 
-      className="text-destructive"
-      onClick={() => setUserToDelete(user._id)}
-      data-testid={`action-delete-${user._id}`}
-    >
-      <UserX className="h-4 w-4 mr-2" />
-      Delete Account
-    </DropdownMenuItem>
-  )}
-</DropdownMenuContent>
-                          
-                        
+                          {(user._id !== currentUserId) && (user.role === 'admin' || user.role === 'events_office') && (
+                            <DropdownMenuItem 
+                              className="text-destructive"
+                              onClick={() => setUserToDelete(user._id)}
+                              data-testid={`action-delete-${user._id}`}
+                            >
+                              <UserX className="h-4 w-4 mr-2" />
+                              Delete Account
+                            </DropdownMenuItem>
+                          )}
+                        </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>
-
-
-                    
                   </TableRow>
                 ))}
               </TableBody>
@@ -369,75 +350,14 @@ export default function AdminUsers() {
               Fill in the details to create a new admin or event office account
             </DialogDescription>
           </DialogHeader>
-          
-          <form onSubmit={handleCreateAdmin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="adminName">Name</Label>
-              <Input
-                id="adminName"
-                value={newAdmin.name}
-                onChange={(e) => setNewAdmin({ ...newAdmin, name: e.target.value })}
-                data-testid="input-admin-name"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="adminEmail">Email</Label>
-              <Input
-                id="adminEmail"
-                type="email"
-                value={newAdmin.email}
-                onChange={(e) => setNewAdmin({ ...newAdmin, email: e.target.value })}
-                data-testid="input-admin-email"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="adminRole">Role</Label>
-              <Select
-                value={newAdmin.role}
-                onValueChange={(value: any) => setNewAdmin({ ...newAdmin, role: value })}
-              >
-                <SelectTrigger id="adminRole" data-testid="select-admin-role">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="admin">Admin</SelectItem>
-                  <SelectItem value="event_office">Event Office</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="adminPassword">Password</Label>
-              <Input
-                id="adminPassword"
-                type="password"
-                value={newAdmin.password}
-                onChange={(e) => setNewAdmin({ ...newAdmin, password: e.target.value })}
-                data-testid="input-admin-password"
-                required
-              />
-            </div>
-
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setShowCreateDialog(false)}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" data-testid="button-submit-admin">
-                Create Account
-              </Button>
-            </DialogFooter>
-          </form>
+          <CreatePrivilegedUserForm
+            onSuccess={() => { setShowCreateDialog(false); fetchUsers(); }}
+            onCancel={() => setShowCreateDialog(false)}
+          />
         </DialogContent>
       </Dialog>
-            <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
