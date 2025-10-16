@@ -1,18 +1,29 @@
 import { useEffect, useState } from "react";
-import { Heart, Calendar, MapPin, Clock } from "lucide-react";
+import { Heart, Calendar, MapPin, Clock, Store, GraduationCap, Route, Megaphone } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CategoryBadge from "@/components/CategoryBadge";
+import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
 
+interface RegisteredEvent {
+  _id: string;
+  name: string;
+  eventType: EventCategory;
+  location: string;
+  startDate: string;
+  endDate: string;
+  bannerImage?: string;
+  status?: string;
+}
+
 export default function MyEvents() {
-  const [registeredEvents, setRegisteredEvents] = useState<any[]>([]);
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -52,6 +63,21 @@ export default function MyEvents() {
     fetchEvents();
   }, []);
 
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case "bazaar":
+        return Store;
+      case "workshop":
+        return GraduationCap;
+      case "trip":
+        return Route;
+      case "conference":
+        return Megaphone;
+      default:
+        return Megaphone;
+    }
+  };
+
   const handleCancelRegistration = (eventId: string) => {
     alert(
       `Registration cancelled for event ${eventId}. Amount will be refunded.`
@@ -81,6 +107,21 @@ export default function MyEvents() {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);
+    }
+  };
+
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/20";
+      case "pending":
+        return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
+      case "rejected":
+        return "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20";
+      case "needs_revision":
+        return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -134,14 +175,30 @@ export default function MyEvents() {
                         data-testid={`card-registered-${event._id}`}
                       >
                         <div className="relative aspect-[16/9] bg-muted">
-                          <img
-                            src={event.bannerImage}
-                            alt={event.name}
-                            className="w-full h-full object-cover"
-                          />
+                          {event.bannerImage ? (
+                            <img
+                              src={event.bannerImage}
+                              alt={event.name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-muted/60 to-muted/30 flex items-center justify-center">
+                              {(() => {
+                                const Icon = getTypeIcon(event.eventType);
+                                return <Icon className="h-16 w-16 text-muted-foreground/60" />;
+                              })()}
+                            </div>
+                          )}
                           <div className="absolute top-3 left-3">
                             <CategoryBadge category={event.eventType} />
                           </div>
+                          {event.status && (
+                            <div className="absolute top-3 right-3">
+                              <Badge className={getStatusClasses(event.status)}>
+                                {event.status}
+                              </Badge>
+                            </div>
+                          )}
                         </div>
                         <CardContent className="p-4 space-y-3">
                           <h3 className="text-xl font-bold">{event.name}</h3>
