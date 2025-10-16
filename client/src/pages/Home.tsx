@@ -24,7 +24,8 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:4000/api/events/upcoming";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
