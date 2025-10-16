@@ -128,11 +128,18 @@ router.patch(
   roleMiddleware(["admin", "events_office"]),
   eventsController.updateConferenceController.bind(eventsController)
 );
-
+//get all upcoming events (approved events)
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware(["vendor"]),
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
