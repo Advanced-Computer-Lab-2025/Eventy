@@ -4,9 +4,6 @@ import { CheckCircle, XCircle, Info, Edit } from "lucide-react";
 
 // top-level components (from components folder)
 import Header from "@/components/Header";
-import EventCard from "@/components/EventCard";
-import EventListItem from "@/components/EventListItem";
-import CategoryBadge from "@/components/CategoryBadge";
 
 // UI primitives (from components/ui)
 import { Button } from "@/components/ui/button";
@@ -52,8 +49,7 @@ export default function WorkshopApprovals() {
   const [revisionComments, setRevisionComments] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const searchTimerRef = useRef<number | null>(null);
-  const [hasSearched, setHasSearched] = useState(false);
-
+  
   const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
 
   const faculties = ["MET", "IET", "EMS", "Pharmacy & Biotechnology", "Dentistry", "BI", "Management", "Applied Arts"];
