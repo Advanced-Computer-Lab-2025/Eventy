@@ -155,22 +155,20 @@ export const createWorkshop = async (workshopData, professorId) => {
 export const getAllWorkshopsService = async (userRole) => {
   // Only Admin or EventsOffice can view all workshops
   if (userRole !== "admin" && userRole !== "events_office") {
-    const err = new Error("Forbidden: You are not allowed to view workshops.");
-    err.statusCode = 403;
-    throw err;
+    throw new ApiError(403, "Forbidden: You are not allowed to view workshops.");
   }
 
   try {
+    // populate the correct fields defined in the schema: "professors" and "createdBy"
     const workshops = await Event.find({ eventType: "workshop" })
-  .populate("professor", "name email") // if you have a professor ref
-  .sort({ createdAt: -1 });
-
+      .populate("professors", "name email")
+      .populate("createdBy", "name email role")
+      .sort({ createdAt: -1 });
 
     return workshops;
   } catch (error) {
-    const err = new Error("Error fetching workshops: " + error.message);
-    err.statusCode = 500;
-    throw err;
+    // Wrap in ApiError so error middleware can format it consistently
+    throw new ApiError(500, "Error fetching workshops: " + error.message);
   }
 };
 
