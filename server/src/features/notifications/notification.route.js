@@ -32,4 +32,12 @@ router.post(
   NotificationController.createNotification
 );
 
+// PATCH /api/notifications/:id
+router.patch(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(allRoles),
+  NotificationController.updateNotification
+);
+
 export default router;
