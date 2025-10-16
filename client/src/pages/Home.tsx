@@ -90,13 +90,14 @@ export default function Home() {
                       id={event._id || String(index)}
                       title={event.name || "Untitled Event"}
                       category={(event.eventType || "academic") as any}
-                      date={event.date || "TBA"}
-                      time={event.time || "TBA"}
+                      date={event.startDate? new Date(event.startDate).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",}): "TBA"}
+                      time={event.startDate? new Date(event.startDate).toLocaleTimeString("en-US", {hour: "2-digit",minute: "2-digit",hour12: true, }): "TBA"}
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
-                      image={
-                         event.image ||event.imageUrl ||"https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800&auto=format&fit=crop"
-                      }
                       vendors={event.vendors || []}
                       onRegister={() =>
                         console.log("Register:", event.name)
