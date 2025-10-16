@@ -8,7 +8,7 @@ interface BoothProps {
   height: number;
   number: number | string;
   isSelected: boolean;
-  onClick: (id: string) => void;
+  onClick: (id: string, number: number | string) => void;
   fontSize?: number;
   textY?: number;
   verticalText?: boolean;
@@ -92,7 +92,7 @@ const Booth: React.FC<BoothProps> = ({
   };
   
   return (
-    <g onClick={() => onClick(id)} style={{ cursor: "pointer" }}>
+    <g onClick={() => onClick(id, number)} style={{ cursor: "pointer" }}>
       <rect
         x={x}
         y={y}

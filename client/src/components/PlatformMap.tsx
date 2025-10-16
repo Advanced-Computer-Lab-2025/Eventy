@@ -1,5 +1,6 @@
 import React from "react";
 import Booths from "./Booths";
+import { useToast } from "@/hooks/use-toast";
 
 interface PlatformMapProps {
   selectedLocation: string;
@@ -10,11 +11,21 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
   selectedLocation,
   onLocationSelect,
 }) => {
-  const handleBoothClick = (id: string) => {
+  const { toast } = useToast();
+
+  const handleBoothClick = (id: string, number: number | string) => {
+    toast({
+      title: "Booth Selected",
+      description: `Booth ${number} selected`,
+    });
     onLocationSelect(selectedLocation === id ? "" : id);
   };
 
-  const handleBoothClickSpecial = (id: string) => {
+  const handleBoothClickSpecial = (id: string, number: number | string) => {
+    toast({
+      title: "Booth Selected",
+      description: `Booth ${number} selected`,
+    });
     console.log(`Special booth ${id} clicked!`);
     onLocationSelect(selectedLocation === id ? "" : id);
   };

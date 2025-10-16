@@ -3,8 +3,8 @@ import Booth from "./Booth";
 
 interface BoothsProps {
   selectedLocation: string;
-  onBoothClick: (id: string) => void;
-  onBoothClickSpecial: (id: string) => void;
+  onBoothClick: (id: string, number: number | string) => void;
+  onBoothClickSpecial: (id: string, number: number | string) => void;
 }
 
 const Booths: React.FC<BoothsProps> = ({
