@@ -15,7 +15,7 @@ import {
 
 async function updateVendorStatus(requestId: string, status: "accepted" | "rejected") {
   try {
-    const response = await fetch(`http://localhost:4000/api/admin/applications/${requestId}/status`, {
+    const response = await fetch(`http://localhost:4000/api/applications/${requestId}/status`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",

@@ -88,12 +88,19 @@ export class ApplicationController {
     }
   }
   async updateApplicationStatus(req, res, next) {
+    
     try {
       const { applicationId } = req.params;
       const { status } = req.body;
+        if (!["admin", "events_office"].includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Only Admins or Events Office can update status.",
+      });
+    }
 
       // Only allow 'accepted' or 'rejected'
-      if (!["accepted", "rejected"].includes(status)) {
+      if (!["approved", "rejected"].includes(status)) {
         return res.status(400).json({
           success: false,
           message: "Invalid status value. Must be 'accepted' or 'rejected'.",
