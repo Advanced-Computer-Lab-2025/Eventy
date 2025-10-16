@@ -52,8 +52,29 @@ export default function AdminUsers() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [assigningRole, setAssigningRole] = useState<string | null>(null);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
-  const currentUserId = localStorage.getItem('userId'); // Get logged in user's ID
+  const [newAdmin, setNewAdmin] = useState({
+    name: "",
+    email: "",
+    password: "",
+    role: "admin",
+  });
+   const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  // Derive current user identity from localStorage or JWT token as fallback
+  const token = localStorage.getItem('token');
+  let tokenUserId: string | null = null;
+  let tokenUserEmail: string | null = null;
+  if (token) {
+    try {
+      const [, payloadBase64] = token.split('.');
+      const payloadJson = JSON.parse(atob(payloadBase64));
+      tokenUserId = payloadJson.id || null;
+      tokenUserEmail = payloadJson.email || null;
+    } catch (_e) {
+      // ignore decode errors
+    }
+  }
+  const currentUserId = localStorage.getItem('userId') || localStorage.getItem('id') || tokenUserId;
+  const currentUserEmail = localStorage.getItem('userEmail') || localStorage.getItem('email') || tokenUserEmail;
 
   const handleDeleteUser = async (userId: string) => {
     try {
@@ -247,17 +268,19 @@ export default function AdminUsers() {
                             </DropdownMenuItem>
                           )}
 
-                          {(user._id !== currentUserId) && (user.role === 'admin' || user.role === 'events_office') && (
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => setUserToDelete(user._id)}
-                              data-testid={`action-delete-${user._id}`}
-                            >
-                              <UserX className="h-4 w-4 mr-2" />
-                              Delete Account
-                            </DropdownMenuItem>
-                          )}
-                        </DropdownMenuContent>
+  {(currentUserId ? user._id !== currentUserId : true) && (currentUserEmail ? user.email !== currentUserEmail : true) && (user.role === 'admin' || user.role === 'events_office') && (
+    <DropdownMenuItem 
+      className="text-destructive"
+      onClick={() => setUserToDelete(user._id)}
+      data-testid={`action-delete-${user._id}`}
+    >
+      <UserX className="h-4 w-4 mr-2" />
+      Delete Account
+    </DropdownMenuItem>
+  )}
+</DropdownMenuContent>
+                          
+                        
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
