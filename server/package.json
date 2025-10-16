@@ -7,10 +7,7 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
-    "seed:pending": "node src/seed.js",
-    "seed:professors": "node src/seed/professor.seed.js",
-    "seed:workshops": "node src/seed/workshop.seed.js",
-    "seed:eventsoffice": "node src/seed/eventsoffice.seed.js"
+    "seed:pending": "node src/seed.js"
   },
   "keywords": [],
   "author": "",
