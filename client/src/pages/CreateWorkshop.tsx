@@ -16,6 +16,15 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 
+// ✅ Toast imports
+import {
+  ToastProvider,
+  Toast,
+  ToastTitle,
+  ToastDescription,
+  ToastViewport,
+} from "@/components/ui/toast";
+
 interface WorkshopFormData {
   name: string;
   location: string;
@@ -53,18 +62,17 @@ export default function CreateWorkshop() {
     deadline: "",
   });
 
-  // Professors fetched from backend
   const [professorsOptions, setProfessorsOptions] = useState<
     { id: string; name: string; email: string }[]
   >([]);
 
-  // Selected professor IDs
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
-
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // Fetch professors on mount
+  // ✅ Toast state
+  const [toastOpen, setToastOpen] = useState(false);
+
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -93,14 +101,12 @@ export default function CreateWorkshop() {
     })();
   }, []);
 
-  // Submit handler
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
     try {
-      // ✅ Frontend validation
       if (selectedProfessors.length === 0) {
         throw new Error("Please select at least one professor.");
       }
@@ -115,7 +121,7 @@ export default function CreateWorkshop() {
         description: formData.description,
         agenda: formData.agenda,
         faculty: formData.faculty,
-        professors: selectedProfessors, // array of ObjectId strings
+        professors: selectedProfessors,
         requiredBudget: Number(formData.budget),
         fundingSource: formData.fundingSource,
         extraResources: formData.resources,
@@ -141,8 +147,11 @@ export default function CreateWorkshop() {
         throw new Error(data.message || "Failed to create workshop");
       }
 
-      alert("✅ Workshop created successfully and sent for approval!");
-      setLocation("/dashboard");
+      // ✅ Success toast instead of alert
+      setToastOpen(true);
+
+      // Navigate after toast appears
+      setTimeout(() => setLocation("/dashboard"), 2000); // yehia : change location to our dashboard
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
@@ -317,7 +326,7 @@ export default function CreateWorkshop() {
                 />
               </div>
 
-              {/* ✅ Professors multi-select checkboxes */}
+              {/* Professors multi-select */}
               <div className="space-y-2">
                 <Label>Professor(s) Participating</Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
@@ -458,6 +467,19 @@ export default function CreateWorkshop() {
           </div>
         </form>
       </main>
+
+      {/* ✅ Toast Notification */}
+      <ToastProvider>
+        <Toast open={toastOpen} onOpenChange={setToastOpen}>
+          <div className="flex flex-col space-y-1">
+            <ToastTitle>Workshop Created 🎉</ToastTitle>
+            <ToastDescription>
+              Your workshop has been successfully submitted for approval!
+            </ToastDescription>
+          </div>
+        </Toast>
+        <ToastViewport />
+      </ToastProvider>
     </div>
   );
 }
