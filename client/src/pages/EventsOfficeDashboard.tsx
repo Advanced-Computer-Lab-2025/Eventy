@@ -6,7 +6,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, MapPin, Plus } from "lucide-react";
+import { Calendar, MapPin, Plus, CalendarDays, CheckCircle2, Clock } from "lucide-react";
+import StatCard from "@/components/StatCard";
+import QuickActions from "@/components/QuickActions";
+import { Badge } from "@/components/ui/badge";
+import { useRef } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -27,6 +32,10 @@ export default function EventsOfficeDashboard() {
   const [error, setError] = useState("");
   const [bazaars, setBazaars] = useState<Bazaar[]>([]);
   const [loadingBazaars, setLoadingBazaars] = useState(true);
+  const formRef = useRef<HTMLDivElement | null>(null);
+  const existingRef = useRef<HTMLDivElement | null>(null);
+  const { toast } = useToast();
+  const [editingBazaarId, setEditingBazaarId] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -83,8 +92,13 @@ export default function EventsOfficeDashboard() {
           : undefined,
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/events/bazaars`, {
-        method: "POST",
+      const url = editingBazaarId
+        ? `${API_BASE_URL}/api/events/bazaars/${editingBazaarId}`
+        : `${API_BASE_URL}/api/events/bazaars`;
+      const method = editingBazaarId ? "PATCH" : "POST";
+
+      const res = await fetch(url, {
+        method,
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -94,7 +108,10 @@ export default function EventsOfficeDashboard() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create bazaar");
+      if (!res.ok)
+        throw new Error(
+          data.message || (editingBazaarId ? "Failed to update bazaar" : "Failed to create bazaar")
+        );
 
       // Reset form and refresh list
       setFormData({
@@ -107,12 +124,50 @@ export default function EventsOfficeDashboard() {
         description: "",
         registrationDeadline: "",
       });
+      setEditingBazaarId(null);
       await fetchBazaars();
+      toast({
+        title: editingBazaarId ? "Bazaar updated" : "Bazaar created",
+        description: editingBazaarId
+          ? "The bazaar has been updated successfully."
+          : "Your bazaar has been created successfully.",
+      });
     } catch (err: any) {
       setError(err.message || "Something went wrong");
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const beginEdit = (b: Bazaar) => {
+    const toDate = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
+    const toTime = (iso?: string) => (iso ? new Date(iso).toISOString().slice(11, 16) : "");
+    setEditingBazaarId(b._id);
+    setFormData({
+      name: b.name || "",
+      location: b.location || "",
+      startDate: toDate(b.startDate),
+      startTime: toTime(b.startDate),
+      endDate: toDate(b.endDate),
+      endTime: toTime(b.endDate),
+      description: b.description || "",
+      registrationDeadline: toDate(b.registrationDeadline),
+    });
+    formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const cancelEdit = () => {
+    setEditingBazaarId(null);
+    setFormData({
+      name: "",
+      location: "",
+      startDate: "",
+      startTime: "",
+      endDate: "",
+      endTime: "",
+      description: "",
+      registrationDeadline: "",
+    });
   };
 
   return (
@@ -127,13 +182,31 @@ export default function EventsOfficeDashboard() {
           <p className="text-muted-foreground">
             Create and manage bazaars. Fill in the details below to create a new bazaar.
           </p>
+          {/* Stats Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
+            <StatCard
+              title="Total Bazaars"
+              value={loadingBazaars ? "-" : bazaars.length}
+              icon={CalendarDays}
+            />
+            <StatCard
+              title="Upcoming"
+              value={loadingBazaars ? "-" : bazaars.filter(b => new Date(b.startDate) > new Date()).length}
+              icon={Clock}
+            />
+            <StatCard
+              title="Active/Approved"
+              value={loadingBazaars ? "-" : bazaars.filter(b => (b.status || "").toLowerCase().includes("approved") || (b.status || "").toLowerCase().includes("active")).length}
+              icon={CheckCircle2}
+            />
+          </div>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            <Card>
+            <Card ref={formRef as any}>
               <CardHeader>
-                <CardTitle>Create Bazaar</CardTitle>
+                <CardTitle>{editingBazaarId ? "Edit Bazaar" : "Create Bazaar"}</CardTitle>
               </CardHeader>
               <CardContent>
                 {error && (
@@ -255,21 +328,27 @@ export default function EventsOfficeDashboard() {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => setLocation("/dashboard")}
+                      onClick={editingBazaarId ? cancelEdit : () => setLocation("/dashboard")}
                       className="flex-1"
                     >
-                      Cancel
+                      {editingBazaarId ? "Cancel Edit" : "Cancel"}
                     </Button>
                     <Button type="submit" className="flex-1" disabled={submitting} data-testid="button-submit-bazaar">
                       <Plus className="h-4 w-4 mr-2" />
-                      {submitting ? "Creating..." : "Create Bazaar"}
+                      {submitting
+                        ? editingBazaarId
+                          ? "Updating..."
+                          : "Creating..."
+                        : editingBazaarId
+                          ? "Update Bazaar"
+                          : "Create Bazaar"}
                     </Button>
                   </div>
                 </form>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card ref={existingRef as any}>
               <CardHeader>
                 <CardTitle>Existing Bazaars</CardTitle>
               </CardHeader>
@@ -279,15 +358,40 @@ export default function EventsOfficeDashboard() {
                 ) : bazaars.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">No bazaars found.</div>
                 ) : (
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {bazaars.map((b) => (
-                      <div key={b._id} className="border rounded-lg p-4">
-                        <div className="font-semibold">{b.name}</div>
-                        <div className="text-sm text-muted-foreground line-clamp-2">{b.description}</div>
-                        <div className="text-xs text-muted-foreground mt-2">
-                          {new Date(b.startDate).toLocaleString()} - {new Date(b.endDate).toLocaleString()} • {b.location}
-                        </div>
-                      </div>
+                      <Card key={b._id} className="hover:shadow-md transition-shadow">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <div className="font-semibold text-base">{b.name}</div>
+                                {b.status && (
+                                  <Badge variant="outline" className="uppercase tracking-wide">
+                                    {b.status}
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-sm text-muted-foreground line-clamp-2 mt-1">{b.description}</div>
+                            </div>
+                            <div className="shrink-0">
+                              <Button size="sm" variant="outline" onClick={() => beginEdit(b)} data-testid={`button-edit-${b._id}`}>
+                                Edit
+                              </Button>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-3">
+                            <Calendar className="h-3.5 w-3.5" />
+                            <span>
+                              {new Date(b.startDate).toLocaleString()} - {new Date(b.endDate).toLocaleString()}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <MapPin className="h-3.5 w-3.5" />
+                            <span>{b.location}</span>
+                          </div>
+                        </CardContent>
+                      </Card>
                     ))}
                   </div>
                 )}
@@ -296,6 +400,10 @@ export default function EventsOfficeDashboard() {
           </div>
 
           <div className="space-y-6">
+            <QuickActions
+              onCreateEvent={() => formRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+              onEditBazaar={() => existingRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })}
+            />
             <Card>
               <CardHeader>
                 <CardTitle>Tips</CardTitle>
