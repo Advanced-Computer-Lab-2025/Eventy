@@ -8,7 +8,6 @@ const maskCredentials = (uri) => {
   }
 };
 
-
 const appendAuthSourceAdmin = (uri) => {
   if (/authSource=/i.test(uri)) return uri;
   if (uri.includes("?")) return `${uri}&authSource=admin`;

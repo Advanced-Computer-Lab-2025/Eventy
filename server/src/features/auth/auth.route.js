@@ -26,7 +26,7 @@ router.get("/verify", async (req, res) => {
     // Decode JWT
     const decoded = jwt.verify(
       token,
-      
+      process.env.JWT_SECRET || "supersecretkey"
     );
 
     // Find the user
