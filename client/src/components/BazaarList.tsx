@@ -3,8 +3,7 @@ import BazaarCard, { BazaarCardProps } from "./BazaarCard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, Store } from "lucide-react";
+import { Search, Store } from "lucide-react";
 
 export interface Bazaar {
   _id: string;
@@ -40,10 +39,9 @@ export default function BazaarList({
   className = "",
 }: BazaarListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [filteredBazaars, setFilteredBazaars] = useState<Bazaar[]>(bazaars);
 
-  // Filter bazaars based on search term and status
+  // Filter bazaars based on search term
   useEffect(() => {
     let filtered = bazaars;
 
@@ -57,13 +55,8 @@ export default function BazaarList({
       );
     }
 
-    // Filter by status
-    if (statusFilter !== "all") {
-      filtered = filtered.filter((bazaar) => bazaar.status === statusFilter);
-    }
-
     setFilteredBazaars(filtered);
-  }, [bazaars, searchTerm, statusFilter]);
+  }, [bazaars, searchTerm]);
 
   const handleRegister = (bazaarId: string) => {
     if (onRegister) {
@@ -107,7 +100,7 @@ export default function BazaarList({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Filters */}
+      {/* Search Filter */}
       {showFilters && (
         <Card>
           <CardContent className="p-4">
@@ -123,21 +116,6 @@ export default function BazaarList({
                   />
                 </div>
               </div>
-              <div className="sm:w-48">
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger>
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="approved">Approved</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="needs_revision">Needs Revision</SelectItem>
-                    <SelectItem value="rejected">Rejected</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -148,16 +126,15 @@ export default function BazaarList({
         <p className="text-sm text-muted-foreground">
           {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
         </p>
-        {(searchTerm || statusFilter !== "all") && (
+        {searchTerm && (
           <Button
             variant="outline"
             size="sm"
             onClick={() => {
               setSearchTerm("");
-              setStatusFilter("all");
             }}
           >
-            Clear filters
+            Clear search
           </Button>
         )}
       </div>
@@ -170,7 +147,7 @@ export default function BazaarList({
               <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">No bazaars match your search</h3>
               <p className="text-muted-foreground">
-                Try adjusting your search terms or filters
+                Try adjusting your search terms
               </p>
             </div>
           </CardContent>
