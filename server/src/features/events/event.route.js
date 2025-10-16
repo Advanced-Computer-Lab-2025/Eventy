@@ -3,7 +3,6 @@ import { EventsController } from "./event.controller.js";
 import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
-
 const router = express.Router();
 const eventsController = new EventsController();
 
@@ -109,21 +108,40 @@ router.post(
   eventsController.createConferenceController
 );
 
+router.get(
+  "/admin/conferences",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getConferencesController.bind(eventsController)
+);
+
+router.get(
+  "/admin/conferences/:conferenceId",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getConferenceByIdController.bind(eventsController)
+);
+
 router.patch(
   "/admin/conferences/:conferenceId",
   authMiddleware,
   roleMiddleware(["admin", "events_office"]),
   eventsController.updateConferenceController.bind(eventsController)
 );
-
-
+//get all upcoming events (approved events)
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware(["vendor"]),
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
-
 
 // Search events (✅ new feature)
 router.get(
@@ -139,4 +157,21 @@ router.get(
   ]),
   eventsController.searchEvents.bind(eventsController)
 );
+
+// Get all events the logged-in user registered for
+router.get(
+  "/me/events",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.getMyEvents.bind(eventsController)
+);
+
+// Get event by ID (vendor only)
+router.get(
+  "/:eventId",
+  authMiddleware,
+  roleMiddleware(["vendor", "student", "staff", "ta", "professor"]),
+  eventsController.getEventById.bind(eventsController)
+);
+
 export default router;
