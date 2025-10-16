@@ -13,12 +13,15 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-async function updateVendorStatus(requestId: string, status: "accepted" | "rejected") {
+const token = localStorage.getItem("token");
+
+async function updateVendorStatus(requestId: string, status: "approved" | "rejected") {
   try {
     const response = await fetch(`http://localhost:4000/api/applications/${requestId}/status`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({ status }),
     });
@@ -48,65 +51,35 @@ async function updateVendorStatus(requestId: string, status: "accepted" | "rejec
   }
 }
 
-// async function updateVendorStatus(
-//   requestId: string,
-//   status: "accepted" | "rejected"
-// ) {
-//   try {
-//     // Replace with your backend URL and port
-//     const backendUrl = "http://localhost:4000";
-
-//     const response = await fetch(
-//       `${backendUrl}/api/admin/applications/${requestId}/status`,
-//       {
-//         method: "PATCH",
-//         headers: {
-//           "Content-Type": "application/json",
-//         },
-//         body: JSON.stringify({ status }),
-//       }
-//     );
-
-//     // If the response is HTML instead of JSON, throw an error
-//     const contentType = response.headers.get("content-type");
-//     if (!contentType || !contentType.includes("application/json")) {
-//       const text = await response.text();
-//       throw new Error(
-//         `Expected JSON, but received: ${text.substring(0, 200)}...`
-//       );
-//     }
-
-//     const data = await response.json();
-
-//     if (!response.ok) {
-//       throw new Error(data.message || "Failed to update application status");
-//     }
-
-//     return data.data; // updated application
-//   } catch (err: any) {
-//     console.error("Error updating vendor status:", err);
-//     alert(err.message);
-//   }
-// }
-
 
 //todo: remove mock functionality
+// const vendorRequests = [
+//   {
+//     id: "1",
+//     company: "Tech Solutions Co.",
+//     bazaar: "Spring Festival Bazaar",
+//     boothSize: "4x4",
+//     attendees: 3,
+//     status: "pending",
+//   },
+//   {
+//     id: "2",
+//     company: "Food Delights",
+//     bazaar: "Summer Market",
+//     boothSize: "2x2",
+//     attendees: 2,
+//     status: "pending",
+//   },
+// ];
+
 const vendorRequests = [
   {
-    id: "1",
+    id: "68e67bc571164efe8d0162f4", // ← a real ObjectId from MongoDB
     company: "Tech Solutions Co.",
     bazaar: "Spring Festival Bazaar",
     boothSize: "4x4",
     attendees: 3,
-    status: "pending",
-  },
-  {
-    id: "2",
-    company: "Food Delights",
-    bazaar: "Summer Market",
-    boothSize: "2x2",
-    attendees: 2,
-    status: "pending",
+    status: "apprved",
   },
 ];
 
@@ -114,10 +87,10 @@ export default function VendorRequests() {
   const [requests, setRequests] = useState(vendorRequests);
 
   const handleApprove = async (requestId: string) => {
-  const updatedApp = await updateVendorStatus(requestId, "accepted");
+  const updatedApp = await updateVendorStatus(requestId, "approved");
   if (updatedApp) {
     setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "accepted" } : r))
+      prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
     );
     alert("Vendor request approved!");
   }
