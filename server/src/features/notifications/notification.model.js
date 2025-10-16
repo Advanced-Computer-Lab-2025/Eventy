@@ -1,14 +1,16 @@
-const mongoose = require('mongoose');
+import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
 const notificationSchema = new Schema(
   {
-    recipient: {
-      type: Schema.Types.ObjectId,
-      ref: 'User',
-      required: true,
-    },
+    recipients: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+      }
+    ],
     message: {
       type: String,
       required: true,
@@ -33,6 +35,5 @@ const notificationSchema = new Schema(
 );
 
 // This ensures the collection is called "notifications"
-const Notification = mongoose.model('Notification', notificationSchema);
-
-module.exports = Notification;
+const Notification = mongoose.model("Notification", notificationSchema);
+export default Notification;

@@ -97,6 +97,35 @@ export class EventsController {
     }
   }
 
+  async getConferencesController(req, res, next) {
+    try {
+      const conferences = await eventService.getConferences();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, conferences, "Conferences retrieved successfully")
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getConferenceByIdController(req, res, next) {
+    try {
+      const { conferenceId } = req.params;
+      const conference = await eventService.getConferenceById(conferenceId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, conference, "Conference retrieved successfully")
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updateConferenceController(req, res, next) {
     try {
       const { error } = updateConferenceSchema.validate(req.body);
@@ -422,8 +451,7 @@ export class EventsController {
       }
 
       // Get the user ID from auth middleware
-      const userId = req.user._id;
-
+      const userId = req.user._id || req.user.id;
       // Fetch events the user is registered for
       const events = await eventService.getEventsByUser(userId);
 
@@ -480,6 +508,18 @@ export class EventsController {
       return res
         .status(200)
         .json(new ApiResponse(200, events, "Events search successful"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEventById(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const event = await eventService.getEventById(eventId);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event fetched successfully"));
     } catch (err) {
       next(err);
     }
