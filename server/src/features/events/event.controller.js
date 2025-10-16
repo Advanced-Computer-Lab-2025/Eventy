@@ -221,7 +221,7 @@ export class EventsController {
 
       const newWorkshop = await eventService.createWorkshop(
         req.body,
-        req.user._id
+        req.user.id
       );
 
       return res
