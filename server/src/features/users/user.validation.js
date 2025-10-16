@@ -20,17 +20,24 @@ export const UserValidation = {
 
 // Schema for creating Admin/Events Office accounts
 export const createManagementAccountSchema = Joi.object({
-  firstName: Joi.string().min(2).required(),
-  lastName: Joi.string().min(2).required(),
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-  role: Joi.string().valid("admin", "events_office").required(),
+  firstName: Joi.string().min(2).required(),
+  lastName: Joi.string().min(2).required(),
+  email: Joi.string()
+    .pattern(/^[A-Za-z0-9._%+-]+@guc\.edu\.eg$/)
+    .message("Email must be in the format username@guc.edu.eg")
+    .required(),
+  password: Joi.string().min(6).required(),
+  role: Joi.string().valid("admin", "events_office").required(),
 });
 
 export const deleteUserSchema = Joi.object({
-  id: Joi.string().hex().length(24).required().messages({
-    'string.hex': 'User ID must be a valid MongoDB ID.',
-    'string.length': 'User ID must be 24 characters long.',
-    'any.required': 'User ID is required.'
-  }),
+  id: Joi.string()
+    .hex()
+    .length(24)
+    .required()
+    .messages({
+      'string.hex': 'User ID must be a valid MongoDB ID.',
+      'string.length': 'User ID must be 24 characters long.',
+      'any.required': 'User ID is required.'
+    }),
 });
