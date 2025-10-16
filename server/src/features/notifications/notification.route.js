@@ -24,4 +24,12 @@ router.get(
   NotificationController.getAllNotificationsByUserId
 );
 
+// POST /api/notifications
+router.post(
+  "/",
+  authMiddleware,
+  roleMiddleware(allRoles),
+  NotificationController.createNotification
+);
+
 export default router;
