@@ -1,5 +1,8 @@
 import NotificationService from "./notification.service.js";
-import { createNotificationSchema } from "./notification.validation.js";
+import {
+  createNotificationSchema,
+  updateNotificationSchema,
+} from "./notification.validation.js";
 
 class NotificationController {
   static async getAllNotificationsByUserId(req, res) {
@@ -34,6 +37,32 @@ class NotificationController {
       const notification = await NotificationService.createNotification(value);
 
       res.status(201).json({ success: true, data: notification });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ success: false, message: "Server error", error: err.message });
+    }
+  }
+
+  static async updateNotification(req, res) {
+    try {
+      const { error, value } = updateNotificationSchema.validate(req.body);
+      if (error) {
+        return res
+          .status(400)
+          .json({ success: false, message: error.details[0].message });
+      }
+      const notificationId = req.params.id;
+      const updated = await NotificationService.updateNotification(
+        notificationId,
+        value
+      );
+      if (!updated) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Notification not found" });
+      }
+      res.json({ success: true, data: updated });
     } catch (err) {
       res
         .status(500)

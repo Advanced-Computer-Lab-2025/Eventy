@@ -12,3 +12,13 @@ export const createNotificationSchema = Joi.object({
   isRead: Joi.boolean().default(false),
   deletedAt: Joi.date().allow(null).default(null),
 });
+
+export const updateNotificationSchema = Joi.object({
+  title: Joi.string().max(255),
+  message: Joi.string().max(1000),
+  type: Joi.string().max(50),
+  recipients: Joi.array().items(Joi.string().hex().length(24)).min(1),
+  link: Joi.string().uri().allow(null, ""),
+  isRead: Joi.boolean(),
+  deletedAt: Joi.date().allow(null),
+});

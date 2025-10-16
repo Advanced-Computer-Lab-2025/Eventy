@@ -20,6 +20,18 @@ class NotificationService {
   static async createNotification(data) {
     return Notification.create(data);
   }
+
+  /**
+   * Update a notification by its ID.
+   * @param {string} notificationId
+   * @param {Object} updateData
+   * @returns {Promise<Object|null>}
+   */
+  static async updateNotification(notificationId, updateData) {
+    return Notification.findByIdAndUpdate(notificationId, updateData, {
+      new: true,
+    });
+  }
 }
 
 export default NotificationService;
