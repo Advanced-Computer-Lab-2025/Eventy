@@ -129,6 +129,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   });
 
   const canCreateSession = userRole === "events_office";
+  const canRegister = userRole === "student" || userRole === "staff" || userRole === "ta" || userRole === "professor";
 
   return (
     <div className="space-y-4">
@@ -178,7 +179,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                   <TableHead>Duration</TableHead>
                   <TableHead>Instructor</TableHead>
                   <TableHead>Capacity</TableHead>
-                  <TableHead>Registration</TableHead>
+                  {canRegister && <TableHead>Registration</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -212,15 +213,17 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          size="sm"
-                          disabled={isFull}
-                          onClick={() => handleRegister(session._id)}
-                        >
-                          Register
-                        </Button>
-                      </TableCell>
+                      {canRegister && (
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            disabled={isFull}
+                            onClick={() => handleRegister(session._id)}
+                          >
+                            Register
+                          </Button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}

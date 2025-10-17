@@ -123,6 +123,8 @@ export default function SportsFacilities() {
     day: "numeric",
   });
 
+  const canViewCourts = userRole === "student";
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -136,12 +138,14 @@ export default function SportsFacilities() {
           </p>
         </div>
 
-        <Tabs defaultValue="courts" className="space-y-6">
+        <Tabs defaultValue={canViewCourts ? "courts" : "gym"} className="space-y-6">
           <TabsList>
-            <TabsTrigger value="courts">
-              <Calendar className="h-4 w-4 mr-2" />
-              Court Reservations
-            </TabsTrigger>
+            {canViewCourts && (
+              <TabsTrigger value="courts">
+                <Calendar className="h-4 w-4 mr-2" />
+                Court Reservations
+              </TabsTrigger>
+            )}
             <TabsTrigger value="gym">
               <Dumbbell className="h-4 w-4 mr-2" />
               Gym Schedule
@@ -149,7 +153,8 @@ export default function SportsFacilities() {
           </TabsList>
 
           {/* COURT SCHEDULES */}
-          <TabsContent value="courts">
+          {canViewCourts && (
+            <TabsContent value="courts">
             {/* Centered Date Navigation — for courts only */}
             <div className="flex items-center justify-center gap-4 my-6">
               <Button
@@ -229,6 +234,7 @@ export default function SportsFacilities() {
               </div>
             )}
           </TabsContent>
+          )}
 
           {/* GYM SCHEDULES */}
           <TabsContent value="gym" className="space-y-4">
