@@ -174,6 +174,13 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
         <image href="/images/bushd.png" x="160" y="-32" width="100" height="80" />
         <image href="/images/bushd.png" x="340" y="-32" width="100" height="80" />
         <image href="/images/bushd.png" x="460" y="-32" width="100" height="80" />
+
+        <image href="/images/palmri.png" x="640" y="360" width="100" height="80" />
+        <image href="/images/palmri.png" x="640" y="220" width="100" height="80" />
+        <image href="/images/palmri.png" x="640" y="70" width="100" height="80" />
+        <image href="/images/bushr.png" x="657" y="300" width="100" height="80" />
+        <image href="/images/bushr.png" x="657" y="140" width="100" height="80" />
+
         
 
 
