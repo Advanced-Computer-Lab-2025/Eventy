@@ -17,7 +17,7 @@ interface Event {
   attendeesCount?: number;
   image?: string;
   description?: string;
-  vendors?: Array<{
+ vendors?: Array<{
     vendorId?: string;
     vendorName?: string;
     vendorEmail?: string;
@@ -29,7 +29,6 @@ interface Event {
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
-  const [events, setEvents] = useState<any[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true);
@@ -37,38 +36,6 @@ export default function Home() {
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const API_URL = `${API_BASE_URL}/api/events/upcoming`;
-  const token = localStorage.getItem("token");
-
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(API_URL, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
-
-        if (!response.ok) throw new Error("Failed to fetch events");
-
-        const data = await response.json();
-        console.log("Events from backend:", data.data);
-        setEvents(data.data || []);
-      } catch (err) {
-        console.error("Error fetching events:", err);
-        setError("Unable to load events. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  const API_URL = "http://localhost:4000/api/events/upcoming";
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -181,7 +148,7 @@ export default function Home() {
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
                       image={event.image}
-                      vendors={event.vendors}
+                      vendors={event.vendors || []}
                       onRegister={() => console.log("Register:", event.name)}
                       onSave={() => console.log("Save:", event.name)}
                       onShare={() => console.log("Share:", event.name)}

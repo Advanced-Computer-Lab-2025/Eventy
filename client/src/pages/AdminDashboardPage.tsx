@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { useLocation } from "wouter";
+import { MapPin } from "lucide-react";
 import EventCard from "@/components/EventCard";
+import { useLocation } from "wouter";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -34,67 +34,83 @@ interface Event {
   image?: string;
 }
 
-export default function EventsOfficeDashboard() {
+interface Conference {
+  _id: string;
+  title: string;
+  fundingSource?: "external" | "guc" | string;
+  requiredBudget?: number;
+}
+export default function AdminDashboardPage() {
   const [, setLocation] = useLocation();
-  const [creating, setCreating] = useState(false);
-  const [conferences, setConferences] = useState<Conference[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [events, setEvents] = useState<any[]>([]);
-  const [eventsLoading, setEventsLoading] = useState(true);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(true);
   const [eventsError, setEventsError] = useState("");
+  const [conferences, setConferences] = useState<Conference[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [bazaars, setBazaars] = useState<Bazaar[]>([]);
+  const [loadingBazaars, setLoadingBazaars] = useState(true);
 
-  useEffect(() => {
-    const fetchConferences = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
+  const [formData, setFormData] = useState({
+    name: "",
+    location: "",
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
+    description: "",
+    registrationDeadline: "",
+  });
 
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch conferences");
+  // Fetch bazaars
+  const fetchBazaars = async () => {
+    try {
+      setLoadingBazaars(true);
+      setError("");
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/search?type=bazaar`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to fetch bazaars");
+      setBazaars(data.data || []);
+    } catch (e: any) {
+      setError(e.message || "Failed to load bazaars");
+      setBazaars([]);
+    } finally {
+      setLoadingBazaars(false);
+    }
+  };
 
-        setConferences(data.data || []);
-      } catch (err: any) {
-        console.error("Error fetching conferences:", err);
-        setConferences([]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch upcoming events (like in Home)
+  const fetchEvents = async () => {
+    try {
+      setLoadingEvents(true);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : "",
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to load events");
+      setEvents(data.data || []);
+    } catch (e: any) {
+      console.error("Error fetching events:", e);
+      setEventsError(e.message || "Unable to load events");
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
 
   useEffect(() => {
     fetchBazaars();
     fetchEvents();
-  }, []);
-
-  useEffect(() => {
-    const fetchUpcoming = async () => {
-      try {
-        setEventsLoading(true);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            "Content-Type": "application/json",
-          },
-          credentials: "include",
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch upcoming events");
-        setEvents(data.data || []);
-      } catch (err: any) {
-        console.error("Error fetching upcoming events:", err);
-        setEvents([]);
-        setEventsError("Unable to load upcoming events.");
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-    fetchUpcoming();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -312,51 +328,6 @@ export default function EventsOfficeDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Events</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {eventsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    Loading events...
-                  </div>
-                ) : eventsError ? (
-                  <div className="text-center py-8 text-red-500">{eventsError}</div>
-                ) : events.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No upcoming events</p>
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {events.map((event: any, index: number) => (
-                      <EventCard
-                        key={event._id || index}
-                        id={event._id || String(index)}
-                        title={event.name || "Untitled Event"}
-                        category={(event.eventType || "academic") as any}
-                        date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        }) : "TBA"}
-                        time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
-                        location={event.location || "Unknown location"}
-                        attendees={event.attendeesCount || 0}
-                        vendors={event.vendors || []}
-                        onRegister={() => console.log("Register:", event.name)}
-                        onSave={() => console.log("Save:", event.name)}
-                        onShare={() => console.log("Share:", event.name)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
             
 
             {/* Upcoming Events Section */}
@@ -487,4 +458,5 @@ export default function EventsOfficeDashboard() {
       </main>
     </div>
   );
+
 }
