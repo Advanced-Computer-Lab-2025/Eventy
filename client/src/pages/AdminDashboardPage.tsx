@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
-import Header from "@/components/Header";
+import { useState, useEffect } from "react";
+import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
+import Header from "@/components/AdminHeader";
+import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -388,10 +389,60 @@ export default function EventsOfficeDashboard() {
               <CardHeader>
                 <CardTitle>Tips</CardTitle>
               </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">
-                - Ensure dates and times are correct before submitting.
-                <br />- Vendors will see approved bazaars and can apply before
-                the registration deadline.
+              <CardContent className="space-y-3">
+                <Button 
+                  className="w-full" 
+                  onClick={() => setLocation("/admin/create/conference")}
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Conference
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline" 
+                  onClick={() => setLocation("/admin/users")}
+                >
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Manage Users
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline" 
+                  onClick={() => console.log("Settings")}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Conference Stats</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Conferences</span>
+                  <span className="text-sm font-semibold">{conferences.length}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">External Funding</span>
+                  <span className="text-sm font-semibold">
+                    {conferences.filter(c => c.fundingSource === 'external').length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">GUC Funding</span>
+                  <span className="text-sm font-semibold">
+                    {conferences.filter(c => c.fundingSource === 'guc').length}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm">Total Budget</span>
+                  <span className="text-sm font-semibold">
+                    {conferences.reduce((sum, c) => sum + (c.requiredBudget || 0), 0)} EGP
+                  </span>
+                </div>
               </CardContent>
             </Card>
           </div>

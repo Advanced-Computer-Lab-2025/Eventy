@@ -22,6 +22,7 @@ import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
   return (
@@ -39,7 +40,11 @@ function Router() {
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard" component={VendorDashboard} />
       <Route path="/events-office/dashboard" component={EventsOfficeDashboard} />
-      <Route path="/sports" component={SportsFacilities} />
+      <Route path="/sports">
+        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+          <SportsFacilities />
+        </ProtectedRoute>
+      </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
