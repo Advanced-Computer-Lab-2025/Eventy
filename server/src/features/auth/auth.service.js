@@ -164,7 +164,7 @@ export const loginUser = async (data) => {
     process.env.JWT_SECRET || "supersecretkey",
     { expiresIn: "30d" }
   );
-  //////////////////////////////////////////////////////////////note : frontend stores the token not backend /////////////////////////////////////////////////
+
   // ✅ Step 6: Personalized welcome message
   let welcomeMessage = `Welcome back, ${user.firstName || "User"}!`;
   if (user.role === "vendor")
