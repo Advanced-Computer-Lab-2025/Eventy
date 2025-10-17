@@ -242,7 +242,7 @@ export class EventsController {
     }
 
     // ✅ 2. Allow only Admin or Events Office roles
-    if (req.user.role !== "admin" && req.user.role !== "events_office") {
+    if (req.user.role !== "events_office") {
       throw new ApiError(
         403,
         "Forbidden: Only Admin or Events Office can view all workshops"
