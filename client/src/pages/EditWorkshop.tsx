@@ -5,6 +5,7 @@ import {
   Clock,
   Users,
   DollarSign,
+  AlertCircle,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 
 interface WorkshopFormData {
@@ -70,6 +72,8 @@ export default function EditWorkshop() {
   const [loading, setLoading] = useState(false);
   const [fetchingWorkshop, setFetchingWorkshop] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
+  const [workshopStatus, setWorkshopStatus] = useState<string>("");
+  const [revisionComments, setRevisionComments] = useState<string>("");
 
   useEffect(() => {
     fetchProfessors();
@@ -155,6 +159,10 @@ export default function EditWorkshop() {
         );
         setSelectedProfessors(professorIds);
       }
+
+      // Set status and revision comments
+      setWorkshopStatus(workshop.status || "");
+      setRevisionComments(workshop.revisionComments || "");
     } catch (err) {
       console.error(err);
       setErrorMsg(err instanceof Error ? err.message : "Failed to load workshop");
@@ -259,6 +267,17 @@ export default function EditWorkshop() {
           </p>
           {errorMsg && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
         </div>
+
+        {/* Revision Comments Alert */}
+        {workshopStatus === "needs_revision" && revisionComments && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Revision Required</AlertTitle>
+            <AlertDescription className="mt-2">
+              {revisionComments}
+            </AlertDescription>
+          </Alert>
+        )}
 
         <form onSubmit={handleSubmit}>
           {/* --- Basic Info --- */}
