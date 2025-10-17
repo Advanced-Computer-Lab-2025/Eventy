@@ -20,6 +20,7 @@ import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
+import MyWorkshops from "@/pages/MyWorkshops";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -44,6 +45,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/my-events" component={MyEvents} />
+      <Route path="/my-workshops" component={MyWorkshops} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
       <Route component={NotFound} />
