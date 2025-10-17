@@ -1,4 +1,5 @@
 import jwt from "jsonwebtoken";
+import { User } from "../features/users/user.model.js";
 export const validateToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
@@ -6,7 +7,8 @@ export const validateToken = (token) => {
     return null;
   }
 };
-const authMiddleware = (req, res, next) => {
+
+const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
   if (!authHeader) {
     return res.status(401).json({ message: "Authorization header missing" });
@@ -19,7 +21,15 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
+    
+    // Fetch the full user object from database
+    const user = await User.findById(decoded.id || decoded.userId || decoded._id);
+    
+    if (!user) {
+      return res.status(401).json({ message: "User not found" });
+    }
+    
+    req.user = user; // Now req.user has _id, role, etc.
     next();
   } catch (err) {
     return res.status(401).json({ message: "Invalid or expired token" });

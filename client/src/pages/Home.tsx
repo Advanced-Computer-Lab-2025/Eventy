@@ -1,95 +1,104 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import EventCard from "@/components/EventCard";
 import EventHero from "@/components/EventHero";
 import EventFilters from "@/components/EventFilters";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
+import { getEventImage } from "@/lib/eventImages";
 
-//todo: remove mock functionality
-const mockEvents = [
-  {
-    id: "1",
-    title: "AI & Machine Learning Workshop",
-    category: "academic" as const,
-    date: "March 15, 2024",
-    time: "2:00 PM - 5:00 PM",
-    location: "Engineering Building, Room 301",
-    attendees: 45,
-    image: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=800&auto=format&fit=crop",
-  },
-  {
-    id: "2",
-    title: "Spring Festival Celebration",
-    category: "cultural" as const,
-    date: "March 20, 2024",
-    time: "6:00 PM - 10:00 PM",
-    location: "Main Quadrangle",
-    attendees: 320,
-    image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop",
-  },
-  {
-    id: "3",
-    title: "Basketball Championship Finals",
-    category: "sports" as const,
-    date: "March 18, 2024",
-    time: "7:00 PM - 9:00 PM",
-    location: "Sports Center Arena",
-    attendees: 500,
-    image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop",
-  },
-  {
-    id: "4",
-    title: "Career Fair 2024",
-    category: "career" as const,
-    date: "March 25, 2024",
-    time: "10:00 AM - 4:00 PM",
-    location: "Convention Center",
-    attendees: 180,
-    image: "https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&auto=format&fit=crop",
-  },
-  {
-    id: "5",
-    title: "Annual Music Concert",
-    category: "social" as const,
-    date: "March 28, 2024",
-    time: "8:00 PM - 11:00 PM",
-    location: "University Auditorium",
-    attendees: 250,
-    image: "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&auto=format&fit=crop",
-  },
-  {
-    id: "6",
-    title: "Research Symposium",
-    category: "academic" as const,
-    date: "March 22, 2024",
-    time: "9:00 AM - 5:00 PM",
-    location: "Science Building Hall",
-    attendees: 95,
-    image: "https://images.unsplash.com/photo-1587825140708-dfaf72ae4b04?w=800&auto=format&fit=crop",
-  },
-];
+// Define Event type for type safety
+interface Event {
+  _id: string;
+  name: string;
+  eventType?: string;
+  startDate?: string;
+  location?: string;
+  attendeesCount?: number;
+  image?: string;
+  description?: string;
+ vendors?: Array<{
+    vendorId?: string;
+    vendorName?: string;
+    vendorEmail?: string;
+    type?: string;
+    boothSize?: string;
+    attendees?: number;
+  }>;
+}
 
 export default function Home() {
+  const [events, setEvents] = useState<Event[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(API_URL, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        if (!response.ok) throw new Error("Failed to fetch events");
+
+        const data = await response.json();
+        console.log("Events from backend:", data.data);
+        setEvents(data.data || []);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Unable to load events. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
       <Header onSearch={(query) => console.log("Search:", query)} />
-      
+
       <main className="pb-20 md:pb-8">
-        <EventHero
-          title="Annual Tech Summit 2024"
-          category="career"
-          date="April 20, 2024"
-          time="9:00 AM - 6:00 PM"
-          location="University Convention Center"
-          attendees={250}
-          image="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop"
-          description="Join us for the biggest tech event of the year featuring industry leaders, workshops, and networking opportunities."
-          onRegister={() => console.log("Register clicked")}
-        />
+        {!loading && events.length > 0 && (
+          <EventHero
+            title={events[0].name || "Untitled Event"}
+            category={(events[0].eventType || "academic") as any}
+            date={events[0].startDate
+              ? new Date(events[0].startDate).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "TBA"}
+            time={events[0].startDate
+              ? new Date(events[0].startDate).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })
+              : "TBA"}
+            location={events[0].location || "Unknown location"}
+            attendees={events[0].attendeesCount || 0}
+            image={events[0].image || getEventImage(events[0].eventType, events[0].name)}
+            description={
+              events[0].description ||
+              "Discover and register for exciting upcoming events across campus."
+            }
+            onRegister={() => console.log("Register:", events[0].name)}
+          />
+        )}
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
@@ -107,17 +116,46 @@ export default function Home() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {mockEvents.map((event) => (
-                  <EventCard
-                    key={event.id}
-                    {...event}
-                    onRegister={() => console.log("Register:", event.title)}
-                    onSave={() => console.log("Save:", event.title)}
-                    onShare={() => console.log("Share:", event.title)}
-                  />
-                ))}
-              </div>
+              {loading ? (
+                <p>Loading events...</p>
+              ) : error ? (
+                <p className="text-red-500">{error}</p>
+              ) : events.length === 0 ? (
+                <p>No upcoming events found.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {events.map((event, index) => (
+                    <EventCard
+                      key={event._id || index}
+                      id={event._id || String(index)}
+                      title={event.name || "Untitled Event"}
+                      category={(event.eventType || "academic") as any}
+                      date={event.startDate
+                        ? new Date(event.startDate).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "TBA"}
+                      time={event.startDate
+                        ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                        : "TBA"}
+                      location={event.location || "Unknown location"}
+                      attendees={event.attendeesCount || 0}
+                      image={event.image}
+                      vendors={event.vendors || []}
+                      onRegister={() => console.log("Register:", event.name)}
+                      onSave={() => console.log("Save:", event.name)}
+                      onShare={() => console.log("Share:", event.name)}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

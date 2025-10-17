@@ -20,7 +20,11 @@ import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
+import ProfessorDashboard from "@/pages/ProfessorDashboard";
+import EditWorkshop from "@/pages/EditWorkshop";
+import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
+import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 
 function Router() {
@@ -35,10 +39,34 @@ function Router() {
       <Route path="/admin/events/conference/edit/:id" component={EditConference} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
+      <Route path="/professor/dashboard">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <ProfessorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/create-workshop">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <CreateWorkshop />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/edit-workshop/:id">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <EditWorkshop />
+        </ProtectedRoute>
+      </Route>
       <Route path="/create/trip" component={CreateTrip} />
       <Route path="/create/bazaar" component={CreateBazaar} />
-      <Route path="/vendor/dashboard" component={VendorDashboard} />
-      <Route path="/sports" component={SportsFacilities} />
+      <Route path="/vendor/dashboard">
+        <ProtectedRoute allowedRoles={["vendor"]}>
+          <VendorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/dashboard" component={EventsOfficeDashboard} />
+      <Route path="/sports">
+        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+          <SportsFacilities />
+        </ProtectedRoute>
+      </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/vendor-requests" component={VendorRequests} />

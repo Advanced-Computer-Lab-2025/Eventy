@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
@@ -7,6 +7,7 @@ import QuickActions from "@/components/QuickActions";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import EventCard from "@/components/EventCard";
 import { useEffect } from "react";
 
 
@@ -39,6 +40,36 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch(API_URL, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!response.ok) throw new Error("Failed to fetch events");
+        const data = await response.json();
+        setEvents(data.data || []);
+      } catch (err) {
+        console.error("Error fetching events:", err);
+        setError("Unable to load events. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchEvents();
+  }, []);
 
  
 
@@ -142,6 +173,51 @@ export default function Dashboard() {
               ))}
             </CardContent> */}
 
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Upcoming Events</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    Loading events...
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8 text-red-500">{error}</div>
+                ) : events.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No upcoming events</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {events.map((event: any, index: number) => (
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        }) : "TBA"}
+                        time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
+                        location={event.location || "Unknown location"}
+                        attendees={event.attendeesCount || 0}
+                        vendors={event.vendors || []}
+                        onRegister={() => console.log("Register:", event.name)}
+                        onSave={() => console.log("Save:", event.name)}
+                        onShare={() => console.log("Share:", event.name)}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
             </Card>
 
             <Card>
