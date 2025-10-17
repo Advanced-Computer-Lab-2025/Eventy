@@ -9,6 +9,11 @@ import jwt from "jsonwebtoken";
 export const signUpUser = async (data) => {
   const { role } = data;
 
+  // ✅ Check if role exists before calling toLowerCase()
+  if (!role) {
+    throw new Error("Role is required");
+  }
+
   // ✅ Step 1: Normalize role
   const normalizedRole = role.toLowerCase();
 
@@ -62,6 +67,7 @@ export const signUpUser = async (data) => {
     roleVerifiedByAdmin: false,
   };
 
+  userData.role = null;
   // ✅ Step 7: Create and save user
   const user = new User(userData);
   await user.save();
