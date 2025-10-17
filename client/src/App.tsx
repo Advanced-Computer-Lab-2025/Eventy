@@ -18,7 +18,6 @@ import CreateBazaar from "@/pages/CreateBazaar";
 import VendorDashboard from "@/pages/VendorDashboard";
 import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
-import MyWorkshops from "@/pages/MyWorkshops";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
@@ -66,7 +65,6 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/my-events" component={MyEvents} />
-      <Route path="/my-workshops" component={MyWorkshops} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
       <Route component={NotFound} />
