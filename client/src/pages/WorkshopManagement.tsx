@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin, Users, DollarSign, Edit, Plus } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Edit, Plus, ArrowLeft } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -110,6 +110,16 @@ export default function WorkshopManagement() {
       <Header />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        {/* Back Button */}
+        <Button 
+          variant="ghost" 
+          onClick={() => setLocation("/professor")}
+          className="mb-4"
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div>
@@ -148,60 +158,62 @@ export default function WorkshopManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {workshops.map((workshop) => (
-              <Card key={workshop._id} className="hover:shadow-lg transition-shadow">
+              <Card key={workshop._id} className="hover:shadow-lg transition-shadow flex flex-col">
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{workshop.name}</CardTitle>
                     {getStatusBadge(workshop.status)}
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {workshop.description}
-                  </p>
+                <CardContent className="space-y-4 flex-1 flex flex-col">
+                  <div className="flex-1 space-y-4">
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {workshop.description}
+                    </p>
 
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center text-muted-foreground">
-                      <MapPin className="mr-2 h-4 w-4" />
-                      {workshop.location}
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center text-muted-foreground">
+                        <MapPin className="mr-2 h-4 w-4" />
+                        {workshop.location}
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {formatDate(workshop.startDate)} - {formatDate(workshop.endDate)}
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <Users className="mr-2 h-4 w-4" />
+                        Capacity: {workshop.capacity}
+                      </div>
+                      <div className="flex items-center text-muted-foreground">
+                        <DollarSign className="mr-2 h-4 w-4" />
+                        Budget: ${workshop.requiredBudget.toLocaleString()}
+                      </div>
                     </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      {formatDate(workshop.startDate)} - {formatDate(workshop.endDate)}
+
+                    <div className="pt-2 border-t">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
+                        <span>Faculty: {workshop.faculty.toUpperCase()}</span>
+                        <span>Source: {workshop.fundingSource.toUpperCase()}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        Deadline: {formatDate(workshop.registrationDeadline)}
+                      </div>
                     </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <Users className="mr-2 h-4 w-4" />
-                      Capacity: {workshop.capacity}
-                    </div>
-                    <div className="flex items-center text-muted-foreground">
-                      <DollarSign className="mr-2 h-4 w-4" />
-                      Budget: ${workshop.requiredBudget.toLocaleString()}
-                    </div>
+
+                    {workshop.revisionComments && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
+                        <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
+                          Revision Required:
+                        </p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                          {workshop.revisionComments}
+                        </p>
+                      </div>
+                    )}
                   </div>
-
-                  <div className="pt-2 border-t">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
-                      <span>Faculty: {workshop.faculty.toUpperCase()}</span>
-                      <span>Source: {workshop.fundingSource.toUpperCase()}</span>
-                    </div>
-                    <div className="text-xs text-muted-foreground">
-                      Deadline: {formatDate(workshop.registrationDeadline)}
-                    </div>
-                  </div>
-
-                  {workshop.revisionComments && (
-                    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-                      <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                        Revision Required:
-                      </p>
-                      <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                        {workshop.revisionComments}
-                      </p>
-                    </div>
-                  )}
 
                   <Button
-                    className="w-full"
+                    className="w-full mt-auto"
                     variant="outline"
                     onClick={() => setLocation(`/professor/edit-workshop/${workshop._id}`)}
                     disabled={workshop.status !== "pending" && workshop.status !== "needs_revision"}
