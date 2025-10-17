@@ -17,6 +17,14 @@ interface Event {
   attendeesCount?: number;
   image?: string;
   description?: string;
+  vendors?: Array<{
+    vendorId?: string;
+    vendorName?: string;
+    vendorEmail?: string;
+    type?: string;
+    boothSize?: string;
+    attendees?: number;
+  }>;
 }
 
 export default function Home() {
@@ -140,6 +148,7 @@ export default function Home() {
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
                       image={event.image}
+                      vendors={event.vendors}
                       onRegister={() => console.log("Register:", event.name)}
                       onSave={() => console.log("Save:", event.name)}
                       onShare={() => console.log("Share:", event.name)}

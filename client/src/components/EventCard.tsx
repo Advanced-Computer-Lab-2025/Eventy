@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users, Bookmark, Share2 } from "lucide-react";
+import { Calendar, MapPin, Users, Bookmark, Share2, Store } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
@@ -17,6 +17,14 @@ export interface EventCardProps {
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
+  vendors?: Array<{
+    vendorId?: string;
+    vendorName?: string;
+    vendorEmail?: string;
+    type?: string;
+    boothSize?: string;
+    attendees?: number;
+  }>;
 }
 
 export default function EventCard({
@@ -32,9 +40,11 @@ export default function EventCard({
   onRegister,
   onSave,
   onShare,
+  vendors = [],
 }: EventCardProps) {
   const imageSrc = image || getEventImage(String(category), title);
   const isRegisterable = /workshop|trip/i.test(String(category));
+  const isBazaarOrBooth = /bazaar|booth/i.test(String(category));
   return (
     <Card 
       className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1"
@@ -73,6 +83,30 @@ export default function EventCard({
             <span>{attendees}</span>
           </div>
         </div>
+
+        {isBazaarOrBooth && vendors.some(v => !!v.vendorName) && (
+          <div className="mt-1 text-sm">
+            <div className="flex items-center gap-2 text-foreground font-medium">
+              <Store className="h-4 w-4 text-primary" />
+              <span>Participating Vendors</span>
+            </div>
+            <div className="mt-1 text-muted-foreground">
+              {(() => {
+                const names = vendors
+                  .map((v) => v.vendorName)
+                  .filter(Boolean) as string[];
+                const shown = names.slice(0, 3);
+                const remaining = Math.max(0, names.length - shown.length);
+                return (
+                  <span data-testid={`text-vendors-${id}`}>
+                    {shown.join(", ")}
+                    {remaining > 0 ? ` and ${remaining} more` : ""}
+                  </span>
+                );
+              })()}
+            </div>
+          </div>
+        )}
 
         {showActions && (
           <div className="flex gap-2 pt-2">
