@@ -2,12 +2,14 @@ import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
 import { Calendar, MapPin, Users, DollarSign, Edit2, Plus, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function TripManagement() {
+  const { toast } = useToast();
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -124,7 +126,11 @@ export default function TripManagement() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("You must be logged in to create a trip.");
+        toast({
+          title: "Authentication required",
+          description: "You must be logged in to create or edit a trip.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -174,18 +180,30 @@ export default function TripManagement() {
 
       const json = await response.json().catch(() => null);
       if (response.ok) {
-        console.log("Trip submit success:", json);
+        const isEdit = Boolean(editingId);
+        toast({
+          title: isEdit ? "Trip updated" : "Trip created",
+          description: isEdit ? "The trip was updated successfully." : "The trip was created successfully.",
+        });
         await fetchTrips();
         handleCloseModal();
       } else {
         // more verbose error output to help debugging
         console.error("Submit failed:", response.status, json);
         const msg = json?.message ?? json?.error ?? `Server returned ${response.status}`;
-        alert(`Error: ${msg}`);
+        toast({
+          title: "Failed to save trip",
+          description: String(msg),
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error submitting form:", error);
-      alert("Error submitting form. See console for details.");
+      toast({
+        title: "Unexpected error",
+        description: "Error submitting form. See console for details.",
+        variant: "destructive",
+      });
     }
   };
 
