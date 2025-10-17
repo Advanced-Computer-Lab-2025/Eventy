@@ -107,7 +107,8 @@ export default function EventListItem({
                     Delete
                   </Button>
                 )}
-                <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                
+              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
               </div>
             </div>
             
@@ -125,6 +126,29 @@ export default function EventListItem({
                 <span className="line-clamp-1">{location}</span>
               </div>
             </div>
+             {/* Show delete button only for admins/events office */}
+             {canDelete && (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={async (e) => {
+                    e.stopPropagation(); // prevents triggering card click
+                    if (!confirm("Are you sure you want to delete this event?")) return;
+
+                    try {
+                      await deleteEvent(id);
+                      alert("Event deleted successfully ✅");
+                      onDelete?.(id); // remove from parent list
+                    } catch (err: any) {
+                      alert(err.message || "Failed to delete event ❌");
+                    }
+                  }}
+                 data-testid={`button-delete-event-${id}`}
+               >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                   Delete
+               </Button>
+                )}
           </div>
         </div>
       </CardContent>

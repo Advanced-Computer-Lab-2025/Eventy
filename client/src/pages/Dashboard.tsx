@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 
 
+
 //todo: remove mock functionality
 const recentEvents = [
   {
