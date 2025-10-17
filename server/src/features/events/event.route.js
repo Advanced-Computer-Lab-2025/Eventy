@@ -139,4 +139,20 @@ router.get(
   ]),
   eventsController.searchEvents.bind(eventsController)
 );
+router.get(
+  "/all",
+  authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "vendor",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
+  eventsController.getAllEvents.bind(eventsController)
+);
+
+
 export default router;

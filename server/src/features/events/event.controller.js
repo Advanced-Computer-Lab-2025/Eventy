@@ -489,4 +489,15 @@ export class EventsController {
       next(err);
     }
   }
+  async getAllEvents(req, res, next) {
+  try {
+    const events = await eventService.getAllEvents();
+    return res
+      .status(200)
+      .json(new ApiResponse(200, events, "All events fetched successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+
 }

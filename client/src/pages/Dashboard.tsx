@@ -7,6 +7,8 @@ import QuickActions from "@/components/QuickActions";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect } from "react";
+
 
 //todo: remove mock functionality
 const recentEvents = [
@@ -31,8 +33,38 @@ const recentEvents = [
 ];
 
 export default function Dashboard() {
-  const [events, setEvents] = useState(recentEvents);
+   const [events, setEvents] = useState(recentEvents);
+  // const [showCreateDialog, setShowCreateDialog] = useState(false);
+//const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+
+ 
+
+  //   const handleDelete = async (eventId: string) => {
+  //   try {
+  //     const res = await fetch(`/api/admin/events/${eventId}`, {
+  //       method: "DELETE",
+  //       credentials: "include",
+  //     });
+
+  //     if (res.status === 409) {
+  //       const data = await res.json();
+  //       alert(data.message || "Cannot delete event with registered users ❌");
+  //       return;
+  //     }
+
+  //     if (!res.ok) throw new Error("Failed to delete event");
+
+  //     setEvents(prev => prev.filter(e => e._id !== eventId));
+  //     alert("Event deleted successfully ✅");
+  //   } catch (err: any) {
+  //     alert(err.message || "Failed to delete event ❌");
+  //   }
+  // };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,6 +121,27 @@ export default function Dashboard() {
         />
       ))}
     </CardContent>
+              {/* <CardContent className="space-y-3">
+              {loading && <p>Loading events...</p>}
+              {error && <p className="text-red-500">Error: {error}</p>}
+              {!loading && !error && events.length === 0 && <p>No events found.</p>}
+
+              {!loading && !error && events.map((event) => (
+                <EventListItem
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={event.eventType}
+                  date={new Date(event.startDate).toLocaleDateString()}
+                  time={`${new Date(event.startDate).toLocaleTimeString()} - ${new Date(event.endDate).toLocaleTimeString()}`}
+                  location={event.location}
+                  image={event.bannerImage || "/placeholder.png"}
+                  canDelete={true}
+                  onDelete={handleDelete} // ✅ connect to real delete API
+                />
+              ))}
+            </CardContent> */}
+
             </Card>
 
             <Card>
