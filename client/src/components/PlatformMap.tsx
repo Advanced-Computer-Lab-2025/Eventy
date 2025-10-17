@@ -100,37 +100,50 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
         <image href="/images/pathV.png" x="290" y="-20" width="20" height="120" />
         <image href="/images/pathV.png" x="290" y="400" width="20" height="120" />
 
-        {/* --- TABLES & UMBRELLAS --- */}
-        <image href="/images/tables.png" x="190" y="120" width="100" height="80" />
-        <image href="/images/tables.png" x="60" y="160" width="100" height="80" />
-        <image href="/images/tables.png" x="440" y="160" width="100" height="80" />
-        <image href="/images/tables.png" x="130" y="220" width="100" height="80" />
-        <image href="/images/tables.png" x="250" y="220" width="100" height="80" />
-        <image href="/images/tables.png" x="380" y="220" width="100" height="80" />
-        <image href="/images/tables.png" x="300" y="150" width="100" height="80" />
-        <image href="/images/tables.png" x="70" y="90" width="100" height="80" />
-        <image href="/images/tables.png" x="400" y="90" width="100" height="80" />
-        <image href="/images/tables.png" x="470" y="280" width="100" height="80" />
-        <image href="/images/tables.png" x="350" y="300" width="100" height="80" />
-        <image href="/images/tables.png" x="220" y="300" width="100" height="80" />
-        <image href="/images/tables.png" x="30" y="250" width="100" height="80" />
-        <image href="/images/tables.png" x="110" y="310" width="100" height="80" />
 
-        <image href="/images/ubeige.png" x="350" y="80" width="100" height="80" />
-        <image href="/images/ublue.png" x="390" y="150" width="100" height="80" />
-        <image href="/images/uorange.png" x="330" y="215" width="100" height="80" />
-        <image href="/images/ubeige.png" x="200" y="210" width="100" height="80" />
-        <image href="/images/uyellow.png" x="260" y="140" width="100" height="80" />
-        <image href="/images/ublue.png" x="140" y="110" width="100" height="80" />
-        <image href="/images/uorange.png" x="20" y="80" width="100" height="80" />
-        <image href="/images/ubeige.png" x="10" y="150" width="100" height="80" />
-        <image href="/images/uyellow.png" x="80" y="215" width="100" height="80" />
-        <image href="/images/uorange.png" x="490" y="100" width="100" height="80" />
+        {/* --- LEFT TABLES --- */}
+        <image href="/images/tables.png" x="10" y="230" width="100" height="80" />
+        <image href="/images/tables.png" x="30" y="150" width="100" height="80" />
+        <image href="/images/tables.png" x="60" y="90" width="100" height="80" />
+        <image href="/images/tables.png" x="70" y="320" width="100" height="80" />
+        <image href="/images/tables.png" x="150" y="210" width="100" height="80" />
+        <image href="/images/tables.png" x="180" y="120" width="100" height="80" />
+        <image href="/images/tables.png" x="180" y="300" width="100" height="80" />
+
+        {/* --- RIGHT TABLES ---         <image href="/images/tables.png" x="260" y="220" width="100" height="80" />*/}
+        <image href="/images/tables.png" x="480" y="165" width="100" height="80" />
+        <image href="/images/tables.png" x="410" y="220" width="100" height="80" />
+        <image href="/images/tables.png" x="340" y="130" width="100" height="80" />
+        <image href="/images/tables.png" x="430" y="90" width="100" height="80" />
+        <image href="/images/tables.png" x="470" y="280" width="100" height="80" />
+        <image href="/images/tables.png" x="370" y="300" width="100" height="80" />
+
+
+
+
+
+        {/* --- BEIGE umbrellas ---         <image href="/images/ubeige.png" x="200" y="210" width="100" height="80" />*/}
+        <image href="/images/ubeige.png" x="380" y="80" width="100" height="80" />
+        <image href="/images/ubeige.png" x="20" y="305" width="100" height="80" />
+
+        <image href="/images/ubeige.png" x="-20" y="140" width="100" height="80" />
+
+        {/* --- YELLOW umbrellas --- */}
+        <image href="/images/uyellow.png" x="100" y="200" width="100" height="80" />
+        <image href="/images/uyellow.png" x="290" y="120" width="100" height="80" />
         <image href="/images/uyellow.png" x="520" y="270" width="100" height="80" />
-        <image href="/images/ublue.png" x="300" y="290" width="100" height="80" />
-        <image href="/images/ublue.png" x="-30" y="240" width="100" height="80" />
-        <image href="/images/ubeige.png" x="60" y="305" width="100" height="80" />
-        <image href="/images/uorange.png" x="160" y="290" width="100" height="80" />
+
+        {/* --- BLUE umbrellas --- */}
+        <image href="/images/ublue.png" x="130" y="110" width="100" height="80" />
+        <image href="/images/ublue.png" x="320" y="290" width="100" height="80" />
+        <image href="/images/ublue.png" x="-50" y="220" width="100" height="80" />
+        <image href="/images/ublue.png" x="430" y="155" width="100" height="80" />
+        {/* --- ORANGE umbrellas --- */}
+
+        <image href="/images/uorange.png" x="120" y="290" width="100" height="80" />
+        <image href="/images/uorange.png" x="350" y="215" width="100" height="80" />
+        <image href="/images/uorange.png" x="10" y="80" width="100" height="80" />
+        <image href="/images/uorange.png" x="510" y="100" width="100" height="80" />
 
         <image href="/images/palm2.png" x="-140" y="340" width="100" height="80" />
         <image href="/images/palm2.png" x="-140" y="80" width="100" height="80" />
