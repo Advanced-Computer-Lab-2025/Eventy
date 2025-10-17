@@ -3,7 +3,15 @@ import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import {
   Table,
   TableBody,
@@ -72,25 +80,114 @@ async function updateVendorStatus(requestId: string, status: "approved" | "rejec
 //   },
 // ];
 
-const vendorRequests = [
-  {
-    id: "68e67bc571164efe8d0162f4", // ← a real ObjectId from MongoDB
-    company: "Tech Solutions Co.",
-    bazaar: "Spring Festival Bazaar",
-    boothSize: "4x4",
-    attendees: 3,
-    status: "apprved",
-  },
-];
-
 export default function VendorRequests() {
-  const [requests, setRequests] = useState(vendorRequests);
+  const [requests, setRequests] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [eventNames, setEventNames] = useState<Record<string, string>>({});
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const [selected, setSelected] = useState<any | null>(null);
+
+  useEffect(() => {
+    const fetchApplications = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(`http://localhost:4000/api/applications`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(
+            `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(0, 50)}...`
+          );
+        }
+
+        const body = await res.json();
+        if (!res.ok) {
+          throw new Error(body.message || "Failed to fetch applications");
+        }
+
+        const apps = Array.isArray(body.data) ? body.data : [];
+        setRequests(apps);
+      } catch (err: any) {
+        setError(err.message || "Failed to load applications");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchApplications();
+  }, []);
+
+  useEffect(() => {
+    // After applications are loaded, fetch unique event names
+    const loadEventNames = async () => {
+      const uniqueIds = Array.from(
+        new Set(
+          requests
+            .map((r) => r?.event)
+            .filter((id): id is string => typeof id === "string" && id.length > 0)
+        )
+      ).filter((id) => !(id in eventNames));
+
+      if (uniqueIds.length === 0) return;
+
+      try {
+        const entries = await Promise.all(
+          uniqueIds.map(async (id) => {
+            try {
+              const res = await fetch(`http://localhost:4000/api/events/${id}`, {
+                method: "GET",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                credentials: "include",
+              });
+
+              const contentType = res.headers.get("content-type");
+              if (!contentType || !contentType.includes("application/json")) {
+                // Non-JSON or forbidden; fall back
+                return [id, id] as const;
+              }
+
+              const body = await res.json();
+              if (!res.ok) {
+                // Forbidden for admin/events_office under current route roles
+                return [id, id] as const;
+              }
+
+              const name = body?.data?.name || body?.data?.event?.name || id;
+              return [id, name] as const;
+            } catch {
+              return [id, id] as const;
+            }
+          })
+        );
+
+        setEventNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
+      } catch {
+        // ignore; names will remain IDs
+      }
+    };
+
+    if (requests.length > 0) {
+      loadEventNames();
+    }
+  }, [requests]);
 
   const handleApprove = async (requestId: string) => {
   const updatedApp = await updateVendorStatus(requestId, "approved");
   if (updatedApp) {
     setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "approved" } : r))
+      prev.map((r: any) => (r._id === requestId ? { ...r, status: "approved" } : r))
     );
     alert("Vendor request approved!");
   }
@@ -100,15 +197,16 @@ export default function VendorRequests() {
   const updatedApp = await updateVendorStatus(requestId, "rejected");
   if (updatedApp) {
     setRequests((prev) =>
-      prev.map((r) => (r.id === requestId ? { ...r, status: "rejected" } : r))
+      prev.map((r: any) => (r._id === requestId ? { ...r, status: "rejected" } : r))
     );
     alert("Vendor request rejected.");
   }
 };
 
   const handleViewDocuments = (requestId: string) => {
-    console.log("View documents:", requestId);
-    alert("Viewing uploaded documents...");
+    const req = requests.find((r) => r._id === requestId);
+    setSelected(req || null);
+    setDetailsOpen(!!req);
   };
 
   
@@ -130,6 +228,11 @@ export default function VendorRequests() {
             <CardTitle>Pending Vendor Requests</CardTitle>
           </CardHeader>
           <CardContent>
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">Loading requests...</div>
+            ) : error ? (
+              <div className="text-center py-8 text-red-600">{error}</div>
+            ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -142,43 +245,42 @@ export default function VendorRequests() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {vendorRequests.map((request) => (
-                  <TableRow key={request.id} data-testid={`row-request-${request.id}`}>
-                    <TableCell className="font-medium">{request.company}</TableCell>
-                    <TableCell>{request.bazaar}</TableCell>
-                    <TableCell>{request.boothSize}</TableCell>
-                    <TableCell>{request.attendees}</TableCell>
-                   <TableCell>
-                  <Badge variant={request.status === "pending" ? "outline" : request.status === "accepted" ? "default" : "destructive"}>
-                    {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-                  </Badge>
-                </TableCell>
+                {requests.map((request: any) => (
+                  <TableRow key={request._id} data-testid={`row-request-${request._id}`}>
+                    <TableCell className="font-medium">{request?.createdBy?.companyName || "Unknown"}</TableCell>
+                    <TableCell>{eventNames[request?.event] || (request?.event ? "Loading..." : "N/A")}</TableCell>
+                    <TableCell>{request?.boothSize || "-"}</TableCell>
+                    <TableCell>{Array.isArray(request?.attendees) ? request.attendees.length : 0}</TableCell>
+                    <TableCell>
+                      <Badge variant={request.status === "pending" ? "outline" : request.status === "approved" ? "default" : "destructive"}>
+                        {request.status?.charAt(0).toUpperCase() + request.status?.slice(1)}
+                      </Badge>
+                    </TableCell>
 
                     <TableCell>
                       <div className="flex justify-end gap-2">
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => handleViewDocuments(request.id)}
-                          data-testid={`button-view-${request.id}`}
+                          onClick={() => handleViewDocuments(request._id)}
+                          data-testid={`button-view-${request._id}`}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
-                          onClick={() => handleApprove(request.id)}
-                           disabled={request.status !== "pending"}
-
-                          data-testid={`button-approve-${request.id}`}
+                          onClick={() => handleApprove(request._id)}
+                          disabled={request.status !== "pending"}
+                          data-testid={`button-approve-${request._id}`}
                         >
                           <CheckCircle className="h-4 w-4" />
                         </Button>
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleReject(request.id)}
-                            disabled={request.status !== "pending"}
-                          data-testid={`button-reject-${request.id}`}
+                          onClick={() => handleReject(request._id)}
+                          disabled={request.status !== "pending"}
+                          data-testid={`button-reject-${request._id}`}
                         >
                           <XCircle className="h-4 w-4" />
                         </Button>
@@ -188,8 +290,131 @@ export default function VendorRequests() {
                 ))}
               </TableBody>
             </Table>
+            )}
           </CardContent>
         </Card>
+        <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Application Details</DialogTitle>
+              <DialogDescription>
+                Review vendor participation request details
+              </DialogDescription>
+            </DialogHeader>
+            {selected && (
+              <div className="space-y-4 text-sm">
+                <div className="flex items-start gap-3">
+                  {selected?.createdBy?.companyLogoUrl ? (
+                    <img
+                      src={selected.createdBy.companyLogoUrl}
+                      alt="Company Logo"
+                      className="w-12 h-12 rounded border object-cover"
+                    />
+                  ) : null}
+                  <div>
+                    <div className="font-medium">Company</div>
+                    <div>{selected?.createdBy?.companyName || "Unknown"}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-medium">Event</div>
+                    <div>{eventNames[selected?.event] || "Unknown"}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Type</div>
+                    <div className="capitalize">{selected?.type || "-"}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-medium">Booth Size</div>
+                    <div>{selected?.boothSize || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Status</div>
+                    <div>
+                      <Badge variant={selected?.status === "pending" ? "outline" : selected?.status === "approved" ? "default" : "destructive"}>
+                        {selected?.status?.charAt(0).toUpperCase() + selected?.status?.slice(1)}
+                      </Badge>
+                    </div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-medium">Company Email</div>
+                    <div>{selected?.createdBy?.email || "-"}</div>
+                  </div>
+                  <div>
+                    <div className="font-medium">Created At</div>
+                    <div>{selected?.createdAt ? new Date(selected.createdAt).toLocaleString() : "-"}</div>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="font-medium">Company Logo</div>
+                    {selected?.createdBy?.companyLogoUrl ? (
+                      <a className="text-primary underline" href={selected.createdBy.companyLogoUrl} target="_blank" rel="noreferrer">
+                        View Logo
+                      </a>
+                    ) : (
+                      <div>-</div>
+                    )}
+                  </div>
+                  <div>
+                    <div className="font-medium">Tax Card</div>
+                    {selected?.createdBy?.taxCardUrl ? (
+                      <a className="text-primary underline" href={selected.createdBy.taxCardUrl} target="_blank" rel="noreferrer">
+                        View Document
+                      </a>
+                    ) : (
+                      <div>-</div>
+                    )}
+                  </div>
+                </div>
+                <div>
+                  <div className="font-medium mb-1">Attendees</div>
+                  {Array.isArray(selected?.attendees) && selected.attendees.length > 0 ? (
+                    <ul className="list-disc pl-5 space-y-1">
+                      {selected.attendees.map((a: any) => (
+                        <li key={`${a.name}-${a.email}`}>
+                          {a.name} — {a.email}
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <div>-</div>
+                  )}
+                </div>
+                {selected?.status === "pending" && (
+                  <DialogFooter>
+                    <Button
+                      onClick={async () => {
+                        await handleApprove(selected._id);
+                        setSelected((prev: any) => (prev ? { ...prev, status: "approved" } : prev));
+                        setDetailsOpen(false);
+                      }}
+                      data-testid={`dialog-approve-${selected._id}`}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        await handleReject(selected._id);
+                        setSelected((prev: any) => (prev ? { ...prev, status: "rejected" } : prev));
+                        setDetailsOpen(false);
+                      }}
+                      data-testid={`dialog-reject-${selected._id}`}
+                    >
+                      Reject
+                    </Button>
+                  </DialogFooter>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
