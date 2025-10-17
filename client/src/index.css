@@ -376,11 +376,21 @@
 
   /* Boy with balloon animations */
   @keyframes float {
-    0%, 100% {
+    0% {
       transform: translateY(0px);
+      opacity: 1;
     }
-    50% {
+    60% {
       transform: translateY(-10px);
+      opacity: 1;
+    }
+    90% {
+      transform: translateY(-250px);
+      opacity: 0;
+    }
+    100% {
+      transform: translateY(0px);
+      opacity: 1;
     }
   }
 
@@ -421,7 +431,7 @@
   }
 
   .animate-float {
-    animation: float 3s ease-in-out infinite;
+    animation: float 9s ease-in-out infinite;
   }
 
   .animate-balloon-float {

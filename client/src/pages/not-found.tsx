@@ -11,10 +11,10 @@ export default function NotFound() {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="w-full flex items-center justify-center pt-20 px-4">
-        <Card className="w-full max-w-lg mx-4">
-          <CardContent className="pt-12 pb-8">
+        <Card className="w-full max-w-lg mx-4 overflow-visible">
+          <CardContent className="pt-12 pb-8 overflow-visible">
             {/* Animated Boy with Balloon */}
-            <div className="flex justify-center mb-6">
+            <div className="flex justify-center mb-6 overflow-visible">
               <svg
                 width="200"
                 height="200"
@@ -22,6 +22,7 @@ export default function NotFound() {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 className="animate-float"
+                style={{ overflow: 'visible' }}
               >
                 {/* Balloon String */}
                 <path
