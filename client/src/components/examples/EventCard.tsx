@@ -11,7 +11,7 @@ export default function EventCardExample() {
         time="2:00 PM - 5:00 PM"
         location="Engineering Building, Room 301"
         attendees={45}
-        image="https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=800&auto=format&fit=crop"
+        vendors={[]}
         onRegister={() => console.log("Register clicked")}
         onSave={() => console.log("Save clicked")}
         onShare={() => console.log("Share clicked")}
