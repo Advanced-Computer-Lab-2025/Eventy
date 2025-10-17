@@ -359,4 +359,86 @@
   .scrollbar-custom::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground) / 0.3);
   }
+
+  /* Custom animations for 404 page */
+  @keyframes spin-slow {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  .animate-spin-slow {
+    animation: spin-slow 8s linear infinite;
+  }
+
+  /* Boy with balloon animations */
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+  }
+
+  @keyframes balloon-float {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-15px);
+    }
+  }
+
+  @keyframes sway {
+    0%, 100% {
+      transform: translateX(0px);
+    }
+    50% {
+      transform: translateX(3px);
+    }
+  }
+
+  @keyframes wave {
+    0%, 100% {
+      transform: rotate(20deg);
+    }
+    50% {
+      transform: rotate(35deg);
+    }
+  }
+
+  @keyframes hold-balloon {
+    0%, 100% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-3px);
+    }
+  }
+
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-balloon-float {
+    animation: balloon-float 2.5s ease-in-out infinite;
+    transform-origin: center;
+  }
+
+  .animate-sway {
+    animation: sway 2.5s ease-in-out infinite;
+  }
+
+  .animate-wave {
+    animation: wave 1.5s ease-in-out infinite;
+    transform-origin: 102.5px 130px;
+  }
+
+  .animate-hold-balloon {
+    animation: hold-balloon 2.5s ease-in-out infinite;
+  }
 }
