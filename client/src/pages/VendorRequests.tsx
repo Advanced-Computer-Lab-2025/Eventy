@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
+import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
   DialogContent,
@@ -87,6 +88,7 @@ export default function VendorRequests() {
   const [eventNames, setEventNames] = useState<Record<string, string>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -189,7 +191,7 @@ export default function VendorRequests() {
     setRequests((prev) =>
       prev.map((r: any) => (r._id === requestId ? { ...r, status: "approved" } : r))
     );
-    alert("Vendor request approved!");
+    toast({ title: "Request approved", description: "The vendor request has been approved." });
   }
 };
 
@@ -199,7 +201,7 @@ export default function VendorRequests() {
     setRequests((prev) =>
       prev.map((r: any) => (r._id === requestId ? { ...r, status: "rejected" } : r))
     );
-    alert("Vendor request rejected.");
+    toast({ title: "Request rejected", description: "The vendor request has been rejected.", variant: "destructive" });
   }
 };
 
@@ -252,7 +254,16 @@ export default function VendorRequests() {
                     <TableCell>{request?.boothSize || "-"}</TableCell>
                     <TableCell>{Array.isArray(request?.attendees) ? request.attendees.length : 0}</TableCell>
                     <TableCell>
-                      <Badge variant={request.status === "pending" ? "outline" : request.status === "approved" ? "default" : "destructive"}>
+                      <Badge
+                        variant="outline"
+                        className={
+                          request.status === "approved"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : request.status === "rejected"
+                            ? "bg-red-100 text-red-700 border-red-200"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                        }
+                      >
                         {request.status?.charAt(0).toUpperCase() + request.status?.slice(1)}
                       </Badge>
                     </TableCell>
@@ -269,6 +280,7 @@ export default function VendorRequests() {
                         </Button>
                         <Button
                           size="sm"
+                          className="bg-green-600 hover:bg-green-700 text-white"
                           onClick={() => handleApprove(request._id)}
                           disabled={request.status !== "pending"}
                           data-testid={`button-approve-${request._id}`}
@@ -334,7 +346,16 @@ export default function VendorRequests() {
                   <div>
                     <div className="font-medium">Status</div>
                     <div>
-                      <Badge variant={selected?.status === "pending" ? "outline" : selected?.status === "approved" ? "default" : "destructive"}>
+                      <Badge
+                        variant="outline"
+                        className={
+                          selected?.status === "approved"
+                            ? "bg-green-100 text-green-700 border-green-200"
+                            : selected?.status === "rejected"
+                            ? "bg-red-100 text-red-700 border-red-200"
+                            : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                        }
+                      >
                         {selected?.status?.charAt(0).toUpperCase() + selected?.status?.slice(1)}
                       </Badge>
                     </div>
@@ -389,6 +410,7 @@ export default function VendorRequests() {
                 {selected?.status === "pending" && (
                   <DialogFooter>
                     <Button
+                      className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={async () => {
                         await handleApprove(selected._id);
                         setSelected((prev: any) => (prev ? { ...prev, status: "approved" } : prev));
