@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 
+
 //todo: remove mock functionality
 const recentEvents = [
   {
@@ -32,10 +33,13 @@ const recentEvents = [
 ];
 
 export default function Dashboard() {
-  const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
+   const [events, setEvents] = useState(recentEvents);
+  // const [showCreateDialog, setShowCreateDialog] = useState(false);
+//const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const API_URL = `${API_BASE_URL}/api/events/upcoming`;
@@ -63,6 +67,32 @@ export default function Dashboard() {
     };
     fetchEvents();
   }, []);
+
+ 
+
+  //   const handleDelete = async (eventId: string) => {
+  //   try {
+  //     const res = await fetch(`/api/admin/events/${eventId}`, {
+  //       method: "DELETE",
+  //       credentials: "include",
+  //     });
+
+  //     if (res.status === 409) {
+  //       const data = await res.json();
+  //       alert(data.message || "Cannot delete event with registered users ❌");
+  //       return;
+  //     }
+
+  //     if (!res.ok) throw new Error("Failed to delete event");
+
+  //     setEvents(prev => prev.filter(e => e._id !== eventId));
+  //     alert("Event deleted successfully ✅");
+  //   } catch (err: any) {
+  //     alert(err.message || "Failed to delete event ❌");
+  //   }
+  // };
+
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -108,15 +138,38 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle>Recent Events</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {recentEvents.map((event) => (
-                  <EventListItem
-                    key={event.id}
-                    {...event}
-                    onClick={() => console.log("Event clicked:", event.title)}
-                  />
-                ))}
-              </CardContent>
+             <CardContent className="space-y-3">
+      {events.map((event) => (
+        <EventListItem
+          key={event.id}
+          {...event}
+          canDelete={true}
+          onDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
+          onClick={() => console.log("Event clicked:", event.title)}
+        />
+      ))}
+    </CardContent>
+              {/* <CardContent className="space-y-3">
+              {loading && <p>Loading events...</p>}
+              {error && <p className="text-red-500">Error: {error}</p>}
+              {!loading && !error && events.length === 0 && <p>No events found.</p>}
+
+              {!loading && !error && events.map((event) => (
+                <EventListItem
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={event.eventType}
+                  date={new Date(event.startDate).toLocaleDateString()}
+                  time={`${new Date(event.startDate).toLocaleTimeString()} - ${new Date(event.endDate).toLocaleTimeString()}`}
+                  location={event.location}
+                  image={event.bannerImage || "/placeholder.png"}
+                  canDelete={true}
+                  onDelete={handleDelete} // ✅ connect to real delete API
+                />
+              ))}
+            </CardContent> */}
+
             </Card>
 
             <Card>

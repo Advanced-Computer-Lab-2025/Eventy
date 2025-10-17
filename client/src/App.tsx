@@ -25,6 +25,7 @@ import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import EventListPage from "@/pages/EventListPage";
 
 function Router() {
   return (
@@ -68,7 +69,9 @@ function Router() {
       </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/admin/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests" component={VendorRequests} />
+      <Route path="/events" component={EventListPage} />
+
       <Route component={NotFound} />
     </Switch>
   );

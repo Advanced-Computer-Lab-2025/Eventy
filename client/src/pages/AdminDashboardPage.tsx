@@ -1,164 +1,100 @@
 import { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
-import Header from "@/components/AdminHeader";
+import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { MapPin } from "lucide-react";
-import EventCard from "@/components/EventCard";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocation } from "wouter";
+import EventListItem from "@/components/EventListItem";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
-interface Bazaar {
-  _id: string;
-  name: string;
-  description: string;
-  location: string;
-  startDate: string;
-  endDate: string;
-  registrationDeadline?: string;
-  status?: string;
-}
-
-interface Event {
-  _id: string;
-  name: string;
-  eventType?: string;
-  startDate?: string;
-  location?: string;
-  attendeesCount?: number;
-  image?: string;
-}
-
 interface Conference {
   _id: string;
-  title: string;
-  fundingSource?: "external" | "guc" | string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description: string;
+  websiteUrl?: string;
   requiredBudget?: number;
+  fundingSource?: "external" | "guc";
+  createdBy: string;
 }
+
 export default function AdminDashboardPage() {
   const [, setLocation] = useLocation();
-  const [events, setEvents] = useState<Event[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(true);
-  const [eventsError, setEventsError] = useState("");
+  const [creating, setCreating] = useState(false);
   const [conferences, setConferences] = useState<Conference[]>([]);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [bazaars, setBazaars] = useState<Bazaar[]>([]);
-  const [loadingBazaars, setLoadingBazaars] = useState(true);
-
-  const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-    startDate: "",
-    startTime: "",
-    endDate: "",
-    endTime: "",
-    description: "",
-    registrationDeadline: "",
-  });
-
-  // Fetch bazaars
-  const fetchBazaars = async () => {
-    try {
-      setLoadingBazaars(true);
-      setError("");
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/events/search?type=bazaar`, {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to fetch bazaars");
-      setBazaars(data.data || []);
-    } catch (e: any) {
-      setError(e.message || "Failed to load bazaars");
-      setBazaars([]);
-    } finally {
-      setLoadingBazaars(false);
-    }
-  };
-
-  // Fetch upcoming events (like in Home)
-  const fetchEvents = async () => {
-    try {
-      setLoadingEvents(true);
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : "",
-          "Content-Type": "application/json",
-        },
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to load events");
-      setEvents(data.data || []);
-    } catch (e: any) {
-      console.error("Error fetching events:", e);
-      setEventsError(e.message || "Unable to load events");
-    } finally {
-      setLoadingEvents(false);
-    }
-  };
+  const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
   useEffect(() => {
-    fetchBazaars();
-    fetchEvents();
+    const fetchConferences = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || "Failed to fetch conferences");
+
+        setConferences(data.data || []);
+      } catch (err: any) {
+        console.error("Error fetching conferences:", err);
+        setConferences([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchConferences();
   }, []);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError("");
-    try {
-      const token = localStorage.getItem("token");
-      const payload = {
-        name: formData.name,
-        description: formData.description,
-        location: formData.location,
-        startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
-        endDate: `${formData.endDate}T${formData.endTime}:00.000Z`,
-        registrationDeadline: formData.registrationDeadline
-          ? `${formData.registrationDeadline}T23:59:59.000Z`
-          : undefined,
-      };
+  useEffect(() => {
+    const fetchUpcomingEvents = async () => {
+      try {
+        setEventsLoading(true);
+        setEventsError(null);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
+        }
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || "Failed to fetch upcoming events");
+        setUpcomingEvents(Array.isArray(body.data) ? body.data : body);
+      } catch (err: any) {
+        setEventsError(err.message || "Failed to load upcoming events");
+        setUpcomingEvents([]);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    fetchUpcomingEvents();
+  }, []);
 
-      const res = await fetch(`${API_BASE_URL}/api/events/bazaars`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString();
+  };
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create bazaar");
-
-      setFormData({
-        name: "",
-        location: "",
-        startDate: "",
-        startTime: "",
-        endDate: "",
-        endTime: "",
-        description: "",
-        registrationDeadline: "",
-      });
-      await fetchBazaars();
-    } catch (err: any) {
-      setError(err.message || "Something went wrong");
-    } finally {
-      setSubmitting(false);
-    }
+  const formatTime = (dateString: string) => {
+    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -167,227 +103,167 @@ export default function AdminDashboardPage() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-bold">Events Office Dashboard</h1>
-            <Button variant="outline" onClick={() => setLocation("/")}>
-              Back to Home
+            <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+            <Button onClick={() => setLocation("/admin/create/conference")}> 
+              <Plus className="h-4 w-4 mr-2" />
+              Create Conference
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Create and manage bazaars. View upcoming university events below.
+            Manage events, approvals, and administrative operations
           </p>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-3 mb-8">
+          <StatCard 
+            title="Total Conferences" 
+            value={conferences.length.toString()} 
+            icon={Calendar} 
+            trend={{ value: 12, isPositive: true }} 
+          />
+          <StatCard 
+            title="Total Attendees" 
+            value="3,456" 
+            icon={Users} 
+            trend={{ value: 8, isPositive: true }} 
+          />
+          <StatCard 
+            title="Pending Approvals" 
+            value="7" 
+            icon={TrendingUp} 
+          />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {/* Create Bazaar Form */}
             <Card>
               <CardHeader>
-                <CardTitle>Create Bazaar</CardTitle>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Upcoming Events</CardTitle>
+                </div>
               </CardHeader>
-              <CardContent>
-                {error && <div className="text-red-500 mb-3">{error}</div>}
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Bazaar Name</Label>
-                    <Input
-                      id="name"
-                      placeholder="e.g., Spring Festival Bazaar"
-                      value={formData.name}
-                      onChange={(e) =>
-                        setFormData({ ...formData, name: e.target.value })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="location">Location</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="location"
-                        placeholder="e.g., University Courtyard"
-                        className="pl-10"
-                        value={formData.location}
-                        onChange={(e) =>
-                          setFormData({ ...formData, location: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="startDate">Start Date</Label>
-                      <Input
-                        id="startDate"
-                        type="date"
-                        value={formData.startDate}
-                        onChange={(e) =>
-                          setFormData({ ...formData, startDate: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="startTime">Start Time</Label>
-                      <Input
-                        id="startTime"
-                        type="time"
-                        value={formData.startTime}
-                        onChange={(e) =>
-                          setFormData({ ...formData, startTime: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="endDate">End Date</Label>
-                      <Input
-                        id="endDate"
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) =>
-                          setFormData({ ...formData, endDate: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="endTime">End Time</Label>
-                      <Input
-                        id="endTime"
-                        type="time"
-                        value={formData.endTime}
-                        onChange={(e) =>
-                          setFormData({ ...formData, endTime: e.target.value })
-                        }
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Short Description</Label>
-                    <Textarea
-                      id="description"
-                      placeholder="Brief description of the bazaar..."
-                      rows={4}
-                      value={formData.description}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          description: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="registrationDeadline">
-                      Vendor Registration Deadline
-                    </Label>
-                    <Input
-                      id="registrationDeadline"
-                      type="date"
-                      value={formData.registrationDeadline}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          registrationDeadline: e.target.value,
-                        })
-                      }
-                      required
-                    />
-                  </div>
-
-                  <div className="flex gap-4 pt-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setLocation("/dashboard")}
-                      className="flex-1"
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="submit"
-                      className="flex-1"
-                      disabled={submitting}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {submitting ? "Creating..." : "Create Bazaar"}
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-
-            
-
-            {/* Upcoming Events Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Upcoming Events</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {loadingEvents ? (
-                  <p>Loading events...</p>
+              <CardContent className="space-y-3">
+                {eventsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading upcoming events...</div>
                 ) : eventsError ? (
-                  <p className="text-red-500">{eventsError}</p>
-                ) : events.length === 0 ? (
-                  <p>No upcoming events found.</p>
+                  <div className="text-center py-8 text-red-600">{eventsError}</div>
+                ) : upcomingEvents.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">No upcoming events found.</div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {events.map((event, index) => (
-                      <EventCard
-                        key={event._id || index}
-                        id={event._id || String(index)}
-                        title={event.name || "Untitled Event"}
-                        category={(event.eventType || "academic") as any}
-                        date={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  weekday: "short",
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : "TBA"
-                        }
-                        time={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )
-                            : "TBA"
-                        }
-                        location={event.location || "Unknown location"}
-                        attendees={event.attendeesCount || 0}
-                        image={event.image}
-                        showActions={false}
-                        onRegister={() =>
-                          console.log("Register:", event.name)
-                        }
-                        onSave={() => console.log("Save:", event.name)}
-                        onShare={() => console.log("Share:", event.name)}
+                  <div className="space-y-3">
+                    {upcomingEvents.map((e: any) => (
+                      <EventListItem
+                        key={e._id}
+                        id={e._id}
+                        title={e.name}
+                        // eventType differs from CategoryBadge type, reuse as-is like EventListPage
+                        category={e.eventType as any}
+                        date={new Date(e.startDate).toLocaleDateString()}
+                        time={`${new Date(e.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(e.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                        location={e.location}
+                        image={e.bannerImage || "/placeholder.png"}
+                        canDelete={true}
+                        onDelete={(id: string) => setUpcomingEvents(prev => prev.filter((x) => x._id !== id))}
                       />
                     ))}
                   </div>
                 )}
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Conferences</CardTitle>
+                  <Button 
+                    size="sm" 
+                    onClick={() => setLocation("/admin/create/conference")}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Conference
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    Loading conferences...
+                  </div>
+                ) : conferences.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-lg font-medium mb-2">No conferences found</p>
+                    <p className="text-sm mb-4">Create your first conference to get started</p>
+                    <Button onClick={() => setLocation("/admin/create/conference")}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Conference
+                    </Button>
+                  </div>
+                ) : (
+                  conferences.map((conference) => (
+                    <div key={conference._id} className="border rounded-lg p-4 hover:bg-muted/50 transition-colors group">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <h3 className="font-semibold text-lg group-hover:text-primary transition-colors">
+                            {conference.name}
+                          </h3>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
+                            {conference.description}
+                          </p>
+                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {formatDate(conference.startDate)} - {formatDate(conference.endDate)}
+                            </span>
+                            <span className="flex items-center gap-1">
+                              🕐 {formatTime(conference.startDate)}
+                            </span>
+                            {conference.requiredBudget && (
+                              <span className="flex items-center gap-1">
+                                💰 {conference.requiredBudget} EGP
+                              </span>
+                            )}
+                            {conference.fundingSource && (
+                              <span className="flex items-center gap-1 capitalize">
+                                🏛️ {conference.fundingSource}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 ml-4">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => setLocation(`/admin/events/conference/edit/${conference._id}`)}
+                                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Edit</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Analytics Overview</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-64 flex items-center justify-center text-muted-foreground">
+                  Chart visualization would go here
+                </div>
               </CardContent>
             </Card>
           </div>
@@ -395,7 +271,7 @@ export default function AdminDashboardPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle>Tips</CardTitle>
+                <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
@@ -423,7 +299,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Conference Stats</CardTitle>
@@ -458,5 +334,5 @@ export default function AdminDashboardPage() {
       </main>
     </div>
   );
-
 }
+
