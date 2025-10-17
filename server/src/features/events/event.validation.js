@@ -73,6 +73,9 @@ export const createWorkshopSchema = Joi.object({
     "any.required": "Workshop location is required",
     "any.only": "Location must be either 'GUC Cairo' or 'GUC Berlin'",
   }),
+  startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
+  endTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
+
 
   startDate: Joi.date().required().messages({
     "any.required": "Workshop start date is required",

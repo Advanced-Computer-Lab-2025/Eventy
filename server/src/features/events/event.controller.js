@@ -97,6 +97,35 @@ export class EventsController {
     }
   }
 
+  async getConferencesController(req, res, next) {
+    try {
+      const conferences = await eventService.getConferences();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, conferences, "Conferences retrieved successfully")
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async getConferenceByIdController(req, res, next) {
+    try {
+      const { conferenceId } = req.params;
+      const conference = await eventService.getConferenceById(conferenceId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, conference, "Conference retrieved successfully")
+        );
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async updateConferenceController(req, res, next) {
     try {
       const { error } = updateConferenceSchema.validate(req.body);
@@ -192,7 +221,7 @@ export class EventsController {
 
       const newWorkshop = await eventService.createWorkshop(
         req.body,
-        req.user._id
+        req.user.id
       );
 
       return res
@@ -205,40 +234,35 @@ export class EventsController {
     }
   }
 
-  // Accept workshop
-  async acceptWorkshop(req, res) {
-    try {
-      // Extra role validation
-      if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can accept workshops",
-        });
-      }
-
-      const { error } = workshopStatusSchema.validate({
-        id: req.params.id,
-        status: "approved",
-      });
-      if (error)
-        return res.status(400).json({ message: error.details[0].message });
-
-      const event = await Event.findByIdAndUpdate(
-        req.params.id,
-        { status: "approved" },
-        { new: true }
-      );
-
-      if (!event) {
-        return res.status(404).json({ message: "Workshop not found" });
-      }
-
-      res
-        .status(200)
-        .json({ message: "Workshop accepted and published", event });
-    } catch (error) {
-      res.status(500).json({ message: "Error accepting workshop", error });
+  async viewAllWorkshops(req, res, next) {
+  try {
+    // ✅ 1. Check authentication
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
     }
+
+    // ✅ 2. Allow only Admin or Events Office roles
+    if (req.user.role !== "admin" && req.user.role !== "events_office") {
+      throw new ApiError(
+        403,
+        "Forbidden: Only Admin or Events Office can view all workshops"
+      );
+    }
+
+    // ✅ 3. Call service layer
+    const workshops = await eventService.getAllWorkshopsService(req.user.role);
+
+    // ✅ 4. Return success response
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, workshops, "Workshops retrieved successfully")
+      );
+  } catch (err) {
+    // ✅ 5. Pass errors to global handler
+    next(err);
   }
+}
 
   async getMyWorkshops(req, res, next) {
     try {
@@ -253,9 +277,10 @@ export class EventsController {
         );
       }
 
+      const userId = req.user._id || req.user.id;
       const events = await eventService.getEvents({
         eventType: "workshop",
-        createdBy: req.user._id,
+        createdBy: userId,
       });
 
       return res
@@ -427,8 +452,7 @@ export class EventsController {
       }
 
       // Get the user ID from auth middleware
-      const userId = req.user._id;
-
+      const userId = req.user._id || req.user.id;
       // Fetch events the user is registered for
       const events = await eventService.getEventsByUser(userId);
 
@@ -489,15 +513,16 @@ export class EventsController {
       next(err);
     }
   }
-  async getAllEvents(req, res, next) {
-  try {
-    const events = await eventService.getAllEvents();
-    return res
-      .status(200)
-      .json(new ApiResponse(200, events, "All events fetched successfully"));
-  } catch (err) {
-    next(err);
-  }
-}
 
+  async getEventById(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const event = await eventService.getEventById(eventId);
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event fetched successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
 }
