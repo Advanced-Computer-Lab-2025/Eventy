@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Users, DollarSign } from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  Users,
+  DollarSign
+} from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -151,7 +156,7 @@ export default function CreateWorkshop() {
       setToastOpen(true);
 
       // Navigate after toast appears
-      setTimeout(() => setLocation("/dashboard"), 2000); // yehia : change location to our dashboard
+      setTimeout(() => setLocation("/professor/dashboard"), 2000);
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
@@ -181,7 +186,7 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Workshop Name</Label>
+                <Label htmlFor="name">Workshop Name <span className="text-red-500">*</span></Label>
                 <Input
                   id="name"
                   placeholder="e.g., Advanced Machine Learning"
@@ -195,7 +200,7 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location</Label>
+                  <Label>Location <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.location}
                     onValueChange={(value) =>
@@ -213,7 +218,7 @@ export default function CreateWorkshop() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faculty Responsible</Label>
+                  <Label>Faculty Responsible <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.faculty}
                     onValueChange={(value) =>
@@ -236,59 +241,83 @@ export default function CreateWorkshop() {
               {/* Start & End */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Start Date</Label>
+                  <Label htmlFor="startDate">Start Date <span className="text-red-500">*</span></Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
+                      id="startDate"
                       type="date"
-                      className="pl-10"
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
                       }
+                      onClick={(e) => {
+                        e.currentTarget.showPicker();
+                      }}
                       required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Start Time</Label>
-                  <Input
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
-                    }
-                    required
-                  />
+                  <Label htmlFor="startTime">Start Time <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startTime: e.target.value })
+                      }
+                      onClick={(e) => {
+                        e.currentTarget.showPicker();
+                      }}
+                      required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>End Date</Label>
+                  <Label htmlFor="endDate">End Date <span className="text-red-500">*</span></Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
+                      id="endDate"
                       type="date"
-                      className="pl-10"
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
                       }
+                      onClick={(e) => {
+                        e.currentTarget.showPicker();
+                      }}
                       required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>End Time</Label>
-                  <Input
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endTime: e.target.value })
-                    }
-                    required
-                  />
+                  <Label htmlFor="endTime">End Time <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endTime: e.target.value })
+                      }
+                      onClick={(e) => {
+                        e.currentTarget.showPicker();
+                      }}
+                      required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -301,8 +330,9 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
                 <Textarea
+                  id="description"
                   placeholder="Brief overview of the workshop..."
                   rows={3}
                   value={formData.description}
@@ -314,8 +344,9 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label>Full Agenda</Label>
+                <Label htmlFor="agenda">Full Agenda <span className="text-red-500">*</span></Label>
                 <Textarea
+                  id="agenda"
                   placeholder="Detailed workshop agenda..."
                   rows={5}
                   value={formData.agenda}
@@ -328,7 +359,7 @@ export default function CreateWorkshop() {
 
               {/* Professors multi-select */}
               <div className="space-y-2">
-                <Label>Professor(s) Participating</Label>
+                <Label>Professor(s) Participating <span className="text-red-500">*</span></Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
                   {professorsOptions.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -350,7 +381,7 @@ export default function CreateWorkshop() {
                             }
                           }}
                         />
-                        <Label htmlFor={p.id} className="text-sm">
+                        <Label htmlFor={p.id} className="text-sm cursor-pointer">
                           {p.name}{" "}
                           <span className="text-muted-foreground text-xs">
                             ({p.email})
@@ -372,10 +403,11 @@ export default function CreateWorkshop() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Required Budget</Label>
+                  <Label htmlFor="budget">Required Budget <span className="text-red-500">*</span></Label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
+                      id="budget"
                       type="number"
                       placeholder="5000"
                       className="pl-10"
@@ -388,7 +420,7 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Funding Source</Label>
+                  <Label>Funding Source <span className="text-red-500">*</span></Label>
                   <Select
                     value={formData.fundingSource}
                     onValueChange={(value) =>
@@ -407,8 +439,9 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label>Extra Resources</Label>
+                <Label htmlFor="resources">Extra Resources</Label>
                 <Textarea
+                  id="resources"
                   placeholder="e.g., Projector, laptops..."
                   rows={3}
                   value={formData.resources}
@@ -420,10 +453,11 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Capacity</Label>
+                  <Label htmlFor="capacity">Capacity <span className="text-red-500">*</span></Label>
                   <div className="relative">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
+                      id="capacity"
                       type="number"
                       placeholder="50"
                       className="pl-10"
@@ -436,15 +470,23 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Registration Deadline</Label>
-                  <Input
-                    type="date"
-                    value={formData.deadline}
-                    onChange={(e) =>
-                      setFormData({ ...formData, deadline: e.target.value })
-                    }
-                    required
-                  />
+                  <Label htmlFor="deadline">Registration Deadline <span className="text-red-500">*</span></Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="deadline"
+                      type="date"
+                      value={formData.deadline}
+                      onChange={(e) =>
+                        setFormData({ ...formData, deadline: e.target.value })
+                      }
+                      onClick={(e) => {
+                        e.currentTarget.showPicker();
+                      }}
+                      required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
             </CardContent>
@@ -455,7 +497,7 @@ export default function CreateWorkshop() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/dashboard")}
+              onClick={() => setLocation("/professor/dashboard")}
               className="flex-1"
               disabled={loading}
             >

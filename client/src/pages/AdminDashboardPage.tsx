@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
-import Header from "@/components/AdminHeader";
+import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocation } from "wouter";
+import EventListItem from "@/components/EventListItem";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -26,6 +27,9 @@ export default function AdminDashboardPage() {
   const [creating, setCreating] = useState(false);
   const [conferences, setConferences] = useState<Conference[]>([]);
   const [loading, setLoading] = useState(true);
+  const [eventsLoading, setEventsLoading] = useState(true);
+  const [eventsError, setEventsError] = useState<string | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -51,6 +55,38 @@ export default function AdminDashboardPage() {
     };
 
     fetchConferences();
+  }, []);
+
+  useEffect(() => {
+    const fetchUpcomingEvents = async () => {
+      try {
+        setEventsLoading(true);
+        setEventsError(null);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
+        }
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || "Failed to fetch upcoming events");
+        setUpcomingEvents(Array.isArray(body.data) ? body.data : body);
+      } catch (err: any) {
+        setEventsError(err.message || "Failed to load upcoming events");
+        setUpcomingEvents([]);
+      } finally {
+        setEventsLoading(false);
+      }
+    };
+    fetchUpcomingEvents();
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -100,6 +136,40 @@ export default function AdminDashboardPage() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Upcoming Events</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {eventsLoading ? (
+                  <div className="text-center py-8 text-muted-foreground">Loading upcoming events...</div>
+                ) : eventsError ? (
+                  <div className="text-center py-8 text-red-600">{eventsError}</div>
+                ) : upcomingEvents.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">No upcoming events found.</div>
+                ) : (
+                  <div className="space-y-3">
+                    {upcomingEvents.map((e: any) => (
+                      <EventListItem
+                        key={e._id}
+                        id={e._id}
+                        title={e.name}
+                        // eventType differs from CategoryBadge type, reuse as-is like EventListPage
+                        category={e.eventType as any}
+                        date={new Date(e.startDate).toLocaleDateString()}
+                        time={`${new Date(e.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(e.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
+                        location={e.location}
+                        image={e.bannerImage || "/placeholder.png"}
+                        canDelete={true}
+                        onDelete={(id: string) => setUpcomingEvents(prev => prev.filter((x) => x._id !== id))}
+                      />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -229,7 +299,7 @@ export default function AdminDashboardPage() {
                 </Button>
               </CardContent>
             </Card>
-            
+
             <Card>
               <CardHeader>
                 <CardTitle>Conference Stats</CardTitle>

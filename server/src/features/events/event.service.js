@@ -165,27 +165,6 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
-// Get all workshops - Admin or EventsOffice only
-export const getAllWorkshopsService = async (userRole) => {
-  // Only Admin or EventsOffice can view all workshops
-  if (userRole !== "admin" && userRole !== "events_office") {
-    throw new ApiError(403, "Forbidden: You are not allowed to view workshops.");
-  }
-
-  try {
-    // populate the correct fields defined in the schema: "professors" and "createdBy"
-    const workshops = await Event.find({ eventType: "workshop" })
-      .populate("professors", "name email")
-      .populate("createdBy", "name email role")
-      .sort({ createdAt: -1 });
-
-    return workshops;
-  } catch (error) {
-    // Wrap in ApiError so error middleware can format it consistently
-    throw new ApiError(500, "Error fetching workshops: " + error.message);
-  }
-};
-
 /**
  * Allows a professor to edit their own workshop if it needs revision.
  * @param {string} workshopId - The ID of the workshop to edit.
@@ -203,7 +182,9 @@ export async function editWorkshop(workshopId, updateData, user) {
     throw new ApiError(400, "This event is not a workshop");
   }
 
-  if (workshop.createdBy.toString() !== user._id.toString()) {
+  // Handle both user.id and user._id from JWT token
+  const userId = user._id || user.id;
+  if (workshop.createdBy.toString() !== userId.toString()) {
     throw new ApiError(403, "Forbidden: You can only edit your own workshops");
   }
 
@@ -296,6 +277,7 @@ export const getUpcomingEventsService = async () => {
   const events = await Event.find({
     status: "approved",
     startDate: { $gte: now },
+    deletedAt: null,
   })
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email")
@@ -314,8 +296,9 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Proceed with deletion
-  await Event.findByIdAndDelete(eventId);
+  // Soft delete: set deletedAt timestamp
+  event.deletedAt = new Date();
+  await event.save();
   return true;
 }
 // 🔍 Search events service
@@ -398,6 +381,36 @@ export const getEventById = async (eventId) => {
   }
   return event;
 };
+export const getAllTripsService = async () => {
+  
+  const trips = await Event.find({ eventType: "trip" })
+    .select("name location price startDate endDate description capacity registrationDeadline")
+    .lean();
+
+  return trips;
+};
+
+export const getAllWorkshopsService = async (userRole) => {
+  
+
+    // ✅ 3. Fetch all workshops from the database
+    const workshops = await Event.find({ eventType: "workshop" }).sort({
+      createdAt: -1,
+    });
+
+    // ✅ 4. Return response
+    return workshops
+  
+};
+export async function getAllEvents() {
+  try {
+    const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
+    return events;
+  } catch (err) {
+    throw new ApiError(500, "Error fetching events");
+  }
+}
+
 export async function getAllEvents() {
   try {
     const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
