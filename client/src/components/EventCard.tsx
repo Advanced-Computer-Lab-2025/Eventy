@@ -2,6 +2,11 @@ import { Calendar, MapPin, Users, Bookmark, Share2, Store } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
+
+interface Vendor {
+  name: string
+  booth: string
+}
 import { getEventImage } from "@/lib/eventImages";
 
 export interface EventCardProps {
@@ -12,8 +17,7 @@ export interface EventCardProps {
   time: string;
   location: string;
   attendees: number;
-  image?: string;
-  showActions?: boolean;
+  vendors: Vendor[]
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
@@ -35,7 +39,7 @@ export default function EventCard({
   time,
   location,
   attendees,
-  image,
+  vendors,
   showActions = true,
   onRegister,
   onSave,
@@ -59,8 +63,6 @@ export default function EventCard({
         <div className="absolute top-3 left-3">
           <CategoryBadge category={category} />
         </div>
-      </div>
-      <CardContent className="p-4 space-y-3">
         <div className="flex items-start gap-2">
           <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
           <div className="font-mono text-sm">
@@ -83,6 +85,20 @@ export default function EventCard({
             <span>{attendees}</span>
           </div>
         </div>
+
+        {/* Vendor section */}
+        {vendors && vendors.length > 0 && (
+          <div>
+            <div className="font-semibold text-sm mb-1">Participating Vendors:</div>
+            <ul className="list-disc list-inside text-sm text-muted-foreground">
+              {vendors.map((vendor, idx) => (
+                <li key={idx}>
+                  {vendor.name} {vendor.booth && <span className="text-xs text-muted-foreground">(Booth {vendor.booth})</span>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {isBazaarOrBooth && vendors.some(v => !!v.vendorName) && (
           <div className="mt-1 text-sm">

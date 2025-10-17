@@ -1,4 +1,4 @@
-import { Search, Bell, LayoutGrid, User, Store } from "lucide-react";
+import { Search, Bell, LayoutGrid, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
@@ -53,12 +53,6 @@ export default function Header({ onSearch }: HeaderProps) {
           <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-career">Career</Button>
-          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-vendor-dashboard"
-            onClick={() => setLocation("/vendor/dashboard")}
-          >
-            <Store className="h-4 w-4" />
-            Vendor Dashboard
-          </Button>
         </div>
       </div>
     </header>

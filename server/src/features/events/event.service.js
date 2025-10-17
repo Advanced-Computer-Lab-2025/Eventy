@@ -165,27 +165,6 @@ export const createWorkshop = async (workshopData, professorId) => {
   return workshop;
 };
 
-// Get all workshops - Admin or EventsOffice only
-export const getAllWorkshopsService = async (userRole) => {
-  // Only Admin or EventsOffice can view all workshops
-  if (userRole !== "admin" && userRole !== "events_office") {
-    throw new ApiError(403, "Forbidden: You are not allowed to view workshops.");
-  }
-
-  try {
-    // populate the correct fields defined in the schema: "professors" and "createdBy"
-    const workshops = await Event.find({ eventType: "workshop" })
-      .populate("professors", "name email")
-      .populate("createdBy", "name email role")
-      .sort({ createdAt: -1 });
-
-    return workshops;
-  } catch (error) {
-    // Wrap in ApiError so error middleware can format it consistently
-    throw new ApiError(500, "Error fetching workshops: " + error.message);
-  }
-};
-
 /**
  * Allows a professor to edit their own workshop if it needs revision.
  * @param {string} workshopId - The ID of the workshop to edit.
@@ -203,7 +182,9 @@ export async function editWorkshop(workshopId, updateData, user) {
     throw new ApiError(400, "This event is not a workshop");
   }
 
-  if (workshop.createdBy.toString() !== user._id.toString()) {
+  // Handle both user.id and user._id from JWT token
+  const userId = user._id || user.id;
+  if (workshop.createdBy.toString() !== userId.toString()) {
     throw new ApiError(403, "Forbidden: You can only edit your own workshops");
   }
 
@@ -397,4 +378,25 @@ export const getEventById = async (eventId) => {
     throw new ApiError(404, "Event not found");
   }
   return event;
+};
+export const getAllTripsService = async () => {
+  
+  const trips = await Event.find({ eventType: "trip" })
+    .select("name location price startDate endDate description capacity registrationDeadline")
+    .lean();
+
+  return trips;
+};
+
+export const getAllWorkshopsService = async (userRole) => {
+  
+
+    // ✅ 3. Fetch all workshops from the database
+    const workshops = await Event.find({ eventType: "workshop" }).sort({
+      createdAt: -1,
+    });
+
+    // ✅ 4. Return response
+    return workshops
+  
 };

@@ -40,8 +40,12 @@ export default function Login() {
       // ✅ Optionally store user data
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      // ✅ Redirect after successful login
-      setLocation("/");
+      // ✅ Redirect based on user role
+      if (data.user.role === "vendor") {
+        setLocation("/vendor/dashboard");
+      } else {
+        setLocation("/");
+      }
     } catch (err: any) {
       alert(err.message);
     }
