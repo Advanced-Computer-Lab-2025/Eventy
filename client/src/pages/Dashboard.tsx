@@ -8,7 +8,6 @@ import CreateEventDialog from "@/components/CreateEventDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
-import { useEffect } from "react";
 
 
 //todo: remove mock functionality
@@ -40,9 +39,7 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const API_URL = `${API_BASE_URL}/api/events/upcoming`;
