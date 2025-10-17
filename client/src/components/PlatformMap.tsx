@@ -147,17 +147,35 @@ const PlatformMap: React.FC<PlatformMapProps> = ({
 
         <image href="/images/palm2.png" x="-140" y="340" width="100" height="80" />
         <image href="/images/palm2.png" x="-140" y="80" width="100" height="80" />
-        <image href="/images/screen.png" x="-140" y="200" width="100" height="80" />
+        <image href="/images/screen.png" x="-140" y="205" width="100" height="80" />
+        <image href="/images/bush.png" x="-155" y="290" width="100" height="80" />
+        <image href="/images/bush.png" x="-155" y="125" width="100" height="80" />
 
-        <image href="/images/palmr.png" x="-40" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="-35" y="-10" width="100" height="80" />
         <image href="/images/palmr.png" x="220" y="-10" width="100" height="80" />
         <image href="/images/palmr.png" x="280" y="-10" width="100" height="80" />
         <image href="/images/palmr.png" x="530" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="95" y="-10" width="100" height="80" />
+        <image href="/images/palmr.png" x="400" y="-10" width="100" height="80" />
 
-        <image href="/images/palm.png" x="-40" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="-35" y="430" width="100" height="80" />
         <image href="/images/palm.png" x="220" y="430" width="100" height="80" />
         <image href="/images/palm.png" x="280" y="430" width="100" height="80" />
         <image href="/images/palm.png" x="530" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="95" y="430" width="100" height="80" />
+        <image href="/images/palm.png" x="400" y="430" width="100" height="80" />
+
+        <image href="/images/bushu.png" x="30" y="452" width="100" height="80" />
+        <image href="/images/bushu.png" x="160" y="452" width="100" height="80" />
+        <image href="/images/bushu.png" x="340" y="452" width="100" height="80" />
+        <image href="/images/bushu.png" x="460" y="452" width="100" height="80" />
+
+        <image href="/images/bushd.png" x="30" y="-32" width="100" height="80" />
+        <image href="/images/bushd.png" x="160" y="-32" width="100" height="80" />
+        <image href="/images/bushd.png" x="340" y="-32" width="100" height="80" />
+        <image href="/images/bushd.png" x="460" y="-32" width="100" height="80" />
+        
+
 
         {/* All Booths */}
         <Booths
