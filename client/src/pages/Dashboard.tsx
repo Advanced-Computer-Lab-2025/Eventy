@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 
-import { useEffect } from "react";
 
 
 //todo: remove mock functionality
