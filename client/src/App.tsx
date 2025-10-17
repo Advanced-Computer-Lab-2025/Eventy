@@ -22,6 +22,7 @@ import MyWorkshops from "@/pages/MyWorkshops";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
+import WorkshopManagement from "@/pages/WorkshopManagement";
 import EditWorkshop from "@/pages/EditWorkshop";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -38,9 +39,14 @@ function Router() {
       <Route path="/admin/events/conference/edit/:id" component={EditConference} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
-      <Route path="/professor/dashboard">
+      <Route path="/professor">
         <ProtectedRoute allowedRoles={["professor"]}>
           <ProfessorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/workshops">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <WorkshopManagement />
         </ProtectedRoute>
       </Route>
       <Route path="/professor/create-workshop">
