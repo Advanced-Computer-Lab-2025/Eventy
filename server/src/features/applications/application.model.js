@@ -11,7 +11,7 @@ const applicationSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
       required: function() {
-        return this.type === "bazaar";
+        return this.type === "bazaar"; // Only required for bazaar applications
       },
     },
     type: {
