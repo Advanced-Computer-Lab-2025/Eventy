@@ -296,6 +296,7 @@ export const getUpcomingEventsService = async () => {
   const events = await Event.find({
     status: "approved",
     startDate: { $gte: now },
+    deletedAt: null,
   })
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email")
@@ -314,8 +315,9 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Proceed with deletion
-  await Event.findByIdAndDelete(eventId);
+  // Soft delete: set deletedAt timestamp
+  event.deletedAt = new Date();
+  await event.save();
   return true;
 }
 // 🔍 Search events service

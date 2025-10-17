@@ -3,19 +3,35 @@ import { Card, CardContent } from "@/components/ui/card";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
 import { Button } from "@/components/ui/button";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
 async function deleteEvent(eventId: string) {
-  const response = await fetch(`/api/admin/events/${eventId}`, {
+  const token = localStorage.getItem("token");
+  const response = await fetch(`${API_BASE_URL}/api/events/admin/events/${eventId}`, {
     method: "DELETE",
+    headers: {
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
     credentials: "include",
   });
 
+  // Try to parse JSON if available for better error messages
+  const contentType = response.headers.get("content-type");
   if (response.status === 409) {
-    const data = await response.json();
-    throw new Error(data.message || "Cannot delete event with registered users.");
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json();
+      throw new Error(data.message || "Cannot delete event with registered users.");
+    }
+    throw new Error("Cannot delete event with registered users.");
   }
 
   if (!response.ok) {
-    throw new Error("Failed to delete event");
+    let msg = "Failed to delete event";
+    if (contentType && contentType.includes("application/json")) {
+      const data = await response.json().catch(() => null);
+      if (data?.message) msg = data.message;
+    }
+    throw new Error(msg);
   }
 
   return true;
