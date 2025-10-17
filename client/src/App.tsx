@@ -31,7 +31,10 @@ function Router() {
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/admin" component={AdminDashboardPage} />
       <Route path="/admin/create/conference" component={CreateConference} />
-      <Route path="/admin/events/conference/edit/:id" component={EditConference} />
+      <Route
+        path="/admin/events/conference/edit/:id"
+        component={EditConference}
+      />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
       <Route path="/create/trip" component={CreateTrip} />
