@@ -61,6 +61,7 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/my-events" component={MyEvents} />
+      <Route path="/my-workshops" component={MyWorkshops} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />
       <Route component={NotFound} />

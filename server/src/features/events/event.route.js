@@ -6,6 +6,12 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 const router = express.Router();
 const eventsController = new EventsController();
 
+router.get(
+  "/gettrips",
+  authMiddleware,
+  roleMiddleware("events_office"),
+  eventsController.getAllTrips.bind(eventsController)
+);
 // Create bazaar /events/bazaars
 router.post(
   "/bazaars",
@@ -31,9 +37,9 @@ router.delete(
 
 // PATCH /api/admin/trips/:tripId
 router.patch(
-  "/admin/trips/:tripId",
+  "/edit/trips/:tripId",
   authMiddleware,
-  roleMiddleware("admin", "events_office"),
+  roleMiddleware("events_office"),
   eventsController.updateTripController
 );
 
@@ -87,9 +93,9 @@ router.patch(
 
 // POST /api/admin/trips
 router.post(
-  "/admin/trips",
+  "/createtrips",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.createTrip.bind(eventsController)
 );
 
@@ -132,14 +138,11 @@ router.patch(
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware([
-    "student",
+  roleMiddleware(["student",
     "staff",
     "events_office",
     "ta",
-    "professor",
-    "admin",
-  ]),
+    "professor",]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
@@ -180,5 +183,7 @@ router.get(
   roleMiddleware(["vendor", "student", "staff", "ta", "professor"]),
   eventsController.getEventById.bind(eventsController)
 );
+
+
 
 export default router;

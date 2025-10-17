@@ -157,9 +157,9 @@ export class EventsController {
       // 1️⃣ Validate request body
       const { error } = createTripSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
-
+      const userId = req.user._id || req.user.id;
       // 2️⃣ Call service
-      const newTrip = await eventService.createTrip(req.body, req.user._id);
+      const newTrip = await eventService.createTrip(req.body, userId);
 
       // 3️⃣ Send success response
       return res
@@ -242,7 +242,7 @@ export class EventsController {
     }
 
     // ✅ 2. Allow only Admin or Events Office roles
-    if (req.user.role !== "admin" && req.user.role !== "events_office") {
+    if (req.user.role !== "events_office") {
       throw new ApiError(
         403,
         "Forbidden: Only Admin or Events Office can view all workshops"
@@ -291,7 +291,7 @@ export class EventsController {
     }
   }
 
-  // ...existing code...
+
 
   async acceptWorkshop(req, res, next) {
     try {
@@ -514,7 +514,7 @@ export class EventsController {
     }
   }
 
-  async getEventById(req, res, next) {
+    async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
       const event = await eventService.getEventById(eventId);
@@ -525,4 +525,30 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getAllTrips(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    if (req.user.role !== "events_office") {
+      throw new ApiError(403, "Forbidden: Only Events Office can view all trips");
+    }
+
+    const trips = await eventService.getAllTripsService();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
+  } catch (err) {
+    next(err);
+  }
 }
+
+
+}
+
+

@@ -34,7 +34,7 @@ async getAllApplications() {
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
-    const query = { vendorId };
+    const query = { createdBy: vendorId };
 
     // Conditionally add the status to the query if it exists in the filters
     if (filters.status) {
