@@ -34,7 +34,7 @@ export interface Application {
   boothSize: "2x2" | "4x4";
   durationWeeks?: number;
   locationPreference?: string;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "rejected" |"approved";
   vendorId: string;
   createdAt: string;
   updatedAt: string;

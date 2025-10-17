@@ -20,10 +20,9 @@ export class ApplicationController {
 
       const applicationDetails = {
         ...req.body,
-        vendorId,
         event: eventId, // Set event from path param
         type: "bazaar",
-        createdBy: user.id,
+        createdBy: vendorId,
       };
 
       const newApplication = await ApplicationService.createApplication(
@@ -54,10 +53,9 @@ export class ApplicationController {
 
       const applicationDetails = {
         ...req.body,
-        vendorId,
         event: null, // Platform booths don't need a specific event reference
         type: "booth",
-        createdBy: user.id,
+        createdBy: vendorId,
       };
 
       const newApplication = await ApplicationService.createApplication(
