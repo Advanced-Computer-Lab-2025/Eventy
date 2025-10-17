@@ -182,7 +182,9 @@ export async function editWorkshop(workshopId, updateData, user) {
     throw new ApiError(400, "This event is not a workshop");
   }
 
-  if (workshop.createdBy.toString() !== user._id.toString()) {
+  // Handle both user.id and user._id from JWT token
+  const userId = user._id || user.id;
+  if (workshop.createdBy.toString() !== userId.toString()) {
     throw new ApiError(403, "Forbidden: You can only edit your own workshops");
   }
 
