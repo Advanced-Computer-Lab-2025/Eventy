@@ -480,6 +480,7 @@ export class EventsController {
       next(err);
     }
   }
+  // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
       const events = await eventService.getUpcomingEventsService();

@@ -5,15 +5,37 @@ import EventFilters from "@/components/EventFilters";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
+import { getEventImage } from "@/lib/eventImages";
+
+// Define Event type for type safety
+interface Event {
+  _id: string;
+  name: string;
+  eventType?: string;
+  startDate?: string;
+  location?: string;
+  attendeesCount?: number;
+  image?: string;
+  description?: string;
+ vendors?: Array<{
+    vendorId?: string;
+    vendorName?: string;
+    vendorEmail?: string;
+    type?: string;
+    boothSize?: string;
+    attendees?: number;
+  }>;
+}
 
 export default function Home() {
-  const [events, setEvents] = useState<any[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const API_URL = "http://localhost:4000/api/events/upcoming";
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
   const token = localStorage.getItem("token");
 
   useEffect(() => {
@@ -48,17 +70,35 @@ export default function Home() {
       <Header onSearch={(query) => console.log("Search:", query)} />
 
       <main className="pb-20 md:pb-8">
-        <EventHero
-          title="Annual Tech Summit 2024"
-          category="career"
-          date="April 20, 2024"
-          time="9:00 AM - 6:00 PM"
-          location="University Convention Center"
-          attendees={250}
-          image="https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=1200&auto=format&fit=crop"
-          description="Join us for the biggest tech event of the year featuring industry leaders, workshops, and networking opportunities."
-          onRegister={() => console.log("Register clicked")}
-        />
+        {!loading && events.length > 0 && (
+          <EventHero
+            title={events[0].name || "Untitled Event"}
+            category={(events[0].eventType || "academic") as any}
+            date={events[0].startDate
+              ? new Date(events[0].startDate).toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "long",
+                  day: "numeric",
+                  year: "numeric",
+                })
+              : "TBA"}
+            time={events[0].startDate
+              ? new Date(events[0].startDate).toLocaleTimeString("en-US", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })
+              : "TBA"}
+            location={events[0].location || "Unknown location"}
+            attendees={events[0].attendeesCount || 0}
+            image={events[0].image || getEventImage(events[0].eventType, events[0].name)}
+            description={
+              events[0].description ||
+              "Discover and register for exciting upcoming events across campus."
+            }
+            onRegister={() => console.log("Register:", events[0].name)}
+          />
+        )}
 
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
@@ -90,18 +130,26 @@ export default function Home() {
                       id={event._id || String(index)}
                       title={event.name || "Untitled Event"}
                       category={(event.eventType || "academic") as any}
-                      date={event.startDate? new Date(event.startDate).toLocaleDateString("en-US", {
+                      date={event.startDate
+                        ? new Date(event.startDate).toLocaleDateString("en-US", {
                             weekday: "short",
                             month: "long",
                             day: "numeric",
-                            year: "numeric",}): "TBA"}
-                      time={event.startDate? new Date(event.startDate).toLocaleTimeString("en-US", {hour: "2-digit",minute: "2-digit",hour12: true, }): "TBA"}
+                            year: "numeric",
+                          })
+                        : "TBA"}
+                      time={event.startDate
+                        ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                        : "TBA"}
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
+                      image={event.image}
                       vendors={event.vendors || []}
-                      onRegister={() =>
-                        console.log("Register:", event.name)
-                      }
+                      onRegister={() => console.log("Register:", event.name)}
                       onSave={() => console.log("Save:", event.name)}
                       onShare={() => console.log("Share:", event.name)}
                     />

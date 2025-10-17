@@ -1,19 +1,15 @@
-import { Plus, Upload, Settings, Download } from "lucide-react";
+import { Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface QuickActionsProps {
   onCreateEvent?: () => void;
-  onImport?: () => void;
-  onExport?: () => void;
-  onSettings?: () => void;
+  onEditBazaar?: () => void;
 }
 
 export default function QuickActions({
   onCreateEvent,
-  onImport,
-  onExport,
-  onSettings,
+  onEditBazaar,
 }: QuickActionsProps) {
   return (
     <Card>
@@ -27,34 +23,16 @@ export default function QuickActions({
           data-testid="button-create-event"
         >
           <Plus className="h-4 w-4" />
-          Create Event
+          Create Bazaar
         </Button>
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full justify-start gap-2"
-          onClick={onImport}
-          data-testid="button-import"
+          onClick={onEditBazaar}
+          data-testid="button-edit-bazaar"
         >
-          <Upload className="h-4 w-4" />
-          Import Events
-        </Button>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start gap-2"
-          onClick={onExport}
-          data-testid="button-export"
-        >
-          <Download className="h-4 w-4" />
-          Export Data
-        </Button>
-        <Button 
-          variant="outline" 
-          className="w-full justify-start gap-2"
-          onClick={onSettings}
-          data-testid="button-settings"
-        >
-          <Settings className="h-4 w-4" />
-          Settings
+          <Pencil className="h-4 w-4" />
+          Edit bazaar
         </Button>
       </CardContent>
     </Card>

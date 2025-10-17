@@ -22,6 +22,7 @@ import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
 import EditWorkshop from "@/pages/EditWorkshop";
+import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 
@@ -59,6 +60,7 @@ function Router() {
           <VendorDashboard />
         </ProtectedRoute>
       </Route>
+      <Route path="/events-office/dashboard" component={EventsOfficeDashboard} />
       <Route path="/sports">
         <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
           <SportsFacilities />

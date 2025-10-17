@@ -20,11 +20,48 @@ export default function CreateBazaar() {
     description: "",
     deadline: "",
   });
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Bazaar created:", formData);
-    setLocation("/dashboard");
+    setSubmitting(true);
+    setError("");
+    try {
+      const token = localStorage.getItem("token");
+      const payload = {
+        eventType: "bazaar",
+        name: formData.name,
+        description: formData.description,
+        location: formData.location,
+        startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
+        endDate: `${formData.endDate}T${formData.endTime}:00.000Z`,
+        registrationDeadline: formData.deadline
+          ? `${formData.deadline}T23:59:59.000Z`
+          : undefined,
+      };
+
+      const res = await fetch(`${API_BASE_URL}/api/events/bazaars`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || "Failed to create bazaar");
+
+      setLocation("/events-office/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -45,6 +82,9 @@ export default function CreateBazaar() {
               <CardTitle>Bazaar Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {error && (
+                <div className="text-red-500" role="alert">{error}</div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="name">Bazaar Name</Label>
                 <Input
@@ -169,8 +209,8 @@ export default function CreateBazaar() {
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" data-testid="button-submit-bazaar">
-              Create Bazaar
+            <Button type="submit" className="flex-1" data-testid="button-submit-bazaar" disabled={submitting}>
+              {submitting ? "Creating..." : "Create Bazaar"}
             </Button>
           </div>
         </form>
