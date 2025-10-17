@@ -158,6 +158,13 @@ router.get(
   eventsController.searchEvents.bind(eventsController)
 );
 
+router.get(
+  "/allworkshops",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.viewAllWorkshops.bind(eventsController)
+);
+
 // Get all events the logged-in user registered for
 router.get(
   "/me/events",

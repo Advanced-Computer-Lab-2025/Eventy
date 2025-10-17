@@ -24,7 +24,7 @@ router.get(
 router.patch(
   "/:applicationId/status",
   authMiddleware,
-  role(["admin", "eventsOffice"]),
+  role(["admin", "events_office"]),
   applicationController.updateApplicationStatus.bind(applicationController)
 );
 

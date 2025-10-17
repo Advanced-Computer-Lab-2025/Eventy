@@ -83,7 +83,6 @@ async getCourtSchedules() {
       date: { $gte: startOfMonth, $lte: endOfMonth },
       deletedAt: null,
     })
-      .populate("instructor", "name email role")
       .sort({ date: 1, startTime: 1 });
 
     return sessions;
@@ -95,14 +94,14 @@ async getCourtSchedules() {
    * @param {Object} user - Authenticated user
    */
   async createGymSession(data) {
-  const { date, time, duration, type, instructorId, maxParticipants } = data;
+  const { date, time, duration, type, instructor, maxParticipants } = data;
 
   const newSession = new GymSession({
     date,
     startTime: time,
     durationMinutes: duration,
     type,
-    instructor: instructorId,
+    instructor: instructor,
     maxParticipants: maxParticipants
   });
 

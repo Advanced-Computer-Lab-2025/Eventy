@@ -42,8 +42,8 @@ async getAllApplications() {
     }
 
     const applications = await Application.find(query)
-      // Populate 'bazaarId' with specific fields from the linked Event/Bazaar document
-      .populate("bazaarId", "name description startDate endDate location")
+      // Populate 'event' with specific fields from the linked Event/Bazaar document
+      .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
 
     return applications;
@@ -54,16 +54,30 @@ async getAllApplications() {
  * @param {string} status - The new status ("accepted" or "rejected").
  * @returns {Promise<Document|null>} The updated application.
  */
+// async updateApplicationStatus(applicationId, status) {
+//   const application = await Application.findById(applicationId);
+//   if (!application) {
+//     throw new Error("Application not found");
+//   }
+
+//   application.status = status;
+//   await application.save();
+
+//   return application;
+// }
+
 async updateApplicationStatus(applicationId, status) {
-  const application = await Application.findById(applicationId);
-  if (!application) {
+  const updatedApp = await Application.findByIdAndUpdate(
+    applicationId,
+    { $set: { status } },
+    { new: true, runValidators: false } // ✅ prevents missing required field errors
+  );
+
+  if (!updatedApp) {
     throw new Error("Application not found");
   }
 
-  application.status = status;
-  await application.save();
-
-  return application;
+  return updatedApp;
 }
 
 }
