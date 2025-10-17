@@ -34,8 +34,16 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/admin" component={AdminDashboardPage} />
-      <Route path="/admin/create/conference" component={CreateConference} />
+      <Route path="/admin">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminDashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/create/conference">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <CreateConference />
+        </ProtectedRoute>
+      </Route>
       <Route path="/admin/events/conference/edit/:id" component={EditConference} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />

@@ -410,13 +410,3 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
-export async function getAllEvents() {
-  try {
-    const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
-    return events;
-  } catch (err) {
-    throw new ApiError(500, "Error fetching events");
-  }
-}
-
