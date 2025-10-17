@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useLocation, useRoute } from "wouter";
 import {
   Calendar,
   Clock,
   Users,
-  DollarSign
+  DollarSign,
 } from "lucide-react";
 import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -20,15 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-
-// ✅ Toast imports
-import {
-  ToastProvider,
-  Toast,
-  ToastTitle,
-  ToastDescription,
-  ToastViewport,
-} from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface WorkshopFormData {
   name: string;
@@ -47,8 +39,11 @@ interface WorkshopFormData {
   deadline: string;
 }
 
-export default function CreateWorkshop() {
+export default function EditWorkshop() {
+  const [, params] = useRoute("/professor/edit-workshop/:id");
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const workshopId = params?.id;
 
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
@@ -73,38 +68,105 @@ export default function CreateWorkshop() {
 
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchingWorkshop, setFetchingWorkshop] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // ✅ Toast state
-  const [toastOpen, setToastOpen] = useState(false);
-
   useEffect(() => {
+    fetchProfessors();
+    if (workshopId) {
+      fetchWorkshopDetails();
+    }
+  }, [workshopId]);
+
+  const fetchProfessors = async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
-    (async () => {
-      try {
-        const res = await fetch("http://localhost:4000/api/users/professors", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) {
-          console.error("Failed to fetch professors: ", res.status);
-          return;
-        }
-        const payload = await res.json();
-        const list = payload?.data || payload;
-        setProfessorsOptions(
-          list.map((u: any) => ({
-            id: u._id,
-            name: `${u.firstName} ${u.lastName}`,
-            email: u.email,
-          }))
-        );
-      } catch (err) {
-        console.error("Failed to fetch professors", err);
+    try {
+      const res = await fetch("http://localhost:4000/api/users/professors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        console.error("Failed to fetch professors: ", res.status);
+        return;
       }
-    })();
-  }, []);
+      const payload = await res.json();
+      const list = payload?.data || payload;
+      setProfessorsOptions(
+        list.map((u: any) => ({
+          id: u._id,
+          name: `${u.firstName} ${u.lastName}`,
+          email: u.email,
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to fetch professors", err);
+    }
+  };
+
+  const fetchWorkshopDetails = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setLocation("/login");
+        return;
+      }
+
+      const res = await fetch(
+        `http://localhost:4000/api/events/${workshopId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch workshop details");
+      }
+
+      const data = await res.json();
+      const workshop = data.data;
+
+      // Parse dates and times
+      const startDate = new Date(workshop.startDate);
+      const endDate = new Date(workshop.endDate);
+      const deadline = new Date(workshop.registrationDeadline);
+
+      setFormData({
+        name: workshop.name || "",
+        location: workshop.location || "",
+        startDate: startDate.toISOString().split("T")[0],
+        startTime: workshop.startTime || "",
+        endDate: endDate.toISOString().split("T")[0],
+        endTime: workshop.endTime || "",
+        description: workshop.description || "",
+        agenda: workshop.agenda || "",
+        faculty: workshop.faculty || "",
+        budget: workshop.requiredBudget?.toString() || "",
+        fundingSource: workshop.fundingSource || "",
+        resources: workshop.extraResources || "",
+        capacity: workshop.capacity?.toString() || "",
+        deadline: deadline.toISOString().split("T")[0],
+      });
+
+      // Set selected professors
+      if (workshop.professors && Array.isArray(workshop.professors)) {
+        const professorIds = workshop.professors.map((p: any) =>
+          typeof p === "string" ? p : p._id
+        );
+        setSelectedProfessors(professorIds);
+      }
+    } catch (err) {
+      console.error(err);
+      setErrorMsg(err instanceof Error ? err.message : "Failed to load workshop");
+      toast({
+        title: "Error",
+        description: "Failed to load workshop details",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingWorkshop(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -137,33 +199,53 @@ export default function CreateWorkshop() {
       const token = localStorage.getItem("token");
       if (!token) throw new Error("Not authenticated. Please log in first.");
 
-      const res = await fetch("http://localhost:4000/api/events/workshops", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(workshopData),
-      });
+      const res = await fetch(
+        `http://localhost:4000/api/events/workshops/${workshopId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(workshopData),
+        }
+      );
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to create workshop");
+        throw new Error(data.message || "Failed to update workshop");
       }
 
-      // ✅ Success toast instead of alert
-      setToastOpen(true);
+      toast({
+        title: "Workshop Updated",
+        description: "Your workshop has been successfully updated and is pending re-approval.",
+      });
 
-      // Navigate after toast appears
-      setTimeout(() => setLocation("/professor/dashboard"), 2000);
+      setTimeout(() => setLocation("/professor/dashboard"), 1500);
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to update workshop",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
+
+  if (fetchingWorkshop) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-muted-foreground">Loading workshop details...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -171,9 +253,9 @@ export default function CreateWorkshop() {
 
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Create Workshop</h1>
+          <h1 className="text-4xl font-bold mb-2">Edit Workshop</h1>
           <p className="text-muted-foreground">
-            Fill in the details to create a new workshop
+            Update the workshop details below
           </p>
           {errorMsg && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
         </div>
@@ -504,24 +586,11 @@ export default function CreateWorkshop() {
               Cancel
             </Button>
             <Button type="submit" className="flex-1" disabled={loading}>
-              {loading ? "Submitting..." : "Submit Workshop for Approval"}
+              {loading ? "Updating..." : "Update Workshop"}
             </Button>
           </div>
         </form>
       </main>
-
-      {/* ✅ Toast Notification */}
-      <ToastProvider>
-        <Toast open={toastOpen} onOpenChange={setToastOpen}>
-          <div className="flex flex-col space-y-1">
-            <ToastTitle>Workshop Created 🎉</ToastTitle>
-            <ToastDescription>
-              Your workshop has been successfully submitted for approval!
-            </ToastDescription>
-          </div>
-        </Toast>
-        <ToastViewport />
-      </ToastProvider>
     </div>
   );
 }
