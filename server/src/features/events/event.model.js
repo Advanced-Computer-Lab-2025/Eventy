@@ -12,7 +12,9 @@ const eventSchema = new Schema(
     description: { type: String, required: true },
     location: { type: String, required: true },
     startDate: { type: Date, required: true },
+    startTime: { type: String },
     endDate: { type: Date, required: true },
+    endTime: { type: String },
     registrationDeadline: { type: Date, required: true },
 
     status: {
