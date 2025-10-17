@@ -43,6 +43,10 @@ export default function Login() {
       // ✅ Redirect based on user role
       if (data.user.role === "vendor") {
         setLocation("/vendor/dashboard");
+      } else if (data.user.role === "staff" || data.user.role === "ta") {
+        setLocation("/staff-ta");
+      } else if (data.user.role === "professor") {
+        setLocation("/professor");
       } else {
         setLocation("/");
       }
