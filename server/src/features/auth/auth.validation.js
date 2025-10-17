@@ -22,13 +22,13 @@ export const validateAcademicSignUp = (data) => {
   if (!firstName || !lastName) {
     throw new Error("First name and last name are required.");
   }
-
+  /*
   if (!studentStaffId || !/^[0-9]+$/.test(studentStaffId)) {
     throw new Error(
       "A valid Student/Staff ID is required (ID has to be only numbers)."
     );
   }
-
+*/
   // Save normalized email back to data
   data.email = email;
 

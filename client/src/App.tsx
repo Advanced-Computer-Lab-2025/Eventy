@@ -9,6 +9,9 @@ import Dashboard from "@/pages/Dashboard";
 import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import AdminUsers from "@/pages/AdminUsers";
+import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import CreateConference from "@/pages/CreateConference";
+import EditConference from "@/pages/EditConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
 import CreateTrip from "@/pages/CreateTrip";
 import CreateBazaar from "@/pages/CreateBazaar";
@@ -18,6 +21,7 @@ import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import NotFound from "@/pages/not-found";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 function Router() {
   return (
@@ -26,12 +30,19 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/admin" component={AdminDashboardPage} />
+      <Route path="/admin/create/conference" component={CreateConference} />
+      <Route path="/admin/events/conference/edit/:id" component={EditConference} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
       <Route path="/create/trip" component={CreateTrip} />
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard" component={VendorDashboard} />
-      <Route path="/sports" component={SportsFacilities} />
+      <Route path="/sports">
+        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+          <SportsFacilities />
+        </ProtectedRoute>
+      </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/admin/vendor-requests" component={VendorRequests} />

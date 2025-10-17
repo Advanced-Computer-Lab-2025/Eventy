@@ -21,7 +21,7 @@ export interface Bazaar {
 
 export interface Application {
   _id: string;
-  bazaarId: {
+  event?: {
     _id: string;
     name: string;
     description: string;
@@ -54,6 +54,31 @@ class BazaarApiService {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
     };
+  }
+
+  async getEvents(type?: string): Promise<Bazaar[]> {
+    try {
+      const params = new URLSearchParams();
+      if (type) {
+        params.append("type", type);
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/api/events?${params.toString()}`, {
+        method: "GET",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const apiResponse: ApiResponse<Bazaar[]> = await response.json();
+      return apiResponse.data;
+    } catch (error) {
+      console.error("Error fetching events:", error);
+      throw error;
+    }
   }
 
   async getUpcomingBazaars(): Promise<Bazaar[]> {

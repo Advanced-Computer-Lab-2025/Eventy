@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { CheckCircle, XCircle, Edit, Eye } from "lucide-react";
-import Header from "@/components/Header";
+import AdminHeader from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -75,7 +75,7 @@ export default function WorkshopApprovals() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <AdminHeader />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
