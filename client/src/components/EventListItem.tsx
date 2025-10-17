@@ -2,6 +2,7 @@ import { Calendar, MapPin, ChevronRight,Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -62,6 +63,7 @@ export default function EventListItem({
    onDelete,
   canDelete = false,
 }: EventListItemProps) {
+  const { toast } = useToast();
   return (
     <Card 
       className="hover-elevate cursor-pointer transition-all duration-200"
@@ -83,8 +85,30 @@ export default function EventListItem({
               <h3 className="font-semibold line-clamp-1" data-testid={`text-event-title-${id}`}>
                 {title}
               </h3>
-              
-              <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              <div className="flex items-center gap-2">
+                {canDelete && (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      if (!confirm("Are you sure you want to delete this event?")) return;
+                      try {
+                        await deleteEvent(id);
+                        toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                        onDelete?.(id);
+                      } catch (err: any) {
+                        toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
+                      }
+                    }}
+                    data-testid={`button-delete-event-${id}`}
+                  >
+                    <Trash2 className="h-4 w-4 mr-1" />
+                    Delete
+                  </Button>
+                )}
+                <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              </div>
             </div>
             
             <div className="mb-2">
@@ -101,29 +125,6 @@ export default function EventListItem({
                 <span className="line-clamp-1">{location}</span>
               </div>
             </div>
-             {/* Show delete button only for admins/events office */}
-             {canDelete && (
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={async (e) => {
-                    e.stopPropagation(); // prevents triggering card click
-                    if (!confirm("Are you sure you want to delete this event?")) return;
-
-                    try {
-                      await deleteEvent(id);
-                      alert("Event deleted successfully ✅");
-                      onDelete?.(id); // remove from parent list
-                    } catch (err: any) {
-                      alert(err.message || "Failed to delete event ❌");
-                    }
-                  }}
-                 data-testid={`button-delete-event-${id}`}
-               >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                   Delete
-               </Button>
-                )}
           </div>
         </div>
       </CardContent>

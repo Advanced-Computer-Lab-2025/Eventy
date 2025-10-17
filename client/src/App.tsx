@@ -41,7 +41,7 @@ function Router() {
       <Route path="/sports" component={SportsFacilities} />
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/admin/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests" component={VendorRequests} />
       <Route path="/events" component={EventListPage} />
 
       <Route component={NotFound} />
