@@ -18,6 +18,7 @@ import CreateBazaar from "@/pages/CreateBazaar";
 import VendorDashboard from "@/pages/VendorDashboard";
 import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
+import MyWorkshops from "@/pages/MyWorkshops";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
@@ -54,7 +55,11 @@ function Router() {
       </Route>
       <Route path="/create/trip" component={CreateTrip} />
       <Route path="/create/bazaar" component={CreateBazaar} />
-      <Route path="/vendor/dashboard" component={VendorDashboard} />
+      <Route path="/vendor/dashboard">
+        <ProtectedRoute allowedRoles={["vendor"]}>
+          <VendorDashboard />
+        </ProtectedRoute>
+      </Route>
       <Route path="/sports">
         <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
           <SportsFacilities />
