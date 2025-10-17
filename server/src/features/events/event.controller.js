@@ -482,7 +482,7 @@ export class EventsController {
   }
   async getUpcomingEvents(req, res, next) {
     try {
-      const events = await eventService.getUpcomingEventsService();
+      const events = await eventService.getUpcomingEventsWithVendors(true);
       return res
         .status(200)
         .json(
