@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Settings } from "lucide-react";
+import { Bell, LayoutGrid, User, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -40,8 +40,8 @@ export default function AdminHeader() {
           <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-admin-dashboard"
             onClick={() => setLocation("/admin")}
           >
-            <Settings className="h-4 w-4" />
-            Admin Dashboard
+            <Home className="h-4 w-4" />
+            Home
           </Button>
         </div>
       </div>
