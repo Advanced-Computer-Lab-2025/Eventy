@@ -303,8 +303,13 @@ export async function deleteEvent(eventId, user) {
 }
 // 🔍 Search events service
 export const searchEvents = async ({ name, type }) => {
-  // Build a flexible filter
-  const filter = { status: "approved" };
+  // Build a flexible filter - only search upcoming events like getUpcomingEventsService
+  const now = new Date();
+  const filter = { 
+    status: "approved",
+    startDate: { $gte: now },
+    deletedAt: null
+  };
 
   // If both name and type are provided and are the same (unified search)
   // Use OR logic to search across all fields
