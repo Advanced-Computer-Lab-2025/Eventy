@@ -342,39 +342,54 @@ export default function VendorDashboard() {
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Vendor Dashboard</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Store className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
+          </div>
           <p className="text-muted-foreground">
             Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
           </p>
         </div>
 
-        {/* Statistics Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-          <StatCard
-            title="Total Applications"
-            value={vendorStats.totalApplications}
-            icon={FolderOpen}
-          />
-          <StatCard
-            title="Pending Approval"
-            value={vendorStats.pendingCount}
-            icon={Clock}
-          />
-          <StatCard
-            title="Approved"
-            value={vendorStats.approvedCount}
-            icon={CheckCircle}
-          />
-          <StatCard
-            title="Rejected"
-            value={vendorStats.rejectedCount}
-            icon={XCircle}
-          />
-        </div>
-
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
 
           <TabsContent value="upcoming" className="space-y-4">
+            {/* Statistics Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <StatCard
+                title="Total Applications"
+                value={vendorStats.totalApplications}
+                description="All applications submitted"
+                icon={FolderOpen}
+                valueColor="text-gray-900"
+                iconColor="text-gray-600"
+              />
+              <StatCard
+                title="Pending Approval"
+                value={vendorStats.pendingCount}
+                description="Awaiting review"
+                icon={Clock}
+                valueColor="text-blue-600"
+                iconColor="text-blue-600"
+              />
+              <StatCard
+                title="Approved"
+                value={vendorStats.approvedCount}
+                description="Successfully approved"
+                icon={CheckCircle}
+                valueColor="text-green-600"
+                iconColor="text-green-600"
+              />
+              <StatCard
+                title="Rejected"
+                value={vendorStats.rejectedCount}
+                description="Requires updates"
+                icon={XCircle}
+                valueColor="text-orange-600"
+                iconColor="text-orange-600"
+              />
+            </div>
+
             <div className="mb-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Upcoming Bazaars</h2>

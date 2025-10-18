@@ -4,23 +4,37 @@ import { LucideIcon } from "lucide-react";
 interface StatCardProps {
   title: string;
   value: string | number;
+  description?: string;
   icon: LucideIcon;
+  valueColor?: string;
+  iconColor?: string;
   trend?: {
     value: number;
     isPositive: boolean;
   };
 }
 
-export default function StatCard({ title, value, icon: Icon, trend }: StatCardProps) {
+export default function StatCard({ 
+  title, 
+  value, 
+  description, 
+  icon: Icon, 
+  valueColor = "text-gray-900", 
+  iconColor = "text-gray-600",
+  trend 
+}: StatCardProps) {
   return (
     <Card>
       <CardContent className="p-6">
-        <div className="flex items-center justify-between">
+        <div className="relative">
           <div>
-            <p className="text-sm text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold mt-1" data-testid="text-stat-value">
+            <p className="text-sm text-gray-900 mb-1">{title}</p>
+            <p className={`text-3xl font-bold mb-1 ${valueColor}`} data-testid="text-stat-value">
               {value}
             </p>
+            {description && (
+              <p className="text-xs text-gray-500">{description}</p>
+            )}
             {trend && (
               <p className={`text-sm mt-2 flex items-center gap-1 ${
                 trend.isPositive ? "text-green-500" : "text-red-500"
@@ -30,8 +44,8 @@ export default function StatCard({ title, value, icon: Icon, trend }: StatCardPr
               </p>
             )}
           </div>
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Icon className="h-6 w-6 text-primary" />
+          <div className="absolute top-0 right-0">
+            <Icon className={`h-5 w-5 ${iconColor}`} />
           </div>
         </div>
       </CardContent>
