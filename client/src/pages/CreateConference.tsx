@@ -39,7 +39,7 @@ export default function CreateConference() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to create conference");
 
-      setLocation("/admin");
+      setLocation("/events-office/dashboard");
     } catch (err: any) {
       alert(err.message || "Something went wrong");
     } finally {
@@ -54,8 +54,8 @@ export default function CreateConference() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold">Create Conference</h1>
-            <Button variant="outline" onClick={() => setLocation("/admin")}>
-              Back to Admin
+            <Button variant="outline" onClick={() => setLocation("/events-office/dashboard")}>
+              Back to Events Office
             </Button>
           </div>
           <p className="text-muted-foreground">

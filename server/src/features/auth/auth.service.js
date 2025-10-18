@@ -9,6 +9,11 @@ import jwt from "jsonwebtoken";
 export const signUpUser = async (data) => {
   const { role } = data;
 
+  // ✅ Check if role exists before calling toLowerCase()
+  if (!role) {
+    throw new Error("Role is required");
+  }
+
   // ✅ Step 1: Normalize role
   const normalizedRole = role.toLowerCase();
 
@@ -62,6 +67,7 @@ export const signUpUser = async (data) => {
     roleVerifiedByAdmin: false,
   };
 
+  userData.role = null;
   // ✅ Step 7: Create and save user
   const user = new User(userData);
   await user.save();
@@ -164,7 +170,7 @@ export const loginUser = async (data) => {
     process.env.JWT_SECRET || "supersecretkey",
     { expiresIn: "30d" }
   );
-  //////////////////////////////////////////////////////////////note : frontend stores the token not backend /////////////////////////////////////////////////
+
   // ✅ Step 6: Personalized welcome message
   let welcomeMessage = `Welcome back, ${user.firstName || "User"}!`;
   if (user.role === "vendor")
@@ -176,6 +182,8 @@ export const loginUser = async (data) => {
       id: user._id,
       email: user.email,
       role: user.role,
+      firstName: user.firstName,
+      companyName: user.companyName,
     },
     token,
   };

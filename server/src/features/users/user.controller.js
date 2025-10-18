@@ -1,6 +1,10 @@
 import { User } from "./user.model.js";
-import { UserValidation, createManagementAccountSchema } from "./user.validation.js";
-import { sendVerificationEmail } from "../auth/email.service.js";
+import {
+  UserValidation,
+  createManagementAccountSchema,
+} from "./user.validation.js";
+import { sendRegistrationEmail } from "../auth/email.service.js";
+
 import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes

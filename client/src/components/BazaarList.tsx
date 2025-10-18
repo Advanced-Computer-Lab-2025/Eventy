@@ -26,6 +26,7 @@ interface BazaarListProps {
   onRegister?: (bazaarId: string) => void;
   onSave?: (bazaarId: string) => void;
   onShare?: (bazaarId: string) => void;
+  onEdit?: (bazaarId: string) => void;
   showFilters?: boolean;
   className?: string;
 }
@@ -35,6 +36,7 @@ export default function BazaarList({
   onRegister,
   onSave,
   onShare,
+  onEdit,
   showFilters = true,
   className = "",
 }: BazaarListProps) {
@@ -82,6 +84,14 @@ export default function BazaarList({
     }
   };
 
+  const handleEdit = (bazaarId: string) => {
+    if (onEdit) {
+      onEdit(bazaarId);
+    } else {
+      console.log(`Edit bazaar: ${bazaarId}`);
+    }
+  };
+
   if (bazaars.length === 0) {
     return (
       <Card className={className}>
@@ -122,22 +132,24 @@ export default function BazaarList({
       )}
 
       {/* Results count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
-        </p>
-        {searchTerm && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSearchTerm("");
-            }}
-          >
-            Clear search
-          </Button>
-        )}
-      </div>
+      {showFilters && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
+          </p>
+          {searchTerm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+              }}
+            >
+              Clear search
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Bazaar Grid */}
       {filteredBazaars.length === 0 ? (
@@ -171,6 +183,7 @@ export default function BazaarList({
               onRegister={() => handleRegister(bazaar._id)}
               onSave={() => handleSave(bazaar._id)}
               onShare={() => handleShare(bazaar._id)}
+              onEdit={() => handleEdit(bazaar._id)}
             />
           ))}
         </div>
