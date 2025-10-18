@@ -6,6 +6,12 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 const router = express.Router();
 const eventsController = new EventsController();
 
+router.get(
+  "/gettrips",
+  authMiddleware,
+  roleMiddleware("events_office"),
+  eventsController.getAllTrips.bind(eventsController)
+);
 // Create bazaar /events/bazaars
 router.post(
   "/bazaars",
@@ -31,9 +37,9 @@ router.delete(
 
 // PATCH /api/admin/trips/:tripId
 router.patch(
-  "/admin/trips/:tripId",
+  "/edit/trips/:tripId",
   authMiddleware,
-  roleMiddleware("admin", "events_office"),
+  roleMiddleware("events_office"),
   eventsController.updateTripController
 );
 
@@ -87,9 +93,9 @@ router.patch(
 
 // POST /api/admin/trips
 router.post(
-  "/admin/trips",
+  "/createtrips",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.createTrip.bind(eventsController)
 );
 
@@ -104,28 +110,28 @@ router.get(
 router.post(
   "/admin/conferences",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.createConferenceController
 );
 
 router.get(
   "/admin/conferences",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.getConferencesController.bind(eventsController)
 );
 
 router.get(
   "/admin/conferences/:conferenceId",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.getConferenceByIdController.bind(eventsController)
 );
 
 router.patch(
   "/admin/conferences/:conferenceId",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.updateConferenceController.bind(eventsController)
 );
 //get all upcoming events (approved events)
@@ -143,7 +149,7 @@ router.get(
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
-// Search events (✅ new feature)
+// Search events ( new feature)
 router.get(
   "/search",
   authMiddleware,
@@ -158,6 +164,13 @@ router.get(
   eventsController.searchEvents.bind(eventsController)
 );
 
+router.get(
+  "/allworkshops",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.viewAllWorkshops.bind(eventsController)
+);
+
 // Get all events the logged-in user registered for
 router.get(
   "/me/events",
@@ -170,8 +183,10 @@ router.get(
 router.get(
   "/:eventId",
   authMiddleware,
-  roleMiddleware(["vendor", "student", "staff", "ta", "professor"]),
+  roleMiddleware(["vendor", "student", "staff", "ta", "professor", "admin", "events_office"]),
   eventsController.getEventById.bind(eventsController)
 );
+
+
 
 export default router;

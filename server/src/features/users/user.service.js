@@ -58,6 +58,9 @@ class UserService {
       targetUser.deletedAt = new Date();
       targetUser.status = "blocked";
       await targetUser.save();
+      targetUser.deletedAt = new Date();
+      targetUser.status = "deleted";
+      await targetUser.save();
     }
 
     return targetUser;

@@ -10,7 +10,9 @@ const applicationSchema = new mongoose.Schema(
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
-      required: true,
+      required: function() {
+        return this.type === "bazaar"; // Only required for bazaar applications
+      },
     },
     type: {
       type: String,

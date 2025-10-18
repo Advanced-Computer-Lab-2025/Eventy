@@ -34,7 +34,7 @@ async getAllApplications() {
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
-    const query = { vendorId };
+    const query = { createdBy: vendorId };
 
     // Conditionally add the status to the query if it exists in the filters
     if (filters.status) {
@@ -42,8 +42,8 @@ async getAllApplications() {
     }
 
     const applications = await Application.find(query)
-      // Populate 'bazaarId' with specific fields from the linked Event/Bazaar document
-      .populate("bazaarId", "name description startDate endDate location")
+      // Populate 'event' with specific fields from the linked Event/Bazaar document
+      .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
 
     return applications;

@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Users, Bookmark, Share2, Store } from "lucide-react";
+import { Calendar, MapPin, Users, Bookmark, Share2, Store, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +20,7 @@ export interface BazaarCardProps {
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
+  onEdit?: () => void;
 }
 
 export default function BazaarCard({
@@ -37,6 +38,7 @@ export default function BazaarCard({
   onRegister,
   onSave,
   onShare,
+  onEdit,
 }: BazaarCardProps) {
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   // Format dates for display
@@ -154,6 +156,17 @@ export default function BazaarCard({
         )}
 
         <div className="flex gap-2 pt-2">
+          {onEdit && (
+            <Button 
+              variant="outline"
+              className="flex-1"
+              onClick={onEdit}
+              data-testid={`button-edit-${id}`}
+            >
+              <Pencil className="h-4 w-4 mr-2" />
+              Edit
+            </Button>
+          )}
           <Button 
             onClick={handleRegister} 
             className="flex-1"

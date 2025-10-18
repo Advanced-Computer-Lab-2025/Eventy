@@ -20,7 +20,12 @@ import SportsFacilities from "@/pages/SportsFacilities";
 import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
+import ProfessorDashboard from "@/pages/ProfessorDashboard";
+import EditWorkshop from "@/pages/EditWorkshop";
+import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
+import ProtectedRoute from "@/components/ProtectedRoute";
+import EventListPage from "@/pages/EventListPage";
 
 function Router() {
   return (
@@ -29,21 +34,68 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/admin" component={AdminDashboardPage} />
-      <Route path="/admin/create/conference" component={CreateConference} />
-      <Route
-        path="/admin/events/conference/edit/:id"
-        component={EditConference}
-      />
+      <Route path="/admin">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminDashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/create/conference">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateConference />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/events/conference/edit/:id">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EditConference />
+        </ProtectedRoute>
+      </Route>
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
+      <Route path="/professor/dashboard">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <ProfessorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/create-workshop">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <CreateWorkshop />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/edit-workshop/:id">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <EditWorkshop />
+        </ProtectedRoute>
+      </Route>
       <Route path="/create/trip" component={CreateTrip} />
       <Route path="/create/bazaar" component={CreateBazaar} />
-      <Route path="/vendor/dashboard" component={VendorDashboard} />
-      <Route path="/sports" component={SportsFacilities} />
+      <Route path="/vendor/dashboard">
+        <ProtectedRoute allowedRoles={["vendor"]}>
+          <VendorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/dashboard">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EventsOfficeDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/sports">
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "events_office",
+            "ta",
+            "professor",
+          ]}
+        >
+          <SportsFacilities />
+        </ProtectedRoute>
+      </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/admin/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests" component={VendorRequests} />
+      <Route path="/events" component={EventListPage} />
+
       <Route component={NotFound} />
     </Switch>
   );

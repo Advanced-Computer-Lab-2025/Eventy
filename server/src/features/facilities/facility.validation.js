@@ -54,17 +54,14 @@ export const createGymSessionSchema = Joi.object({
         "Invalid type. Must be one of yoga, pilates, aerobics, zumba, cross_circuit, or kick_boxing",
     }),
 
-  instructorId: Joi.string()
-    .custom((value, helpers) => {
-      if (!mongoose.Types.ObjectId.isValid(value)) {
-        return helpers.error("any.invalid");
-      }
-      return value;
-    })
+  instructor: Joi.string()
+    .min(2)
+    .max(100)
     .required()
     .messages({
-      "any.required": "Instructor ID is required",
-      "any.invalid": "Instructor ID must be a valid ObjectId",
+      "any.required": "Instructor name is required",
+      "string.min": "Instructor name must be at least 2 characters",
+      "string.max": "Instructor name cannot exceed 100 characters",
     }),
 
   maxParticipants: Joi.number()

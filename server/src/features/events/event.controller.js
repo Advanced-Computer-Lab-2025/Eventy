@@ -157,9 +157,9 @@ export class EventsController {
       // 1️⃣ Validate request body
       const { error } = createTripSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
-
+      const userId = req.user._id || req.user.id;
       // 2️⃣ Call service
-      const newTrip = await eventService.createTrip(req.body, req.user._id);
+      const newTrip = await eventService.createTrip(req.body, userId);
 
       // 3️⃣ Send success response
       return res
@@ -221,7 +221,7 @@ export class EventsController {
 
       const newWorkshop = await eventService.createWorkshop(
         req.body,
-        req.user._id
+        req.user.id
       );
 
       return res
@@ -234,40 +234,35 @@ export class EventsController {
     }
   }
 
-  // Accept workshop
-  async acceptWorkshop(req, res) {
-    try {
-      // Extra role validation
-      if (req.user.role !== "events_office") {
-        return res.status(403).json({
-          message: "Forbidden: Only events office can accept workshops",
-        });
-      }
-
-      const { error } = workshopStatusSchema.validate({
-        id: req.params.id,
-        status: "approved",
-      });
-      if (error)
-        return res.status(400).json({ message: error.details[0].message });
-
-      const event = await Event.findByIdAndUpdate(
-        req.params.id,
-        { status: "approved" },
-        { new: true }
-      );
-
-      if (!event) {
-        return res.status(404).json({ message: "Workshop not found" });
-      }
-
-      res
-        .status(200)
-        .json({ message: "Workshop accepted and published", event });
-    } catch (error) {
-      res.status(500).json({ message: "Error accepting workshop", error });
+  async viewAllWorkshops(req, res, next) {
+  try {
+    // ✅ 1. Check authentication
+    if (!req.user) {
+      throw new ApiError(401, "Unauthorized");
     }
+
+    // ✅ 2. Allow only Admin or Events Office roles
+    if (req.user.role !== "events_office") {
+      throw new ApiError(
+        403,
+        "Forbidden: Only Admin or Events Office can view all workshops"
+      );
+    }
+
+    // ✅ 3. Call service layer
+    const workshops = await eventService.getAllWorkshopsService(req.user.role);
+
+    // ✅ 4. Return success response
+    return res
+      .status(200)
+      .json(
+        new ApiResponse(200, workshops, "Workshops retrieved successfully")
+      );
+  } catch (err) {
+    // ✅ 5. Pass errors to global handler
+    next(err);
   }
+}
 
   async getMyWorkshops(req, res, next) {
     try {
@@ -282,9 +277,10 @@ export class EventsController {
         );
       }
 
+      const userId = req.user._id || req.user.id;
       const events = await eventService.getEvents({
         eventType: "workshop",
-        createdBy: req.user._id,
+        createdBy: userId,
       });
 
       return res
@@ -295,7 +291,7 @@ export class EventsController {
     }
   }
 
-  // ...existing code...
+
 
   async acceptWorkshop(req, res, next) {
     try {
@@ -484,6 +480,7 @@ export class EventsController {
       next(err);
     }
   }
+  // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
       const events = await eventService.getUpcomingEventsService();
@@ -518,7 +515,7 @@ export class EventsController {
     }
   }
 
-  async getEventById(req, res, next) {
+    async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
       const event = await eventService.getEventById(eventId);
@@ -529,4 +526,30 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getAllTrips(req, res, next) {
+  try {
+    const userId = req.user._id || req.user.id;
+
+    if (!userId) {
+      throw new ApiError(401, "Unauthorized");
+    }
+
+    if (req.user.role !== "events_office") {
+      throw new ApiError(403, "Forbidden: Only Events Office can view all trips");
+    }
+
+    const trips = await eventService.getAllTripsService();
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
+  } catch (err) {
+    next(err);
+  }
 }
+
+
+}
+
+
