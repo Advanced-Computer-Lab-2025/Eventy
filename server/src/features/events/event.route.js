@@ -187,6 +187,11 @@ router.get(
   eventsController.getEventById.bind(eventsController)
 );
 
-
+router.post(
+  "/:id/register",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.registerForEvent.bind(eventsController)
+);
 
 export default router;
