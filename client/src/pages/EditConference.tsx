@@ -22,7 +22,7 @@ interface Conference {
 
 export default function EditConference() {
   const [, setLocation] = useLocation();
-  const [, params] = useRoute("/admin/events/conference/edit/:id");
+  const [, params] = useRoute("/events-office/events/conference/edit/:id");
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conference, setConference] = useState<Conference | null>(null);
@@ -46,6 +46,12 @@ export default function EditConference() {
           },
           credentials: "include",
         });
+
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`);
+        }
 
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to fetch conference");
@@ -88,11 +94,18 @@ export default function EditConference() {
         credentials: "include",
         body: JSON.stringify(payload),
       });
+      
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(`Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`);
+      }
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to update conference");
 
-      setLocation("/admin");
+      setLocation("/events-office/dashboard");
     } catch (err: any) {
       alert(err.message || "Something went wrong");
     } finally {
@@ -132,8 +145,8 @@ export default function EditConference() {
             </CardHeader>
             <CardContent>
               <p className="text-red-500 mb-4">{error || "Conference not found"}</p>
-              <Button onClick={() => setLocation("/admin")}>
-                Back to Admin Dashboard
+              <Button onClick={() => setLocation("/events-office/dashboard")}>
+                Back to Events Office Dashboard
               </Button>
             </CardContent>
           </Card>
@@ -162,8 +175,8 @@ export default function EditConference() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold">Edit Conference</h1>
-            <Button variant="outline" onClick={() => setLocation("/admin")}>
-              Back to Admin
+            <Button variant="outline" onClick={() => setLocation("/events-office/dashboard")}>
+              Back to Events Office
             </Button>
           </div>
           <p className="text-muted-foreground">
