@@ -29,6 +29,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import EventCard from "@/components/EventCard";
 
 interface RegisteredEvent {
   _id: string;
@@ -181,6 +182,9 @@ export default function StaffTADashboard() {
   };
 
   const stats = getEventStats();
+  const upcomingRegistered = registeredEvents
+    .filter((e) => new Date(e.startDate) > new Date())
+    .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 
   const quickActions = [
     {

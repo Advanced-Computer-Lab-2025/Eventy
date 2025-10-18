@@ -12,6 +12,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
+import EventCard from "@/components/EventCard";
+import EventSearch from "@/components/EventSearch";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -36,6 +38,10 @@ export default function MyEvents() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
+  // Upcoming events (from backend via EventSearch, same as Home)
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [upcomingLoading, setUpcomingLoading] = useState<boolean>(true);
+  const [upcomingError, setUpcomingError] = useState<string>("");
 
   useEffect(() => {
     // Get user role from localStorage
@@ -76,6 +82,8 @@ export default function MyEvents() {
 
     fetchEvents();
   }, []);
+
+  // Registered events can still be shown below; upcomingEvents is driven by EventSearch
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -205,6 +213,65 @@ export default function MyEvents() {
         </div>
 
         <div className="space-y-6">
+          {/* UPCOMING EVENTS (exactly like Home, using EventSearch) */}
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Upcoming Events</h2>
+            <EventSearch
+              onSearchResults={(results) => setUpcomingEvents(results)}
+              onLoading={(isLoading) => setUpcomingLoading(isLoading)}
+              onError={(msg) => setUpcomingError(msg)}
+              placeholder="Search events by name, professor, or type..."
+              className="mb-2"
+            />
+            {upcomingLoading ? (
+              <p>Loading events...</p>
+            ) : upcomingError ? (
+              <p className="text-red-500">{upcomingError}</p>
+            ) : upcomingEvents.length === 0 ? (
+              <p>No upcoming events found.</p>
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {upcomingEvents.map((event: any, index: number) => (
+                  <EventCard
+                    key={event._id || index}
+                    id={event._id || String(index)}
+                    title={event.name || "Untitled Event"}
+                    category={(event.eventType || "academic") as any}
+                    date={event.startDate
+                      ? new Date(event.startDate).toLocaleDateString("en-US", {
+                          weekday: "short",
+                          month: "long",
+                          day: "numeric",
+                          year: "numeric",
+                        })
+                      : "TBA"}
+                    time={event.startDate
+                      ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                          hour12: true,
+                        })
+                      : "TBA"}
+                    location={event.location || "Unknown location"}
+                    attendees={event.attendeesCount || 0}
+                    image={event.image}
+                    description={event.description}
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    capacity={event.capacity}
+                    registrationDeadline={event.registrationDeadline}
+                    vendors={event.vendors || []}
+                    showDetailedView={true}
+                    onRegister={() => {}}
+                    onSave={() => {}}
+                    onShare={() => {}}
+                    onViewDetails={() => handleCardClick(event._id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* REGISTERED EVENTS */}
           {loading ? (
             <div>Loading...</div>
@@ -213,67 +280,26 @@ export default function MyEvents() {
               You have not registered for any events yet.
             </p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {registeredEvents.map((event) => {
-                  const startDate = new Date(event.startDate).toLocaleDateString();
-                  const endDate = new Date(event.endDate).toLocaleDateString();
-
-                  return (
-                    <div
-                      key={event._id}
-                      className="cursor-pointer"
-                      onClick={() => handleCardClick(event._id)}
-                    >
-                      <Card
-                        className="overflow-hidden"
-                        data-testid={`card-registered-${event._id}`}
-                      >
-                        <div className="relative aspect-[16/9] bg-muted">
-                          {event.bannerImage ? (
-                            <img
-                              src={event.bannerImage}
-                              alt={event.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-muted/60 to-muted/30 flex items-center justify-center">
-                              {(() => {
-                                const Icon = getTypeIcon(event.eventType);
-                                return <Icon className="h-16 w-16 text-muted-foreground/60" />;
-                              })()}
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <CategoryBadge category={event.eventType} />
-                          </div>
-                          {event.status && (
-                            <div className="absolute top-3 right-3">
-                              <Badge className={getStatusClasses(event.status)}>
-                                {event.status}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="p-4 space-y-3">
-                          <h3 className="text-xl font-bold">{event.name}</h3>
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {startDate} → {endDate}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </div>
-                          </div>
-                          <Badge className="bg-green-500 hover:bg-green-600">
-                            Registered
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {registeredEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={event.eventType}
+                  date={new Date(event.startDate).toLocaleDateString()}
+                  time={new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  location={event.location}
+                  attendees={0}
+                  image={event.bannerImage}
+                  startDate={event.startDate}
+                  endDate={event.endDate}
+                  showActions={true}
+                  onViewDetails={() => handleCardClick(event._id)}
+                  onSave={() => {}}
+                  onShare={() => {}}
+                />
+              ))}
             </div>
           )}
         </div>

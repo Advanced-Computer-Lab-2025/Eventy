@@ -40,7 +40,6 @@ async function deleteEvent(eventId: string) {
   return true;
 }
 
-// ✅ Define a single, correct vendor type
 interface Vendor {
   vendorId?: string;
   vendorName?: string;
@@ -108,7 +107,6 @@ export default function EventCard({
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
 
-  // Helper functions for date/time formatting
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -125,7 +123,6 @@ export default function EventCard({
     });
   };
 
-  // Check if registration is available
   const now = new Date();
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
@@ -137,14 +134,14 @@ export default function EventCard({
       className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col"
       data-testid={`card-event-${id}`}
     >
-      <div className="relative aspect-[16/9] overflow-hidden bg-muted">
+      <div className="relative aspect-[2/1] overflow-hidden bg-muted">
         <img
           src={imageSrc}
           alt={title}
           className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
         />
         {!showDetailedView && (
-          <div className="absolute top-3 left-3">
+          <div className="absolute top-2 left-2">
             <CategoryBadge category={category} />
           </div>
         )}
@@ -152,63 +149,56 @@ export default function EventCard({
 
       {showDetailedView ? (
         <>
-          <CardHeader>
+          <CardHeader className="pb-3">
             <div className="flex justify-between items-start gap-2">
               <CardTitle className="text-xl line-clamp-2">{title}</CardTitle>
               <CategoryBadge category={category} />
             </div>
           </CardHeader>
           
-          <CardContent className="space-y-4 flex-1 flex flex-col">
-            <div className="flex-1 space-y-4">
+          <CardContent className="space-y-4 flex-1 flex flex-col pt-0">
+            <div className="flex-1 space-y-3">
               {description && (
-                <p className="text-sm text-muted-foreground line-clamp-3">
+                <p className="text-sm text-muted-foreground line-clamp-2">
                   {description}
                 </p>
               )}
 
               <div className="space-y-2 text-sm">
-                {/* Date & Time - Compact Layout */}
-                <div className="flex items-start text-muted-foreground">
-                  <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <div className="flex-1">
+                <div className="flex items-center text-muted-foreground">
+                  <Calendar className="mr-2 h-4 w-4 flex-shrink-0" />
+                  <span className="line-clamp-1">
                     {startDate && endDate ? (
-                      <div>
-                        {formatDate(startDate)}, {formatTime(startDate)} → {formatDate(endDate)}, {formatTime(endDate)}
-                      </div>
+                      `${formatDate(startDate)}, ${formatTime(startDate)} → ${formatDate(endDate)}, ${formatTime(endDate)}`
                     ) : startDate ? (
-                      <div>
-                        {formatDate(startDate)}, {formatTime(startDate)}
-                      </div>
+                      `${formatDate(startDate)}, ${formatTime(startDate)}`
                     ) : null}
-                  </div>
+                  </span>
                 </div>
 
-                {/* Location */}
                 {location && (
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span>{location}</span>
+                    <span className="line-clamp-1">{location}</span>
                   </div>
                 )}
 
-                {/* Attendees and Registration Deadline - Same Line */}
-                <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>{attendees} attendee{attendees !== 1 ? 's' : ''}</span>
                     {capacity && attendees >= capacity && (
-                      <span className="text-red-500 font-semibold ml-2">(Full)</span>
+                      <Badge variant="destructive" className="ml-2 text-xs py-0">Full</Badge>
                     )}
                   </div>
 
                   {registrationDeadline && (
                     <div className="flex items-center">
                       <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>
-                        Deadline: {formatDate(registrationDeadline)}
+                      <span className="text-xs">
+                        {formatDate(registrationDeadline)}
                         {new Date() > new Date(registrationDeadline) && (
-                          <span className="text-red-500 font-semibold ml-2">(Closed)</span>
+                          <Badge variant="destructive" className="ml-2 text-xs py-0">Closed</Badge>
                         )}
                       </span>
                     </div>
@@ -216,30 +206,29 @@ export default function EventCard({
                 </div>
               </div>
 
-              {/* Vendors Section for Bazaar/Booth */}
               {isBazaarOrBooth && vendors.length > 0 && (
-                <div className="pt-3 border-t">
-                  <div className="flex items-center gap-2 text-foreground font-medium mb-2">
+                <div className="pt-2 border-t">
+                  <div className="flex items-center gap-2 text-foreground font-medium mb-2 text-sm">
                     <Store className="h-4 w-4 text-primary" />
-                    <span>Participating Vendors</span>
+                    <span>Vendors ({vendors.length})</span>
                   </div>
                   <div>
                     {(() => {
                       const vendorNames = vendors
                         .map((v) => v.name || v.vendorName)
                         .filter(Boolean) as string[];
-                      const initialCount = 4;
+                      const initialCount = 3;
                       const shown = expandedVendors ? vendorNames : vendorNames.slice(0, initialCount);
                       const remaining = vendorNames.length - initialCount;
                       
                       return (
-                        <div className="space-y-2">
-                          <div className="flex flex-wrap gap-2">
+                        <div className="space-y-1.5">
+                          <div className="flex flex-wrap gap-1.5">
                             {shown.map((name: string, idx: number) => (
                               <Badge
                                 key={idx}
                                 variant="secondary"
-                                className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800 text-xs"
                               >
                                 {name}
                               </Badge>
@@ -249,17 +238,17 @@ export default function EventCard({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              className="h-auto py-0.5 px-1 text-xs text-muted-foreground hover:text-foreground"
                               onClick={() => setExpandedVendors(true)}
                             >
-                              + {remaining} more vendor{remaining > 1 ? 's' : ''}
+                              + {remaining} more
                             </Button>
                           )}
                           {expandedVendors && vendorNames.length > initialCount && (
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                              className="h-auto py-0.5 px-1 text-xs text-muted-foreground hover:text-foreground"
                               onClick={() => setExpandedVendors(false)}
                             >
                               Show less
@@ -273,7 +262,7 @@ export default function EventCard({
               )}
             </div>
 
-            <div className="flex gap-2 mt-auto">
+            <div className="flex gap-2 mt-auto pt-2">
               {canRegister && (
                 <Button
                   className="flex-1"
@@ -295,7 +284,7 @@ export default function EventCard({
               {canDelete && (
                 <Button
                   variant="destructive"
-                  size="sm"
+                  size="icon"
                   onClick={async (e) => {
                     if ((e as any).stopPropagation) (e as any).stopPropagation();
                     if (!confirm("Are you sure you want to delete this event?")) return;
@@ -309,8 +298,7 @@ export default function EventCard({
                   }}
                   data-testid={`button-delete-event-${id}`}
                 >
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Delete
+                  <Trash2 className="h-4 w-4" />
                 </Button>
               )}
             </div>
@@ -318,90 +306,76 @@ export default function EventCard({
         </>
       ) : (
         <>
-          {/* Compact View (Original Design) */}
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-3 space-y-2">
             <div className="flex items-start gap-2">
-              <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
-              <div className="font-mono text-sm">
+              <Calendar className="h-3.5 w-3.5 mt-0.5 text-primary flex-shrink-0" />
+              <div className="font-mono text-xs leading-tight">
                 <div className="font-semibold text-foreground">{date}</div>
                 <div className="text-muted-foreground">{time}</div>
               </div>
             </div>
 
             <h3
-              className="text-xl font-bold line-clamp-2 text-foreground"
+              className="text-base font-bold line-clamp-2 text-foreground leading-tight"
               data-testid={`text-event-title-${id}`}
             >
               {title}
             </h3>
 
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-3 text-xs text-muted-foreground">
               <div className="flex items-center gap-1">
-                <MapPin className="h-4 w-4" />
+                <MapPin className="h-3.5 w-3.5" />
                 <span className="line-clamp-1">{location}</span>
               </div>
               <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
+                <Users className="h-3.5 w-3.5" />
                 <span>{attendees}</span>
               </div>
             </div>
 
-            {/* Vendors section - compact view */}
-            {isBazaarOrBooth && vendors.length > 0 && (
-              <div className="mt-2">
-                <div className="flex items-center gap-2 text-foreground font-medium">
-                  <Store className="h-4 w-4 text-primary" />
-                  <span>Participating Vendors</span>
-                </div>
-                <div className="mt-1 text-sm text-muted-foreground">
-                  {(() => {
-                    const names = vendors
-                      .map((v) => v.name || v.vendorName)
-                      .filter(Boolean) as string[];
-                    const shown = names.slice(0, 3);
-                    const remaining = Math.max(0, names.length - shown.length);
-                    return (
-                      <span data-testid={`text-vendors-${id}`}>
-                        {shown.join(", ")}
-                        {remaining > 0 ? ` and ${remaining} more` : ""}
-                      </span>
-                    );
-                  })()}
-                </div>
-              </div>
-            )}
-
             {showActions && (
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-1.5 pt-1">
                 {isRegisterable && (
                   <Button
                     onClick={onRegister}
-                    className="flex-1"
+                    className="flex-1 h-8 text-xs"
                     data-testid={`button-register-${id}`}
                   >
                     Register
                   </Button>
                 )}
+                {onViewDetails && (
+                  <Button
+                    variant="outline"
+                    className="flex-1 h-8 text-xs"
+                    onClick={onViewDetails}
+                  >
+                    Details
+                  </Button>
+                )}
                 <Button
                   variant="outline"
                   size="icon"
+                  className="h-8 w-8"
                   onClick={onSave}
                   data-testid={`button-save-${id}`}
                 >
-                  <Bookmark className="h-4 w-4" />
+                  <Bookmark className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   variant="outline"
                   size="icon"
+                  className="h-8 w-8"
                   onClick={onShare}
                   data-testid={`button-share-${id}`}
                 >
-                  <Share2 className="h-4 w-4" />
+                  <Share2 className="h-3.5 w-3.5" />
                 </Button>
                 {canDelete && (
                   <Button
                     variant="destructive"
-                    size="sm"
+                    size="icon"
+                    className="h-8 w-8"
                     onClick={async (e) => {
                       if ((e as any).stopPropagation) (e as any).stopPropagation();
                       if (!confirm("Are you sure you want to delete this event?")) return;
@@ -415,8 +389,7 @@ export default function EventCard({
                     }}
                     data-testid={`button-delete-event-${id}`}
                   >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 )}
               </div>
