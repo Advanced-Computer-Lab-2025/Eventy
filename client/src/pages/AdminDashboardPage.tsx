@@ -216,6 +216,14 @@ export default function AdminDashboardPage() {
                 <Button 
                   className="w-full" 
                   variant="outline" 
+                  onClick={() => setLocation("/vendor-requests")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Vendor Requests
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline" 
                   onClick={() => console.log("Settings")}
                 >
                   <Settings className="h-4 w-4 mr-2" />

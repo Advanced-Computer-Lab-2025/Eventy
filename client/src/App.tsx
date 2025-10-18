@@ -24,6 +24,7 @@ import ProfessorDashboard from "@/pages/ProfessorDashboard";
 import WorkshopManagement from "@/pages/WorkshopManagement";
 import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
+import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
@@ -76,7 +77,17 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/trip" component={CreateTrip} />
+      <Route path="/create/trip">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateTrip />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/staff-ta">
+        <ProtectedRoute allowedRoles={["staff", "ta"]}>
+          <StaffTADashboard />
+        </ProtectedRoute>
+      </Route>
+      
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard">
         <ProtectedRoute allowedRoles={["vendor"]}>
@@ -88,6 +99,7 @@ function Router() {
           <EventsOfficeDashboard />
         </ProtectedRoute>
       </Route>
+        
       <Route path="/sports">
         <ProtectedRoute
           allowedRoles={[
@@ -101,9 +113,28 @@ function Router() {
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
-      <Route path="/my-events" component={MyEvents} />
+     
+    
+      <Route path="/approvals/workshops">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <WorkshopApprovals />
+        </ProtectedRoute>
+      </Route>
+          
+
+      <Route path="/my-events">
+        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+          <MyEvents />
+        </ProtectedRoute>
+      </Route>
+     
+      
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests">
+        <ProtectedRoute allowedRoles={["admin", "events_office"]}>
+          <VendorRequests />
+        </ProtectedRoute>
+      </Route>
       <Route path="/events" component={EventListPage} />
 
       <Route component={NotFound} />
