@@ -138,15 +138,18 @@ router.patch(
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware(["student",
+  roleMiddleware([
+    "student",
     "staff",
     "events_office",
     "ta",
-    "professor",]),
+    "professor",
+    "admin",
+  ]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
-// Search events (✅ new feature)
+// Search events ( new feature)
 router.get(
   "/search",
   authMiddleware,
