@@ -315,7 +315,7 @@ export default function ProfessorDashboard() {
                 Start by creating your first workshop. You can add details like name, location, 
                 dates, description, faculty, budget, and more.
               </p>
-              <Button onClick={() => setLocation("/professor/dashboard")}>
+              <Button onClick={() => setLocation("/professor/workshops")}>
                 <BookOpen className="mr-2 h-4 w-4" />
                 Go to Workshop Management
               </Button>
