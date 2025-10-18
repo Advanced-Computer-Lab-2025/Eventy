@@ -30,6 +30,8 @@ export default function AdminDashboardPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
+  const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -89,6 +91,37 @@ export default function AdminDashboardPage() {
     fetchUpcomingEvents();
   }, []);
 
+  useEffect(() => {
+    const fetchApprovedEvents = async () => {
+      try {
+        setApprovedLoading(true);
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/search`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+        const contentType = res.headers.get("content-type");
+        if (!contentType || !contentType.includes("application/json")) {
+          const text = await res.text();
+          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
+        }
+        const body = await res.json();
+        if (!res.ok) throw new Error(body.message || "Failed to fetch approved events");
+        const list = Array.isArray(body.data) ? body.data : body;
+        setApprovedEventsCount(Array.isArray(list) ? list.length : 0);
+      } catch (err) {
+        setApprovedEventsCount(0);
+      } finally {
+        setApprovedLoading(false);
+      }
+    };
+    fetchApprovedEvents();
+  }, []);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -112,20 +145,18 @@ export default function AdminDashboardPage() {
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
           <StatCard 
-            title="Total Conferences" 
-            value={conferences.length.toString()} 
+            title="Budget Requested (EGP)" 
+            value={(conferences.reduce((sum, c) => sum + (c.requiredBudget || 0), 0)).toLocaleString()} 
+            icon={TrendingUp} 
+          />
+          <StatCard 
+            title="Upcoming Events" 
+            value={eventsLoading ? "-" : upcomingEvents.length.toString()} 
             icon={Calendar} 
-            trend={{ value: 12, isPositive: true }} 
           />
           <StatCard 
-            title="Total Attendees" 
-            value="3,456" 
-            icon={Users} 
-            trend={{ value: 8, isPositive: true }} 
-          />
-          <StatCard 
-            title="Pending Approvals" 
-            value="7" 
+            title="Approved Events" 
+            value={approvedLoading ? "-" : approvedEventsCount.toString()} 
             icon={TrendingUp} 
           />
         </div>
@@ -164,17 +195,6 @@ export default function AdminDashboardPage() {
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Analytics Overview</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-64 flex items-center justify-center text-muted-foreground">
-                  Chart visualization would go here
-                </div>
               </CardContent>
             </Card>
           </div>
