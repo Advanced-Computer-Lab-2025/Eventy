@@ -1,6 +1,7 @@
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
+import Application from "../applications/application.model.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -271,7 +272,7 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async () => {
+export const getUpcomingEventsService = async (includeVendors = false) => {
   const now = new Date();
 
   const events = await Event.find({
@@ -284,6 +285,45 @@ export const getUpcomingEventsService = async () => {
     .lean();
 
   return events;
+};
+
+/**
+ * Get all upcoming events with their vendors (via applications).
+ * @returns {Promise<Array>} Array of event objects with vendors array.
+ */
+export const getUpcomingEventsWithVendors = async () => {
+  const now = new Date();
+
+  // 1. Get upcoming events
+  const events = await Event.find({
+    status: "approved",
+    startDate: { $gte: now },
+  }).lean();
+
+  // 2. For each event, get vendors via applications
+  const eventsWithVendors = await Promise.all(
+    events.map(async (event) => {
+      // Find applications for this event
+      const applications = await Application.find({ event: event._id })
+        .populate({
+          path: "createdBy",
+          select: "name email role", // Select desired fields
+        })
+        .lean();
+
+      // Extract vendor users from applications
+      const vendors = applications
+        .map((app) => app.createdBy)
+        .filter((user) => user); // Remove nulls if any
+
+      return {
+        ...event,
+        vendors,
+      };
+    })
+  );
+
+  return eventsWithVendors;
 };
 
 export async function deleteEvent(eventId, user) {
@@ -410,3 +450,4 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
