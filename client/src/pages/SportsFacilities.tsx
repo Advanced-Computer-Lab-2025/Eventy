@@ -1,13 +1,17 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, ArrowLeft } from "lucide-react";
-import Header from "@/components/Header";
+import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
+import ProfessorHeader from "@/components/ProfessorHeader";
+import StaffHeader from "@/components/StaffHeader";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
+import ThemeToggle from "@/components/ThemeToggle";
+import Logo from "@/components/Logo";
 
 
 type Slot = {
@@ -129,7 +133,13 @@ export default function SportsFacilities() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {userRole === "professor" ? (
+        <ProfessorHeader />
+      ) : (userRole === "staff" || userRole === "ta") ? (
+        <StaffHeader />
+      ) : (
+        <ProfessorHeader />
+      )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Back Button for Professors */}
@@ -137,6 +147,18 @@ export default function SportsFacilities() {
           <Button 
             variant="ghost" 
             onClick={() => setLocation("/professor")}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        )}
+
+        {/* Back Button for Staff/TA */}
+        {(userRole === "staff" || userRole === "ta") && (
+          <Button 
+            variant="ghost" 
+            onClick={() => setLocation("/staff-ta")}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

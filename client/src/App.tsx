@@ -24,6 +24,7 @@ import ProfessorDashboard from "@/pages/ProfessorDashboard";
 import WorkshopManagement from "@/pages/WorkshopManagement";
 import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
+import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
@@ -72,6 +73,11 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
+      <Route path="/staff-ta">
+        <ProtectedRoute allowedRoles={["staff", "ta"]}>
+          <StaffTADashboard />
+        </ProtectedRoute>
+      </Route>
       <Route path="/create/trip" component={CreateTrip} />
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard">
@@ -97,7 +103,11 @@ function Router() {
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
-      <Route path="/my-events" component={MyEvents} />
+      <Route path="/my-events">
+        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+          <MyEvents />
+        </ProtectedRoute>
+      </Route>
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/vendor-requests" component={VendorRequests} />
       <Route path="/events" component={EventListPage} />
