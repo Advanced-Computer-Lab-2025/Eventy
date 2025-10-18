@@ -104,7 +104,11 @@ export class EventsController {
       return res
         .status(200)
         .json(
-          new ApiResponse(200, conferences, "Conferences retrieved successfully")
+          new ApiResponse(
+            200,
+            conferences,
+            "Conferences retrieved successfully"
+          )
         );
     } catch (error) {
       next(error);
@@ -235,34 +239,36 @@ export class EventsController {
   }
 
   async viewAllWorkshops(req, res, next) {
-  try {
-    // ✅ 1. Check authentication
-    if (!req.user) {
-      throw new ApiError(401, "Unauthorized");
-    }
+    try {
+      // ✅ 1. Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
 
-    // ✅ 2. Allow only Admin or Events Office roles
-    if (req.user.role !== "events_office") {
-      throw new ApiError(
-        403,
-        "Forbidden: Only Admin or Events Office can view all workshops"
+      // ✅ 2. Allow only Admin or Events Office roles
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Admin or Events Office can view all workshops"
+        );
+      }
+
+      // ✅ 3. Call service layer
+      const workshops = await eventService.getAllWorkshopsService(
+        req.user.role
       );
+
+      // ✅ 4. Return success response
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, workshops, "Workshops retrieved successfully")
+        );
+    } catch (err) {
+      // ✅ 5. Pass errors to global handler
+      next(err);
     }
-
-    // ✅ 3. Call service layer
-    const workshops = await eventService.getAllWorkshopsService(req.user.role);
-
-    // ✅ 4. Return success response
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, workshops, "Workshops retrieved successfully")
-      );
-  } catch (err) {
-    // ✅ 5. Pass errors to global handler
-    next(err);
   }
-}
 
   async getMyWorkshops(req, res, next) {
     try {
@@ -290,8 +296,6 @@ export class EventsController {
       next(error);
     }
   }
-
-
 
   async acceptWorkshop(req, res, next) {
     try {
@@ -439,7 +443,7 @@ export class EventsController {
       }
       // General fallback
       console.error("registerForEvent error:", err);
-      return res.status(500).json({ message: "Internal server error" });
+      return res.status(500).json({ message: err.message });
     }
   }
 
@@ -515,7 +519,7 @@ export class EventsController {
     }
   }
 
-    async getEventById(req, res, next) {
+  async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
       const event = await eventService.getEventById(eventId);
@@ -528,28 +532,27 @@ export class EventsController {
   }
 
   async getAllTrips(req, res, next) {
-  try {
-    const userId = req.user._id || req.user.id;
+    try {
+      const userId = req.user._id || req.user.id;
 
-    if (!userId) {
-      throw new ApiError(401, "Unauthorized");
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can view all trips"
+        );
+      }
+
+      const trips = await eventService.getAllTripsService();
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
+    } catch (err) {
+      next(err);
     }
-
-    if (req.user.role !== "events_office") {
-      throw new ApiError(403, "Forbidden: Only Events Office can view all trips");
-    }
-
-    const trips = await eventService.getAllTripsService();
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
-  } catch (err) {
-    next(err);
   }
 }
-
-
-}
-
-
