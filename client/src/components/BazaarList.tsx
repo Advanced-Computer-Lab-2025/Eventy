@@ -132,22 +132,24 @@ export default function BazaarList({
       )}
 
       {/* Results count */}
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
-        </p>
-        {searchTerm && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              setSearchTerm("");
-            }}
-          >
-            Clear search
-          </Button>
-        )}
-      </div>
+      {showFilters && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
+          </p>
+          {searchTerm && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setSearchTerm("");
+              }}
+            >
+              Clear search
+            </Button>
+          )}
+        </div>
+      )}
 
       {/* Bazaar Grid */}
       {filteredBazaars.length === 0 ? (

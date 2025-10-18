@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin } from "lucide-react";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import BazaarList, { Bazaar } from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
+import StatCard from "@/components/StatCard";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -94,6 +95,23 @@ export default function VendorDashboard() {
   const filteredPendingApplications = getFilteredData(pendingApplications, ['event.name', 'type']);
   const filteredRejectedApplications = getFilteredData(rejectedApplications, ['event.name', 'type']);
   const filteredApprovedApplications = getFilteredData(approvedApplications, ['event.name', 'type']);
+
+  // Calculate vendor statistics
+  const getVendorStats = () => {
+    const totalApplications = pendingApplications.length + rejectedApplications.length + approvedApplications.length;
+    const pendingCount = pendingApplications.length;
+    const approvedCount = approvedApplications.length;
+    const rejectedCount = rejectedApplications.length;
+    
+    return {
+      totalApplications,
+      pendingCount,
+      approvedCount,
+      rejectedCount
+    };
+  };
+
+  const vendorStats = getVendorStats();
 
   // Fetch company name from localStorage
   const fetchCompanyName = () => {
@@ -330,9 +348,42 @@ export default function VendorDashboard() {
           </p>
         </div>
 
+        {/* Statistics Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+          <StatCard
+            title="Total Applications"
+            value={vendorStats.totalApplications}
+            icon={FolderOpen}
+          />
+          <StatCard
+            title="Pending Approval"
+            value={vendorStats.pendingCount}
+            icon={Clock}
+          />
+          <StatCard
+            title="Approved"
+            value={vendorStats.approvedCount}
+            icon={CheckCircle}
+          />
+          <StatCard
+            title="Rejected"
+            value={vendorStats.rejectedCount}
+            icon={XCircle}
+          />
+        </div>
+
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
 
           <TabsContent value="upcoming" className="space-y-4">
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Upcoming Bazaars</h2>
+                <p className="text-sm text-muted-foreground">
+                  {filteredUpcomingBazaars.length} bazaar{filteredUpcomingBazaars.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
+            </div>
+            
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
