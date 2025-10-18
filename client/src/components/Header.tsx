@@ -1,9 +1,21 @@
-import { Search, Bell, LayoutGrid, User, Home } from "lucide-react";
+"use client"
+
+import { Search, Bell, LayoutGrid, User, Home, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import ProfileMenu from "./ProfileMenu";
 
 interface HeaderProps {
   onSearch?: (query: string) => void;
@@ -16,6 +28,26 @@ interface HeaderProps {
 
 export default function Header({ onSearch, homeOnly = false, homeHref = "/", hideSearch = false, showHomeTop = false, hideBottomNav = false }: HeaderProps) {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<{ firstName?: string; lastName?: string; email?: string } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("user");
+    setUser(null);
+    setLocation("/login");
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
@@ -55,9 +87,9 @@ export default function Header({ onSearch, homeOnly = false, homeHref = "/", hid
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" data-testid="button-profile">
-              <User className="h-5 w-5" />
-            </Button>
+
+            {/* profile menu (logout only) */}
+            <ProfileMenu />
           </div>
         </div>
 
