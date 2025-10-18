@@ -156,7 +156,7 @@ export default function CreateWorkshop() {
       setToastOpen(true);
 
       // Navigate after toast appears
-      setTimeout(() => setLocation("/professor/dashboard"), 2000);
+      setTimeout(() => setLocation("/professor/workshops"), 2000);
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
@@ -497,7 +497,7 @@ export default function CreateWorkshop() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/professor/dashboard")}
+              onClick={() => setLocation("/professor/workshops")}
               className="flex-1"
               disabled={loading}
             >

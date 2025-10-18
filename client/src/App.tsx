@@ -21,6 +21,7 @@ import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
+import WorkshopManagement from "@/pages/WorkshopManagement";
 import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
@@ -34,18 +35,35 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/admin" component={AdminDashboardPage} />
-      <Route path="/admin/create/conference" component={CreateConference} />
-      <Route path="/admin/events/conference/edit/:id" component={EditConference} />
-      <Route path="/create/workshop" component={CreateWorkshop} />
+      <Route path="/admin">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminDashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/create/conference">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateConference />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/events/conference/edit/:id">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EditConference />
+        </ProtectedRoute>
+      </Route>
       <Route path="/admin/users">
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminUsers />
         </ProtectedRoute>
       </Route>
-      <Route path="/professor/dashboard">
+      <Route path="/create/workshop" component={CreateWorkshop} />
+      <Route path="/professor">
         <ProtectedRoute allowedRoles={["professor"]}>
           <ProfessorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/workshops">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <WorkshopManagement />
         </ProtectedRoute>
       </Route>
       <Route path="/professor/create-workshop">
@@ -65,9 +83,21 @@ function Router() {
           <VendorDashboard />
         </ProtectedRoute>
       </Route>
-      <Route path="/events-office/dashboard" component={EventsOfficeDashboard} />
+      <Route path="/events-office/dashboard">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EventsOfficeDashboard />
+        </ProtectedRoute>
+      </Route>
       <Route path="/sports">
-        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "events_office",
+            "ta",
+            "professor",
+          ]}
+        >
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
