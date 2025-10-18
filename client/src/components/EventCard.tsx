@@ -168,27 +168,21 @@ export default function EventCard({
               )}
 
               <div className="space-y-2 text-sm">
-                {/* Start Date & Time */}
-                {startDate && (
-                  <div className="flex items-start text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium text-foreground">Start</div>
-                      <div>{formatDate(startDate)} at {formatTime(startDate)}</div>
-                    </div>
+                {/* Date & Time - Compact Layout */}
+                <div className="flex items-start text-muted-foreground">
+                  <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
+                  <div className="flex-1">
+                    {startDate && endDate ? (
+                      <div>
+                        {formatDate(startDate)}, {formatTime(startDate)} → {formatDate(endDate)}, {formatTime(endDate)}
+                      </div>
+                    ) : startDate ? (
+                      <div>
+                        {formatDate(startDate)}, {formatTime(startDate)}
+                      </div>
+                    ) : null}
                   </div>
-                )}
-                
-                {/* End Date & Time */}
-                {endDate && (
-                  <div className="flex items-start text-muted-foreground">
-                    <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
-                    <div>
-                      <div className="font-medium text-foreground">End</div>
-                      <div>{formatDate(endDate)} at {formatTime(endDate)}</div>
-                    </div>
-                  </div>
-                )}
+                </div>
 
                 {/* Location */}
                 {location && (
@@ -198,34 +192,28 @@ export default function EventCard({
                   </div>
                 )}
 
-                {/* Attendees */}
-                <div className="flex items-center text-muted-foreground">
-                  <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                  <span>{attendees} attendees</span>
-                </div>
-
-                {/* Capacity */}
-                {capacity && (
-                  <div className="text-xs text-muted-foreground ml-6">
-                    Capacity: {attendees} / {capacity}
-                    {attendees >= capacity && (
+                {/* Attendees and Registration Deadline - Same Line */}
+                <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
+                  <div className="flex items-center">
+                    <Users className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span>{attendees} attendee{attendees !== 1 ? 's' : ''}</span>
+                    {capacity && attendees >= capacity && (
                       <span className="text-red-500 font-semibold ml-2">(Full)</span>
                     )}
                   </div>
-                )}
 
-                {/* Registration Deadline */}
-                {registrationDeadline && (
-                  <div className="flex items-center text-muted-foreground">
-                    <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span>
-                      Registration deadline: {formatDate(registrationDeadline)}
-                      {new Date() > new Date(registrationDeadline) && (
-                        <span className="text-red-500 font-semibold ml-2">(Closed)</span>
-                      )}
-                    </span>
-                  </div>
-                )}
+                  {registrationDeadline && (
+                    <div className="flex items-center">
+                      <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span>
+                        Deadline: {formatDate(registrationDeadline)}
+                        {new Date() > new Date(registrationDeadline) && (
+                          <span className="text-red-500 font-semibold ml-2">(Closed)</span>
+                        )}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Vendors Section for Bazaar/Booth */}
