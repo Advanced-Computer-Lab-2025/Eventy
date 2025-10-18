@@ -58,7 +58,7 @@ export default function EventsOfficeDashboard() {
   const fetchPendingWorkshops = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/events/workshops`, {
+      const res = await fetch(`${API_BASE_URL}/api/events/allworkshops`, {
         headers: {
           "Content-Type": "application/json",
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
