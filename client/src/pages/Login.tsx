@@ -12,7 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import Logo from "@/components/Logo";
-
 export default function Login() {
   const [, setLocation] = useLocation();
   const [formData, setFormData] = useState({
@@ -33,15 +32,12 @@ export default function Login() {
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.message || "Login failed");
-
-      // ✅ Store token securely in localStorage
       localStorage.setItem("token", data.token);
-
-      // ✅ Optionally store user data
       localStorage.setItem("user", JSON.stringify(data.user));
-
-      // ✅ Redirect based on user role
-      if (data.user.role === "vendor") {
+      const role = (
+        (data.user?.role ?? data.role ?? "") as string
+      ).toLowerCase();
+      if (role === "vendor") {
         setLocation("/vendor/dashboard");
       } else if (data.user.role === "staff" || data.user.role === "ta") {
         setLocation("/staff-ta");
