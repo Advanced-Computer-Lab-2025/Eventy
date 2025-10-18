@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Home } from "lucide-react";
+import { Bell, LayoutGrid, User, Home, Users } from "lucide-react"; 
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -14,7 +14,6 @@ export default function AdminHeader() {
           <div className="flex items-center gap-2 -ml-6">
             <Logo size="xl" />
           </div>
-
 
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="icon" data-testid="button-notifications">
@@ -36,8 +35,24 @@ export default function AdminHeader() {
           <Button variant="ghost" size="sm" data-testid="button-nav-social">Social</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
           <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-career">Career</Button>
-          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-admin-dashboard"
+
+          {/* ✅ New Users Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-users"
+            onClick={() => setLocation("/admin/users")}
+          >
+            <Users className="h-4 w-4" />
+            Users
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-admin-dashboard"
             onClick={() => setLocation("/admin")}
           >
             <Home className="h-4 w-4" />
