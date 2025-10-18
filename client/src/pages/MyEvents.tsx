@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
-import { Heart, Calendar, MapPin, Clock, Store, GraduationCap, Route, Megaphone } from "lucide-react";
-import Header from "@/components/Header";
+import { useLocation } from "wouter";
+import { Heart, Calendar, MapPin, Clock, Store, GraduationCap, Route, Megaphone, Search, Bell, User as UserIcon, Home, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import ThemeToggle from "@/components/ThemeToggle";
+import Logo from "@/components/Logo";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -23,6 +26,7 @@ interface RegisteredEvent {
 }
 
 export default function MyEvents() {
+  const [, setLocation] = useLocation();
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
   const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -127,41 +131,87 @@ export default function MyEvents() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {/* Custom Header with Home and My Events only */}
+      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
+        <div className="max-w-7xl mx-auto px-4 md:px-6">
+          <div className="flex h-16 items-center justify-between gap-4">
+            <div className="flex items-center gap-2 -ml-6">
+              <Logo size="xl" />
+            </div>
+
+            <div className="hidden md:flex flex-1 max-w-md mx-8">
+              <div className="relative w-full">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search events..."
+                  className="pl-10"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon">
+                <Bell className="h-5 w-5" />
+              </Button>
+              <ThemeToggle />
+              <Button variant="ghost" size="icon">
+                <UserIcon className="h-5 w-5" />
+              </Button>
+            </div>
+          </div>
+
+          <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setLocation("/staff-ta")}
+            >
+              <Home className="h-4 w-4" />
+              Home
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setLocation("/my-events")}
+            >
+              <Calendar className="h-4 w-4" />
+              My Events
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="gap-2"
+              onClick={() => setLocation("/sports")}
+            >
+              <Dumbbell className="h-4 w-4" />
+              Sports Facilities
+            </Button>
+          </div>
+        </div>
+      </header>
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">My Events</h1>
           <p className="text-muted-foreground">
-            Manage your registered events and favorites
+            Manage your registered events
           </p>
         </div>
 
-        <Tabs defaultValue="registered" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="registered">
-              <Calendar className="h-4 w-4 mr-2" />
-              Registered Events
-            </TabsTrigger>
-            <TabsTrigger value="favorites">
-              <Heart className="h-4 w-4 mr-2" />
-              Favorites
-            </TabsTrigger>
-          </TabsList>
-
-          {/* REGISTERED EVENTS TAB */}
-          <TabsContent value="registered" className="space-y-4">
-            {loading ? (
-              <div>Loading...</div>
-            ) : registeredEvents.length === 0 ? (
-              <p className="text-muted-foreground text-center">
-                You have not registered for any events yet.
-              </p>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-6">
+          {/* REGISTERED EVENTS */}
+          {loading ? (
+            <div>Loading...</div>
+          ) : registeredEvents.length === 0 ? (
+            <p className="text-muted-foreground text-center">
+              You have not registered for any events yet.
+            </p>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {registeredEvents.map((event) => {
-                  const startDate = new Date(
-                    event.startDate
-                  ).toLocaleDateString();
+                  const startDate = new Date(event.startDate).toLocaleDateString();
                   const endDate = new Date(event.endDate).toLocaleDateString();
 
                   return (
@@ -220,69 +270,9 @@ export default function MyEvents() {
                     </div>
                   );
                 })}
-              </div>
-            )}
-          </TabsContent>
-
-          {/* FAVORITES TAB (Optional future feature) */}
-          <TabsContent value="favorites" className="space-y-4">
-            {favoriteEvents.length === 0 ? (
-              <p className="text-muted-foreground text-center">
-                No favorite events added yet.
-              </p>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {favoriteEvents.map((event) => (
-                  <Card
-                    key={event.id}
-                    className="overflow-hidden"
-                    data-testid={`card-favorite-${event.id}`}
-                  >
-                    <div className="relative aspect-[16/9] bg-muted">
-                      <img
-                        src={event.image}
-                        alt={event.title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute top-3 left-3">
-                        <CategoryBadge category={event.category} />
-                      </div>
-                    </div>
-                    <CardContent className="p-4 space-y-3">
-                      <h3 className="text-xl font-bold">{event.title}</h3>
-
-                      <div className="space-y-2 text-sm text-muted-foreground">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="h-3 w-3" />
-                          {event.date}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {event.time}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <MapPin className="h-3 w-3" />
-                          {event.location}
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
-                        <Button className="flex-1">Register</Button>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          onClick={() => handleRemoveFavorite(event.id)}
-                        >
-                          <Heart className="h-4 w-4 fill-current" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
-        </Tabs>
+            </div>
+          )}
+        </div>
 
         <EventDetailsDialog
           open={dialogOpen}

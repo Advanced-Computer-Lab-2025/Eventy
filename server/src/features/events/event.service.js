@@ -1,6 +1,7 @@
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
+import Application from "../applications/application.model.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -271,7 +272,7 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async () => {
+export const getUpcomingEventsService = async (includeVendors = false) => {
   const now = new Date();
 
   const events = await Event.find({
@@ -285,6 +286,61 @@ export const getUpcomingEventsService = async () => {
 
   return events;
 };
+
+/**
+ * Get all upcoming events with their vendors (via applications).
+ * @returns {Promise<Array>} Array of event objects with vendors array.
+ */
+export const getUpcomingEventsWithVendors = async () => {
+  const now = new Date();
+
+  // Get all approved upcoming events
+  const events = await Event.find({
+    status: "approved",
+    startDate: { $gte: now },
+  }).lean();
+
+  const eventsWithVendors = await Promise.all(
+    events.map(async (event) => {
+      // Find applications related to this event
+      const applications = await Application.find({ event: event._id })
+        .populate({
+          path: "createdBy",
+          select: "firstName lastName name email role", // support both schemas
+        })
+        .lean();
+
+      // Extract vendor details clearly
+      const vendors = applications
+        .map((app) => {
+          const vendor = app.createdBy;
+          if (!vendor) return null;
+
+          // Determine vendor name (handle both name or firstName+lastName)
+          const vendorName = vendor.name
+            ? vendor.name
+            : `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+
+          return {
+            id: vendor._id,
+            name: vendorName || "Unknown Vendor",
+            email: vendor.email || "N/A",
+            role: vendor.role,
+          };
+        })
+        .filter((v) => v !== null);
+
+      // Return each event with vendor details
+      return {
+        ...event,
+        vendors,
+      };
+    })
+  );
+
+  return eventsWithVendors;
+};
+
 
 export async function deleteEvent(eventId, user) {
   // Ensure event exists
@@ -477,3 +533,7 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
+
+
+
