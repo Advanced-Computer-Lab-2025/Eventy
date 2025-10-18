@@ -32,6 +32,7 @@ export default function VendorDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [companyName, setCompanyName] = useState("");
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -93,6 +94,17 @@ export default function VendorDashboard() {
   const filteredPendingApplications = getFilteredData(pendingApplications, ['event.name', 'type']);
   const filteredRejectedApplications = getFilteredData(rejectedApplications, ['event.name', 'type']);
   const filteredApprovedApplications = getFilteredData(approvedApplications, ['event.name', 'type']);
+
+  // Fetch company name from localStorage
+  const fetchCompanyName = () => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setCompanyName(userData.companyName || "Vendor");
+    } else {
+      setCompanyName("Vendor");
+    }
+  };
 
   // Fetch upcoming bazaars
   const fetchUpcomingBazaars = async () => {
@@ -158,6 +170,7 @@ export default function VendorDashboard() {
   };
 
   useEffect(() => {
+    fetchCompanyName();
     fetchUpcomingBazaars();
     fetchApplicationsData();
   }, []);
@@ -313,7 +326,7 @@ export default function VendorDashboard() {
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Vendor Dashboard</h1>
           <p className="text-muted-foreground">
-            Manage your bazaar and booth applications
+            Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
           </p>
         </div>
 
