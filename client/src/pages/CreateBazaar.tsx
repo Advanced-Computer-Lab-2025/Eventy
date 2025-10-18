@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Calendar, MapPin } from "lucide-react";
-import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -117,7 +117,7 @@ export default function CreateBazaar() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showHomeTop homeHref="/events-office/dashboard" hideSearch hideBottomNav />
+      <EventsOfficeHeader />
       
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
