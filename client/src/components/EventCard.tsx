@@ -154,7 +154,7 @@ export default function EventCard({
         <>
           <CardHeader>
             <div className="flex justify-between items-start gap-2">
-              <CardTitle className="text-xl line-clamp-2">{title}</CardTitle>
+              <CardTitle className="text-xl break-words whitespace-normal">{title}</CardTitle>
               <CategoryBadge category={category} />
             </div>
           </CardHeader>
@@ -329,7 +329,7 @@ export default function EventCard({
             </div>
 
             <h3
-              className="text-xl font-bold line-clamp-2 text-foreground"
+              className="text-xl font-bold break-words whitespace-normal text-foreground"
               data-testid={`text-event-title-${id}`}
             >
               {title}

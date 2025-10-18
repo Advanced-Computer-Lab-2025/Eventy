@@ -12,6 +12,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
+import EventCard from "@/components/EventCard";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -213,67 +214,26 @@ export default function MyEvents() {
               You have not registered for any events yet.
             </p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {registeredEvents.map((event) => {
-                  const startDate = new Date(event.startDate).toLocaleDateString();
-                  const endDate = new Date(event.endDate).toLocaleDateString();
-
-                  return (
-                    <div
-                      key={event._id}
-                      className="cursor-pointer"
-                      onClick={() => handleCardClick(event._id)}
-                    >
-                      <Card
-                        className="overflow-hidden"
-                        data-testid={`card-registered-${event._id}`}
-                      >
-                        <div className="relative aspect-[16/9] bg-muted">
-                          {event.bannerImage ? (
-                            <img
-                              src={event.bannerImage}
-                              alt={event.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-muted/60 to-muted/30 flex items-center justify-center">
-                              {(() => {
-                                const Icon = getTypeIcon(event.eventType);
-                                return <Icon className="h-16 w-16 text-muted-foreground/60" />;
-                              })()}
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <CategoryBadge category={event.eventType} />
-                          </div>
-                          {event.status && (
-                            <div className="absolute top-3 right-3">
-                              <Badge className={getStatusClasses(event.status)}>
-                                {event.status}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="p-4 space-y-3">
-                          <h3 className="text-xl font-bold">{event.name}</h3>
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {startDate} → {endDate}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </div>
-                          </div>
-                          <Badge className="bg-green-500 hover:bg-green-600">
-                            Registered
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {registeredEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={event.eventType}
+                  date={new Date(event.startDate).toLocaleDateString()}
+                  time={new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  location={event.location}
+                  attendees={0}
+                  image={event.bannerImage}
+                  startDate={event.startDate}
+                  endDate={event.endDate}
+                  showActions={true}
+                  onViewDetails={() => handleCardClick(event._id)}
+                  onSave={() => {}}
+                  onShare={() => {}}
+                />
+              ))}
             </div>
           )}
         </div>
