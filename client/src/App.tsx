@@ -83,7 +83,11 @@ function Router() {
           <VendorDashboard />
         </ProtectedRoute>
       </Route>
-      <Route path="/events-office/dashboard" component={EventsOfficeDashboard}/>
+      <Route path="/events-office/dashboard">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EventsOfficeDashboard />
+        </ProtectedRoute>
+      </Route>
         
       <Route path="/sports">
         <ProtectedRoute
