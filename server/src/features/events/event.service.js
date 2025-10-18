@@ -1,6 +1,7 @@
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
+import Application from "../applications/application.model.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -271,7 +272,7 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async () => {
+export const getUpcomingEventsService = async (includeVendors = false) => {
   const now = new Date();
 
   const events = await Event.find({
@@ -284,6 +285,45 @@ export const getUpcomingEventsService = async () => {
     .lean();
 
   return events;
+};
+
+/**
+ * Get all upcoming events with their vendors (via applications).
+ * @returns {Promise<Array>} Array of event objects with vendors array.
+ */
+export const getUpcomingEventsWithVendors = async () => {
+  const now = new Date();
+
+  // 1. Get upcoming events
+  const events = await Event.find({
+    status: "approved",
+    startDate: { $gte: now },
+  }).lean();
+
+  // 2. For each event, get vendors via applications
+  const eventsWithVendors = await Promise.all(
+    events.map(async (event) => {
+      // Find applications for this event
+      const applications = await Application.find({ event: event._id })
+        .populate({
+          path: "createdBy",
+          select: "name email role", // Select desired fields
+        })
+        .lean();
+
+      // Extract vendor users from applications
+      const vendors = applications
+        .map((app) => app.createdBy)
+        .filter((user) => user); // Remove nulls if any
+
+      return {
+        ...event,
+        vendors,
+      };
+    })
+  );
+
+  return eventsWithVendors;
 };
 
 export async function deleteEvent(eventId, user) {
@@ -303,24 +343,91 @@ export async function deleteEvent(eventId, user) {
 }
 // 🔍 Search events service
 export const searchEvents = async ({ name, type }) => {
-  // Build a flexible filter
-  const filter = { status: "approved" };
+  // Build a flexible filter - only search upcoming events like getUpcomingEventsService
+  const now = new Date();
+  const filter = { 
+    status: "approved",
+    startDate: { $gte: now },
+    deletedAt: null
+  };
 
-  // Filter by event type if given
-  if (type) {
-    filter.eventType = type.toLowerCase();
-  }
+  // If both name and type are provided and are the same (unified search)
+  // Use OR logic to search across all fields
+  if (name && type && name.toLowerCase() === type.toLowerCase()) {
+    // First, find users whose names match the search query
+    // Support searching by: firstName, lastName, or "firstName lastName"
+    const nameParts = name.trim().split(/\s+/); // Split by whitespace
+    
+    let userQuery = {
+      $or: [
+        { firstName: { $regex: name, $options: "i" } },
+        { lastName: { $regex: name, $options: "i" } },
+      ],
+    };
 
-  // Add name-based search (event name or professor/vendor name)
-  if (name) {
+    // If search has multiple words, also search for "firstName lastName" combination
+    if (nameParts.length >= 2) {
+      userQuery.$or.push({
+        $and: [
+          { firstName: { $regex: nameParts[0], $options: "i" } },
+          { lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" } },
+        ],
+      });
+    }
+
+    const matchingUsers = await User.find(userQuery).select("_id");
+    const userIds = matchingUsers.map((user) => user._id);
+
     filter.$or = [
-      { name: { $regex: name, $options: "i" } },
-      { "createdBy.name": { $regex: name, $options: "i" } },
+      { name: { $regex: name, $options: "i" } }, // Event name
+      { eventType: { $regex: type, $options: "i" } }, // Event type
+      { createdBy: { $in: userIds } }, // Created by matching users
+      { professors: { $in: userIds } }, // Workshop professors matching
     ];
+  } else {
+    // Traditional separate search
+    // Filter by event type if given
+    if (type) {
+      filter.eventType = type.toLowerCase();
+    }
+
+    // Add name-based search (event name or professor/vendor name)
+    if (name) {
+      // First, find users whose names match the search query
+      // Support searching by: firstName, lastName, or "firstName lastName"
+      const nameParts = name.trim().split(/\s+/); // Split by whitespace
+      
+      let userQuery = {
+        $or: [
+          { firstName: { $regex: name, $options: "i" } },
+          { lastName: { $regex: name, $options: "i" } },
+        ],
+      };
+
+      // If search has multiple words, also search for "firstName lastName" combination
+      if (nameParts.length >= 2) {
+        userQuery.$or.push({
+          $and: [
+            { firstName: { $regex: nameParts[0], $options: "i" } },
+            { lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" } },
+          ],
+        });
+      }
+
+      const matchingUsers = await User.find(userQuery).select("_id");
+      const userIds = matchingUsers.map((user) => user._id);
+
+      filter.$or = [
+        { name: { $regex: name, $options: "i" } }, // Event name
+        { createdBy: { $in: userIds } }, // Created by matching users
+        { professors: { $in: userIds } }, // Workshop professors matching
+      ];
+    }
   }
 
   return await Event.find(filter)
-    .populate("createdBy", "name role")
+    .populate("createdBy", "firstName lastName role")
+    .populate("professors", "firstName lastName role")
     .sort({ startDate: 1 });
 };
 
@@ -410,3 +517,4 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
