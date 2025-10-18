@@ -281,7 +281,7 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
     deletedAt: null,
   })
     .populate("professors", "name email") // now Mongoose knows User schema
-    .populate("createdBy", "name email")
+    .populate("createdBy", "name email companyName")
     .lean();
 
   return events;
@@ -306,7 +306,7 @@ export const getUpcomingEventsWithVendors = async () => {
       const applications = await Application.find({ event: event._id })
         .populate({
           path: "createdBy",
-          select: "firstName lastName name email role", // support both schemas
+          select: "firstName lastName name email role companyName", // include companyName for vendors
         })
         .lean();
 
@@ -316,10 +316,15 @@ export const getUpcomingEventsWithVendors = async () => {
           const vendor = app.createdBy;
           if (!vendor) return null;
 
-          // Determine vendor name (handle both name or firstName+lastName)
-          const vendorName = vendor.name
-            ? vendor.name
-            : `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+          // Determine vendor name - prioritize companyName for vendors, fallback to name or firstName+lastName
+          let vendorName;
+          if (vendor.role === "vendor" && vendor.companyName) {
+            vendorName = vendor.companyName;
+          } else if (vendor.name) {
+            vendorName = vendor.name;
+          } else {
+            vendorName = `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+          }
 
           return {
             id: vendor._id,
