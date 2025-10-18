@@ -31,6 +31,7 @@ export default function VendorDashboard() {
   const [approvedApplications, setApprovedApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -69,6 +70,29 @@ export default function VendorDashboard() {
     setActiveTab(value);
     window.location.hash = value;
   };
+
+  // Handle search functionality
+  const handleSearch = (query: string) => {
+    setSearchTerm(query);
+  };
+
+  // Filter data based on search term
+  const getFilteredData = (data: any[], searchFields: string[]) => {
+    if (!searchTerm) return data;
+    
+    return data.filter(item =>
+      searchFields.some(field => {
+        const value = item[field];
+        return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+      })
+    );
+  };
+
+  // Get filtered data for each tab
+  const filteredUpcomingBazaars = getFilteredData(upcomingBazaars, ['name', 'description', 'location']);
+  const filteredPendingApplications = getFilteredData(pendingApplications, ['event.name', 'type']);
+  const filteredRejectedApplications = getFilteredData(rejectedApplications, ['event.name', 'type']);
+  const filteredApprovedApplications = getFilteredData(approvedApplications, ['event.name', 'type']);
 
   // Fetch upcoming bazaars
   const fetchUpcomingBazaars = async () => {
@@ -282,6 +306,7 @@ export default function VendorDashboard() {
       <VendorHeader 
         activeTab={activeTab}
         onTabChange={handleTabChange}
+        onSearch={handleSearch}
       />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
@@ -309,11 +334,11 @@ export default function VendorDashboard() {
               </div>
             ) : (
               <BazaarList
-                bazaars={upcomingBazaars}
+                bazaars={filteredUpcomingBazaars}
                 onRegister={handleRegister}
                 onSave={handleSave}
                 onShare={handleShare}
-                showFilters={true}
+                showFilters={false}
               />
             )}
           </TabsContent>
@@ -454,13 +479,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="participating" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {approvedApplications.length === 0 ? (
+              {filteredApprovedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No approved applications yet</p>
                 </div>
               ) : (
-                approvedApplications.map((application) => (
+                filteredApprovedApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-participation-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -528,13 +553,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="pending" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pendingApplications.length === 0 ? (
+              {filteredPendingApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No pending applications</p>
                 </div>
               ) : (
-                pendingApplications.map((application) => (
+                filteredPendingApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-request-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -603,13 +628,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="rejected" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {rejectedApplications.length === 0 ? (
+              {filteredRejectedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No rejected applications</p>
                 </div>
               ) : (
-                rejectedApplications.map((application) => (
+                filteredRejectedApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">

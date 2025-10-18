@@ -41,7 +41,7 @@ export default function VendorHeader({
               <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search bazaars..."
+                  placeholder="Search..."
                   className="pl-10"
                   onChange={(e) => onSearch?.(e.target.value)}
                   data-testid="input-search"
