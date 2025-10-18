@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
-import Header from "@/components/Header";
+import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
