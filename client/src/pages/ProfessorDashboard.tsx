@@ -9,18 +9,14 @@ import {
   FolderOpen,
   Clock,
   CheckCircle2,
-  AlertCircle,
-  Users,
-  MapPin,
-  Store
+  AlertCircle
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EventSearch from "@/components/EventSearch";
-import CategoryBadge, { type EventCategory } from "@/components/CategoryBadge";
-import { getEventImage } from "@/lib/eventImages";
+import EventCard from "@/components/EventCard";
 
 interface Workshop {
   _id: string;
@@ -36,7 +32,6 @@ export default function ProfessorDashboard() {
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
-  const [expandedVendors, setExpandedVendors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     fetchUserData();
@@ -102,22 +97,6 @@ export default function ProfessorDashboard() {
 
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    });
   };
 
   const quickActions = [
@@ -259,191 +238,37 @@ export default function ProfessorDashboard() {
               </Card>
             ) : events.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {events.map((event: any, index: number) => {
-                  const eventType = (event.eventType || "academic").toLowerCase();
-                  const isWorkshop = eventType.includes("workshop");
-                  const isBazaarOrBooth = eventType.includes("bazaar") || eventType.includes("booth");
-                  const imageSrc = event.image || getEventImage(event.eventType, event.name);
-                  
-                  // Check if registration is available
-                  const now = new Date();
-                  const registrationDeadline = event.registrationDeadline ? new Date(event.registrationDeadline) : null;
-                  const isBeforeDeadline = !registrationDeadline || now <= registrationDeadline;
-                  const hasCapacity = !event.capacity || (event.attendeesCount || 0) < event.capacity;
-                  const canRegister = isWorkshop && isBeforeDeadline && hasCapacity;
-                  
-                  return (
-                    <Card key={event._id || index} className="hover:shadow-lg transition-shadow flex flex-col overflow-hidden">
-                      {/* Event Image */}
-                      <div className="relative aspect-[16/9] overflow-hidden bg-muted">
-                        <img
-                          src={imageSrc}
-                          alt={event.name || "Event"}
-                          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-                        />
-                      </div>
-
-                      <CardHeader>
-                        <div className="flex justify-between items-start gap-2">
-                          <CardTitle className="text-xl line-clamp-2">{event.name || "Untitled Event"}</CardTitle>
-                          <CategoryBadge category={(event.eventType || "academic") as EventCategory} />
-                        </div>
-                      </CardHeader>
-                      
-                      <CardContent className="space-y-4 flex-1 flex flex-col">
-                        <div className="flex-1 space-y-4">
-                          {event.description && (
-                            <p className="text-sm text-muted-foreground line-clamp-3">
-                              {event.description}
-                            </p>
-                          )}
-
-                          <div className="space-y-2 text-sm">
-                            {/* Start Date & Time */}
-                            {event.startDate && (
-                              <div className="flex items-start text-muted-foreground">
-                                <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <div className="font-medium text-foreground">Start</div>
-                                  <div>{formatDate(event.startDate)} at {formatTime(event.startDate)}</div>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* End Date & Time */}
-                            {event.endDate && (
-                              <div className="flex items-start text-muted-foreground">
-                                <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <div className="font-medium text-foreground">End</div>
-                                  <div>{formatDate(event.endDate)} at {formatTime(event.endDate)}</div>
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Location */}
-                            {event.location && (
-                              <div className="flex items-center text-muted-foreground">
-                                <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span>{event.location}</span>
-                              </div>
-                            )}
-
-                            {/* Attendees */}
-                            <div className="flex items-center text-muted-foreground">
-                              <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                              <span>{event.attendeesCount || 0} attendees</span>
-                            </div>
-
-                            {/* Capacity */}
-                            {event.capacity && (
-                              <div className="text-xs text-muted-foreground ml-6">
-                                Capacity: {event.attendeesCount || 0} / {event.capacity}
-                                {(event.attendeesCount || 0) >= event.capacity && (
-                                  <span className="text-red-500 font-semibold ml-2">(Full)</span>
-                                )}
-                              </div>
-                            )}
-
-                            {/* Registration Deadline */}
-                            {event.registrationDeadline && (
-                              <div className="flex items-center text-muted-foreground">
-                                <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                                <span>
-                                  Registration deadline: {formatDate(event.registrationDeadline)}
-                                  {new Date() > new Date(event.registrationDeadline) && (
-                                    <span className="text-red-500 font-semibold ml-2">(Closed)</span>
-                                  )}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Vendors Section for Bazaar/Booth */}
-                          {isBazaarOrBooth && event.vendors && event.vendors.length > 0 && (
-                            <div className="pt-3 border-t">
-                              <div className="flex items-center gap-2 text-foreground font-medium mb-2">
-                                <Store className="h-4 w-4 text-primary" />
-                                <span>Participating Vendors</span>
-                              </div>
-                              <div>
-                                {(() => {
-                                  const vendorNames = event.vendors
-                                    .map((v: any) => v.name || v.vendorName)
-                                    .filter(Boolean) as string[];
-                                  const isExpanded = expandedVendors[event._id];
-                                  const initialCount = 4;
-                                  const shown = isExpanded ? vendorNames : vendorNames.slice(0, initialCount);
-                                  const remaining = vendorNames.length - initialCount;
-                                  
-                                  return (
-                                    <div className="space-y-2">
-                                      <div className="flex flex-wrap gap-2">
-                                        {shown.map((name: string, idx: number) => (
-                                          <Badge
-                                            key={idx}
-                                            variant="secondary"
-                                            className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"
-                                          >
-                                            {name}
-                                          </Badge>
-                                        ))}
-                                      </div>
-                                      {remaining > 0 && !isExpanded && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                                          onClick={() => setExpandedVendors(prev => ({
-                                            ...prev,
-                                            [event._id]: true
-                                          }))}
-                                        >
-                                          + {remaining} more vendor{remaining > 1 ? 's' : ''}
-                                        </Button>
-                                      )}
-                                      {isExpanded && vendorNames.length > initialCount && (
-                                        <Button
-                                          variant="ghost"
-                                          size="sm"
-                                          className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                                          onClick={() => setExpandedVendors(prev => ({
-                                            ...prev,
-                                            [event._id]: false
-                                          }))}
-                                        >
-                                          Show less
-                                        </Button>
-                                      )}
-                                    </div>
-                                  );
-                                })()}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 mt-auto">
-                          {canRegister && (
-                            <Button
-                              className="flex-1"
-                              onClick={() => console.log("Register:", event.name)}
-                            >
-                              Register
-                            </Button>
-                          )}
-                          <Button
-                            className={canRegister ? "flex-1" : "w-full"}
-                            variant="outline"
-                            onClick={() => console.log("View details:", event.name)}
-                          >
-                            View Details
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                {events.map((event: any, index: number) => (
+                  <EventCard
+                    key={event._id || index}
+                    id={event._id || String(index)}
+                    title={event.name || "Untitled Event"}
+                    category={(event.eventType || "academic") as any}
+                    date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    }) : "TBA"}
+                    time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    }) : "TBA"}
+                    location={event.location || "Unknown location"}
+                    attendees={event.attendeesCount || 0}
+                    image={event.image}
+                    description={event.description}
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    capacity={event.capacity}
+                    registrationDeadline={event.registrationDeadline}
+                    vendors={event.vendors || []}
+                    showDetailedView={true}
+                    onRegister={() => console.log("Register:", event.name)}
+                    onViewDetails={() => console.log("View details:", event.name)}
+                  />
+                ))}
               </div>
             ) : (
               <Card>
