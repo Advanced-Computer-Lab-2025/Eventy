@@ -43,6 +43,9 @@ interface Vendor {
   vendorId?: string;
   vendorName?: string;
   vendorEmail?: string;
+  email?: string;  
+  _id?: string; 
+  name?: string;
   type?: string;
   boothSize?: string;
   attendees?: number;
@@ -131,30 +134,31 @@ export default function EventCard({
           </div>
         </div>
 
-        {/* 🛍 Vendors section */}
-        {isBazaarOrBooth && vendors.length > 0 && (
-          <div className="mt-2">
-            <div className="flex items-center gap-2 text-foreground font-medium">
-              <Store className="h-4 w-4 text-primary" />
-              <span>Participating Vendors</span>
-            </div>
-            <div className="mt-1 text-sm text-muted-foreground">
-              {(() => {
-                const names = vendors
-                  .map((v) => v.vendorName)
-                  .filter(Boolean) as string[];
-                const shown = names.slice(0, 3);
-                const remaining = Math.max(0, names.length - shown.length);
-                return (
-                  <span data-testid={`text-vendors-${id}`}>
-                    {shown.join(", ")}
-                    {remaining > 0 ? ` and ${remaining} more` : ""}
-                  </span>
-                );
-              })()}
-            </div>
-          </div>
-        )}
+       {/* 🛍 Vendors section */}
+{isBazaarOrBooth && vendors.length > 0 && (
+  <div className="mt-2">
+    <div className="flex items-center gap-2 text-foreground font-medium">
+      <Store className="h-4 w-4 text-primary" />
+      <span>Participating Vendors</span>
+    </div>
+    <div className="mt-1 text-sm text-muted-foreground">
+      {(() => {
+        const names = vendors
+        .map((v) => v.name)
+        .filter(Boolean) as string[];
+        const shown = names.slice(0, 3);
+        const remaining = Math.max(0, names.length - shown.length);
+        return (
+          <span data-testid={`text-vendors-${id}`}>
+            {shown.join(", ")}
+            {remaining > 0 ? ` and ${remaining} more` : ""}
+          </span>
+        );
+      })()}
+    </div>
+  </div>
+)}
+
 
         {showActions && (
           <div className="flex gap-2 pt-2">
