@@ -1,4 +1,4 @@
-import { Bell, User, Home, BookOpen, Dumbbell } from "lucide-react";
+import { Bell, User, Home, BookOpen, Dumbbell, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -50,6 +50,16 @@ export default function ProfessorHeader({ homeHref = "/professor" }: ProfessorHe
           >
             <BookOpen className="h-4 w-4" />
             Workshops
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/my-events")}
+            data-testid="button-nav-my-events"
+          >
+            <Calendar className="h-4 w-4" />
+            My Events
           </Button>
           <Button
             variant="ghost"
