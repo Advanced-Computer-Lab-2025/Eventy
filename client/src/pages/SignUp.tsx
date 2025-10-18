@@ -368,28 +368,6 @@ export default function SignUp() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="staff-role">Role</Label>
-                  <Select
-                    value={staffForm.role}
-                    onValueChange={(value) =>
-                      setStaffForm({ ...staffForm, role: value })
-                    }
-                  >
-                    <SelectTrigger
-                      id="staff-role"
-                      data-testid="select-staff-role"
-                    >
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="staff">Staff</SelectItem>
-                      <SelectItem value="ta">Teaching Assistant</SelectItem>
-                      <SelectItem value="professor">Professor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
                   <Label htmlFor="staff-id">Staff ID</Label>
                   <div className="relative">
                     <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />

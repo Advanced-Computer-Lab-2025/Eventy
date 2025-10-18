@@ -85,7 +85,15 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/sports">
-        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "events_office",
+            "ta",
+            "professor",
+          ]}
+        >
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
