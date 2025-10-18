@@ -411,12 +411,5 @@ export async function getAllEvents() {
   }
 }
 
-export async function getAllEvents() {
-  try {
-    const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
-    return events;
-  } catch (err) {
-    throw new ApiError(500, "Error fetching events");
-  }
-}
+
 
