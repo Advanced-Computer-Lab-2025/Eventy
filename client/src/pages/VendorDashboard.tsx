@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin } from "lucide-react";
-import Header from "@/components/Header";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle } from "lucide-react";
+import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -12,6 +12,7 @@ import BazaarList, { Bazaar } from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
+import StatCard from "@/components/StatCard";
 import { bazaarApiService, Application } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -31,6 +32,8 @@ export default function VendorDashboard() {
   const [approvedApplications, setApprovedApplications] = useState<Application[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [companyName, setCompanyName] = useState("");
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -68,6 +71,57 @@ export default function VendorDashboard() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     window.location.hash = value;
+  };
+
+  // Handle search functionality
+  const handleSearch = (query: string) => {
+    setSearchTerm(query);
+  };
+
+  // Filter data based on search term
+  const getFilteredData = (data: any[], searchFields: string[]) => {
+    if (!searchTerm) return data;
+    
+    return data.filter(item =>
+      searchFields.some(field => {
+        const value = item[field];
+        return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+      })
+    );
+  };
+
+  // Get filtered data for each tab
+  const filteredUpcomingBazaars = getFilteredData(upcomingBazaars, ['name', 'description', 'location']);
+  const filteredPendingApplications = getFilteredData(pendingApplications, ['event.name', 'type']);
+  const filteredRejectedApplications = getFilteredData(rejectedApplications, ['event.name', 'type']);
+  const filteredApprovedApplications = getFilteredData(approvedApplications, ['event.name', 'type']);
+
+  // Calculate vendor statistics
+  const getVendorStats = () => {
+    const totalApplications = pendingApplications.length + rejectedApplications.length + approvedApplications.length;
+    const pendingCount = pendingApplications.length;
+    const approvedCount = approvedApplications.length;
+    const rejectedCount = rejectedApplications.length;
+    
+    return {
+      totalApplications,
+      pendingCount,
+      approvedCount,
+      rejectedCount
+    };
+  };
+
+  const vendorStats = getVendorStats();
+
+  // Fetch company name from localStorage
+  const fetchCompanyName = () => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setCompanyName(userData.companyName || "Vendor");
+    } else {
+      setCompanyName("Vendor");
+    }
   };
 
   // Fetch upcoming bazaars
@@ -134,6 +188,7 @@ export default function VendorDashboard() {
   };
 
   useEffect(() => {
+    fetchCompanyName();
     fetchUpcomingBazaars();
     fetchApplicationsData();
   }, []);
@@ -279,41 +334,71 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <VendorHeader 
+        activeTab={activeTab}
+        onTabChange={handleTabChange}
+        onSearch={handleSearch}
+      />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Vendor Dashboard</h1>
+          <div className="flex items-center gap-3 mb-2">
+            <Store className="h-8 w-8 text-primary" />
+            <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
+          </div>
           <p className="text-muted-foreground">
-            Manage your bazaar and booth applications
+            Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="upcoming" data-testid="tab-upcoming">
-              <Calendar className="h-4 w-4 mr-2" />
-              Upcoming Bazaars
-            </TabsTrigger>
-            <TabsTrigger value="platform-booths" data-testid="tab-platform-booths">
-              <Store className="h-4 w-4 mr-2" />
-              Platform Booths
-            </TabsTrigger>
-            <TabsTrigger value="participating" data-testid="tab-participating">
-              <CheckCircle className="h-4 w-4 mr-2" />
-              My Participations
-            </TabsTrigger>
-            <TabsTrigger value="pending" data-testid="tab-pending">
-              <Clock className="h-4 w-4 mr-2" />
-              Pending Requests
-            </TabsTrigger>
-            <TabsTrigger value="rejected" data-testid="tab-rejected">
-              <XCircle className="h-4 w-4 mr-2" />
-              Rejected Requests
-            </TabsTrigger>
-          </TabsList>
 
           <TabsContent value="upcoming" className="space-y-4">
+            {/* Statistics Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+              <StatCard
+                title="Total Applications"
+                value={vendorStats.totalApplications}
+                description="All applications submitted"
+                icon={FolderOpen}
+                valueColor="text-gray-900"
+                iconColor="text-gray-600"
+              />
+              <StatCard
+                title="Pending Approval"
+                value={vendorStats.pendingCount}
+                description="Awaiting review"
+                icon={Clock}
+                valueColor="text-blue-600"
+                iconColor="text-blue-600"
+              />
+              <StatCard
+                title="Approved"
+                value={vendorStats.approvedCount}
+                description="Successfully approved"
+                icon={CheckCircle}
+                valueColor="text-green-600"
+                iconColor="text-green-600"
+              />
+              <StatCard
+                title="Rejected"
+                value={vendorStats.rejectedCount}
+                description="Requires updates"
+                icon={XCircle}
+                valueColor="text-orange-600"
+                iconColor="text-orange-600"
+              />
+            </div>
+
+            <div className="mb-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-semibold">Upcoming Bazaars</h2>
+                <p className="text-sm text-muted-foreground">
+                  {filteredUpcomingBazaars.length} bazaar{filteredUpcomingBazaars.length !== 1 ? 's' : ''} found
+                </p>
+              </div>
+            </div>
+            
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -328,11 +413,11 @@ export default function VendorDashboard() {
               </div>
             ) : (
               <BazaarList
-                bazaars={upcomingBazaars}
+                bazaars={filteredUpcomingBazaars}
                 onRegister={handleRegister}
                 onSave={handleSave}
                 onShare={handleShare}
-                showFilters={true}
+                showFilters={false}
               />
             )}
           </TabsContent>
@@ -473,13 +558,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="participating" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {approvedApplications.length === 0 ? (
+              {filteredApprovedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No approved applications yet</p>
                 </div>
               ) : (
-                approvedApplications.map((application) => (
+                filteredApprovedApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-participation-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -547,13 +632,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="pending" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pendingApplications.length === 0 ? (
+              {filteredPendingApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No pending applications</p>
                 </div>
               ) : (
-                pendingApplications.map((application) => (
+                filteredPendingApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-request-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
@@ -622,13 +707,13 @@ export default function VendorDashboard() {
 
           <TabsContent value="rejected" className="space-y-4">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {rejectedApplications.length === 0 ? (
+              {filteredRejectedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">No rejected applications</p>
                 </div>
               ) : (
-                rejectedApplications.map((application) => (
+                filteredRejectedApplications.map((application) => (
                   <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
