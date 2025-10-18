@@ -226,9 +226,9 @@ export default function VendorRequests() {
         </div>
 
         <Card>
-          <CardHeader>
+          {/* <CardHeader>
             <CardTitle>Pending Vendor Requests</CardTitle>
-          </CardHeader>
+          </CardHeader> */}
           <CardContent>
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">Loading requests...</div>

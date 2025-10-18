@@ -99,7 +99,11 @@ function Router() {
       </Route>
       <Route path="/my-events" component={MyEvents} />
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests">
+        <ProtectedRoute allowedRoles={["admin", "events_office"]}>
+          <VendorRequests />
+        </ProtectedRoute>
+      </Route>
       <Route path="/events" component={EventListPage} />
 
       <Route component={NotFound} />
