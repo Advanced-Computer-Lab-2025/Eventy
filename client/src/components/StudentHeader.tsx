@@ -1,4 +1,4 @@
-import { Bell, User, Home, Calendar } from "lucide-react";
+import { Bell, User, Home, Calendar, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -50,6 +50,16 @@ export default function StudentHeader({ homeHref = "/" }: StudentHeaderProps) {
           >
             <Calendar className="h-4 w-4" />
             My Events
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/sports")}
+            data-testid="button-nav-sports"
+          >
+            <Dumbbell className="h-4 w-4" />
+            Sports Facilities
           </Button>
         </div>
       </div>
