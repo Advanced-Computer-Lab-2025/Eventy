@@ -306,21 +306,83 @@ export const searchEvents = async ({ name, type }) => {
   // Build a flexible filter
   const filter = { status: "approved" };
 
-  // Filter by event type if given
-  if (type) {
-    filter.eventType = type.toLowerCase();
-  }
+  // If both name and type are provided and are the same (unified search)
+  // Use OR logic to search across all fields
+  if (name && type && name.toLowerCase() === type.toLowerCase()) {
+    // First, find users whose names match the search query
+    // Support searching by: firstName, lastName, or "firstName lastName"
+    const nameParts = name.trim().split(/\s+/); // Split by whitespace
+    
+    let userQuery = {
+      $or: [
+        { firstName: { $regex: name, $options: "i" } },
+        { lastName: { $regex: name, $options: "i" } },
+      ],
+    };
 
-  // Add name-based search (event name or professor/vendor name)
-  if (name) {
+    // If search has multiple words, also search for "firstName lastName" combination
+    if (nameParts.length >= 2) {
+      userQuery.$or.push({
+        $and: [
+          { firstName: { $regex: nameParts[0], $options: "i" } },
+          { lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" } },
+        ],
+      });
+    }
+
+    const matchingUsers = await User.find(userQuery).select("_id");
+    const userIds = matchingUsers.map((user) => user._id);
+
     filter.$or = [
-      { name: { $regex: name, $options: "i" } },
-      { "createdBy.name": { $regex: name, $options: "i" } },
+      { name: { $regex: name, $options: "i" } }, // Event name
+      { eventType: { $regex: type, $options: "i" } }, // Event type
+      { createdBy: { $in: userIds } }, // Created by matching users
+      { professors: { $in: userIds } }, // Workshop professors matching
     ];
+  } else {
+    // Traditional separate search
+    // Filter by event type if given
+    if (type) {
+      filter.eventType = type.toLowerCase();
+    }
+
+    // Add name-based search (event name or professor/vendor name)
+    if (name) {
+      // First, find users whose names match the search query
+      // Support searching by: firstName, lastName, or "firstName lastName"
+      const nameParts = name.trim().split(/\s+/); // Split by whitespace
+      
+      let userQuery = {
+        $or: [
+          { firstName: { $regex: name, $options: "i" } },
+          { lastName: { $regex: name, $options: "i" } },
+        ],
+      };
+
+      // If search has multiple words, also search for "firstName lastName" combination
+      if (nameParts.length >= 2) {
+        userQuery.$or.push({
+          $and: [
+            { firstName: { $regex: nameParts[0], $options: "i" } },
+            { lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" } },
+          ],
+        });
+      }
+
+      const matchingUsers = await User.find(userQuery).select("_id");
+      const userIds = matchingUsers.map((user) => user._id);
+
+      filter.$or = [
+        { name: { $regex: name, $options: "i" } }, // Event name
+        { createdBy: { $in: userIds } }, // Created by matching users
+        { professors: { $in: userIds } }, // Workshop professors matching
+      ];
+    }
   }
 
   return await Event.find(filter)
-    .populate("createdBy", "name role")
+    .populate("createdBy", "firstName lastName role")
+    .populate("professors", "firstName lastName role")
     .sort({ startDate: 1 });
 };
 

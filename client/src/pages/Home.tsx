@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import EventCard from "@/components/EventCard";
 import EventHero from "@/components/EventHero";
 import EventFilters from "@/components/EventFilters";
+import EventSearch from "@/components/EventSearch";
 import Header from "@/components/Header";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
@@ -31,39 +32,25 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Initial loading state
   const [error, setError] = useState("");
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
-  const token = localStorage.getItem("token");
+  const handleSearchResults = (results: any[]) => {
+    setEvents(results);
+    // After first results, we're no longer in initial loading
+    if (loading) setLoading(false);
+  };
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(API_URL, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        });
+  const handleLoading = (isLoading: boolean) => {
+    // Only show loading overlay on initial load
+    if (events.length === 0) {
+      setLoading(isLoading);
+    }
+  };
 
-        if (!response.ok) throw new Error("Failed to fetch events");
-
-        const data = await response.json();
-        console.log("Events from backend:", data.data);
-        setEvents(data.data || []);
-      } catch (err) {
-        console.error("Error fetching events:", err);
-        setError("Unable to load events. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
-  }, []);
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -115,6 +102,15 @@ export default function Home() {
                   Discover exciting events happening at your university
                 </p>
               </div>
+
+              {/* Event Search */}
+              <EventSearch
+                onSearchResults={handleSearchResults}
+                onLoading={handleLoading}
+                onError={handleError}
+                placeholder="Search events by name, professor, or type..."
+                className="mb-6"
+              />
 
               {loading ? (
                 <p>Loading events...</p>

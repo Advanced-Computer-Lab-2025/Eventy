@@ -1,15 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Calendar, Users, TrendingUp, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import StatCard from "@/components/StatCard";
 import EventListItem from "@/components/EventListItem";
 import QuickActions from "@/components/QuickActions";
 import CreateEventDialog from "@/components/CreateEventDialog";
+import EventSearch from "@/components/EventSearch";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
-
-
 
 //todo: remove mock functionality
 const recentEvents = [
@@ -34,66 +33,27 @@ const recentEvents = [
 ];
 
 export default function Dashboard() {
-   const [events, setEvents] = useState(recentEvents);
-  // const [showCreateDialog, setShowCreateDialog] = useState(false);
-//const [events, setEvents] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  
+  const [events, setEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true); // Initial loading state
+  const [error, setError] = useState("");
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-  const API_URL = `${API_BASE_URL}/api/events/upcoming`;
-  const token = localStorage.getItem("token");
+  const handleSearchResults = (results: any[]) => {
+    setEvents(results);
+    // After first results, we're no longer in initial loading
+    if (loading) setLoading(false);
+  };
 
-  useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(API_URL, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            "Content-Type": "application/json",
-          },
-        });
-        if (!response.ok) throw new Error("Failed to fetch events");
-        const data = await response.json();
-        setEvents(data.data || []);
-      } catch (err) {
-        console.error("Error fetching events:", err);
-        setError("Unable to load events. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchEvents();
-  }, []);
+  const handleLoading = (isLoading: boolean) => {
+    // Only show loading overlay on initial load
+    if (events.length === 0) {
+      setLoading(isLoading);
+    }
+  };
 
- 
-
-  //   const handleDelete = async (eventId: string) => {
-  //   try {
-  //     const res = await fetch(`/api/admin/events/${eventId}`, {
-  //       method: "DELETE",
-  //       credentials: "include",
-  //     });
-
-  //     if (res.status === 409) {
-  //       const data = await res.json();
-  //       alert(data.message || "Cannot delete event with registered users ❌");
-  //       return;
-  //     }
-
-  //     if (!res.ok) throw new Error("Failed to delete event");
-
-  //     setEvents(prev => prev.filter(e => e._id !== eventId));
-  //     alert("Event deleted successfully ✅");
-  //   } catch (err: any) {
-  //     alert(err.message || "Failed to delete event ❌");
-  //   }
-  // };
-
-
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -139,38 +99,15 @@ export default function Dashboard() {
               <CardHeader>
                 <CardTitle>Recent Events</CardTitle>
               </CardHeader>
-             <CardContent className="space-y-3">
-      {events.map((event) => (
-        <EventListItem
-          key={event.id}
-          {...event}
-          canDelete={true}
-          onDelete={(id) => setEvents((prev) => prev.filter((e) => e.id !== id))}
-          onClick={() => console.log("Event clicked:", event.title)}
-        />
-      ))}
-    </CardContent>
-              {/* <CardContent className="space-y-3">
-              {loading && <p>Loading events...</p>}
-              {error && <p className="text-red-500">Error: {error}</p>}
-              {!loading && !error && events.length === 0 && <p>No events found.</p>}
-
-              {!loading && !error && events.map((event) => (
-                <EventListItem
-                  key={event._id}
-                  id={event._id}
-                  title={event.name}
-                  category={event.eventType}
-                  date={new Date(event.startDate).toLocaleDateString()}
-                  time={`${new Date(event.startDate).toLocaleTimeString()} - ${new Date(event.endDate).toLocaleTimeString()}`}
-                  location={event.location}
-                  image={event.bannerImage || "/placeholder.png"}
-                  canDelete={true}
-                  onDelete={handleDelete} // ✅ connect to real delete API
-                />
-              ))}
-            </CardContent> */}
-
+              <CardContent className="space-y-3">
+                {recentEvents.map((event) => (
+                  <EventListItem
+                    key={event.id}
+                    {...event}
+                    onClick={() => console.log("Event clicked:", event.title)}
+                  />
+                ))}
+              </CardContent>
             </Card>
 
             <Card>
@@ -178,6 +115,14 @@ export default function Dashboard() {
                 <CardTitle>Upcoming Events</CardTitle>
               </CardHeader>
               <CardContent>
+                {/* Search Section */}
+                <EventSearch
+                  onSearchResults={handleSearchResults}
+                  onLoading={handleLoading}
+                  onError={handleError}
+                  className="mb-6"
+                />
+
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
