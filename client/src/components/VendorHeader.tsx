@@ -1,4 +1,4 @@
-import { Search, Bell, Calendar, Store, CheckCircle, Clock, XCircle, User } from "lucide-react";
+import { Search, Bell, Home, Store, CheckCircle, Clock, XCircle, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
@@ -69,8 +69,8 @@ export default function VendorHeader({
             onClick={() => handleTabClick("upcoming")}
             data-testid="button-nav-upcoming"
           >
-            <Calendar className="h-4 w-4" />
-            Upcoming Bazaars
+            <Home className="h-4 w-4" />
+            Home
           </Button>
           <Button 
             variant="ghost" 
