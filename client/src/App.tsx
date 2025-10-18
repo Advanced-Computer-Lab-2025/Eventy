@@ -72,18 +72,19 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/trip" component={CreateTrip} />
+      <Route path="/create/trip">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateTrip />
+        </ProtectedRoute>
+      </Route>
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard">
         <ProtectedRoute allowedRoles={["vendor"]}>
           <VendorDashboard />
         </ProtectedRoute>
       </Route>
-      <Route path="/events-office/dashboard">
-        <ProtectedRoute allowedRoles={["events_office"]}>
-          <EventsOfficeDashboard />
-        </ProtectedRoute>
-      </Route>
+      <Route path="/events-office/dashboard" component={EventsOfficeDashboard}/>
+        
       <Route path="/sports">
         <ProtectedRoute
           allowedRoles={[
@@ -98,7 +99,14 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/my-events" component={MyEvents} />
-      <Route path="/approvals/workshops" component={WorkshopApprovals} />
+    
+      <Route path="/approvals/workshops">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <WorkshopApprovals />
+        </ProtectedRoute>
+      </Route>
+          
+
       <Route path="/vendor-requests" component={VendorRequests} />
       <Route path="/events" component={EventListPage} />
 
