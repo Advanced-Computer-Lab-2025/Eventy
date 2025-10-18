@@ -283,15 +283,6 @@ export default function EventCard({
                   Register
                 </Button>
               )}
-              {onViewDetails && (
-                <Button
-                  className={canRegister ? "flex-1" : "w-full"}
-                  variant="outline"
-                  onClick={onViewDetails}
-                >
-                  View Details
-                </Button>
-              )}
               {canDelete && (
                 <Button
                   variant="destructive"

@@ -257,7 +257,7 @@ export default function ProfessorDashboard() {
                     }) : "TBA"}
                     location={event.location || "Unknown location"}
                     attendees={event.attendeesCount || 0}
-                    image={event.image}
+                    image={event.bannerImage || event.image}
                     description={event.description}
                     startDate={event.startDate}
                     endDate={event.endDate}
