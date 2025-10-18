@@ -230,7 +230,7 @@ export default function EditWorkshop() {
         description: "Your workshop has been successfully updated and is pending re-approval.",
       });
 
-      setTimeout(() => setLocation("/professor/dashboard"), 1500);
+      setTimeout(() => setLocation("/professor/workshops"), 1500);
     } catch (error) {
       console.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
@@ -598,7 +598,7 @@ export default function EditWorkshop() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/professor/dashboard")}
+              onClick={() => setLocation("/professor/workshops")}
               className="flex-1"
               disabled={loading}
             >

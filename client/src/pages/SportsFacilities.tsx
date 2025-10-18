@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home } from "lucide-react";
+import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home, ArrowLeft } from "lucide-react";
+import Header from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -193,6 +194,18 @@ export default function SportsFacilities() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        {/* Back Button for Professors */}
+        {userRole === "professor" && (
+          <Button 
+            variant="ghost" 
+            onClick={() => setLocation("/professor")}
+            className="mb-4"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        )}
+
         {/* Left-aligned title */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Sports Facilities</h1>

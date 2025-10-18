@@ -110,43 +110,46 @@ router.get(
 router.post(
   "/admin/conferences",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.createConferenceController
 );
 
 router.get(
   "/admin/conferences",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.getConferencesController.bind(eventsController)
 );
 
 router.get(
   "/admin/conferences/:conferenceId",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.getConferenceByIdController.bind(eventsController)
 );
 
 router.patch(
   "/admin/conferences/:conferenceId",
   authMiddleware,
-  roleMiddleware(["admin", "events_office"]),
+  roleMiddleware(["events_office"]),
   eventsController.updateConferenceController.bind(eventsController)
 );
 //get all upcoming events (approved events)
 router.get(
   "/upcoming",
   authMiddleware,
-  roleMiddleware(["student",
+  roleMiddleware([
+    "student",
     "staff",
     "events_office",
     "ta",
-    "professor",]),
+    "professor",
+    "admin",
+  ]),
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
-// Search events (✅ new feature)
+// Search events ( new feature)
 router.get(
   "/search",
   authMiddleware,
@@ -180,7 +183,7 @@ router.get(
 router.get(
   "/:eventId",
   authMiddleware,
-  roleMiddleware(["vendor", "student", "staff", "ta", "professor"]),
+  roleMiddleware(["vendor", "student", "staff", "ta", "professor", "admin", "events_office"]),
   eventsController.getEventById.bind(eventsController)
 );
 

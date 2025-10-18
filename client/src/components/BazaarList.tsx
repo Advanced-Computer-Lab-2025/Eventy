@@ -26,6 +26,7 @@ interface BazaarListProps {
   onRegister?: (bazaarId: string) => void;
   onSave?: (bazaarId: string) => void;
   onShare?: (bazaarId: string) => void;
+  onEdit?: (bazaarId: string) => void;
   showFilters?: boolean;
   className?: string;
 }
@@ -35,6 +36,7 @@ export default function BazaarList({
   onRegister,
   onSave,
   onShare,
+  onEdit,
   showFilters = true,
   className = "",
 }: BazaarListProps) {
@@ -79,6 +81,14 @@ export default function BazaarList({
       onShare(bazaarId);
     } else {
       console.log(`Share bazaar: ${bazaarId}`);
+    }
+  };
+
+  const handleEdit = (bazaarId: string) => {
+    if (onEdit) {
+      onEdit(bazaarId);
+    } else {
+      console.log(`Edit bazaar: ${bazaarId}`);
     }
   };
 
@@ -171,6 +181,7 @@ export default function BazaarList({
               onRegister={() => handleRegister(bazaar._id)}
               onSave={() => handleSave(bazaar._id)}
               onShare={() => handleShare(bazaar._id)}
+              onEdit={() => handleEdit(bazaar._id)}
             />
           ))}
         </div>
