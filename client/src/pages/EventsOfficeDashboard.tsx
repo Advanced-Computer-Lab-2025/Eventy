@@ -1,12 +1,15 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
-import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
+import EventSearch from "@/components/EventSearch";
+import EventCard from "@/components/EventCard";
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -33,6 +36,37 @@ export default function EventsOfficeDashboard() {
   const [showWorkshopNotif, setShowWorkshopNotif] = useState(false);
   const [reminderTime, setReminderTime] = useState<NodeJS.Timeout | null>(null);
   const existingRef = useRef<HTMLDivElement | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
+  const [upcomingError, setUpcomingError] = useState("");
+  const [eventTypeFilter, setEventTypeFilter] = useState<
+    'all' | 'bazaar' | 'trip' | 'workshop' | 'conference' | 'platform_booth'
+  >('all');
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+
+  const handleCardClick = async (eventId: string) => {
+    setDetailsLoading(true);
+    setDialogOpen(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch event details");
+      const data = await res.json();
+      setSelectedEvent(data.data);
+    } catch (err) {
+      setSelectedEvent(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   const fetchBazaars = async () => {
     try {
@@ -156,8 +190,8 @@ export default function EventsOfficeDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <EventsOfficeHeader />
-
+      <Header homeOnly homeHref="/events-office/dashboard" hideSearch />
+      
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Main Title and Info Section */}
@@ -184,10 +218,12 @@ export default function EventsOfficeDashboard() {
                 icon={CheckCircle2}
               />
             </div>
+
           </div>
 
           {/* Action Buttons Card */}
-          <div>
+          <div className="lg:col-span-1">
+            <div className="space-y-6">
             <Card className="h-full">
               <CardHeader>
                 <CardTitle>Quick Actions</CardTitle>
@@ -216,7 +252,7 @@ export default function EventsOfficeDashboard() {
                   Create Trip
                 </button>
                 <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
                   onClick={() => setLocation("/approvals/workshops")}
                 >
                   <CheckCircle2 className="h-4 w-4" />
@@ -224,6 +260,8 @@ export default function EventsOfficeDashboard() {
                 </button>
               </CardContent>
             </Card>
+            {/* Sidebar kept for Quick Actions only */}
+          </div>
           </div>
         </div>
 
@@ -272,117 +310,99 @@ export default function EventsOfficeDashboard() {
         )}
 
         <div className="space-y-6" ref={existingRef as any}>
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Bazaars</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loadingBazaars ? (
-                <div className="text-center py-8 text-muted-foreground">Loading bazaars...</div>
-              ) : (
-                <BazaarList 
-                  bazaars={formattedBazaars} 
-                  showFilters 
-                  className="mt-2" 
-                  onEdit={(id) => setLocation(`/create/bazaar?id=${id}`)}
-                />
-              )}
-            </CardContent>
-          </Card>
-
+          {/* Upcoming Events (same width as Existing Bazaars) */}
           <Card>
             <CardHeader>
               <CardTitle>Upcoming Events</CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p className="text-lg font-medium mb-2">No upcoming events</p>
-                <p className="text-sm">Events will appear here as they are created</p>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: 'all', label: 'All' },
+                  { key: 'bazaar', label: 'Bazaars' },
+                  { key: 'trip', label: 'Trips' },
+                  { key: 'workshop', label: 'Workshops' },
+                  { key: 'conference', label: 'Conferences' },
+                  { key: 'platform_booth', label: 'Platform Booths' },
+                ].map((opt) => (
+                  <Button
+                    key={opt.key}
+                    size="sm"
+                    variant={eventTypeFilter === (opt.key as any) ? 'default' : 'outline'}
+                    onClick={() => setEventTypeFilter(opt.key as any)}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Conferences</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {loadingConfs ? (
-                <div className="text-center py-8 text-muted-foreground">Loading conferences...</div>
-              ) : conferences.length === 0 ? (
+              <EventSearch
+                onSearchResults={(results) => setUpcomingEvents(results)}
+                onLoading={(isLoading) => setUpcomingLoading(isLoading)}
+                onError={(msg) => setUpcomingError(msg)}
+                placeholder="Search events by name, professor, or type..."
+              />
+              {upcomingLoading ? (
+                <p>Loading events...</p>
+              ) : upcomingError ? (
+                <p className="text-red-500">{upcomingError}</p>
+              ) : upcomingEvents.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">No conferences found</p>
-                  <p className="text-sm mb-4">Create your first conference to get started</p>
+                  <p className="text-lg font-medium mb-2">No upcoming events found</p>
+                  <p className="text-sm">Events will appear here as they are created</p>
                 </div>
               ) : (
-                <>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex flex-col sm:flex-row gap-4">
-                        <div className="flex-1">
-                          <div className="relative">
-                            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                            <Input
-                              placeholder="Search conferences..."
-                              value={confSearch}
-                              onChange={(e) => setConfSearch(e.target.value)}
-                              className="pl-10"
-                            />
-                          </div>
-                        </div>
-                        {confSearch && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setConfSearch("")}
-                          >
-                            Clear search
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="flex items-center justify-between">
-                    <p className="text-sm text-muted-foreground">
-                      {filteredConfs.length} conference{filteredConfs.length !== 1 ? "s" : ""} found
-                    </p>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredConfs.map((c: any) => (
-                      <div key={c._id} className="border rounded-lg overflow-hidden bg-card">
-                        <div className="h-40 w-full flex items-center justify-center bg-muted">
-                          <Calendar className="h-10 w-10 text-muted-foreground" />
-                        </div>
-                        <div className="p-4">
-                          <h3 className="font-semibold text-lg hover:text-primary transition-colors">{c.name}</h3>
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{c.description}</p>
-                          <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {new Date(c.startDate).toLocaleDateString()} - {new Date(c.endDate).toLocaleDateString()}
-                            </span>
-                          </div>
-                          <div className="mt-4 flex justify-end">
-                            <Button size="sm" variant="outline" onClick={() => setLocation(`/events-office/events/conference/edit/${c._id}`)}>
-                              <Edit className="h-4 w-4 mr-1" /> Edit
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {upcomingEvents
+                    .filter((event: any) => eventTypeFilter === 'all' ? true : event.eventType === eventTypeFilter)
+                    .slice(0, 8)
+                    .map((event: any, index: number) => (
+                    <EventCard
+                      key={event._id || index}
+                      id={event._id || String(index)}
+                      title={event.name || "Untitled Event"}
+                      category={(event.eventType || "academic") as any}
+                      date={event.startDate
+                        ? new Date(event.startDate).toLocaleDateString("en-US", {
+                            weekday: "short",
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })
+                        : "TBA"}
+                      time={event.startDate
+                        ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                            hour12: true,
+                          })
+                        : "TBA"}
+                      location={event.location || "Unknown location"}
+                      attendees={event.attendeesCount || 0}
+                      image={event.image}
+                      description={event.description}
+                      startDate={event.startDate}
+                      endDate={event.endDate}
+                      capacity={-1}
+                      vendors={event.vendors || []}
+                      showDetailedView={true}
+                    />
+                  ))}
+                </div>
               )}
             </CardContent>
           </Card>
-
-         
         </div>
       </main>
+      <EventDetailsDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          setDialogOpen(open);
+          if (!open) setSelectedEvent(null);
+        }}
+        event={selectedEvent}
+        loading={detailsLoading}
+      />
     </div>
   );
 }
