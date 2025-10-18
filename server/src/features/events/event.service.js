@@ -281,7 +281,7 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
     deletedAt: null,
   })
     .populate("professors", "name email") // now Mongoose knows User schema
-    .populate("createdBy", "name email")
+    .populate("createdBy", "name email companyName")
     .lean();
 
   return events;
@@ -294,28 +294,48 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
 export const getUpcomingEventsWithVendors = async () => {
   const now = new Date();
 
-  // 1. Get upcoming events
+  // Get all approved upcoming events
   const events = await Event.find({
     status: "approved",
     startDate: { $gte: now },
   }).lean();
 
-  // 2. For each event, get vendors via applications
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
-      // Find applications for this event
+      // Find applications related to this event
       const applications = await Application.find({ event: event._id })
         .populate({
           path: "createdBy",
-          select: "name email role", // Select desired fields
+          select: "firstName lastName name email role companyName", // include companyName for vendors
         })
         .lean();
 
-      // Extract vendor users from applications
+      // Extract vendor details clearly
       const vendors = applications
-        .map((app) => app.createdBy)
-        .filter((user) => user); // Remove nulls if any
+        .map((app) => {
+          const vendor = app.createdBy;
+          if (!vendor) return null;
 
+          // Determine vendor name - prioritize companyName for vendors, fallback to name or firstName+lastName
+          let vendorName;
+          if (vendor.role === "vendor" && vendor.companyName) {
+            vendorName = vendor.companyName;
+          } else if (vendor.name) {
+            vendorName = vendor.name;
+          } else {
+            vendorName = `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+          }
+
+          return {
+            id: vendor._id,
+            name: vendorName || "Unknown Vendor",
+            email: vendor.email || "N/A",
+            role: vendor.role,
+          };
+        })
+        .filter((v) => v !== null);
+
+      // Return each event with vendor details
       return {
         ...event,
         vendors,
@@ -325,6 +345,7 @@ export const getUpcomingEventsWithVendors = async () => {
 
   return eventsWithVendors;
 };
+
 
 export async function deleteEvent(eventId, user) {
   // Ensure event exists
@@ -517,4 +538,7 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
+
+
 

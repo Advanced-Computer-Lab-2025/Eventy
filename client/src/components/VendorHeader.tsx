@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
 
 interface VendorHeaderProps {
@@ -55,9 +56,7 @@ export default function VendorHeader({
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" data-testid="button-profile">
-              <User className="h-5 w-5" />
-            </Button>
+            <ProfileMenu />
           </div>
         </div>
 
