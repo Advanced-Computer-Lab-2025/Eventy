@@ -362,41 +362,59 @@ export default function ProfessorDashboard() {
                           {/* Vendors Section for Bazaar/Booth */}
                           {isBazaarOrBooth && event.vendors && event.vendors.length > 0 && (
                             <div className="pt-3 border-t">
-                              <div className="flex items-center justify-between mb-2">
-                                <div className="flex items-center gap-2 text-foreground font-medium">
-                                  <Store className="h-4 w-4 text-primary" />
-                                  <span>Participating Vendors ({event.vendors.length})</span>
-                                </div>
-                                {event.vendors.length > 5 && (
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="h-auto py-1 px-2 text-xs"
-                                    onClick={() => setExpandedVendors(prev => ({
-                                      ...prev,
-                                      [event._id]: !prev[event._id]
-                                    }))}
-                                  >
-                                    {expandedVendors[event._id] ? "Show less" : "Show more"}
-                                  </Button>
-                                )}
+                              <div className="flex items-center gap-2 text-foreground font-medium mb-2">
+                                <Store className="h-4 w-4 text-primary" />
+                                <span>Participating Vendors</span>
                               </div>
-                              <div className="text-sm text-muted-foreground">
+                              <div>
                                 {(() => {
                                   const vendorNames = event.vendors
-                                    .map((v: any) => v.vendorName)
+                                    .map((v: any) => v.name || v.vendorName)
                                     .filter(Boolean) as string[];
                                   const isExpanded = expandedVendors[event._id];
-                                  const shown = isExpanded ? vendorNames : vendorNames.slice(0, 5);
+                                  const initialCount = 4;
+                                  const shown = isExpanded ? vendorNames : vendorNames.slice(0, initialCount);
+                                  const remaining = vendorNames.length - initialCount;
                                   
                                   return (
-                                    <div className="space-y-1">
-                                      {shown.map((name: string, idx: number) => (
-                                        <div key={idx} className="flex items-center">
-                                          <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                                          {name}
-                                        </div>
-                                      ))}
+                                    <div className="space-y-2">
+                                      <div className="flex flex-wrap gap-2">
+                                        {shown.map((name: string, idx: number) => (
+                                          <Badge
+                                            key={idx}
+                                            variant="secondary"
+                                            className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800"
+                                          >
+                                            {name}
+                                          </Badge>
+                                        ))}
+                                      </div>
+                                      {remaining > 0 && !isExpanded && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                          onClick={() => setExpandedVendors(prev => ({
+                                            ...prev,
+                                            [event._id]: true
+                                          }))}
+                                        >
+                                          + {remaining} more vendor{remaining > 1 ? 's' : ''}
+                                        </Button>
+                                      )}
+                                      {isExpanded && vendorNames.length > initialCount && (
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                          onClick={() => setExpandedVendors(prev => ({
+                                            ...prev,
+                                            [event._id]: false
+                                          }))}
+                                        >
+                                          Show less
+                                        </Button>
+                                      )}
                                     </div>
                                   );
                                 })()}
