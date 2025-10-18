@@ -21,6 +21,7 @@ import MyEvents from "@/pages/MyEvents";
 import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
+import WorkshopManagement from "@/pages/WorkshopManagement";
 import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import NotFound from "@/pages/not-found";
@@ -51,9 +52,14 @@ function Router() {
       </Route>
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/create/workshop" component={CreateWorkshop} />
-      <Route path="/professor/dashboard">
+      <Route path="/professor">
         <ProtectedRoute allowedRoles={["professor"]}>
           <ProfessorDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/workshops">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <WorkshopManagement />
         </ProtectedRoute>
       </Route>
       <Route path="/professor/create-workshop">
