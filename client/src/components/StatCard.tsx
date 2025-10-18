@@ -45,7 +45,7 @@ export default function StatCard({
             )}
           </div>
           <div className="absolute top-0 right-0">
-            <Icon className={`h-5 w-5 ${iconColor}`} />
+            <Icon className={`h-4 w-4 ${iconColor}`} />
           </div>
         </div>
       </CardContent>
