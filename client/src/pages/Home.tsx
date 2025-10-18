@@ -3,7 +3,7 @@ import EventCard from "@/components/EventCard";
 import EventHero from "@/components/EventHero";
 import EventFilters from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
-import Header from "@/components/Header";
+import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { getEventImage } from "@/lib/eventImages";
@@ -54,7 +54,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={(query) => console.log("Search:", query)} />
+      <StudentHeader />
 
       <main className="pb-20 md:pb-8">
         {!loading && events.length > 0 && (
