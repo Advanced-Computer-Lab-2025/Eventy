@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home, ArrowLeft } from "lucide-react";
-import Header from "@/components/Header";
+import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
+import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -132,66 +132,7 @@ export default function SportsFacilities() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Custom Header with Home and My Events only */}
-      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-2 -ml-6">
-              <Logo size="xl" />
-            </div>
-
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search events..."
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <ThemeToggle />
-              <Button variant="ghost" size="icon">
-                <UserIcon className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-
-          <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/staff-ta")}
-            >
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/my-events")}
-            >
-              <Calendar className="h-4 w-4" />
-              My Events
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/sports")}
-            >
-              <Dumbbell className="h-4 w-4" />
-              Sports Facilities
-            </Button>
-          </div>
-        </div>
-      </header>
+      <ProfessorHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Back Button for Professors */}
