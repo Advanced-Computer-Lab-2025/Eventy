@@ -38,7 +38,7 @@ export const signUpUser = async (data) => {
       studentStaffId: data.studentStaffId,
     });
     if (existingId)
-      throw new Error("This Student/Staff ID is already registered.");
+      throw new Error("This ID is already registered.");
   } else if (normalizedRole === "vendor") {
     const existingCompany = await User.findOne({
       companyName: data.companyName,
@@ -57,17 +57,17 @@ export const signUpUser = async (data) => {
   }
 
   // ✅ Step 6: Build user data
-  const userData = {
-    ...data,
-    password: hashedPassword,
-    status,
-    isVerified: ["staff", "ta", "professor"].includes(normalizedRole)
-      ? false
-      : true,
-    roleVerifiedByAdmin: false,
-  };
+const isAcademic = ["staff", "ta", "professor"].includes(normalizedRole);
 
-  userData.role = null;
+const userData = {
+  ...data,
+  password: hashedPassword,
+  status,
+  isVerified: isAcademic ? false : true,
+  roleVerifiedByAdmin: false,
+  role: isAcademic ? null : normalizedRole,
+};
+
   // ✅ Step 7: Create and save user
   const user = new User(userData);
   await user.save();
