@@ -194,11 +194,4 @@ router.post(
   eventsController.registerForEvent.bind(eventsController)
 );
 
-// Server-Sent Events endpoint for real-time updates
-router.get(
-  "/stream",
-  authMiddleware,
-  eventsController.setupSSE.bind(eventsController)
-);
-
 export default router;

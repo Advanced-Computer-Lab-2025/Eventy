@@ -3,7 +3,6 @@ import {
   validateBazaarApplication,
   validateBoothApplication,
 } from "./application.validation.js";
-import { EventsController } from "../events/event.controller.js";
 
 export class ApplicationController {
   async applyToBazaar(req, res, next) {
@@ -29,14 +28,6 @@ export class ApplicationController {
       const newApplication = await ApplicationService.createApplication(
         applicationDetails
       );
-
-      // Broadcast new application to all connected clients
-      EventsController.broadcastUpdate('new_application', {
-        applicationId: newApplication._id,
-        eventId: eventId,
-        vendorId: vendorId,
-        type: 'bazaar'
-      });
 
       res.status(201).json({
         success: true,
@@ -129,14 +120,6 @@ export class ApplicationController {
           message: "Application not found.",
         });
       }
-
-      // Broadcast update to all connected clients
-      EventsController.broadcastUpdate('application_status_changed', {
-        applicationId,
-        status,
-        eventId: updatedApplication.event,
-        vendorId: updatedApplication.createdBy
-      });
 
       res.status(200).json({
         success: true,
