@@ -1,5 +1,5 @@
 import { useState } from "react";
-import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import CreateEventForm, { CreateEventFormValues } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -49,7 +49,7 @@ export default function CreateConference() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      <EventsOfficeHeader />
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">

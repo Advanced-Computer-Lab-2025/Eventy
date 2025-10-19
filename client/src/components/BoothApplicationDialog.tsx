@@ -101,9 +101,13 @@ export default function BoothApplicationDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting booth application:", error);
+      
+      // Extract error message from the error object
+      const errorMessage = error instanceof Error ? error.message : "Failed to submit your booth application. Please try again.";
+      
       toast({
         title: "Application Submission Failed",
-        description: "Failed to submit your booth application. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {

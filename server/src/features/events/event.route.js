@@ -67,6 +67,14 @@ router.patch(
   eventsController.acceptWorkshop.bind(eventsController)
 );
 
+// Approve bazaar
+router.patch(
+  "/bazaars/:id/approve",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.approveBazaar.bind(eventsController)
+);
+
 // Reject workshop
 router.patch(
   "/:id/reject",

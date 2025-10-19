@@ -28,6 +28,7 @@ import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
+import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 
 function Router() {
   return (
@@ -51,7 +52,11 @@ function Router() {
           <EditConference />
         </ProtectedRoute>
       </Route>
-      <Route path="/admin/users" component={AdminUsers} />
+      <Route path="/admin/users">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminUsers />
+        </ProtectedRoute>
+      </Route>
       <Route path="/create/workshop" component={CreateWorkshop} />
       <Route path="/professor">
         <ProtectedRoute allowedRoles={["professor"]}>
@@ -73,12 +78,22 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
+      <Route path="/create/trip">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateTrip />
+        </ProtectedRoute>
+      </Route>
       <Route path="/staff-ta">
         <ProtectedRoute allowedRoles={["staff", "ta"]}>
           <StaffTADashboard />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/trip" component={CreateTrip} />
+      <Route path="/staff-ta/upcoming">
+        <ProtectedRoute allowedRoles={["staff", "ta"]}>
+          <StaffUpcomingEvents />
+        </ProtectedRoute>
+      </Route>
+      
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard">
         <ProtectedRoute allowedRoles={["vendor"]}>
@@ -90,6 +105,7 @@ function Router() {
           <EventsOfficeDashboard />
         </ProtectedRoute>
       </Route>
+        
       <Route path="/sports">
         <ProtectedRoute
           allowedRoles={[
@@ -103,13 +119,28 @@ function Router() {
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
+     
+    
+      <Route path="/approvals/workshops">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <WorkshopApprovals />
+        </ProtectedRoute>
+      </Route>
+          
+
       <Route path="/my-events">
         <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
           <MyEvents />
         </ProtectedRoute>
       </Route>
+     
+      
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
-      <Route path="/vendor-requests" component={VendorRequests} />
+      <Route path="/vendor-requests">
+        <ProtectedRoute allowedRoles={["admin", "events_office"]}>
+          <VendorRequests />
+        </ProtectedRoute>
+      </Route>
       <Route path="/events" component={EventListPage} />
 
       <Route component={NotFound} />

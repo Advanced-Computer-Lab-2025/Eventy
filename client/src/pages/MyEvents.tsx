@@ -10,6 +10,9 @@ import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
+import StudentHeader from "@/components/StudentHeader";
+import ProfessorHeader from "@/components/ProfessorHeader";
+import EventCard from "@/components/EventCard";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -33,8 +36,16 @@ export default function MyEvents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [userRole, setUserRole] = useState<string>("");
 
   useEffect(() => {
+    // Get user role from localStorage
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setUserRole(userData.role || "");
+    }
+
     const fetchEvents = async () => {
       setLoading(true);
       try {
@@ -131,66 +142,60 @@ export default function MyEvents() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Custom Header with Home and My Events only */}
-      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-2 -ml-6">
-              <Logo size="xl" />
-            </div>
-
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search events..."
-                  className="pl-10"
-                />
+      {/* Use appropriate header based on user role */}
+      {userRole === "professor" ? (
+        <ProfessorHeader homeHref="/professor" />
+      ) : userRole === "staff" || userRole === "ta" ? (
+        <div className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="flex h-16 items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Logo size="xl" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-5 w-5" />
+                </Button>
+                <ThemeToggle />
+                <Button variant="ghost" size="icon">
+                  <UserIcon className="h-5 w-5" />
+                </Button>
               </div>
             </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
+            <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/staff-ta")}
+              >
+                <Home className="h-4 w-4" />
+                Home
               </Button>
-              <ThemeToggle />
-              <Button variant="ghost" size="icon">
-                <UserIcon className="h-5 w-5" />
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/my-events")}
+              >
+                <Calendar className="h-4 w-4" />
+                My Events
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/sports")}
+              >
+                <Dumbbell className="h-4 w-4" />
+                Sports Facilities
               </Button>
             </div>
           </div>
-
-          <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/staff-ta")}
-            >
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/my-events")}
-            >
-              <Calendar className="h-4 w-4" />
-              My Events
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              className="gap-2"
-              onClick={() => setLocation("/sports")}
-            >
-              <Dumbbell className="h-4 w-4" />
-              Sports Facilities
-            </Button>
-          </div>
         </div>
-      </header>
+      ) : (
+        <StudentHeader homeHref="/" />
+      )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
@@ -209,67 +214,26 @@ export default function MyEvents() {
               You have not registered for any events yet.
             </p>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {registeredEvents.map((event) => {
-                  const startDate = new Date(event.startDate).toLocaleDateString();
-                  const endDate = new Date(event.endDate).toLocaleDateString();
-
-                  return (
-                    <div
-                      key={event._id}
-                      className="cursor-pointer"
-                      onClick={() => handleCardClick(event._id)}
-                    >
-                      <Card
-                        className="overflow-hidden"
-                        data-testid={`card-registered-${event._id}`}
-                      >
-                        <div className="relative aspect-[16/9] bg-muted">
-                          {event.bannerImage ? (
-                            <img
-                              src={event.bannerImage}
-                              alt={event.name}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-gradient-to-br from-muted/60 to-muted/30 flex items-center justify-center">
-                              {(() => {
-                                const Icon = getTypeIcon(event.eventType);
-                                return <Icon className="h-16 w-16 text-muted-foreground/60" />;
-                              })()}
-                            </div>
-                          )}
-                          <div className="absolute top-3 left-3">
-                            <CategoryBadge category={event.eventType} />
-                          </div>
-                          {event.status && (
-                            <div className="absolute top-3 right-3">
-                              <Badge className={getStatusClasses(event.status)}>
-                                {event.status}
-                              </Badge>
-                            </div>
-                          )}
-                        </div>
-                        <CardContent className="p-4 space-y-3">
-                          <h3 className="text-xl font-bold">{event.name}</h3>
-                          <div className="space-y-2 text-sm text-muted-foreground">
-                            <div className="flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {startDate} → {endDate}
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <MapPin className="h-3 w-3" />
-                              {event.location}
-                            </div>
-                          </div>
-                          <Badge className="bg-green-500 hover:bg-green-600">
-                            Registered
-                          </Badge>
-                        </CardContent>
-                      </Card>
-                    </div>
-                  );
-                })}
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {registeredEvents.map((event) => (
+                <EventCard
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={event.eventType}
+                  date={new Date(event.startDate).toLocaleDateString()}
+                  time={new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  location={event.location}
+                  attendees={0}
+                  image={event.bannerImage}
+                  startDate={event.startDate}
+                  endDate={event.endDate}
+                  showActions={true}
+                  onViewDetails={() => handleCardClick(event._id)}
+                  onSave={() => {}}
+                  onShare={() => {}}
+                />
+              ))}
             </div>
           )}
         </div>

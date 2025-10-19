@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
-import StaffHeader from "@/components/StaffHeader";
+import StudentHeader from "@/components/StudentHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,9 +136,55 @@ export default function SportsFacilities() {
       {userRole === "professor" ? (
         <ProfessorHeader />
       ) : (userRole === "staff" || userRole === "ta") ? (
-        <StaffHeader />
+        <div className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
+          <div className="max-w-7xl mx-auto px-4 md:px-6">
+            <div className="flex h-16 items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Logo size="xl" />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon">
+                  <Bell className="h-5 w-5" />
+                </Button>
+                <ThemeToggle />
+                <Button variant="ghost" size="icon">
+                  <UserIcon className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+            <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/staff-ta")}
+              >
+                <Home className="h-4 w-4" />
+                Home
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/my-events")}
+              >
+                <Calendar className="h-4 w-4" />
+                My Events
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="gap-2"
+                onClick={() => setLocation("/sports")}
+              >
+                <Dumbbell className="h-4 w-4" />
+                Sports Facilities
+              </Button>
+            </div>
+          </div>
+        </div>
       ) : (
-        <ProfessorHeader />
+        <StudentHeader />
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">

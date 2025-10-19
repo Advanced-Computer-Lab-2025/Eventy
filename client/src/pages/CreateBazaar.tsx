@@ -1,15 +1,17 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { Calendar, MapPin } from "lucide-react";
-import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 export default function CreateBazaar() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     name: "",
     location: "",
@@ -33,6 +35,38 @@ export default function CreateBazaar() {
     setError("");
     try {
       const token = localStorage.getItem("token");
+      // Validate date logic: no past start, and end after start
+      const now = new Date();
+      const start = formData.startDate
+        ? new Date(`${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`)
+        : null;
+      const end = formData.endDate
+        ? new Date(`${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`)
+        : null;
+      if (!start || isNaN(start.getTime())) {
+        setError("Please provide a valid start date/time.");
+        toast({ title: "Invalid start date", description: "Please provide a valid start date/time.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (start < now) {
+        setError("Bazaar start date/time cannot be in the past.");
+        toast({ title: "Start date in the past", description: "Bazaar start date/time cannot be in the past.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (!end || isNaN(end.getTime())) {
+        setError("Please provide a valid end date/time.");
+        toast({ title: "Invalid end date", description: "Please provide a valid end date/time.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
+      if (end <= start) {
+        setError("End date/time must be after start date/time.");
+        toast({ title: "Invalid date range", description: "End date/time must be after start date/time.", variant: "destructive" });
+        setSubmitting(false);
+        return;
+      }
       const payload = {
         name: formData.name,
         description: formData.description,
@@ -117,7 +151,7 @@ export default function CreateBazaar() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header showHomeTop homeHref="/events-office/dashboard" hideSearch hideBottomNav />
+      <EventsOfficeHeader />
       
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">

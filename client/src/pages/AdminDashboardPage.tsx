@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import { Calendar, Users, TrendingUp, Plus, Edit, Settings, UserCheck } from "lucide-react";
-import Header from "@/components/Header";
+import { Calendar, Users, TrendingUp, Settings, UserCheck } from "lucide-react";
+import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocation } from "wouter";
-import EventListItem from "@/components/EventListItem";
+import EventSearch from "@/components/EventSearch";
+import EventCard from "@/components/EventCard";
+import { getEventImage } from "@/lib/eventImages";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -32,6 +33,10 @@ export default function AdminDashboardPage() {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
+  const [eventTypeFilter, setEventTypeFilter] = useState<
+    'all' | 'bazaar' | 'trip' | 'workshop' | 'conference' | 'platform_booth'
+  >('all');
+  
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -166,10 +171,45 @@ export default function AdminDashboardPage() {
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Upcoming Events</CardTitle>
+                  <div>
+                    <CardTitle>Upcoming Events</CardTitle>
+                    <p className="text-sm text-muted-foreground mt-1">Curated upcoming events across all categories</p>
+                  </div>
+                  {!eventsLoading && (
+                    <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground border">
+                      {upcomingEvents.length} found
+                    </span>
+                  )}
                 </div>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent className="space-y-6">
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'bazaar', label: 'Bazaars' },
+                    { key: 'trip', label: 'Trips' },
+                    { key: 'workshop', label: 'Workshops' },
+                    { key: 'conference', label: 'Conferences' },
+                    { key: 'platform_booth', label: 'Platform Booths' },
+                  ].map((opt) => (
+                    <Button
+                      key={opt.key}
+                      size="sm"
+                      variant={eventTypeFilter === (opt.key as any) ? 'default' : 'outline'}
+                      onClick={() => setEventTypeFilter(opt.key as any)}
+                    >
+                      {opt.label}
+                    </Button>
+                  ))}
+                </div>
+
+                <EventSearch
+                  onSearchResults={(results) => setUpcomingEvents(results)}
+                  onLoading={(isLoading) => setEventsLoading(isLoading)}
+                  onError={(msg) => setEventsError(msg)}
+                  placeholder="Search events by name, professor, or type..."
+                />
+
                 {eventsLoading ? (
                   <div className="text-center py-8 text-muted-foreground">Loading upcoming events...</div>
                 ) : eventsError ? (
@@ -177,22 +217,36 @@ export default function AdminDashboardPage() {
                 ) : upcomingEvents.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">No upcoming events found.</div>
                 ) : (
-                  <div className="space-y-3">
-                    {upcomingEvents.map((e: any) => (
-                      <EventListItem
-                        key={e._id}
-                        id={e._id}
-                        title={e.name}
-                        // eventType differs from CategoryBadge type, reuse as-is like EventListPage
-                        category={e.eventType as any}
-                        date={new Date(e.startDate).toLocaleDateString()}
-                        time={`${new Date(e.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} - ${new Date(e.endDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
-                        location={e.location}
-                        image={e.bannerImage || "/placeholder.png"}
-                        canDelete={true}
-                        onDelete={(id: string) => setUpcomingEvents(prev => prev.filter((x) => x._id !== id))}
-                      />
-                    ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
+                    {upcomingEvents
+                      .filter((e: any) => eventTypeFilter === 'all' ? true : e.eventType === eventTypeFilter)
+                      .slice(0, 6)
+                      .map((e: any, index: number) => (
+                        <div key={e._id || index} className="h-full">
+                          <EventCard
+                            className="h-full hover:-translate-y-2"
+                            id={e._id || String(index)}
+                            title={e.name || "Untitled Event"}
+                            category={(e.eventType || "academic") as any}
+                            date={e.startDate ? new Date(e.startDate).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            }) : "TBA"}
+                            time={e.startDate ? new Date(e.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
+                            location={e.location || "Unknown location"}
+                            attendees={e.attendeesCount || 0}
+                            image={e.bannerImage || e.image || getEventImage(e.eventType, e.name)}
+                            description={e.description}
+                            startDate={e.startDate}
+                            endDate={e.endDate}
+                            capacity={-1}
+                            vendors={e.vendors || []}
+                            showDetailedView={true}
+                          />
+                        </div>
+                      ))}
                   </div>
                 )}
               </CardContent>
@@ -212,6 +266,14 @@ export default function AdminDashboardPage() {
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Manage Users
+                </Button>
+                <Button 
+                  className="w-full" 
+                  variant="outline" 
+                  onClick={() => setLocation("/vendor-requests")}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Vendor Requests
                 </Button>
                 <Button 
                   className="w-full" 

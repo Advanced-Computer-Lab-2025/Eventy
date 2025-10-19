@@ -34,7 +34,7 @@ export interface Application {
   boothSize: "2x2" | "4x4";
   durationWeeks?: number;
   locationPreference?: string;
-  status: "pending" | "accepted" | "rejected" |"approved";
+  status: "pending" | "approved" | "rejected";
   vendorId: string;
   createdAt: string;
   updatedAt: string;
@@ -195,7 +195,7 @@ class BazaarApiService {
   }
 
   async getApprovedApplications(): Promise<Application[]> {
-    return this.getApplicationsByStatus("accepted");
+    return this.getApplicationsByStatus("approved");
   }
 
   async applyToBazaar(bazaarId: string, applicationData: {
@@ -237,7 +237,13 @@ class BazaarApiService {
       });      
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Get the error message from the response
+        const errorResponse = await response.json();
+        
+        // Use the message directly from the server
+        const errorMessage = errorResponse.message || `HTTP error! status: ${response.status}`;
+        
+        throw new Error(errorMessage);
       }
 
       const apiResponse: ApiResponse<Application> = await response.json();

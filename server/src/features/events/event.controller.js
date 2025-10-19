@@ -195,6 +195,7 @@ export class EventsController {
           eventType: "bazaar",
           status: "approved",
           startDate: { $gte: new Date() },
+          deletedAt: null, // Exclude soft-deleted bazaars
         };
       }
 
@@ -316,7 +317,26 @@ export class EventsController {
 
       res
         .status(200)
-        .json(new ApiResponse(200, event, "Workshop accepted and published"));
+        .json(new ApiResponse(200, event, "Workshop approved and published"));
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async approveBazaar(req, res, next) {
+    try {
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can approve bazaars"
+        );
+      }
+
+      const event = await eventService.approveBazaar(req.params.id);
+
+      res
+        .status(200)
+        .json(new ApiResponse(200, event, "Bazaar approved and published"));
     } catch (error) {
       next(error);
     }

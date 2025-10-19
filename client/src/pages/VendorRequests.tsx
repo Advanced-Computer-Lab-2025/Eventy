@@ -1,5 +1,7 @@
 import { CheckCircle, XCircle, Eye, Download } from "lucide-react";
 import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +23,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const token = localStorage.getItem("token");
 
@@ -89,6 +92,15 @@ export default function VendorRequests() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const { toast } = useToast();
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+
+  let userRole: string | null = null;
+  try {
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      userRole = payload?.role || null;
+    }
+  } catch {}
 
   useEffect(() => {
     const fetchApplications = async () => {
@@ -215,7 +227,13 @@ export default function VendorRequests() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
+      {userRole === "admin" ? (
+        <AdminHeader />
+      ) : userRole === "events_office" ? (
+        <EventsOfficeHeader />
+      ) : (
+        <Header />
+      )}
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
@@ -226,10 +244,23 @@ export default function VendorRequests() {
         </div>
 
         <Card>
-          <CardHeader>
+          {/* <CardHeader>
             <CardTitle>Pending Vendor Requests</CardTitle>
-          </CardHeader>
+          </CardHeader> */}
           <CardContent>
+            <div className="flex items-center justify-end mb-4 gap-2">
+              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">Loading requests...</div>
             ) : error ? (
@@ -247,7 +278,7 @@ export default function VendorRequests() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {requests.map((request: any) => (
+                {(statusFilter === "all" ? requests : requests.filter((r) => r.status === statusFilter)).map((request: any) => (
                   <TableRow key={request._id} data-testid={`row-request-${request._id}`}>
                     <TableCell className="font-medium">{request?.createdBy?.companyName || "Unknown"}</TableCell>
                     <TableCell>{eventNames[request?.event] || (request?.event ? "Loading..." : "N/A")}</TableCell>
@@ -278,24 +309,26 @@ export default function VendorRequests() {
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          className="bg-green-600 hover:bg-green-700 text-white"
-                          onClick={() => handleApprove(request._id)}
-                          disabled={request.status !== "pending"}
-                          data-testid={`button-approve-${request._id}`}
-                        >
-                          <CheckCircle className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleReject(request._id)}
-                          disabled={request.status !== "pending"}
-                          data-testid={`button-reject-${request._id}`}
-                        >
-                          <XCircle className="h-4 w-4" />
-                        </Button>
+                        {request.status === "pending" && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              onClick={() => handleApprove(request._id)}
+                              data-testid={`button-approve-${request._id}`}
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleReject(request._id)}
+                              data-testid={`button-reject-${request._id}`}
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </>
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
