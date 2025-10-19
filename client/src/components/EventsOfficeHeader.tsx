@@ -72,16 +72,6 @@ export default function EventsOfficeHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => setLocation("/approvals/workshops")}
-            data-testid="button-nav-approvals"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Approvals
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
             onClick={() => setLocation("/create/trip")}
             data-testid="button-nav-trips"
           >
@@ -97,6 +87,16 @@ export default function EventsOfficeHeader() {
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/approvals/workshops")}
+            data-testid="button-nav-approvals"
+          >
+            <CheckCircle2 className="h-4 w-4" />
+            Approvals
           </Button>
         </div>
       </div>
