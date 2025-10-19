@@ -76,6 +76,7 @@ export interface EventCardProps {
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
   canDelete?: boolean;
+  className?: string;
 }
 
 export default function EventCard({
@@ -101,6 +102,7 @@ export default function EventCard({
   onDelete,
   onViewDetails,
   canDelete = false,
+  className,
 }: EventCardProps) {
   const imageSrc = image || getEventImage(String(category), title);
   const isRegisterable = /workshop|trip/i.test(String(category));
@@ -134,7 +136,7 @@ export default function EventCard({
 
   return (
     <Card
-      className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col"
+      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${className || ""}`}
       data-testid={`card-event-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
