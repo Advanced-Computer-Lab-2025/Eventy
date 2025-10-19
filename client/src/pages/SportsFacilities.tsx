@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -135,6 +136,8 @@ export default function SportsFacilities() {
     <div className="min-h-screen bg-background">
       {userRole === "professor" ? (
         <ProfessorHeader />
+      ) : userRole === "events_office" ? (
+        <EventsOfficeHeader />
       ) : (userRole === "staff" || userRole === "ta") ? (
         <div className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
           <div className="max-w-7xl mx-auto px-4 md:px-6">

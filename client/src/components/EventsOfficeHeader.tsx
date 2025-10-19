@@ -1,4 +1,4 @@
-import { Bell, Home, CalendarDays, Store, CheckCircle2, Plane, ClipboardList } from "lucide-react";
+import { Bell, Home, CalendarDays, Store, CheckCircle2, Plane, ClipboardList, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -62,6 +62,26 @@ export default function EventsOfficeHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
+            onClick={() => setLocation("/create/trip")}
+            data-testid="button-nav-trips"
+          >
+            <Plane className="h-4 w-4" />
+            Trips
+          </Button>
+                    <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/sports")}
+            data-testid="button-nav-sports"
+          >
+            <Dumbbell className="h-4 w-4" />
+            Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
             onClick={() => setLocation("/approvals/workshops")}
             data-testid="button-nav-approvals"
           >
@@ -78,16 +98,13 @@ export default function EventsOfficeHeader() {
             <ClipboardList className="h-4 w-4" />
             Vendor Requests
           </Button>
-          <Button
+          {/* <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/create/trip")}
             data-testid="button-nav-trips"
-          >
-            <Plane className="h-4 w-4" />
-            Trips
-          </Button>
+          /> */}
         </div>
       </div>
     </header>

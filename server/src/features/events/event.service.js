@@ -387,6 +387,11 @@ export const searchEvents = async ({ name, type }) => {
       $or: [
         { firstName: { $regex: name, $options: "i" } },
         { lastName: { $regex: name, $options: "i" } },
+        // Add variations with spaces for partial matching
+        { firstName: { $regex: `${name} `, $options: "i" } }, // "firstName "
+        { firstName: { $regex: ` ${name}`, $options: "i" } }, // " firstName"
+        { lastName: { $regex: `${name} `, $options: "i" } }, // "lastName "
+        { lastName: { $regex: ` ${name}`, $options: "i" } }, // " lastName"
       ],
     };
 
@@ -426,6 +431,11 @@ export const searchEvents = async ({ name, type }) => {
         $or: [
           { firstName: { $regex: name, $options: "i" } },
           { lastName: { $regex: name, $options: "i" } },
+          // Add variations with spaces for partial matching
+          { firstName: { $regex: `${name} `, $options: "i" } }, // "firstName "
+          { firstName: { $regex: ` ${name}`, $options: "i" } }, // " firstName"
+          { lastName: { $regex: `${name} `, $options: "i" } }, // "lastName "
+          { lastName: { $regex: ` ${name}`, $options: "i" } }, // " lastName"
         ],
       };
 

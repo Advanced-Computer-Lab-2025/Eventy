@@ -1,8 +1,8 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
-import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X, ClipboardList } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X, ClipboardList, Dumbbell } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -47,6 +48,7 @@ export default function EventsOfficeDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
 
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -192,7 +194,7 @@ export default function EventsOfficeDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header homeOnly homeHref="/events-office/dashboard" hideSearch />
+      <EventsOfficeHeader />
       
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -255,6 +257,13 @@ export default function EventsOfficeDashboard() {
                 >
                   <Plus className="h-4 w-4" />
                   Create Trip
+                </button>
+                <button
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
+                  onClick={() => setIsCreateGymDialogOpen(true)}
+                >
+                  <Dumbbell className="h-4 w-4" />
+                  Create Gym Session
                 </button>
                 <button
                   className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
@@ -416,6 +425,15 @@ export default function EventsOfficeDashboard() {
         }}
         event={selectedEvent}
         loading={detailsLoading}
+      />
+      <CreateGymSessionDialog
+        open={isCreateGymDialogOpen}
+        onOpenChange={setIsCreateGymDialogOpen}
+        onSuccess={(createdDate) => {
+          console.log("Gym session created for:", createdDate);
+          // Optionally navigate to sports facilities page
+          // setLocation("/sports");
+        }}
       />
     </div>
   );
