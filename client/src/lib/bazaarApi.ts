@@ -237,7 +237,13 @@ class BazaarApiService {
       });      
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        // Get the error message from the response
+        const errorResponse = await response.json();
+        
+        // Use the message directly from the server
+        const errorMessage = errorResponse.message || `HTTP error! status: ${response.status}`;
+        
+        throw new Error(errorMessage);
       }
 
       const apiResponse: ApiResponse<Application> = await response.json();
