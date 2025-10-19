@@ -28,6 +28,7 @@ import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
+import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 
 function Router() {
   return (
@@ -85,6 +86,11 @@ function Router() {
       <Route path="/staff-ta">
         <ProtectedRoute allowedRoles={["staff", "ta"]}>
           <StaffTADashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/staff-ta/upcoming">
+        <ProtectedRoute allowedRoles={["staff", "ta"]}>
+          <StaffUpcomingEvents />
         </ProtectedRoute>
       </Route>
       

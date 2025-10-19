@@ -10,27 +10,91 @@ class ApplicationServiceClass {
    */
   async createApplication(applicationData) {
     try {
+      // For booth applications, validate booth availability
+      if (applicationData.type === "booth") {
+        await this.validateBoothAvailability(applicationData);
+      }
+
       const newApplication = new Application(applicationData);
       await newApplication.save();
       return newApplication;
     } catch (error) {
-      // It's good practice to throw the error to be handled by the controller
+      // For booth availability errors, pass the original message directly
+      if (applicationData.type === "booth" && error.message.includes("already reserved")) {
+        throw error; // Pass the original error with the clean message
+      }
+      // For other errors, wrap with context
       throw new Error(`Could not create application: ${error.message}`);
     }
   }
+
+  /**
+   * Validates that a booth is available for the requested duration
+   * @param {object} applicationData - The booth application data
+   * @throws {Error} If booth is not available
+   */
+  async validateBoothAvailability(applicationData) {
+    const { locationPreference, durationWeeks } = applicationData;
+    
+    if (!locationPreference || !durationWeeks) {
+      throw new Error("Booth location and duration are required");
+    }
+
+    // Calculate the end date for this application (assuming it starts today)
+    const startDate = new Date();
+    const endDate = new Date();
+    endDate.setDate(startDate.getDate() + (durationWeeks * 7));
+
+    // Find all approved applications for this booth
+    const existingApplications = await Application.find({
+      type: "booth",
+      locationPreference: locationPreference,
+      status: "approved"
+    });
+
+    // Check for overlapping periods manually
+    const overlappingApplications = existingApplications.filter(app => {
+      const appStartDate = new Date(app.createdAt);
+      const appEndDate = new Date(app.createdAt);
+      appEndDate.setDate(appEndDate.getDate() + (app.durationWeeks * 7));
+      
+      // Check if periods overlap
+      return (appStartDate < endDate && appEndDate > startDate);
+    });
+
+    if (overlappingApplications.length > 0) {
+      throw new Error(
+        `unfortunately booth is already reserved`
+      );
+    }
+  }
 async getAllApplications() {
-  return Application.find({ deletedAt: null })
+  const applications = await Application.find({ deletedAt: null })
     .populate({
       path: "createdBy",
       select: "companyName email companyLogoUrl taxCardUrl status",
     })
+    .populate("event", "name description startDate endDate location")
     .sort({ createdAt: -1 });
+
+  // Filter out applications for events that have already passed
+  const currentDate = new Date();
+  const activeApplications = applications.filter(app => {
+    // If event is populated and has an endDate, check if it's in the future
+    if (app.event && app.event.endDate) {
+      return new Date(app.event.endDate) > currentDate;
+    }
+    // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
+    return true;
+  });
+
+  return activeApplications;
 }
 
   /**
    * Finds all applications for a specific vendor, with optional filtering and population.
    * @param {string} vendorId - The ID of the authenticated vendor.
-   * @param {object} filters - An object containing query filters like { status: 'accepted' }.
+   * @param {object} filters - An object containing query filters like { status: 'approved' }.
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
@@ -46,12 +110,23 @@ async getAllApplications() {
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
 
-    return applications;
+    // Filter out applications for events that have already passed
+    const currentDate = new Date();
+    const activeApplications = applications.filter(app => {
+      // If event is populated and has an endDate, check if it's in the future
+      if (app.event && app.event.endDate) {
+        return new Date(app.event.endDate) > currentDate;
+      }
+      // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
+      return true;
+    });
+
+    return activeApplications;
   }
   /**
  * Updates the status of an application by its ID.
  * @param {string} applicationId - The ID of the application.
- * @param {string} status - The new status ("accepted" or "rejected").
+ * @param {string} status - The new status ("approved" or "rejected").
  * @returns {Promise<Document|null>} The updated application.
  */
 // async updateApplicationStatus(applicationId, status) {
@@ -66,19 +141,37 @@ async getAllApplications() {
 //   return application;
 // }
 
-async updateApplicationStatus(applicationId, status) {
-  const updatedApp = await Application.findByIdAndUpdate(
-    applicationId,
-    { $set: { status } },
-    { new: true, runValidators: false } // ✅ prevents missing required field errors
-  );
+  async updateApplicationStatus(applicationId, status) {
+    const updatedApp = await Application.findByIdAndUpdate(
+      applicationId,
+      { $set: { status } },
+      { new: true, runValidators: false } // ✅ prevents missing required field errors
+    );
 
-  if (!updatedApp) {
-    throw new Error("Application not found");
+    if (!updatedApp) {
+      throw new Error("Application not found");
+    }
+
+    return updatedApp;
   }
 
-  return updatedApp;
-}
+  /**
+   * Checks if a booth is available for a given duration
+   * @param {string} boothId - The booth ID/location preference
+   * @param {number} durationWeeks - Duration in weeks
+   * @returns {Promise<boolean>} True if available, false if occupied
+   */
+  async checkBoothAvailability(boothId, durationWeeks) {
+    try {
+      await this.validateBoothAvailability({
+        locationPreference: boothId,
+        durationWeeks: durationWeeks
+      });
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
 }
 

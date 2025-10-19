@@ -183,7 +183,7 @@ export default function BazaarList({
               onRegister={() => handleRegister(bazaar._id)}
               onSave={() => handleSave(bazaar._id)}
               onShare={() => handleShare(bazaar._id)}
-              onEdit={() => handleEdit(bazaar._id)}
+              {...(onEdit && { onEdit: () => handleEdit(bazaar._id) })}
             />
           ))}
         </div>

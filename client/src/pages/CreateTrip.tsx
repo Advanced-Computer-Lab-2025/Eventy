@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
 import type { FormEvent } from "react";
-import { Calendar, MapPin, Users, DollarSign, Edit2, Plus, X, Info } from "lucide-react";
+import { Calendar, MapPin, Users, Edit2, Plus, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 
 export default function TripManagement() {
   const { toast } = useToast();
@@ -125,6 +126,30 @@ export default function TripManagement() {
 
     try {
       const token = localStorage.getItem("token");
+      // Validate date logic: no past start, and end after start
+      const now = new Date();
+      const start = formData.startDate
+        ? new Date(`${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`)
+        : null;
+      const end = formData.endDate
+        ? new Date(`${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`)
+        : null;
+      if (!start || isNaN(start.getTime())) {
+        toast({ title: "Invalid start date", description: "Please provide a valid start date/time.", variant: "destructive" });
+        return;
+      }
+      if (start < now) {
+        toast({ title: "Start date in the past", description: "Trip start date/time cannot be in the past.", variant: "destructive" });
+        return;
+      }
+      if (!end || isNaN(end.getTime())) {
+        toast({ title: "Invalid end date", description: "Please provide a valid end date/time.", variant: "destructive" });
+        return;
+      }
+      if (end <= start) {
+        toast({ title: "Invalid date range", description: "End date/time must be after start date/time.", variant: "destructive" });
+        return;
+      }
       if (!token) {
         toast({
           title: "Authentication required",
@@ -232,6 +257,7 @@ export default function TripManagement() {
 
   return (
     <div className="min-h-screen bg-background">
+      <EventsOfficeHeader />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Trip Management</h1>
@@ -378,19 +404,15 @@ export default function TripManagement() {
 
                   <div className="space-y-2">
                     <Label htmlFor="price">Price (EGP)</Label>
-                    <div className="relative">
-                      <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        id="price"
-                        type="number"
-                        placeholder="500"
-                        className="pl-10"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        data-testid="input-price"
-                        required
-                      />
-                    </div>
+                    <Input
+                      id="price"
+                      type="number"
+                      placeholder="500"
+                      value={formData.price}
+                      onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                      data-testid="input-price"
+                      required
+                    />
                   </div>
                 </div>
 

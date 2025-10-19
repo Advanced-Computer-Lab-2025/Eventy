@@ -1,15 +1,15 @@
-import { Bell, User, Home, BookOpen, Dumbbell, Calendar } from "lucide-react";
+import { Bell, User, Home, Calendar, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
 
-interface ProfessorHeaderProps {
+interface StudentHeaderProps {
   homeHref?: string;
 }
 
-export default function ProfessorHeader({ homeHref = "/professor" }: ProfessorHeaderProps) {
+export default function StudentHeader({ homeHref = "/" }: StudentHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -39,16 +39,6 @@ export default function ProfessorHeader({ homeHref = "/professor" }: ProfessorHe
           >
             <Home className="h-4 w-4" />
             Home
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/professor/workshops")}
-            data-testid="button-nav-workshops"
-          >
-            <BookOpen className="h-4 w-4" />
-            Workshops
           </Button>
           <Button
             variant="ghost"

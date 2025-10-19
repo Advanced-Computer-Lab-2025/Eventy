@@ -3,7 +3,7 @@ import EventCard from "@/components/EventCard";
 import EventHero from "@/components/EventHero";
 import EventFilters from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
-import Header from "@/components/Header";
+import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { getEventImage } from "@/lib/eventImages";
@@ -14,13 +14,18 @@ interface Event {
   name: string;
   eventType?: string;
   startDate?: string;
+  endDate?: string;
   location?: string;
   attendeesCount?: number;
+  capacity?: number;
+  registrationDeadline?: string;
   image?: string;
+  bannerImage?: string;
   description?: string;
- vendors?: Array<{
+  vendors?: Array<{
     vendorId?: string;
     vendorName?: string;
+    name?: string;
     vendorEmail?: string;
     type?: string;
     boothSize?: string;
@@ -54,7 +59,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header onSearch={(query) => console.log("Search:", query)} />
+      <StudentHeader />
 
       <main className="pb-20 md:pb-8">
         {!loading && events.length > 0 && (
@@ -119,7 +124,7 @@ export default function Home() {
               ) : events.length === 0 ? (
                 <p>No upcoming events found.</p>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {events.map((event, index) => (
                     <EventCard
                       key={event._id || index}
@@ -143,11 +148,18 @@ export default function Home() {
                         : "TBA"}
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
-                      image={event.image}
+                      image={event.bannerImage || event.image}
+                      description={event.description}
+                      startDate={event.startDate}
+                      endDate={event.endDate}
+                      capacity={event.capacity}
+                      registrationDeadline={event.registrationDeadline}
                       vendors={event.vendors || []}
+                      showDetailedView={true}
                       onRegister={() => console.log("Register:", event.name)}
                       onSave={() => console.log("Save:", event.name)}
                       onShare={() => console.log("Share:", event.name)}
+                      onViewDetails={() => console.log("View details:", event.name)}
                     />
                   ))}
                 </div>

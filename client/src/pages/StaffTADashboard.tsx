@@ -197,6 +197,19 @@ export default function StaffTADashboard() {
       ]
     },
     {
+      title: "Upcoming Events",
+      description: "Browse all upcoming campus events",
+      icon: Clock,
+      color: "bg-purple-500",
+      path: "/staff-ta/upcoming",
+      features: [
+        "See all upcoming events",
+        "Filter and search",
+        "View detailed info",
+        "Register (when available)"
+      ]
+    },
+    {
       title: "Sports Facilities",
       description: "View gym schedule and fitness sessions",
       icon: Dumbbell,
