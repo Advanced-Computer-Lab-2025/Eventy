@@ -34,7 +34,8 @@ export default function VendorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
+  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -194,33 +195,71 @@ export default function VendorDashboard() {
     fetchApplicationsData();
   }, []);
 
-  // Auto-refresh data with smart intervals
+  // Real-time updates using Server-Sent Events
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let eventSource: EventSource | null = null;
     
-    const startRefresh = () => {
-      interval = setInterval(async () => {
-        try {
-          setIsBackgroundRefreshing(true);
-          // Fetch data silently in background
-          await Promise.all([
-            fetchUpcomingBazaars(),
-            fetchApplicationsData()
-          ]);
-        } catch (error) {
-          // Silent fail - don't show error toasts for background refreshes
-          console.warn("Background refresh failed:", error);
-        } finally {
-          setIsBackgroundRefreshing(false);
-        }
-      }, 15000); // Refresh every 15 seconds
+    const setupRealTimeUpdates = () => {
+      try {
+        // Create Server-Sent Events connection
+        eventSource = new EventSource('/api/events/stream');
+        
+        eventSource.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            
+            // Handle different types of updates
+            switch (data.type) {
+              case 'bazaar_updated':
+                // Update bazaar data
+                fetchUpcomingBazaars();
+                break;
+              case 'application_status_changed':
+                // Update applications data
+                fetchApplicationsData();
+                break;
+              case 'new_application':
+                // Update applications data
+                fetchApplicationsData();
+                break;
+              default:
+                // Generic update - refresh all data
+                fetchUpcomingBazaars();
+                fetchApplicationsData();
+            }
+            
+            setLastUpdateTime(new Date());
+          } catch (error) {
+            console.warn('Failed to parse SSE data:', error);
+          }
+        };
+        
+        eventSource.onerror = (error) => {
+          console.warn('SSE connection error:', error);
+          setIsConnected(false);
+          // Attempt to reconnect after 5 seconds
+          setTimeout(() => {
+            if (eventSource?.readyState === EventSource.CLOSED) {
+              setupRealTimeUpdates();
+            }
+          }, 5000);
+        };
+        
+        eventSource.onopen = () => {
+          console.log('Real-time connection established');
+          setIsConnected(true);
+        };
+        
+      } catch (error) {
+        console.warn('Failed to setup real-time updates:', error);
+      }
     };
-
-    startRefresh();
-
+    
+    setupRealTimeUpdates();
+    
     return () => {
-      if (interval) {
-        clearInterval(interval);
+      if (eventSource) {
+        eventSource.close();
       }
     };
   }, []);
@@ -235,31 +274,6 @@ export default function VendorDashboard() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Refresh data when user returns to the tab (focus event)
-  useEffect(() => {
-    const handleFocus = () => {
-      // Refresh data when user returns to the tab
-      fetchUpcomingBazaars();
-      fetchApplicationsData();
-    };
-
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        // Page became visible, refresh data
-        fetchUpcomingBazaars();
-        fetchApplicationsData();
-      }
-    };
-
-    window.addEventListener('focus', handleFocus);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-
-    return () => {
-      window.removeEventListener('focus', handleFocus);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
   const handleRegister = (bazaarId: string) => {
     const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
     if (bazaar) {
@@ -269,9 +283,8 @@ export default function VendorDashboard() {
   };
 
   const handleApplicationSubmitted = () => {
-    // Refresh applications data after successful submission
+    // Immediately refresh data after user action
     fetchApplicationsData();
-    // Also refresh upcoming bazaars in case attendee counts changed
     fetchUpcomingBazaars();
   };
 
@@ -358,8 +371,9 @@ export default function VendorDashboard() {
       setDurationWeeks(1);
       setSelectedMapLocation("");
       
-      // Refresh data to show updated applications
+      // Immediately refresh data after user action
       fetchApplicationsData();
+      fetchUpcomingBazaars();
     } catch (error) {
       console.error("Error submitting platform booth application:", error);
       toast({
@@ -408,12 +422,16 @@ export default function VendorDashboard() {
           <div className="flex items-center gap-3 mb-2">
             <Store className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
-            {isBackgroundRefreshing && (
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span>Live</span>
-              </div>
-            )}
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+              <span>{isConnected ? 'Live' : 'Disconnected'}</span>
+              {lastUpdateTime && (
+                <>
+                  <span>•</span>
+                  <span>Updated {lastUpdateTime.toLocaleTimeString()}</span>
+                </>
+              )}
+            </div>
           </div>
           <p className="text-muted-foreground">
             Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
