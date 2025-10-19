@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X, ClipboardList } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatCard from "@/components/StatCard";
@@ -259,6 +260,14 @@ export default function EventsOfficeDashboard() {
                   <CheckCircle2 className="h-4 w-4" />
                   Workshop Approvals
                 </button>
+                <button
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
+                  onClick={() => setLocation("/vendor-requests")}
+                  data-testid="button-quick-vendor-requests"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Vendor Requests
+                </button>
               </CardContent>
             </Card>
             {/* Sidebar kept for Quick Actions only */}
@@ -356,6 +365,7 @@ export default function EventsOfficeDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {upcomingEvents
                     .filter((event: any) => eventTypeFilter === 'all' ? true : event.eventType === eventTypeFilter)
+                    .filter((event: any) => !event?.deletedAt)
                     .slice(0, 8)
                     .map((event: any, index: number) => (
                     <EventCard

@@ -1,4 +1,4 @@
-import { Bell, Home, CalendarDays, Store, CheckCircle2, Plane } from "lucide-react";
+import { Bell, Home, CalendarDays, Store, CheckCircle2, Plane, ClipboardList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -77,6 +77,16 @@ export default function EventsOfficeHeader() {
           >
             <CheckCircle2 className="h-4 w-4" />
             Approvals
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/vendor-requests")}
+            data-testid="button-nav-vendor-requests"
+          >
+            <ClipboardList className="h-4 w-4" />
+            Vendor Requests
           </Button>
           <Button
             variant="ghost"
