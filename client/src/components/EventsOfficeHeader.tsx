@@ -68,29 +68,12 @@ export default function EventsOfficeHeader() {
             <Plane className="h-4 w-4" />
             Trips
           </Button>
-          <Button
+                    <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
-          >
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/vendor-requests")}
-            data-testid="button-nav-vendor-requests"
-          >
-            <ClipboardList className="h-4 w-4" />
-            Vendor Requests
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
@@ -105,6 +88,23 @@ export default function EventsOfficeHeader() {
             <CheckCircle2 className="h-4 w-4" />
             Approvals
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/vendor-requests")}
+            data-testid="button-nav-vendor-requests"
+          >
+            <ClipboardList className="h-4 w-4" />
+            Vendor Requests
+          </Button>
+          {/* <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/create/trip")}
+            data-testid="button-nav-trips"
+          /> */}
         </div>
       </div>
     </header>
