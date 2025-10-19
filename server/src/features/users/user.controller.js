@@ -85,7 +85,7 @@ export default class UserController {
 
       user.role = role;
       await user.save();
-      await sendVerificationEmail(user);
+      await sendRegistrationEmail(user);
 
       return res.status(200).json({
         success: true,
