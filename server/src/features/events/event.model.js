@@ -103,6 +103,18 @@ const eventSchema = new Schema(
   { timestamps: true }
 );
 
+// Add indexes for search performance
+eventSchema.index({ name: 1 }); // Index for event name search
+eventSchema.index({ eventType: 1 }); // Index for event type search
+eventSchema.index({ status: 1 }); // Index for status filtering
+eventSchema.index({ startDate: 1 }); // Index for date filtering
+eventSchema.index({ deletedAt: 1 }); // Index for soft delete filtering
+eventSchema.index({ createdBy: 1 }); // Index for createdBy lookup
+eventSchema.index({ professors: 1 }); // Index for professors array lookup
+
+// Compound indexes for common query patterns
+eventSchema.index({ status: 1, startDate: 1, deletedAt: 1 }); // For upcoming events query
+eventSchema.index({ name: 'text', description: 'text' }); // Text index for name and description search
+
 
 export const Event = mongoose.model('Event', eventSchema);
-
