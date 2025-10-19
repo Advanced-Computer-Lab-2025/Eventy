@@ -11,6 +11,7 @@ import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import { getEventImage } from "@/lib/eventImages";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -389,7 +390,7 @@ export default function EventsOfficeDashboard() {
                         : "TBA"}
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
-                      image={event.image}
+                      image={event.bannerImage || event.image || getEventImage(event.eventType, event.name)}
                       description={event.description}
                       startDate={event.startDate}
                       endDate={event.endDate}

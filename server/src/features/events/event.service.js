@@ -299,6 +299,7 @@ export const getUpcomingEventsWithVendors = async () => {
   const events = await Event.find({
     status: "approved",
     startDate: { $gte: now },
+    deletedAt: null,
   }).lean();
 
   const eventsWithVendors = await Promise.all(

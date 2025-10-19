@@ -20,6 +20,7 @@ interface Event {
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
+  bannerImage?: string;
   description?: string;
   vendors?: Array<{
     vendorId?: string;
@@ -147,7 +148,7 @@ export default function Home() {
                         : "TBA"}
                       location={event.location || "Unknown location"}
                       attendees={event.attendeesCount || 0}
-                      image={event.image}
+                      image={event.bannerImage || event.image}
                       description={event.description}
                       startDate={event.startDate}
                       endDate={event.endDate}

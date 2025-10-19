@@ -14,7 +14,7 @@ export function getEventImage(type?: string, name?: string): string {
   if (t.includes("conference") || n.includes("conference") || n.includes("summit"))
     return "https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200&auto=format&fit=crop"; // conference
   if (t.includes("trip") || n.includes("trip") || n.includes("tour"))
-    return "https://images.unsplash.com/photo-1502920917128-1aa500764ce7?w=1200&auto=format&fit=crop"; // travel
+    return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=80"; // travel alt
   if (t.includes("bazaar") || n.includes("bazaar") || n.includes("market"))
     return "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&auto=format&fit=crop"; // market
   if (t.includes("academic") || n.includes("lecture") || n.includes("seminar"))
