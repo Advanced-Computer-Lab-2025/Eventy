@@ -64,15 +64,15 @@ export default function BazaarCard({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700';
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700';
       case 'rejected':
-        return 'bg-red-100 text-red-800 border-red-200';
+        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
       case 'needs_revision':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700';
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600';
     }
   };
 
@@ -110,7 +110,7 @@ export default function BazaarCard({
           </Badge>
         </div>
         <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className="bg-white/90 text-gray-700">
+          <Badge variant="secondary" className="bg-background/90 text-foreground">
             <Store className="h-3 w-3 mr-1" />
             BAZAAR
           </Badge>
@@ -150,7 +150,7 @@ export default function BazaarCard({
         </div>
 
         {!isRegistrationOpen && (
-          <div className="text-xs text-red-600 bg-red-50 px-2 py-1 rounded">
+          <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
             Registration closed on {formatDate(registrationDeadline)}
           </div>
         )}

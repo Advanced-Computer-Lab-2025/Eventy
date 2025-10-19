@@ -361,32 +361,32 @@ export default function VendorDashboard() {
                 value={vendorStats.totalApplications}
                 description="All applications submitted"
                 icon={FolderOpen}
-                valueColor="text-gray-900"
-                iconColor="text-gray-600"
+                valueColor="text-foreground"
+                iconColor="text-muted-foreground"
               />
               <StatCard
                 title="Pending Approval"
                 value={vendorStats.pendingCount}
                 description="Awaiting review"
                 icon={Clock}
-                valueColor="text-blue-600"
-                iconColor="text-blue-600"
+                valueColor="text-blue-600 dark:text-blue-400"
+                iconColor="text-blue-600 dark:text-blue-400"
               />
               <StatCard
                 title="Approved"
                 value={vendorStats.approvedCount}
                 description="Successfully approved"
                 icon={CheckCircle}
-                valueColor="text-green-600"
-                iconColor="text-green-600"
+                valueColor="text-green-600 dark:text-green-400"
+                iconColor="text-green-600 dark:text-green-400"
               />
               <StatCard
                 title="Rejected"
                 value={vendorStats.rejectedCount}
                 description="Requires updates"
                 icon={XCircle}
-                valueColor="text-orange-600"
-                iconColor="text-orange-600"
+                valueColor="text-orange-600 dark:text-orange-400"
+                iconColor="text-orange-600 dark:text-orange-400"
               />
             </div>
 

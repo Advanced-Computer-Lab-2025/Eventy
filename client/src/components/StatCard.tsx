@@ -19,8 +19,8 @@ export default function StatCard({
   value, 
   description, 
   icon: Icon, 
-  valueColor = "text-gray-900", 
-  iconColor = "text-gray-600",
+  valueColor = "text-foreground", 
+  iconColor = "text-muted-foreground",
   trend 
 }: StatCardProps) {
   return (
@@ -28,16 +28,16 @@ export default function StatCard({
       <CardContent className="p-6">
         <div className="relative">
           <div>
-            <p className="text-sm text-gray-900 mb-1">{title}</p>
+            <p className="text-sm text-foreground mb-1">{title}</p>
             <p className={`text-3xl font-bold mb-1 ${valueColor}`} data-testid="text-stat-value">
               {value}
             </p>
             {description && (
-              <p className="text-xs text-gray-500">{description}</p>
+              <p className="text-xs text-muted-foreground">{description}</p>
             )}
             {trend && (
               <p className={`text-sm mt-2 flex items-center gap-1 ${
-                trend.isPositive ? "text-green-500" : "text-red-500"
+                trend.isPositive ? "text-green-500 dark:text-green-400" : "text-red-500 dark:text-red-400"
               }`}>
                 <span>{trend.isPositive ? "↑" : "↓"}</span>
                 <span>{Math.abs(trend.value)}%</span>
