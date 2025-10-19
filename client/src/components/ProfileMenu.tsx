@@ -55,9 +55,14 @@ export default function ProfileMenu() {
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <DropdownMenuLabel className="text-sm font-semibold">
-              {user ? `${user.firstName || ""} ${user.lastName || ""}`.trim() : "Guest"}
-            </DropdownMenuLabel>
+              <DropdownMenuLabel className="text-sm font-semibold">
+                {(() => {
+                  if (!user) return "Guest";
+                  // Prefer companyName for vendors, otherwise fall back to first+last name
+                  if ((user as any).companyName) return (user as any).companyName;
+                  return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Guest";
+                })()}
+              </DropdownMenuLabel>
             <div className="text-xs text-muted-foreground">
               {user?.email || "Not signed in"}
             </div>
