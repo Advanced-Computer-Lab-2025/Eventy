@@ -97,6 +97,7 @@ export const createConference = async (data, userId) => {
     description,
     location: "TBD",
     registrationDeadline: startDate, // placeholder
+    status: "approved",
     requiredBudget,
     fundingSource,
     extraResources,
