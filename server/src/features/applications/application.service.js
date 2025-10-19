@@ -19,12 +19,26 @@ class ApplicationServiceClass {
     }
   }
 async getAllApplications() {
-  return Application.find({ deletedAt: null })
+  const applications = await Application.find({ deletedAt: null })
     .populate({
       path: "createdBy",
       select: "companyName email companyLogoUrl taxCardUrl status",
     })
+    .populate("event", "name description startDate endDate location")
     .sort({ createdAt: -1 });
+
+  // Filter out applications for events that have already passed
+  const currentDate = new Date();
+  const activeApplications = applications.filter(app => {
+    // If event is populated and has an endDate, check if it's in the future
+    if (app.event && app.event.endDate) {
+      return new Date(app.event.endDate) > currentDate;
+    }
+    // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
+    return true;
+  });
+
+  return activeApplications;
 }
 
   /**
@@ -46,7 +60,18 @@ async getAllApplications() {
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
 
-    return applications;
+    // Filter out applications for events that have already passed
+    const currentDate = new Date();
+    const activeApplications = applications.filter(app => {
+      // If event is populated and has an endDate, check if it's in the future
+      if (app.event && app.event.endDate) {
+        return new Date(app.event.endDate) > currentDate;
+      }
+      // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
+      return true;
+    });
+
+    return activeApplications;
   }
   /**
  * Updates the status of an application by its ID.
