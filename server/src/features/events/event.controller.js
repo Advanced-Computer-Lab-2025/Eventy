@@ -21,53 +21,65 @@ export class EventsController {
 
   // Setup Server-Sent Events for real-time updates
   setupSSE(req, res) {
-    // Set SSE headers
-    res.writeHead(200, {
-      'Content-Type': 'text/event-stream',
-      'Cache-Control': 'no-cache',
-      'Connection': 'keep-alive',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Cache-Control'
-    });
+    try {
+      // Set SSE headers first
+      res.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Cache-Control'
+      });
 
-    // Create connection object
-    const connection = {
-      res,
-      userId: req.user?.id,
-      send: (data) => {
+      // Create connection object
+      const connection = {
+        res,
+        userId: req.user?.id,
+        send: (data) => {
+          try {
+            res.write(`data: ${JSON.stringify(data)}\n\n`);
+          } catch (error) {
+            console.warn('Failed to send SSE data:', error);
+            EventsController.sseConnections.delete(connection);
+          }
+        }
+      };
+
+      // Add to active connections
+      EventsController.sseConnections.add(connection);
+
+      // Send initial connection message
+      connection.send({ type: 'connected', message: 'Real-time connection established' });
+
+      // Handle client disconnect
+      req.on('close', () => {
+        EventsController.sseConnections.delete(connection);
+      });
+
+      // Keep connection alive with heartbeat
+      const heartbeat = setInterval(() => {
         try {
-          res.write(`data: ${JSON.stringify(data)}\n\n`);
+          res.write(': heartbeat\n\n');
         } catch (error) {
-          console.warn('Failed to send SSE data:', error);
+          clearInterval(heartbeat);
           EventsController.sseConnections.delete(connection);
         }
-      }
-    };
+      }, 30000); // 30 seconds
 
-    // Add to active connections
-    EventsController.sseConnections.add(connection);
-
-    // Send initial connection message
-    connection.send({ type: 'connected', message: 'Real-time connection established' });
-
-    // Handle client disconnect
-    req.on('close', () => {
-      EventsController.sseConnections.delete(connection);
-    });
-
-    // Keep connection alive with heartbeat
-    const heartbeat = setInterval(() => {
-      try {
-        res.write(': heartbeat\n\n');
-      } catch (error) {
+      req.on('close', () => {
         clearInterval(heartbeat);
-        EventsController.sseConnections.delete(connection);
-      }
-    }, 30000); // 30 seconds
+      });
 
-    req.on('close', () => {
-      clearInterval(heartbeat);
-    });
+    } catch (error) {
+      console.error('SSE setup error:', error);
+      // If we can't set up SSE, return a proper error response
+      if (!res.headersSent) {
+        res.status(500).json({ 
+          error: 'Failed to establish real-time connection',
+          message: error.message 
+        });
+      }
+    }
   }
 
   // Static method to broadcast updates to all connected clients
@@ -379,7 +391,7 @@ export class EventsController {
 
       res
         .status(200)
-        .json(new ApiResponse(200, event, "Workshop accepted and published"));
+        .json(new ApiResponse(200, event, "Workshop approved and published"));
     } catch (error) {
       next(error);
     }

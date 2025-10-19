@@ -30,7 +30,7 @@ async getAllApplications() {
   /**
    * Finds all applications for a specific vendor, with optional filtering and population.
    * @param {string} vendorId - The ID of the authenticated vendor.
-   * @param {object} filters - An object containing query filters like { status: 'accepted' }.
+   * @param {object} filters - An object containing query filters like { status: 'approved' }.
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
@@ -51,7 +51,7 @@ async getAllApplications() {
   /**
  * Updates the status of an application by its ID.
  * @param {string} applicationId - The ID of the application.
- * @param {string} status - The new status ("accepted" or "rejected").
+ * @param {string} status - The new status ("approved" or "rejected").
  * @returns {Promise<Document|null>} The updated application.
  */
 // async updateApplicationStatus(applicationId, status) {
