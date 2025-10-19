@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useLocation } from "wouter";
 import EventListItem from "@/components/EventListItem";
+import EventSearch from "@/components/EventSearch";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
@@ -29,9 +30,29 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]); // Filtered/searched events for display
+  const [totalUpcomingCount, setTotalUpcomingCount] = useState<number>(0); // Static count for the tile
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
+
+  const handleSearchResults = (results: any[]) => {
+    setUpcomingEvents(results);
+    if (eventsLoading) setEventsLoading(false);
+    
+    // Set the total count only on initial load (when search is empty)
+    // This check needs to be done in EventSearch component callback
+  };
+
+  const handleLoading = (isLoading: boolean) => {
+    // Only show loading overlay on initial load
+    if (upcomingEvents.length === 0) {
+      setEventsLoading(isLoading);
+    }
+  };
+
+  const handleError = (errorMessage: string) => {
+    setEventsError(errorMessage);
+  };
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -57,38 +78,6 @@ export default function AdminDashboardPage() {
     };
 
     fetchConferences();
-  }, []);
-
-  useEffect(() => {
-    const fetchUpcomingEvents = async () => {
-      try {
-        setEventsLoading(true);
-        setEventsError(null);
-        const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
-        }
-        const body = await res.json();
-        if (!res.ok) throw new Error(body.message || "Failed to fetch upcoming events");
-        setUpcomingEvents(Array.isArray(body.data) ? body.data : body);
-      } catch (err: any) {
-        setEventsError(err.message || "Failed to load upcoming events");
-        setUpcomingEvents([]);
-      } finally {
-        setEventsLoading(false);
-      }
-    };
-    fetchUpcomingEvents();
   }, []);
 
   useEffect(() => {
@@ -122,6 +111,35 @@ export default function AdminDashboardPage() {
     fetchApprovedEvents();
   }, []);
 
+  // Fetch total upcoming events count for the statistics tile (static, not affected by search)
+  useEffect(() => {
+    const fetchUpcomingCount = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+        
+        if (!res.ok) {
+          throw new Error("Failed to fetch upcoming events count");
+        }
+        
+        const data = await res.json();
+        const events = Array.isArray(data.data) ? data.data : data;
+        setTotalUpcomingCount(events.length);
+      } catch (err) {
+        console.error("Error fetching upcoming events count:", err);
+        setTotalUpcomingCount(0);
+      }
+    };
+    
+    fetchUpcomingCount();
+  }, []);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
@@ -151,7 +169,7 @@ export default function AdminDashboardPage() {
           />
           <StatCard 
             title="Upcoming Events" 
-            value={eventsLoading ? "-" : upcomingEvents.length.toString()} 
+            value={totalUpcomingCount.toString()} 
             icon={Calendar} 
           />
           <StatCard 
@@ -170,6 +188,15 @@ export default function AdminDashboardPage() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
+                {/* Event Search */}
+                <EventSearch
+                  onSearchResults={handleSearchResults}
+                  onLoading={handleLoading}
+                  onError={handleError}
+                  placeholder="Search events by name, professor, or type..."
+                  className="mb-6"
+                />
+
                 {eventsLoading ? (
                   <div className="text-center py-8 text-muted-foreground">Loading upcoming events...</div>
                 ) : eventsError ? (
