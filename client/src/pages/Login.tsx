@@ -51,8 +51,13 @@ export default function Login() {
       const role = (data?.user?.role ?? data?.role ?? "").toLowerCase()
 
       setTimeout(() => {
+        // Prefer the normalized `role` variable for comparisons
         if (role === "vendor") {
           setLocation("/vendor/dashboard")
+        } else if (role === "events_office") {
+          setLocation("/events-office/dashboard")
+        } else if (role === "admin") {
+          setLocation("/admin")
         } else if (role === "staff" || role === "ta") {
           setLocation("/staff-ta")
         } else if (role === "professor") {
