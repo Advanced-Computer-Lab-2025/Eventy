@@ -34,8 +34,6 @@ export default function VendorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
-  const [lastUpdateTime, setLastUpdateTime] = useState<Date | null>(null);
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -193,75 +191,6 @@ export default function VendorDashboard() {
     fetchCompanyName();
     fetchUpcomingBazaars();
     fetchApplicationsData();
-  }, []);
-
-  // Real-time updates using Server-Sent Events
-  useEffect(() => {
-    let eventSource: EventSource | null = null;
-    
-    const setupRealTimeUpdates = () => {
-      try {
-        // Create Server-Sent Events connection
-        eventSource = new EventSource('/api/events/stream');
-        
-        eventSource.onmessage = (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            
-            // Handle different types of updates
-            switch (data.type) {
-              case 'bazaar_updated':
-                // Update bazaar data
-                fetchUpcomingBazaars();
-                break;
-              case 'application_status_changed':
-                // Update applications data
-                fetchApplicationsData();
-                break;
-              case 'new_application':
-                // Update applications data
-                fetchApplicationsData();
-                break;
-              default:
-                // Generic update - refresh all data
-                fetchUpcomingBazaars();
-                fetchApplicationsData();
-            }
-            
-            setLastUpdateTime(new Date());
-          } catch (error) {
-            console.warn('Failed to parse SSE data:', error);
-          }
-        };
-        
-        eventSource.onerror = (error) => {
-          console.warn('SSE connection error:', error);
-          setIsConnected(false);
-          // Attempt to reconnect after 5 seconds
-          setTimeout(() => {
-            if (eventSource?.readyState === EventSource.CLOSED) {
-              setupRealTimeUpdates();
-            }
-          }, 5000);
-        };
-        
-        eventSource.onopen = () => {
-          console.log('Real-time connection established');
-          setIsConnected(true);
-        };
-        
-      } catch (error) {
-        console.warn('Failed to setup real-time updates:', error);
-      }
-    };
-    
-    setupRealTimeUpdates();
-    
-    return () => {
-      if (eventSource) {
-        eventSource.close();
-      }
-    };
   }, []);
 
   // Listen for hash changes to update active tab
@@ -422,16 +351,6 @@ export default function VendorDashboard() {
           <div className="flex items-center gap-3 mb-2">
             <Store className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-              <span>{isConnected ? 'Live' : 'Disconnected'}</span>
-              {lastUpdateTime && (
-                <>
-                  <span>•</span>
-                  <span>Updated {lastUpdateTime.toLocaleTimeString()}</span>
-                </>
-              )}
-            </div>
           </div>
           <p className="text-muted-foreground">
             Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
