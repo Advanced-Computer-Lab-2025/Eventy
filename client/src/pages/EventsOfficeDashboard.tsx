@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
-import Header from "@/components/Header";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -156,8 +156,8 @@ export default function EventsOfficeDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header homeOnly homeHref="/events-office/dashboard" hideSearch />
-      
+      <EventsOfficeHeader />
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Main Title and Info Section */}
@@ -216,7 +216,7 @@ export default function EventsOfficeDashboard() {
                   Create Trip
                 </button>
                 <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
                   onClick={() => setLocation("/approvals/workshops")}
                 >
                   <CheckCircle2 className="h-4 w-4" />

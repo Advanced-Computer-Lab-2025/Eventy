@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 
 export default function TripManagement() {
   const { toast } = useToast();
@@ -232,6 +233,7 @@ export default function TripManagement() {
 
   return (
     <div className="min-h-screen bg-background">
+      <EventsOfficeHeader />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Trip Management</h1>
