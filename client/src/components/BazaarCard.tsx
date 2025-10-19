@@ -89,7 +89,7 @@ export default function BazaarCard({
 
   return (
     <Card 
-      className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1"
+      className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 h-full flex flex-col"
       data-testid={`card-bazaar-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -117,45 +117,47 @@ export default function BazaarCard({
         </div>
       </div>
       
-      <CardContent className="p-4 space-y-3">
-        <div className="flex items-start gap-2">
-          <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
-          <div className="font-mono text-sm">
-            <div className="font-semibold text-foreground">
-              {formatDate(startDate)} - {formatDate(endDate)}
+      <CardContent className="p-4 flex flex-col flex-1">
+        <div className="space-y-3 flex-1">
+          <div className="flex items-start gap-2">
+            <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+            <div className="font-mono text-sm">
+              <div className="font-semibold text-foreground">
+                {formatDate(startDate)} - {formatDate(endDate)}
+              </div>
+              <div className="text-muted-foreground">
+                {formatTime(startDate)} - {formatTime(endDate)}
+              </div>
             </div>
-            <div className="text-muted-foreground">
-              {formatTime(startDate)} - {formatTime(endDate)}
+          </div>
+          
+          <h3 className="text-xl font-bold line-clamp-2 text-foreground" data-testid={`text-bazaar-title-${id}`}>
+            {name}
+          </h3>
+          
+          <p className="text-sm text-muted-foreground line-clamp-2">
+            {description}
+          </p>
+          
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              <span className="line-clamp-1">{location}</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="h-4 w-4" />
+              <span>{attendees}{capacity ? `/${capacity}` : ''}</span>
             </div>
           </div>
-        </div>
-        
-        <h3 className="text-xl font-bold line-clamp-2 text-foreground" data-testid={`text-bazaar-title-${id}`}>
-          {name}
-        </h3>
-        
-        <p className="text-sm text-muted-foreground line-clamp-2">
-          {description}
-        </p>
-        
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <MapPin className="h-4 w-4" />
-            <span className="line-clamp-1">{location}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Users className="h-4 w-4" />
-            <span>{attendees}{capacity ? `/${capacity}` : ''}</span>
-          </div>
+
+          {!isRegistrationOpen && (
+            <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
+              Registration closed on {formatDate(registrationDeadline)}
+            </div>
+          )}
         </div>
 
-        {!isRegistrationOpen && (
-          <div className="text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded">
-            Registration closed on {formatDate(registrationDeadline)}
-          </div>
-        )}
-
-        <div className="flex gap-2 pt-2">
+        <div className="flex gap-2 pt-4">
           {onEdit && (
             <Button 
               variant="outline"
