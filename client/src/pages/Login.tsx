@@ -36,8 +36,9 @@ export default function Login() {
         body: JSON.stringify(formData),
       })
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.message || "Login failed")
+
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.message || "Login failed")
 
       localStorage.setItem("token", data.token)
       localStorage.setItem("user", JSON.stringify(data.user))
@@ -47,14 +48,14 @@ export default function Login() {
         description: `Welcome back, ${data.user.firstName || "user"}!`,
       })
 
-      const role = (data.user?.role ?? data.role ?? "").toLowerCase()
+      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase()
 
       setTimeout(() => {
         if (role === "vendor") {
           setLocation("/vendor/dashboard")
-        } else if (data.user.role === "staff" || data.user.role === "ta") {
+        } else if (role === "staff" || role === "ta") {
           setLocation("/staff-ta")
-        } else if (data.user.role === "professor") {
+        } else if (role === "professor") {
           setLocation("/professor")
         } else {
           setLocation("/")
@@ -129,7 +130,7 @@ export default function Login() {
                 className="w-full"
                 data-testid="button-login"
               >
-                Sign In
+                LogIn
               </Button>
             </form>
 
