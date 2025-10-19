@@ -199,9 +199,6 @@ export default function EventCard({
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>{attendees} attendee{attendees !== 1 ? 's' : ''}</span>
-                    {capacity && attendees >= capacity && (
-                      <span className="text-red-500 font-semibold ml-2">(Full)</span>
-                    )}
                   </div>
 
                   {registrationDeadline && (
