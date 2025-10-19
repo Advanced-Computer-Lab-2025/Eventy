@@ -39,7 +39,7 @@ export default function StatCard({
             )}
             {trend && (
               <p className={`text-sm mt-2 flex items-center gap-1 ${
-                trend.isPositive ? "text-green-500" : "text-red-500"
+                trend.isPositive ? "text-green-500 dark:text-green-400" : "text-red-500 dark:text-red-400"
               }`}>
                 <span>{trend.isPositive ? "↑" : "↓"}</span>
                 <span>{Math.abs(trend.value)}%</span>

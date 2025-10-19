@@ -1,7 +1,7 @@
 import Joi from "joi";
 
 export const getMyApplicationsSchema = Joi.object({
-  status: Joi.string().valid("pending", "accepted", "rejected").optional(),
+  status: Joi.string().valid("pending", "approved", "rejected").optional(),
 });
 
 export const validateBazaarApplication = Joi.object({
