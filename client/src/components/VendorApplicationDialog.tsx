@@ -27,6 +27,7 @@ interface VendorApplicationDialogProps {
   onOpenChange: (open: boolean) => void;
   bazaarId: string;
   bazaarName: string;
+  onApplicationSubmitted?: () => void;
 }
 
 interface Attendee {
@@ -39,6 +40,7 @@ export default function VendorApplicationDialog({
   onOpenChange,
   bazaarId,
   bazaarName,
+  onApplicationSubmitted,
 }: VendorApplicationDialogProps) {
   const { toast } = useToast();
   const [attendees, setAttendees] = useState<Attendee[]>([
@@ -125,6 +127,11 @@ export default function VendorApplicationDialog({
       setAttendees([{ name: "", email: "" }]);
       setBoothSize("2x2");
       onOpenChange(false);
+      
+      // Notify parent component that application was submitted
+      if (onApplicationSubmitted) {
+        onApplicationSubmitted();
+      }
     } catch (error) {
       console.error("Error submitting application:", error);
       toast({

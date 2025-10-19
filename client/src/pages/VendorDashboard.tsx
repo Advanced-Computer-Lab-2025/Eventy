@@ -34,6 +34,7 @@ export default function VendorDashboard() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
+  const [isBackgroundRefreshing, setIsBackgroundRefreshing] = useState(false);
   
   // Platform booth form state
   const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
@@ -193,6 +194,37 @@ export default function VendorDashboard() {
     fetchApplicationsData();
   }, []);
 
+  // Auto-refresh data with smart intervals
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    const startRefresh = () => {
+      interval = setInterval(async () => {
+        try {
+          setIsBackgroundRefreshing(true);
+          // Fetch data silently in background
+          await Promise.all([
+            fetchUpcomingBazaars(),
+            fetchApplicationsData()
+          ]);
+        } catch (error) {
+          // Silent fail - don't show error toasts for background refreshes
+          console.warn("Background refresh failed:", error);
+        } finally {
+          setIsBackgroundRefreshing(false);
+        }
+      }, 15000); // Refresh every 15 seconds
+    };
+
+    startRefresh();
+
+    return () => {
+      if (interval) {
+        clearInterval(interval);
+      }
+    };
+  }, []);
+
   // Listen for hash changes to update active tab
   useEffect(() => {
     const handleHashChange = () => {
@@ -201,6 +233,31 @@ export default function VendorDashboard() {
 
     window.addEventListener('hashchange', handleHashChange);
     return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  // Refresh data when user returns to the tab (focus event)
+  useEffect(() => {
+    const handleFocus = () => {
+      // Refresh data when user returns to the tab
+      fetchUpcomingBazaars();
+      fetchApplicationsData();
+    };
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        // Page became visible, refresh data
+        fetchUpcomingBazaars();
+        fetchApplicationsData();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   const handleRegister = (bazaarId: string) => {
@@ -214,7 +271,10 @@ export default function VendorDashboard() {
   const handleApplicationSubmitted = () => {
     // Refresh applications data after successful submission
     fetchApplicationsData();
+    // Also refresh upcoming bazaars in case attendee counts changed
+    fetchUpcomingBazaars();
   };
+
 
   // Platform booth form helpers
   const addPlatformBoothAttendee = () => {
@@ -297,6 +357,9 @@ export default function VendorDashboard() {
       setBoothSize("2x2");
       setDurationWeeks(1);
       setSelectedMapLocation("");
+      
+      // Refresh data to show updated applications
+      fetchApplicationsData();
     } catch (error) {
       console.error("Error submitting platform booth application:", error);
       toast({
@@ -345,6 +408,12 @@ export default function VendorDashboard() {
           <div className="flex items-center gap-3 mb-2">
             <Store className="h-8 w-8 text-primary" />
             <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
+            {isBackgroundRefreshing && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                <span>Live</span>
+              </div>
+            )}
           </div>
           <p className="text-muted-foreground">
             Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
@@ -792,6 +861,7 @@ export default function VendorDashboard() {
           onOpenChange={setShowApplyDialog}
           bazaarId={selectedBazaar._id}
           bazaarName={selectedBazaar.name}
+          onApplicationSubmitted={handleApplicationSubmitted}
         />
       )}
 
