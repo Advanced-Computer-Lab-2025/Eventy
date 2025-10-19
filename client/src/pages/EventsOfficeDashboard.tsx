@@ -11,6 +11,9 @@ import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { getEventImage } from "@/lib/eventImages";
+import EventSearch from "@/components/EventSearch";
+import EventCard from "@/components/EventCard";
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
