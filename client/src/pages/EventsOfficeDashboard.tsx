@@ -2,7 +2,8 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import Header from "@/components/Header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X } from "lucide-react";
+import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X, ClipboardList } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import StatCard from "@/components/StatCard";
@@ -207,16 +208,19 @@ export default function EventsOfficeDashboard() {
                 title="Total Bazaars"
                 value={loadingBazaars ? "-" : bazaars.length}
                 icon={CalendarDays}
+                themed
               />
               <StatCard
                 title="Total Events"
                 value={(loadingBazaars || loadingConfs) ? "-" : (bazaars.length + conferences.length)}
                 icon={Clock}
+                themed
               />
               <StatCard
                 title="Total Conferences"
                 value={loadingConfs ? "-" : conferences.length}
                 icon={CheckCircle2}
+                themed
               />
             </div>
 
@@ -259,6 +263,14 @@ export default function EventsOfficeDashboard() {
                   <CheckCircle2 className="h-4 w-4" />
                   Workshop Approvals
                 </button>
+                <button
+                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
+                  onClick={() => setLocation("/vendor-requests")}
+                  data-testid="button-quick-vendor-requests"
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Vendor Requests
+                </button>
               </CardContent>
             </Card>
             {/* Sidebar kept for Quick Actions only */}
@@ -268,15 +280,15 @@ export default function EventsOfficeDashboard() {
 
         {/* Workshop Pending Notification */}
         {showWorkshopNotif && pendingWorkshops > 0 && (
-          <Card className="mb-8 border-amber-200 bg-amber-50">
+          <Card className="mb-8 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
             <CardContent className="pt-6">
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0">
-                  <AlertCircle className="h-6 w-6 text-amber-600" />
+                  <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-amber-900 mb-2">Pending Workshops</h3>
-                  <p className="text-sm text-amber-800 mb-4">
+                  <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-100 mb-2">Pending Workshops</h3>
+                  <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
                     You have <span className="font-semibold">{pendingWorkshops}</span> workshop{pendingWorkshops !== 1 ? "s" : ""} awaiting approval.
                   </p>
                   <div className="flex gap-2 flex-wrap">
@@ -286,7 +298,7 @@ export default function EventsOfficeDashboard() {
                         handleCloseNotif();
                         setLocation("/approvals/workshops");
                       }}
-                      className="bg-amber-600 hover:bg-amber-700"
+                      className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
                     >
                       Review Approvals
                     </Button>
@@ -301,7 +313,7 @@ export default function EventsOfficeDashboard() {
                 </div>
                 <button
                   onClick={handleCloseNotif}
-                  className="flex-shrink-0 text-amber-600 hover:text-amber-800"
+                  className="flex-shrink-0 text-amber-600 hover:text-amber-800 dark:text-amber-300 dark:hover:text-amber-200"
                 >
                   <X className="h-5 w-5" />
                 </button>
@@ -356,6 +368,7 @@ export default function EventsOfficeDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {upcomingEvents
                     .filter((event: any) => eventTypeFilter === 'all' ? true : event.eventType === eventTypeFilter)
+                    .filter((event: any) => !event?.deletedAt)
                     .slice(0, 8)
                     .map((event: any, index: number) => (
                     <EventCard

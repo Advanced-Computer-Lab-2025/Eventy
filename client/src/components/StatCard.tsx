@@ -8,6 +8,7 @@ interface StatCardProps {
   icon: LucideIcon;
   valueColor?: string;
   iconColor?: string;
+  themed?: boolean;
   trend?: {
     value: number;
     isPositive: boolean;
@@ -19,8 +20,9 @@ export default function StatCard({
   value, 
   description, 
   icon: Icon, 
-  valueColor = "text-foreground", 
-  iconColor = "text-muted-foreground",
+  valueColor = "text-gray-900", 
+  iconColor = "text-gray-600",
+  themed = false,
   trend 
 }: StatCardProps) {
   return (
@@ -28,12 +30,12 @@ export default function StatCard({
       <CardContent className="p-6">
         <div className="relative">
           <div>
-            <p className="text-sm text-foreground mb-1">{title}</p>
-            <p className={`text-3xl font-bold mb-1 ${valueColor}`} data-testid="text-stat-value">
+            <p className={`text-sm ${themed ? "text-muted-foreground" : "text-gray-900"} mb-1`}>{title}</p>
+            <p className={`text-3xl font-bold mb-1 ${themed ? "text-foreground" : valueColor}`} data-testid="text-stat-value">
               {value}
             </p>
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className={`text-xs ${themed ? "text-muted-foreground" : "text-gray-500"}`}>{description}</p>
             )}
             {trend && (
               <p className={`text-sm mt-2 flex items-center gap-1 ${
@@ -45,7 +47,7 @@ export default function StatCard({
             )}
           </div>
           <div className="absolute top-0 right-0">
-            <Icon className={`h-4 w-4 ${iconColor}`} />
+            <Icon className={`h-4 w-4 ${themed ? "text-muted-foreground" : iconColor}`} />
           </div>
         </div>
       </CardContent>
