@@ -18,7 +18,8 @@ import {
   Store,
   GraduationCap,
   Route as RouteIcon,
-  Megaphone
+  Megaphone,
+  AlertCircle
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,8 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import EventSearch from "@/components/EventSearch";
+import EventCard from "@/components/EventCard";
 
 interface RegisteredEvent {
   _id: string;
@@ -60,6 +63,8 @@ export default function StaffTADashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetchUserData();
@@ -181,6 +186,25 @@ export default function StaffTADashboard() {
   };
 
   const stats = getEventStats();
+
+  const handleSearchResults = (searchResults: any[]) => {
+    setUpcomingEvents(searchResults);
+    // Only disable loading after first results
+    if (upcomingEvents.length === 0) {
+      setLoading(false);
+    }
+  };
+
+  const handleLoading = (isLoading: boolean) => {
+    // Only show loading overlay when there are no events yet (initial load)
+    if (upcomingEvents.length === 0) {
+      setLoading(isLoading);
+    }
+  };
+
+  const handleError = (errorMessage: string) => {
+    setError(errorMessage);
+  };
 
   const quickActions = [
     {
@@ -358,69 +382,143 @@ export default function StaffTADashboard() {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {quickActions.map((action) => (
-              <Card key={action.title} className="hover:shadow-lg transition-shadow flex flex-col">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`${action.color} p-3 rounded-lg`}>
-                        <action.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">{action.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {action.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <div className="flex-1">
-                    {action.features && (
-                      <ul className="space-y-2 mb-4">
-                        {action.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {action.activities && (
-                      <div className="mb-4">
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Access the gym schedule to view monthly fitness sessions and book your preferred time slots.
-                        </p>
-                        <p className="text-sm font-medium mb-3">Available Sessions:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {action.activities.map((activity, idx) => (
-                            <Badge 
-                              key={idx} 
-                              variant="secondary"
-                              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                            >
-                              {activity}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <Button 
-                    className="w-full mt-auto" 
-                    onClick={() => setLocation(action.path)}
-                  >
-                    Access {action.title}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
+        {/* Main Content Grid */}
+        <div className="grid gap-12 lg:grid-cols-3">
+          {/* Left Column - Upcoming Events */}
+          <div className="lg:col-span-2">
+            <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+            
+            <EventSearch 
+              onSearchResults={handleSearchResults}
+              onLoading={handleLoading}
+              onError={handleError}
+              className="mb-6"
+            />
+
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-muted-foreground">Loading events...</div>
+              </div>
+            ) : error && upcomingEvents.length === 0 ? (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground text-center">{error}</p>
                 </CardContent>
               </Card>
-            ))}
+            ) : upcomingEvents.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {upcomingEvents.map((event: any, index: number) => (
+                  <EventCard
+                    key={event._id || index}
+                    id={event._id || String(index)}
+                    title={event.name || "Untitled Event"}
+                    category={(event.eventType || "academic") as any}
+                    date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "long",
+                      day: "numeric",
+                      year: "numeric",
+                    }) : "TBA"}
+                    time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                      hour12: true,
+                    }) : "TBA"}
+                    location={event.location || "Unknown location"}
+                    attendees={event.attendeesCount || 0}
+                    image={event.image}
+                    description={event.description}
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    capacity={event.capacity}
+                    registrationDeadline={event.registrationDeadline}
+                    vendors={event.vendors || []}
+                    showDetailedView={true}
+                    onRegister={() => console.log("Register:", event.name)}
+                    onViewDetails={() => console.log("View details:", event.name)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="flex flex-col items-center justify-center py-12">
+                  <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
+                  <p className="text-muted-foreground text-center">
+                    There are no upcoming events at the moment.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+
+          {/* Right Column - Quick Access */}
+          <div className="space-y-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
+              <div className="space-y-6">
+                {quickActions.map((action) => (
+                  <Card key={action.title} className="hover:shadow-lg transition-shadow flex flex-col">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`${action.color} p-3 rounded-lg`}>
+                            <action.icon className="h-6 w-6 text-white" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-xl">{action.title}</CardTitle>
+                            <CardDescription className="mt-1">
+                              {action.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-1 flex flex-col">
+                      <div className="flex-1">
+                        {action.features && (
+                          <ul className="space-y-2 mb-4">
+                            {action.features.map((feature, idx) => (
+                              <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                                <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
+                                {feature}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                        {action.activities && (
+                          <div className="mb-4">
+                            <p className="text-sm text-muted-foreground mb-3">
+                              Access the gym schedule to view monthly fitness sessions and book your preferred time slots.
+                            </p>
+                            <p className="text-sm font-medium mb-3">Available Sessions:</p>
+                            <div className="flex flex-wrap gap-2">
+                              {action.activities.map((activity, idx) => (
+                                <Badge 
+                                  key={idx} 
+                                  variant="secondary"
+                                  className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
+                                >
+                                  {activity}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <Button 
+                        className="w-full mt-auto" 
+                        onClick={() => setLocation(action.path)}
+                      >
+                        Access {action.title}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
