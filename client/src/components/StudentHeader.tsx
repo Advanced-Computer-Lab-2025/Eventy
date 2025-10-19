@@ -2,6 +2,7 @@ import { Bell, User, Home, Calendar, Dumbbell } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
+import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
 
 interface StudentHeaderProps {
@@ -24,9 +25,7 @@ export default function StudentHeader({ homeHref = "/" }: StudentHeaderProps) {
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
-            <Button variant="ghost" size="icon" data-testid="button-profile">
-              <User className="h-5 w-5" />
-            </Button>
+            <ProfileMenu />
           </div>
         </div>
 

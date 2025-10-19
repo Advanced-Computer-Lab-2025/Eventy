@@ -68,14 +68,36 @@ export class ApplicationController {
         data: newApplication,
       });
     } catch (error) {
-      next(error);
+      console.error("Error in applyToBooth:", error);
+      
+      // Handle booth availability errors specifically
+      if (error.message && (error.message.includes("already reserved") || (error.message.includes("booth") && error.message.includes("reserved")))) {
+        return res.status(409).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      
+      // Handle other validation errors
+      if (error.message && error.message.includes("Could not create application")) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      
+      // Fallback for any other errors
+      return res.status(500).json({
+        success: false,
+        message: error.message || "Internal server error",
+      });
     }
   }
 
   async getMyApplications(req, res, next) {
     try {
       const vendorId = req.user._id;
-      const filters = req.query; // Get filters from query string (e.g., ?status=accepted)
+      const filters = req.query; // Get filters from query string (e.g., ?status=approved)
 
       const applications = await ApplicationService.findVendorApplications(
         vendorId,
@@ -103,11 +125,11 @@ export class ApplicationController {
       });
     }
 
-      // Only allow 'accepted' or 'rejected'
+      // Only allow 'approved' or 'rejected'
       if (!["approved", "rejected"].includes(status)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid status value. Must be 'accepted' or 'rejected'.",
+          message: "Invalid status value. Must be 'approved' or 'rejected'.",
         });
       }
 
