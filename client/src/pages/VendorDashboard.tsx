@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle } from "lucide-react";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -591,43 +591,41 @@ export default function VendorDashboard() {
                     <CardContent>
                       <div className="space-y-2 text-sm">
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(application.event.startDate).toLocaleDateString()}
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Store className="h-3 w-3" />
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
                         {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">⏱️</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
                             Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
                           </div>
                         )}
                         {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">🎯</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Target className="h-4 w-4 flex-shrink-0" />
                             Preferred Location: {application.locationPreference}
                           </div>
                         )}
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">📍</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <span className="h-3 w-3">👥</span>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="h-4 w-4 flex-shrink-0" />
                           {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
                         </div>
-                        {application.type === 'booth' && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">📅</span>
-                            Applied: {new Date(application.createdAt).toLocaleDateString()}
-                          </div>
-                        )}
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
@@ -665,36 +663,40 @@ export default function VendorDashboard() {
                     <CardContent>
                       <div className="space-y-2 text-sm mb-4">
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(application.event.startDate).toLocaleDateString()}
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Store className="h-3 w-3" />
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
                         {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">⏱️</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
                             Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
                           </div>
                         )}
                         {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">🎯</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Target className="h-4 w-4 flex-shrink-0" />
                             Preferred Location: {application.locationPreference}
                           </div>
                         )}
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">📍</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <span className="h-3 w-3">👥</span>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="h-4 w-4 flex-shrink-0" />
                           {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
+                        </div>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
                         </div>
                       </div>
                       <Button 
@@ -740,40 +742,40 @@ export default function VendorDashboard() {
                     <CardContent>
                       <div className="space-y-2 text-sm mb-4">
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {new Date(application.event.startDate).toLocaleDateString()}
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
+                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <Store className="h-3 w-3" />
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
                         {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">⏱️</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Clock className="h-4 w-4 flex-shrink-0" />
                             Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
                           </div>
                         )}
                         {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">🎯</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <Target className="h-4 w-4 flex-shrink-0" />
                             Preferred Location: {application.locationPreference}
                           </div>
                         )}
                         {application.type === 'bazaar' && application.event && (
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <span className="h-3 w-3">📍</span>
+                          <div className="flex items-center gap-2 text-muted-foreground">
+                            <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <span className="h-3 w-3">👥</span>
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                            <Users className="h-4 w-4 flex-shrink-0" />
                           {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
                         </div>
-                        <div className="flex items-center gap-1 text-muted-foreground">
-                          <span className="h-3 w-3">📅</span>
-                          Applied: {new Date(application.createdAt).toLocaleDateString()}
+                        <div className="flex items-center gap-2 text-muted-foreground">
+                          <Calendar className="h-4 w-4 flex-shrink-0" />
+                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
                         </div>
                       </div>
                       <Button 
