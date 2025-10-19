@@ -466,6 +466,21 @@ export const acceptWorkshop = async (workshopId) => {
   return event;
 };
 
+export const approveBazaar = async (bazaarId) => {
+  const event = await Event.findByIdAndUpdate(
+    bazaarId,
+    { status: "approved" },
+    { new: true }
+  );
+  if (!event) {
+    throw new ApiError(404, "Bazaar not found");
+  }
+  if (event.eventType !== "bazaar") {
+    throw new ApiError(400, "This event is not a bazaar");
+  }
+  return event;
+};
+
 export const rejectWorkshop = async (workshopId) => {
   const event = await Event.findByIdAndUpdate(
     workshopId,

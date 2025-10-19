@@ -5,15 +5,25 @@ export const validateAcademicSignUp = (data) => {
   // Normalize email
   email = email.toLowerCase().trim();
 
-  const allowedRoles = ["student", "staff", "ta", "professor"];
-  if (!allowedRoles.includes(role.toLowerCase())) {
-    throw new Error("Invalid role for academic user.");
-  }
+ const allowedRoles = ["student", "staff", "ta", "professor"];
 
-  const gucEmailRegex = /^[a-zA-Z0-9._%+-]+@(student\.)?guc\.edu\.eg$/;
-  if (!gucEmailRegex.test(email)) {
-    throw new Error("Please use your official GUC email.");
+if (!allowedRoles.includes(role.toLowerCase())) {
+  throw new Error("Invalid role for academic user.");
+}
+
+const studentEmailRegex = /^[a-zA-Z0-9._%+-]+@student\.guc\.edu\.eg$/;
+const staffEmailRegex = /^[a-zA-Z0-9._%+-]+@guc\.edu\.eg$/;
+
+if (role.toLowerCase() === "student") {
+  if (!studentEmailRegex.test(email)) {
+    throw new Error("Students must use their @student.guc.edu.eg email.");
   }
+} else {
+  if (!staffEmailRegex.test(email)) {
+    throw new Error("Staff, TAs, and Professors must use their @guc.edu.eg email.");
+  }
+}
+
 
   if (!password || password.length < 6) {
     throw new Error("Password must be at least 6 characters long.");
@@ -45,11 +55,17 @@ export const validateVendorSignUp = (data) => {
   if (role.toLowerCase() !== "vendor") {
     throw new Error("Invalid role for vendor sign up.");
   }
-
+// Email format validation
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || !emailRegex.test(email)) {
     throw new Error("A valid company email is required.");
   }
+
+  // Prevent vendors from using any GUC domain
+const gucEmailRegex = /^[a-zA-Z0-9._%+-]+@(student\.)?guc\.edu\.eg$/i;
+if (gucEmailRegex.test(email)) {
+  throw new Error("Vendors cannot use GUC emails. Please use a company email address.");
+}
 
   if (!password || password.length < 6) {
     throw new Error("Password must be at least 6 characters long.");
