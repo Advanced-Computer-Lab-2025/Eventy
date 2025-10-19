@@ -107,6 +107,19 @@ export default function EventCard({
   const isBazaarOrBooth = /bazaar|booth/i.test(String(category));
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  // Determine user role for delete permission
+  let roleAllowsDelete = false;
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      const role = payload?.role;
+      roleAllowsDelete = role === "admin" || role === "events_office";
+    }
+  } catch {}
+  const canShowDelete = roleAllowsDelete;
+  const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
   const formatDate = (dateString: string) => {
@@ -131,6 +144,8 @@ export default function EventCard({
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || attendees < capacity;
   const canRegister = isRegisterable && isBeforeDeadline && hasCapacity;
+
+  if (isDeleted) return null;
 
   return (
     <Card
@@ -292,16 +307,17 @@ export default function EventCard({
                   View Details
                 </Button>
               )}
-              {canDelete && (
+              {canShowDelete && !hasRegistrations && (
                 <Button
                   variant="destructive"
                   size="sm"
                   onClick={async (e) => {
                     if ((e as any).stopPropagation) (e as any).stopPropagation();
-                    if (!confirm("Are you sure you want to delete this event?")) return;
+                    if (!confirm("This will permanently delete the event. Proceed?")) return;
                     try {
                       await deleteEvent(id);
                       toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                      setIsDeleted(true);
                       onDelete?.(id);
                     } catch (err: any) {
                       toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
@@ -398,16 +414,17 @@ export default function EventCard({
                 >
                   <Share2 className="h-4 w-4" />
                 </Button>
-                {canDelete && (
+                {canShowDelete && !hasRegistrations && (
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={async (e) => {
                       if ((e as any).stopPropagation) (e as any).stopPropagation();
-                      if (!confirm("Are you sure you want to delete this event?")) return;
+                      if (!confirm("This will permanently delete the event. Proceed?")) return;
                       try {
                         await deleteEvent(id);
                         toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                        setIsDeleted(true);
                         onDelete?.(id);
                       } catch (err: any) {
                         toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });

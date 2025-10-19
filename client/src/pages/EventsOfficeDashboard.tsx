@@ -364,6 +364,7 @@ export default function EventsOfficeDashboard() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {upcomingEvents
                     .filter((event: any) => eventTypeFilter === 'all' ? true : event.eventType === eventTypeFilter)
+                    .filter((event: any) => !event?.deletedAt)
                     .slice(0, 8)
                     .map((event: any, index: number) => (
                     <EventCard
