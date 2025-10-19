@@ -165,11 +165,6 @@ export default function VendorDashboard() {
       
       if (totalApplications === 0) {
         console.log("No applications found in database for this user");
-        toast({
-          title: "Info",
-          description: "No applications found. You may need to apply to a bazaar first.",
-          variant: "default",
-        });
       }
       
       setPendingApplications(pending);
