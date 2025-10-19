@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
 
 export interface CreateEventFormValues {
   name: string;
@@ -53,6 +54,16 @@ export default function CreateEventForm({
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const { toast } = useToast();
+
+  // Helper: today's date in local timezone as YYYY-MM-DD
+  const todayLocal = () => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
 
   function validate(): boolean {
     const nextErrors: Record<string, string> = {};
@@ -83,6 +94,33 @@ export default function CreateEventForm({
       }
       if (!values.fundingSource) {
         nextErrors.fundingSource = "Select a funding source";
+      }
+    }
+
+    // Logical date/time validation
+    if (values.startDate && values.startTime) {
+      const start = new Date(`${values.startDate}T${values.startTime}:00`);
+      const now = new Date();
+      if (!isNaN(start.getTime()) && start < now) {
+        nextErrors.startTime = "Start date/time cannot be in the past";
+        toast({
+          title: "Start date in the past",
+          description: "Start date/time cannot be in the past.",
+          variant: "destructive",
+        });
+      }
+    }
+    if (values.startDate && values.startTime && values.endDate && values.endTime) {
+      const start = new Date(`${values.startDate}T${values.startTime}:00`);
+      const end = new Date(`${values.endDate}T${values.endTime}:00`);
+      if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
+        // Attach error to end time for clarity
+        nextErrors.endTime = "End date/time must be after start date/time";
+        toast({
+          title: "Invalid dates",
+          description: "End date/time must be after start date/time.",
+          variant: "destructive",
+        });
       }
     }
 
@@ -121,6 +159,7 @@ export default function CreateEventForm({
               <Input
                 id="startDate"
                 type="date"
+                min={todayLocal()}
                 value={values.startDate}
                 onChange={(e) => setValues({ ...values, startDate: e.target.value })}
                 required
@@ -147,6 +186,7 @@ export default function CreateEventForm({
               <Input
                 id="endDate"
                 type="date"
+                min={values.startDate || todayLocal()}
                 value={values.endDate}
                 onChange={(e) => setValues({ ...values, endDate: e.target.value })}
                 required

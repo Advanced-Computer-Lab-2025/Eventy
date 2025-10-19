@@ -19,16 +19,6 @@ export default function EventsOfficeHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label="Home"
-              title="Home"
-              onClick={goHome}
-              data-testid="button-header-home-top"
-            >
-              <Home className="h-5 w-5" />
-            </Button>
             <Button variant="ghost" size="icon" data-testid="button-notifications">
               <Bell className="h-5 w-5" />
             </Button>
@@ -46,7 +36,7 @@ export default function EventsOfficeHeader() {
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Dashboard
+            Home
           </Button>
           <Button
             variant="ghost"
