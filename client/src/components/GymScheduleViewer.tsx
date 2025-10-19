@@ -40,7 +40,11 @@ const GYM_SESSION_TYPES: Record<string, string> = {
   kick_boxing: "Kick-boxing",
 };
 
-export default function GymScheduleViewer({ userRole, onCreateClick, navigateToDate }: GymScheduleViewerProps) {
+export default function GymScheduleViewer({
+  userRole,
+  onCreateClick,
+  navigateToDate,
+}: GymScheduleViewerProps) {
   const [sessions, setSessions] = useState<GymSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -107,18 +111,41 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
     });
   };
 
-  const handleRegister = async (sessionId: string) => {
-    // TODO: Implement registration logic
-    toast({
-      title: "Registration",
-      description: "Registration functionality will be implemented soon.",
-    });
+  const handleRegister = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login to register for events");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/events/${eventId}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        alert("Successfully registered for the event!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to register for event");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred while registering for the event");
+    }
   };
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
@@ -129,7 +156,11 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   });
 
   const canCreateSession = userRole === "events_office";
-  const canRegister = userRole === "student" || userRole === "staff" || userRole === "ta" || userRole === "professor";
+  const canRegister =
+    userRole === "student" ||
+    userRole === "staff" ||
+    userRole === "ta" ||
+    userRole === "professor";
 
   return (
     <div className="space-y-4">
@@ -196,23 +227,21 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                       <TableCell>{formatDate(session.date)}</TableCell>
                       <TableCell>{session.startTime}</TableCell>
                       <TableCell>{session.durationMinutes} min</TableCell>
-                      <TableCell>
-                        {session.instructor || "TBA"}
-                      </TableCell>
+                      <TableCell>{session.instructor || "TBA"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <span>
                             {enrolled}/{capacity}
                           </span>
                           {isFull ? (
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
                             >
                               Full
                             </Badge>
                           ) : (
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
                             >

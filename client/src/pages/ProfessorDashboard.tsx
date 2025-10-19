@@ -1,19 +1,25 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { 
-  GraduationCap, 
-  Calendar, 
-  Dumbbell, 
-  BookOpen, 
+import {
+  GraduationCap,
+  Calendar,
+  Dumbbell,
+  BookOpen,
   ArrowRight,
   FolderOpen,
   Clock,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
@@ -72,9 +78,11 @@ export default function ProfessorDashboard() {
 
   const getWorkshopStats = () => {
     const total = workshops.length;
-    const pending = workshops.filter(w => w.status === "pending").length;
-    const approved = workshops.filter(w => w.status === "approved").length;
-    const needsRevision = workshops.filter(w => w.status === "needs_revision").length;
+    const pending = workshops.filter((w) => w.status === "pending").length;
+    const approved = workshops.filter((w) => w.status === "approved").length;
+    const needsRevision = workshops.filter(
+      (w) => w.status === "needs_revision"
+    ).length;
     return { total, pending, approved, needsRevision };
   };
 
@@ -85,6 +93,37 @@ export default function ProfessorDashboard() {
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
+    }
+  };
+
+  const handleRegisterEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login to register for events");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/events/${eventId}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        alert("Successfully registered for the event!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to register for event");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred while registering for the event");
     }
   };
 
@@ -110,8 +149,8 @@ export default function ProfessorDashboard() {
         "Create new workshops",
         "Edit workshop details",
         "View all your workshops",
-        "Track approval status"
-      ]
+        "Track approval status",
+      ],
     },
     {
       title: "Sports Facilities",
@@ -125,9 +164,9 @@ export default function ProfessorDashboard() {
         "Aerobics",
         "Zumba",
         "Cross Circuit",
-        "Kick-boxing"
-      ]
-    }
+        "Kick-boxing",
+      ],
+    },
   ];
 
   if (loading) {
@@ -153,7 +192,8 @@ export default function ProfessorDashboard() {
             <h1 className="text-4xl font-bold">Professor Dashboard</h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            Welcome, Professor {userName}! Manage your workshops and access university facilities.
+            Welcome, Professor {userName}! Manage your workshops and access
+            university facilities.
           </p>
         </div>
 
@@ -161,7 +201,9 @@ export default function ProfessorDashboard() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Workshops</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Total Workshops
+              </CardTitle>
               <FolderOpen className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
@@ -174,14 +216,16 @@ export default function ProfessorDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pending Approval</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Pending Approval
+              </CardTitle>
               <Clock className="h-4 w-4 text-blue-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.pending}</div>
-              <p className="text-xs text-muted-foreground">
-                Awaiting review
-              </p>
+              <div className="text-2xl font-bold text-blue-600">
+                {stats.pending}
+              </div>
+              <p className="text-xs text-muted-foreground">Awaiting review</p>
             </CardContent>
           </Card>
 
@@ -191,7 +235,9 @@ export default function ProfessorDashboard() {
               <CheckCircle2 className="h-4 w-4 text-green-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {stats.approved}
+              </div>
               <p className="text-xs text-muted-foreground">
                 Successfully approved
               </p>
@@ -200,14 +246,16 @@ export default function ProfessorDashboard() {
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Needs Revision</CardTitle>
+              <CardTitle className="text-sm font-medium">
+                Needs Revision
+              </CardTitle>
               <AlertCircle className="h-4 w-4 text-orange-600" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600">{stats.needsRevision}</div>
-              <p className="text-xs text-muted-foreground">
-                Requires updates
-              </p>
+              <div className="text-2xl font-bold text-orange-600">
+                {stats.needsRevision}
+              </div>
+              <p className="text-xs text-muted-foreground">Requires updates</p>
             </CardContent>
           </Card>
         </div>
@@ -217,8 +265,8 @@ export default function ProfessorDashboard() {
           {/* Left Column - Upcoming Events */}
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
-            
-            <EventSearch 
+
+            <EventSearch
               onSearchResults={handleSearchResults}
               onLoading={handleLoading}
               onError={handleError}
@@ -244,17 +292,31 @@ export default function ProfessorDashboard() {
                     id={event._id || String(index)}
                     title={event.name || "Untitled Event"}
                     category={(event.eventType || "academic") as any}
-                    date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    }) : "TBA"}
-                    time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    }) : "TBA"}
+                    date={
+                      event.startDate
+                        ? new Date(event.startDate).toLocaleDateString(
+                            "en-US",
+                            {
+                              weekday: "short",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            }
+                          )
+                        : "TBA"
+                    }
+                    time={
+                      event.startDate
+                        ? new Date(event.startDate).toLocaleTimeString(
+                            "en-US",
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            }
+                          )
+                        : "TBA"
+                    }
                     location={event.location || "Unknown location"}
                     attendees={event.attendeesCount || 0}
                     image={event.bannerImage || event.image}
@@ -265,8 +327,12 @@ export default function ProfessorDashboard() {
                     registrationDeadline={event.registrationDeadline}
                     vendors={event.vendors || []}
                     showDetailedView={true}
-                    onRegister={() => console.log("Register:", event.name)}
-                    onViewDetails={() => console.log("View details:", event.name)}
+                    onRegister={() =>
+                      console.log(handleRegisterEvent(event._id))
+                    }
+                    onViewDetails={() =>
+                      console.log("View details:", event.name)
+                    }
                   />
                 ))}
               </div>
@@ -274,7 +340,9 @@ export default function ProfessorDashboard() {
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
                   <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Events Found</h3>
+                  <h3 className="text-xl font-semibold mb-2">
+                    No Events Found
+                  </h3>
                   <p className="text-muted-foreground text-center">
                     There are no upcoming events at the moment.
                   </p>
@@ -289,7 +357,10 @@ export default function ProfessorDashboard() {
               <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
               <div className="space-y-6">
                 {quickActions.map((action) => (
-                  <Card key={action.title} className="hover:shadow-lg transition-shadow flex flex-col">
+                  <Card
+                    key={action.title}
+                    className="hover:shadow-lg transition-shadow flex flex-col"
+                  >
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -297,7 +368,9 @@ export default function ProfessorDashboard() {
                             <action.icon className="h-6 w-6 text-white" />
                           </div>
                           <div>
-                            <CardTitle className="text-xl">{action.title}</CardTitle>
+                            <CardTitle className="text-xl">
+                              {action.title}
+                            </CardTitle>
                             <CardDescription className="mt-1">
                               {action.description}
                             </CardDescription>
@@ -310,7 +383,10 @@ export default function ProfessorDashboard() {
                         {action.features && (
                           <ul className="space-y-2 mb-4">
                             {action.features.map((feature, idx) => (
-                              <li key={idx} className="flex items-center text-sm text-muted-foreground">
+                              <li
+                                key={idx}
+                                className="flex items-center text-sm text-muted-foreground"
+                              >
                                 <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
                                 {feature}
                               </li>
@@ -320,13 +396,16 @@ export default function ProfessorDashboard() {
                         {action.activities && (
                           <div className="mb-4">
                             <p className="text-sm text-muted-foreground mb-3">
-                              Access the gym schedule to view monthly fitness sessions and book your preferred time slots.
+                              Access the gym schedule to view monthly fitness
+                              sessions and book your preferred time slots.
                             </p>
-                            <p className="text-sm font-medium mb-3">Available Sessions:</p>
+                            <p className="text-sm font-medium mb-3">
+                              Available Sessions:
+                            </p>
                             <div className="flex flex-wrap gap-2">
                               {action.activities.map((activity, idx) => (
-                                <Badge 
-                                  key={idx} 
+                                <Badge
+                                  key={idx}
                                   variant="secondary"
                                   className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
                                 >
@@ -337,8 +416,8 @@ export default function ProfessorDashboard() {
                           </div>
                         )}
                       </div>
-                      <Button 
-                        className="w-full mt-auto" 
+                      <Button
+                        className="w-full mt-auto"
                         onClick={() => setLocation(action.path)}
                       >
                         Access {action.title}
