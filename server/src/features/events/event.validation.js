@@ -146,7 +146,9 @@ export const updateWorkshopSchema = Joi.object({
   name: Joi.string().trim().optional(),
   description: Joi.string().optional(),
   location: Joi.string().valid("GUC Cairo", "GUC Berlin").optional(),
-  startDate: Joi.date().optional(),
+  startDate: Joi.date().greater("now").optional().messages({
+    "date.greater": "Start date must be in the future"
+  }),
   startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
   endDate: Joi.date().when('startDate', {
     is: Joi.exist(),
