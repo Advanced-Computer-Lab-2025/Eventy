@@ -137,6 +137,7 @@ export const loginUser = async (data) => {
   if (
     user.role !== "vendor" &&
     !(
+//      normalizedEmail.endsWith("@gmail.com") ||
       normalizedEmail.endsWith("@guc.edu.eg") ||
       normalizedEmail.endsWith("@student.guc.edu.eg")
     )
@@ -206,6 +207,7 @@ export const confirmEmailVerification = async (token) => {
     if (!user) throw new Error("User not found");
 
     user.isVerified = true;
+    user.status = "active"; // Update status to active
     await user.save();
 
     return { message: "Email verified successfully" };
