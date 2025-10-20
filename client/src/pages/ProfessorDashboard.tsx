@@ -256,7 +256,7 @@ export default function ProfessorDashboard() {
                       hour12: true,
                     }) : "TBA"}
                     location={event.location || "Unknown location"}
-                    attendees={event.attendeesCount || 0}
+                    attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                     image={event.bannerImage || event.image}
                     description={event.description}
                     startDate={event.startDate}

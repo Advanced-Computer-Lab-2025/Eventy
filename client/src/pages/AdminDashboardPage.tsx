@@ -236,7 +236,7 @@ export default function AdminDashboardPage() {
                             }) : "TBA"}
                             time={e.startDate ? new Date(e.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
                             location={e.location || "Unknown location"}
-                            attendees={e.attendeesCount || 0}
+                            attendees={Array.isArray(e.attendees) ? e.attendees.length : (e.attendeesCount || 0)}
                             image={e.bannerImage || e.image || getEventImage(e.eventType, e.name)}
                             description={e.description}
                             startDate={e.startDate}

@@ -151,7 +151,7 @@ export default function Dashboard() {
                         }) : "TBA"}
                         time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
                         location={event.location || "Unknown location"}
-                        attendees={event.attendeesCount || 0}
+                        attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                         vendors={event.vendors || []}
                         onRegister={() => console.log("Register:", event.name)}
                         onSave={() => console.log("Save:", event.name)}
