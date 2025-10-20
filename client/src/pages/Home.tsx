@@ -82,7 +82,7 @@ export default function Home() {
                 })
               : "TBA"}
             location={events[0].location || "Unknown location"}
-            attendees={events[0].attendeesCount || 0}
+            attendees={Array.isArray(events[0].attendees) ? events[0].attendees.length : (events[0].attendeesCount || 0)}
             image={events[0].image || getEventImage(events[0].eventType, events[0].name)}
             description={
               events[0].description ||
@@ -147,7 +147,7 @@ export default function Home() {
                           })
                         : "TBA"}
                       location={event.location || "Unknown location"}
-                      attendees={event.attendeesCount || 0}
+                      attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                       image={event.bannerImage || event.image}
                       description={event.description}
                       startDate={event.startDate}

@@ -401,7 +401,7 @@ export default function EventsOfficeDashboard() {
                           })
                         : "TBA"}
                       location={event.location || "Unknown location"}
-                      attendees={event.attendeesCount || 0}
+                      attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                       image={event.bannerImage || event.image || getEventImage(event.eventType, event.name)}
                       description={event.description}
                       startDate={event.startDate}
