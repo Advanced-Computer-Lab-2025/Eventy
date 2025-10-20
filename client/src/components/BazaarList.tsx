@@ -43,6 +43,37 @@ export default function BazaarList({
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredBazaars, setFilteredBazaars] = useState<Bazaar[]>(bazaars);
 
+  const handleRegisterEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login to register for events");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/events/${eventId}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        alert("Successfully registered for the event!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to register for event");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred while registering for the event");
+    }
+  };
+
   // Filter bazaars based on search term
   useEffect(() => {
     let filtered = bazaars;
@@ -64,7 +95,7 @@ export default function BazaarList({
     if (onRegister) {
       onRegister(bazaarId);
     } else {
-      console.log(`Register for bazaar: ${bazaarId}`);
+      handleRegisterEvent(bazaarId);
     }
   };
 
@@ -135,7 +166,8 @@ export default function BazaarList({
       {showFilters && (
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            {filteredBazaars.length} bazaar{filteredBazaars.length !== 1 ? 's' : ''} found
+            {filteredBazaars.length} bazaar
+            {filteredBazaars.length !== 1 ? "s" : ""} found
           </p>
           {searchTerm && (
             <Button
@@ -157,7 +189,9 @@ export default function BazaarList({
           <CardContent className="p-8">
             <div className="text-center py-8">
               <Search className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No bazaars match your search</h3>
+              <h3 className="text-lg font-semibold mb-2">
+                No bazaars match your search
+              </h3>
               <p className="text-muted-foreground">
                 Try adjusting your search terms
               </p>

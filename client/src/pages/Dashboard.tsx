@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 
 //todo: remove mock functionality
-const recentEvents = [
+const recentEvents = [ 
   {
     id: "1",
     title: "AI & Machine Learning Workshop",
@@ -19,7 +19,8 @@ const recentEvents = [
     date: "Mar 15, 2024",
     time: "2:00 PM",
     location: "Engineering Building",
-    image: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=200&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=200&auto=format&fit=crop",
   },
   {
     id: "2",
@@ -28,7 +29,8 @@ const recentEvents = [
     date: "Mar 20, 2024",
     time: "6:00 PM",
     location: "Main Quadrangle",
-    image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=200&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=200&auto=format&fit=crop",
   },
 ];
 
@@ -58,12 +60,15 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold">Dashboard</h1>
-            <Button onClick={() => setShowCreateDialog(true)} data-testid="button-create-event">
+            <Button
+              onClick={() => setShowCreateDialog(true)}
+              data-testid="button-create-event"
+            >
               <Plus className="h-4 w-4 mr-2" />
               Create Event
             </Button>
@@ -86,11 +91,7 @@ export default function Dashboard() {
             icon={Users}
             trend={{ value: 8, isPositive: true }}
           />
-          <StatCard
-            title="Active Now"
-            value="24"
-            icon={TrendingUp}
-          />
+          <StatCard title="Active Now" value="24" icon={TrendingUp} />
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
@@ -133,7 +134,9 @@ export default function Dashboard() {
                 ) : events.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p className="text-lg font-medium mb-2">No upcoming events</p>
+                    <p className="text-lg font-medium mb-2">
+                      No upcoming events
+                    </p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,17 +146,35 @@ export default function Dashboard() {
                         id={event._id || String(index)}
                         title={event.name || "Untitled Event"}
                         category={(event.eventType || "academic") as any}
-                        date={event.startDate ? new Date(event.startDate).toLocaleDateString("en-US", {
-                          weekday: "short",
-                          month: "long",
-                          day: "numeric",
-                          year: "numeric",
-                        }) : "TBA"}
-                        time={event.startDate ? new Date(event.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
                         location={event.location || "Unknown location"}
                         attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                         vendors={event.vendors || []}
-                        onRegister={() => console.log("Register:", event.name)}
+                        onRegister={() => console.log("hakoona batata")}
                         onSave={() => console.log("Save:", event.name)}
                         onShare={() => console.log("Share:", event.name)}
                       />

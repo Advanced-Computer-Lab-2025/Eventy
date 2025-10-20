@@ -276,6 +276,7 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
+  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -342,7 +343,9 @@ export const getUpcomingEventsWithVendors = async () => {
           } else if (vendor.name) {
             vendorName = vendor.name;
           } else {
-            vendorName = `${vendor.firstName || ""} ${vendor.lastName || ""}`.trim();
+            vendorName = `${vendor.firstName || ""} ${
+              vendor.lastName || ""
+            }`.trim();
           }
 
           return {
@@ -365,7 +368,6 @@ export const getUpcomingEventsWithVendors = async () => {
   return eventsWithVendors;
 };
 
-
 export async function deleteEvent(eventId, user) {
   // Ensure event exists
   const event = await Event.findById(eventId);
@@ -385,10 +387,10 @@ export async function deleteEvent(eventId, user) {
 export const searchEvents = async ({ name, type }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   const now = new Date();
-  const filter = { 
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
-    deletedAt: null
+    deletedAt: null,
   };
 
   // If both name and type are provided and are the same (unified search)
@@ -397,7 +399,7 @@ export const searchEvents = async ({ name, type }) => {
     // First, find users whose names match the search query
     // Support searching by: firstName, lastName, or "firstName lastName"
     const nameParts = name.trim().split(/\s+/); // Split by whitespace
-    
+
     let userQuery = {
       $or: [
         { firstName: { $regex: name, $options: "i" } },
@@ -441,7 +443,7 @@ export const searchEvents = async ({ name, type }) => {
       // First, find users whose names match the search query
       // Support searching by: firstName, lastName, or "firstName lastName"
       const nameParts = name.trim().split(/\s+/); // Split by whitespace
-      
+
       let userQuery = {
         $or: [
           { firstName: { $regex: name, $options: "i" } },
@@ -459,7 +461,9 @@ export const searchEvents = async ({ name, type }) => {
         userQuery.$or.push({
           $and: [
             { firstName: { $regex: nameParts[0], $options: "i" } },
-            { lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" } },
+            {
+              lastName: { $regex: nameParts.slice(1).join(" "), $options: "i" },
+            },
           ],
         });
       }
@@ -554,25 +558,23 @@ export const getEventById = async (eventId) => {
   return event;
 };
 export const getAllTripsService = async () => {
-  
   const trips = await Event.find({ eventType: "trip" })
-    .select("name location price startDate endDate description capacity registrationDeadline")
+    .select(
+      "name location price startDate endDate description capacity registrationDeadline"
+    )
     .lean();
 
   return trips;
 };
 
 export const getAllWorkshopsService = async (userRole) => {
-  
+  // ✅ 3. Fetch all workshops from the database
+  const workshops = await Event.find({ eventType: "workshop" }).sort({
+    createdAt: -1,
+  });
 
-    // ✅ 3. Fetch all workshops from the database
-    const workshops = await Event.find({ eventType: "workshop" }).sort({
-      createdAt: -1,
-    });
-
-    // ✅ 4. Return response
-    return workshops
-  
+  // ✅ 4. Return response
+  return workshops;
 };
 export async function getAllEvents() {
   try {
@@ -582,7 +584,3 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
-
-
-

@@ -43,6 +43,37 @@ export default function StaffUpcomingEvents() {
     }
   };
 
+  const handleRegisterEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        alert("Please login to register for events");
+        return;
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/events/${eventId}/register`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (response.ok) {
+        alert("Successfully registered for the event!");
+      } else {
+        const errorData = await response.json();
+        alert(errorData.message || "Failed to register for event");
+      }
+    } catch (error) {
+      console.error("Registration error:", error);
+      alert("An error occurred while registering for the event");
+    }
+  };
+
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
   };
@@ -79,21 +110,25 @@ export default function StaffUpcomingEvents() {
                 id={event._id || String(index)}
                 title={event.name || "Untitled Event"}
                 category={(event.eventType || "academic") as any}
-                date={event.startDate
-                  ? new Date(event.startDate).toLocaleDateString("en-US", {
-                      weekday: "short",
-                      month: "long",
-                      day: "numeric",
-                      year: "numeric",
-                    })
-                  : "TBA"}
-                time={event.startDate
-                  ? new Date(event.startDate).toLocaleTimeString("en-US", {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                      hour12: true,
-                    })
-                  : "TBA"}
+                date={
+                  event.startDate
+                    ? new Date(event.startDate).toLocaleDateString("en-US", {
+                        weekday: "short",
+                        month: "long",
+                        day: "numeric",
+                        year: "numeric",
+                      })
+                    : "TBA"
+                }
+                time={
+                  event.startDate
+                    ? new Date(event.startDate).toLocaleTimeString("en-US", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                        hour12: true,
+                      })
+                    : "TBA"
+                }
                 location={event.location || "Unknown location"}
                 attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                 image={event.bannerImage || event.image}
@@ -104,7 +139,7 @@ export default function StaffUpcomingEvents() {
                 registrationDeadline={event.registrationDeadline}
                 vendors={event.vendors || []}
                 showDetailedView={true}
-                onRegister={() => console.log("Register:", event.name)}
+                onRegister={() => handleRegisterEvent(event._id)}
                 onSave={() => console.log("Save:", event.name)}
                 onShare={() => console.log("Share:", event.name)}
                 onViewDetails={() => console.log("View details:", event.name)}

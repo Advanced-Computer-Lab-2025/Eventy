@@ -191,10 +191,19 @@ router.get(
 router.get(
   "/:eventId",
   authMiddleware,
-  roleMiddleware(["vendor", "student", "staff", "ta", "professor", "admin", "events_office"]),
+  roleMiddleware([
+    "vendor",
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "admin",
+    "events_office",
+  ]),
   eventsController.getEventById.bind(eventsController)
 );
 
+// Register for event
 router.post(
   "/:id/register",
   authMiddleware,

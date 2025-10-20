@@ -47,7 +47,6 @@ export const updateConferenceSchema = Joi.object({
   agenda: Joi.string().optional(),
 }).min(1);
 
-
 // Validation schema for workshop status update
 export const workshopStatusSchema = Joi.object({
   id: Joi.string().custom(objectId).required(),
@@ -73,9 +72,12 @@ export const createWorkshopSchema = Joi.object({
     "any.required": "Workshop location is required",
     "any.only": "Location must be either 'GUC Cairo' or 'GUC Berlin'",
   }),
-  startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
-  endTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
-
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
 
  startDate: Joi.date().greater("now").required().messages({
     "any.required": "Workshop start date is required",
@@ -153,13 +155,15 @@ export const updateWorkshopSchema = Joi.object({
   endDate: Joi.date().when('startDate', {
     is: Joi.exist(),
     then: Joi.date().greater(Joi.ref("startDate")),
-    otherwise: Joi.date().optional()
+    otherwise: Joi.date().optional(),
   }),
-  endTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
-  registrationDeadline: Joi.date().when('startDate', {
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
+  registrationDeadline: Joi.date().when("startDate", {
     is: Joi.exist(),
     then: Joi.date().less(Joi.ref("startDate")),
-    otherwise: Joi.date().optional()
+    otherwise: Joi.date().optional(),
   }),
   capacity: Joi.number().integer().min(1).optional(),
   agenda: Joi.string().optional(),
