@@ -2,6 +2,7 @@ import { useState } from "react";
 import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
 import EventSearch from "@/components/EventSearch";
+import { useToast } from "@/hooks/use-toast";
 
 interface Event {
   _id: string;
@@ -11,6 +12,7 @@ interface Event {
   endDate?: string;
   location?: string;
   attendeesCount?: number;
+  attendees?: string[];
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
@@ -31,6 +33,7 @@ export default function StaffUpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   const handleSearchResults = (results: any[]) => {
     setEvents(results);
@@ -47,7 +50,11 @@ export default function StaffUpcomingEvents() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to register for events");
+        toast({
+          title: "Login Required",
+          description: "Please login to register for events",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -63,14 +70,25 @@ export default function StaffUpcomingEvents() {
       );
 
       if (response.ok) {
-        alert("Successfully registered for the event!");
+        toast({
+          title: "Registration Successful! 🎉",
+          description: "You have been successfully registered for the event.",
+        });
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to register for event");
+        toast({
+          title: "Registration Failed",
+          description: errorData.message || "Failed to register for event",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("An error occurred while registering for the event");
+      toast({
+        title: "Registration Error",
+        description: "An error occurred while registering for the event",
+        variant: "destructive",
+      });
     }
   };
 

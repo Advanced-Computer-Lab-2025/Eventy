@@ -23,6 +23,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
+import { useToast } from "@/hooks/use-toast";
 
 interface Workshop {
   _id: string;
@@ -38,6 +39,7 @@ export default function ProfessorDashboard() {
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     fetchUserData();
@@ -100,7 +102,11 @@ export default function ProfessorDashboard() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to register for events");
+        toast({
+          title: "Login Required",
+          description: "Please login to register for events",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -116,14 +122,25 @@ export default function ProfessorDashboard() {
       );
 
       if (response.ok) {
-        alert("Successfully registered for the event!");
+        toast({
+          title: "Registration Successful! 🎉",
+          description: "You have been successfully registered for the event.",
+        });
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to register for event");
+        toast({
+          title: "Registration Failed",
+          description: errorData.message || "Failed to register for event",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("An error occurred while registering for the event");
+      toast({
+        title: "Registration Error",
+        description: "An error occurred while registering for the event",
+        variant: "destructive",
+      });
     }
   };
 

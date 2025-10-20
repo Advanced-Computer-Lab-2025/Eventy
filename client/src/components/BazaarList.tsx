@@ -4,6 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Store } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export interface Bazaar {
   _id: string;
@@ -42,12 +43,17 @@ export default function BazaarList({
 }: BazaarListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredBazaars, setFilteredBazaars] = useState<Bazaar[]>(bazaars);
+  const { toast } = useToast();
 
   const handleRegisterEvent = async (eventId: string) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to register for events");
+        toast({
+          title: "Login Required",
+          description: "Please login to register for events",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -63,14 +69,25 @@ export default function BazaarList({
       );
 
       if (response.ok) {
-        alert("Successfully registered for the event!");
+        toast({
+          title: "Registration Successful! 🎉",
+          description: "You have been successfully registered for the event.",
+        });
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to register for event");
+        toast({
+          title: "Registration Failed",
+          description: errorData.message || "Failed to register for event",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("An error occurred while registering for the event");
+      toast({
+        title: "Registration Error",
+        description: "An error occurred while registering for the event",
+        variant: "destructive",
+      });
     }
   };
 
