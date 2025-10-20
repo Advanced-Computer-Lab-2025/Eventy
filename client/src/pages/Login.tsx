@@ -66,11 +66,28 @@ export default function Login() {
         }
       }, 1000); // small delay so toast shows briefly
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Login failed ❌",
-        description: err.message || "Something went wrong. Please try again.",
-      });
+      // Handle specific verification error message
+      const errorMessage = err.message || "Something went wrong. Please try again.";
+      
+      // Check if it's a verification error, null pointer error, or other specific cases
+      if (
+        errorMessage.includes("verified yet") || 
+        errorMessage.includes("verification") ||
+        errorMessage.includes("Cannot read properties of null") ||
+        errorMessage.includes("toLowerCase")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Cannot login yet ⏳",
+          description: "Please check your email for verification",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed ❌",
+          description: errorMessage,
+        });
+      }
     }
   };
 
