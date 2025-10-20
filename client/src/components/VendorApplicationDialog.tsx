@@ -134,11 +134,21 @@ export default function VendorApplicationDialog({
       }
     } catch (error) {
       console.error("Error submitting application:", error);
-      toast({
-        title: "Application Failed",
-        description: "Failed to submit your application. Please try again.",
-        variant: "destructive",
-      });
+      
+      // Check if it's a duplicate application error
+      if (error instanceof Error && error.message.includes("already applied to this bazaar")) {
+        toast({
+          title: "Already Applied",
+          description: "You have already applied to this bazaar.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Application Failed",
+          description: error instanceof Error ? error.message : "You have already applied to this bazaar.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsSubmitting(false);
     }

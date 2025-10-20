@@ -35,6 +35,23 @@ export class ApplicationController {
         data: newApplication,
       });
     } catch (error) {
+      // Handle duplicate application errors specifically
+      if (error.message && error.message.includes("already applied")) {
+        return res.status(409).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      
+      // Handle other validation errors
+      if (error.message && error.message.includes("Could not create application")) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+      
+      // Fallback for any other errors
       next(error);
     }
   }
