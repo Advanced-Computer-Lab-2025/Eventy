@@ -77,9 +77,10 @@ export const createWorkshopSchema = Joi.object({
   endTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).required(),
 
 
-  startDate: Joi.date().required().messages({
+ startDate: Joi.date().greater("now").required().messages({
     "any.required": "Workshop start date is required",
     "date.base": "Invalid start date format",
+    "date.greater": "Start date must be in the future",
   }),
 
   endDate: Joi.date().greater(Joi.ref("startDate")).required().messages({
