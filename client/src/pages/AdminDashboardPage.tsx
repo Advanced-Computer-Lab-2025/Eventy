@@ -31,6 +31,7 @@ export default function AdminDashboardPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [totalUpcomingCount, setTotalUpcomingCount] = useState<number | null>(null);
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
   const [eventTypeFilter, setEventTypeFilter] = useState<
@@ -85,7 +86,9 @@ export default function AdminDashboardPage() {
         }
         const body = await res.json();
         if (!res.ok) throw new Error(body.message || "Failed to fetch upcoming events");
-        setUpcomingEvents(Array.isArray(body.data) ? body.data : body);
+        const eventsList = Array.isArray(body.data) ? body.data : body;
+        setUpcomingEvents(eventsList);
+        setTotalUpcomingCount(eventsList.length);
       } catch (err: any) {
         setEventsError(err.message || "Failed to load upcoming events");
         setUpcomingEvents([]);
@@ -156,7 +159,7 @@ export default function AdminDashboardPage() {
           />
           <StatCard 
             title="Upcoming Events" 
-            value={eventsLoading ? "-" : upcomingEvents.length.toString()} 
+            value={totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()} 
             icon={Calendar} 
           />
           <StatCard 
