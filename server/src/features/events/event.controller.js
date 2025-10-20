@@ -12,7 +12,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
 } from "./event.validation.js";
-import User from "../users/user.model.js"; // adjust path if needed
+import { User } from "../users/user.model.js"; // adjust path if needed
 
 //Write your code in this class!!!
 
