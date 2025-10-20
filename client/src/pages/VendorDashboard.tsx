@@ -8,12 +8,12 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import BazaarList, { Bazaar } from "@/components/BazaarList";
+import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
 import StatCard from "@/components/StatCard";
-import { bazaarApiService, Application } from "@/lib/bazaarApi";
+import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 

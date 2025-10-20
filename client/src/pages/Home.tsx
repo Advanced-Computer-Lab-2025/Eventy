@@ -7,6 +7,7 @@ import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { getEventImage } from "@/lib/eventImages";
+import { useToast } from "@/hooks/use-toast";
 
 // Define Event type for type safety
 interface Event {
@@ -17,6 +18,7 @@ interface Event {
   endDate?: string;
   location?: string;
   attendeesCount?: number;
+  attendees?: string[];
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
@@ -39,12 +41,17 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true); // Initial loading state
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   const handleRegisterEvent = async (eventId: string) => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        alert("Please login to register for events");
+        toast({
+          title: "Login Required",
+          description: "Please login to register for events",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -60,14 +67,25 @@ export default function Home() {
       );
 
       if (response.ok) {
-        alert("Successfully registered for the event!");
+        toast({
+          title: "Registration Successful! 🎉",
+          description: "You have been successfully registered for the event.",
+        });
       } else {
         const errorData = await response.json();
-        alert(errorData.message || "Failed to register for event");
+        toast({
+          title: "Registration Failed",
+          description: errorData.message || "Failed to register for event",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Registration error:", error);
-      alert("An error occurred while registering for the event");
+      toast({
+        title: "Registration Error",
+        description: "An error occurred while registering for the event",
+        variant: "destructive",
+      });
     }
   };
 

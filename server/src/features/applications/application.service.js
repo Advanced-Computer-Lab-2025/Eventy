@@ -10,6 +10,11 @@ class ApplicationServiceClass {
    */
   async createApplication(applicationData) {
     try {
+      // For bazaar applications, check for duplicate applications
+      if (applicationData.type === "bazaar") {
+        await this.validateBazaarApplicationUniqueness(applicationData);
+      }
+      
       // For booth applications, validate booth availability
       if (applicationData.type === "booth") {
         await this.validateBoothAvailability(applicationData);
@@ -23,8 +28,37 @@ class ApplicationServiceClass {
       if (applicationData.type === "booth" && error.message.includes("already reserved")) {
         throw error; // Pass the original error with the clean message
       }
+      // For bazaar duplicate application errors, pass the original message directly
+      if (applicationData.type === "bazaar" && error.message.includes("already applied")) {
+        throw error; // Pass the original error with the clean message
+      }
       // For other errors, wrap with context
       throw new Error(`Could not create application: ${error.message}`);
+    }
+  }
+
+  /**
+   * Validates that a vendor hasn't already applied to the same bazaar
+   * @param {object} applicationData - The bazaar application data
+   * @throws {Error} If vendor has already applied to this bazaar
+   */
+  async validateBazaarApplicationUniqueness(applicationData) {
+    const { event, createdBy } = applicationData;
+    
+    if (!event || !createdBy) {
+      throw new Error("Event and vendor information are required");
+    }
+
+    // Check if vendor has already applied to this bazaar
+    const existingApplication = await Application.findOne({
+      event: event,
+      createdBy: createdBy,
+      type: "bazaar",
+      deletedAt: null // Only check non-deleted applications
+    });
+
+    if (existingApplication) {
+      throw new Error("You have already applied to this bazaar");
     }
   }
 
