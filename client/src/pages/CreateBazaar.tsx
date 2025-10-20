@@ -288,7 +288,7 @@ export default function CreateBazaar() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/dashboard")}
+              onClick={() => setLocation("/events-office/dashboard")}
               className="flex-1"
             >
               Cancel
