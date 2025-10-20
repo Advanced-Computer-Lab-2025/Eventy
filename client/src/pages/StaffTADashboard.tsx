@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
+import ProfileMenu from "@/components/ProfileMenu";
 import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
@@ -248,24 +249,12 @@ export default function StaffTADashboard() {
               <Logo size="xl" />
             </div>
 
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search events..."
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon">
                 <Bell className="h-5 w-5" />
               </Button>
               <ThemeToggle />
-              <Button variant="ghost" size="icon">
-                <UserIcon className="h-5 w-5" />
-              </Button>
+              <ProfileMenu />
             </div>
           </div>
 
