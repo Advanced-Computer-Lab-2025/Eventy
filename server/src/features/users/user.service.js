@@ -56,7 +56,7 @@ class UserService {
 
     if (!targetUser.deletedAt) {
       targetUser.deletedAt = new Date();
-      targetUser.status = "deleted";
+      targetUser.status = "blocked";
       await targetUser.save();
       targetUser.deletedAt = new Date();
       targetUser.status = "deleted";
