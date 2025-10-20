@@ -1,6 +1,7 @@
 import { signUpUser } from "./auth.service.js";
 import { loginUser } from "./auth.service.js";
 import { logoutUser } from "./auth.service.js";
+import { confirmEmailVerification } from "./auth.service.js";
 
 export const signUp = async (req, res) => {
   try {
@@ -39,5 +40,15 @@ export const logout = async (req, res) => {
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const verifyEmail = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const result = await confirmEmailVerification(token);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 };

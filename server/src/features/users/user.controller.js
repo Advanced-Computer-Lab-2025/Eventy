@@ -3,7 +3,7 @@ import {
   UserValidation,
   createManagementAccountSchema,
 } from "./user.validation.js";
-import { sendRegistrationEmail } from "../auth/email.service.js";
+import { sendRegistrationEmail, sendVerificationEmail } from "../auth/email.service.js";
 
 import UserService from "./user.service.js";
 
@@ -85,7 +85,13 @@ export default class UserController {
 
       user.role = role;
       await user.save();
-      await sendRegistrationEmail(user);
+      
+      // Send verification email for staff, TA, and professor roles
+      if (role === 'staff' || role === 'ta' || role === 'professor') {
+        await sendVerificationEmail(user);
+      } else {
+        await sendRegistrationEmail(user);
+      }
 
       return res.status(200).json({
         success: true,
