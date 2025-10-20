@@ -12,6 +12,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
 } from "./event.validation.js";
+import User from "../users/user.model.js"; // adjust path if needed
 
 //Write your code in this class!!!
 
@@ -104,7 +105,11 @@ export class EventsController {
       return res
         .status(200)
         .json(
-          new ApiResponse(200, conferences, "Conferences retrieved successfully")
+          new ApiResponse(
+            200,
+            conferences,
+            "Conferences retrieved successfully"
+          )
         );
     } catch (error) {
       next(error);
@@ -220,6 +225,23 @@ export class EventsController {
       const { error } = createWorkshopSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
 
+      // Check professors are active
+      const professorIds = req.body.professors;
+      const activeProfessors = await User.find({
+        _id: { $in: professorIds },
+        role: "professor",
+        status: "active", // Only active professors
+        deletedAt: null, // Not soft deleted
+      }).select("_id");
+
+      if (activeProfessors.length !== professorIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "All professors must be active and not pending, blocked, or deleted.",
+        });
+      }
+
       const newWorkshop = await eventService.createWorkshop(
         req.body,
         req.user.id
@@ -236,34 +258,36 @@ export class EventsController {
   }
 
   async viewAllWorkshops(req, res, next) {
-  try {
-    // ✅ 1. Check authentication
-    if (!req.user) {
-      throw new ApiError(401, "Unauthorized");
-    }
+    try {
+      // ✅ 1. Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
 
-    // ✅ 2. Allow only Admin or Events Office roles
-    if (req.user.role !== "events_office") {
-      throw new ApiError(
-        403,
-        "Forbidden: Only Admin or Events Office can view all workshops"
+      // ✅ 2. Allow only Admin or Events Office roles
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Admin or Events Office can view all workshops"
+        );
+      }
+
+      // ✅ 3. Call service layer
+      const workshops = await eventService.getAllWorkshopsService(
+        req.user.role
       );
+
+      // ✅ 4. Return success response
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, workshops, "Workshops retrieved successfully")
+        );
+    } catch (err) {
+      // ✅ 5. Pass errors to global handler
+      next(err);
     }
-
-    // ✅ 3. Call service layer
-    const workshops = await eventService.getAllWorkshopsService(req.user.role);
-
-    // ✅ 4. Return success response
-    return res
-      .status(200)
-      .json(
-        new ApiResponse(200, workshops, "Workshops retrieved successfully")
-      );
-  } catch (err) {
-    // ✅ 5. Pass errors to global handler
-    next(err);
   }
-}
 
   async getMyWorkshops(req, res, next) {
     try {
@@ -291,8 +315,6 @@ export class EventsController {
       next(error);
     }
   }
-
-
 
   async acceptWorkshop(req, res, next) {
     try {
@@ -535,7 +557,7 @@ export class EventsController {
     }
   }
 
-    async getEventById(req, res, next) {
+  async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
       const event = await eventService.getEventById(eventId);
@@ -548,28 +570,27 @@ export class EventsController {
   }
 
   async getAllTrips(req, res, next) {
-  try {
-    const userId = req.user._id || req.user.id;
+    try {
+      const userId = req.user._id || req.user.id;
 
-    if (!userId) {
-      throw new ApiError(401, "Unauthorized");
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can view all trips"
+        );
+      }
+
+      const trips = await eventService.getAllTripsService();
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
+    } catch (err) {
+      next(err);
     }
-
-    if (req.user.role !== "events_office") {
-      throw new ApiError(403, "Forbidden: Only Events Office can view all trips");
-    }
-
-    const trips = await eventService.getAllTripsService();
-
-    return res
-      .status(200)
-      .json(new ApiResponse(200, trips, "Trips retrieved successfully"));
-  } catch (err) {
-    next(err);
   }
 }
-
-
-}
-
-
