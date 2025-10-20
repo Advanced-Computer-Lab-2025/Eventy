@@ -14,7 +14,7 @@ export interface Bazaar {
   endDate: string;
   registrationDeadline: string;
   status: "pending" | "approved" | "rejected" | "needs_revision";
-  attendees?: number;
+  attendees?: string[];
   capacity?: number;
   bannerImage?: string;
   eventType: "bazaar";
@@ -177,7 +177,7 @@ export default function BazaarList({
               endDate={bazaar.endDate}
               registrationDeadline={bazaar.registrationDeadline}
               status={bazaar.status}
-              attendees={bazaar.attendees}
+              attendees={bazaar.attendees?.length ?? 0}
               capacity={bazaar.capacity}
               bannerImage={bazaar.bannerImage}
               onRegister={() => handleRegister(bazaar._id)}
