@@ -110,16 +110,6 @@ export default function WorkshopManagement() {
       <ProfessorHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Back Button */}
-        <Button 
-          variant="ghost" 
-          onClick={() => setLocation("/professor")}
-          className="mb-4"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
-        </Button>
-
         {/* Header Section */}
         <div className="flex justify-between items-center mb-8">
           <div>
