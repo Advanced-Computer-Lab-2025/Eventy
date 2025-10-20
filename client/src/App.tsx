@@ -33,10 +33,17 @@ import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={Login} />
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/dashboard" component={Dashboard} />
+
+      <Route path="/home">
+        <ProtectedRoute allowedRoles={["student"]}>
+          <Home />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/admin">
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboardPage />
@@ -93,7 +100,7 @@ function Router() {
           <StaffUpcomingEvents />
         </ProtectedRoute>
       </Route>
-      
+
       <Route path="/create/bazaar" component={CreateBazaar} />
       <Route path="/vendor/dashboard">
         <ProtectedRoute allowedRoles={["vendor"]}>
@@ -105,7 +112,7 @@ function Router() {
           <EventsOfficeDashboard />
         </ProtectedRoute>
       </Route>
-        
+
       <Route path="/sports">
         <ProtectedRoute
           allowedRoles={[
@@ -119,22 +126,27 @@ function Router() {
           <SportsFacilities />
         </ProtectedRoute>
       </Route>
-     
-    
+
       <Route path="/approvals/workshops">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <WorkshopApprovals />
         </ProtectedRoute>
       </Route>
-          
 
       <Route path="/my-events">
-        <ProtectedRoute allowedRoles={["student", "staff", "events_office", "ta", "professor"]}>
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "events_office",
+            "ta",
+            "professor",
+          ]}
+        >
           <MyEvents />
         </ProtectedRoute>
       </Route>
-     
-      
+
       <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/vendor-requests">
         <ProtectedRoute allowedRoles={["admin", "events_office"]}>
