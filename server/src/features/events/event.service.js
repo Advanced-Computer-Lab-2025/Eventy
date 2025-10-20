@@ -153,7 +153,7 @@ export const updateConferenceService = async (
 
 // Get events with optional filter (e.g., for bazaar, published, upcoming)
 export const getEvents = async (filter = {}) => {
-  return Event.find(filter).sort({ startDate: 1 });
+  return Event.find(filter).sort({ startDate: 1 }).lean();
 };
 
 export const createWorkshop = async (workshopData, professorId) => {
