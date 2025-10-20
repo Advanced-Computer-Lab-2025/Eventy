@@ -8,6 +8,7 @@ interface StatCardProps {
   icon: LucideIcon;
   valueColor?: string;
   iconColor?: string;
+  titleColor?: string;
   themed?: boolean;
   trend?: {
     value: number;
@@ -22,6 +23,7 @@ export default function StatCard({
   icon: Icon, 
   valueColor = "text-gray-900", 
   iconColor = "text-gray-600",
+  titleColor,
   themed = false,
   trend 
 }: StatCardProps) {
@@ -30,7 +32,7 @@ export default function StatCard({
       <CardContent className="p-6">
         <div className="relative">
           <div>
-            <p className={`text-sm ${themed ? "text-muted-foreground" : "text-gray-900"} mb-1`}>{title}</p>
+            <p className={`text-sm ${titleColor || (themed ? "text-muted-foreground" : "text-gray-900")} mb-1`}>{title}</p>
             <p className={`text-3xl font-bold mb-1 ${themed ? "text-foreground" : valueColor}`} data-testid="text-stat-value">
               {value}
             </p>

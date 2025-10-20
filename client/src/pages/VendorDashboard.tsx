@@ -364,6 +364,7 @@ export default function VendorDashboard() {
                 icon={FolderOpen}
                 valueColor="text-foreground"
                 iconColor="text-muted-foreground"
+                titleColor="text-gray-900 dark:text-gray-100"
               />
               <StatCard
                 title="Pending Approval"
@@ -372,6 +373,7 @@ export default function VendorDashboard() {
                 icon={Clock}
                 valueColor="text-blue-600 dark:text-blue-400"
                 iconColor="text-blue-600 dark:text-blue-400"
+                titleColor="text-gray-900 dark:text-gray-100"
               />
               <StatCard
                 title="Approved"
@@ -380,6 +382,7 @@ export default function VendorDashboard() {
                 icon={CheckCircle}
                 valueColor="text-green-600 dark:text-green-400"
                 iconColor="text-green-600 dark:text-green-400"
+                titleColor="text-gray-900 dark:text-gray-100"
               />
               <StatCard
                 title="Rejected"
@@ -388,6 +391,7 @@ export default function VendorDashboard() {
                 icon={XCircle}
                 valueColor="text-orange-600 dark:text-orange-400"
                 iconColor="text-orange-600 dark:text-orange-400"
+                titleColor="text-gray-900 dark:text-gray-100"
               />
             </div>
 
@@ -426,7 +430,7 @@ export default function VendorDashboard() {
           <TabsContent value="platform-booths" className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
+                <CardTitle className="flex items-center gap-2 text-card-foreground">
                   <Store className="h-5 w-5" />
                   Apply for Platform Booth
                 </CardTitle>
@@ -569,7 +573,7 @@ export default function VendorDashboard() {
                   <Card key={application._id} data-testid={`card-participation-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
@@ -641,7 +645,7 @@ export default function VendorDashboard() {
                   <Card key={application._id} data-testid={`card-request-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
@@ -720,7 +724,7 @@ export default function VendorDashboard() {
                   <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
