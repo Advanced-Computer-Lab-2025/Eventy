@@ -194,7 +194,7 @@ export default function MyEvents() {
           </div>
         </div>
       ) : (
-        <StudentHeader homeHref="/" />
+        <StudentHeader />
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">

@@ -9,7 +9,7 @@ interface StudentHeaderProps {
   homeHref?: string;
 }
 
-export default function StudentHeader({ homeHref = "/" }: StudentHeaderProps) {
+export default function StudentHeader({ homeHref = "/home" }: StudentHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
