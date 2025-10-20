@@ -1,6 +1,6 @@
 import { useState,useEffect } from "react";
 import axios from "axios";
-import { Plus, Search, MoreVertical, Shield, UserX, UserCheck } from "lucide-react";
+import { Plus, Search, MoreVertical, Shield, UserX, UserCheck, Filter } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,6 +51,8 @@ export default function AdminUsers() {
   const [error, setError] = useState<string | null>(null);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [assigningRole, setAssigningRole] = useState<string | null>(null);
   const [newAdmin, setNewAdmin] = useState({
     name: "",
@@ -168,10 +170,15 @@ export default function AdminUsers() {
   if (loading) return <div className="flex justify-center items-center min-h-screen">Loading...</div>;
   if (error) return <div className="flex justify-center items-center min-h-screen text-red-500">{error}</div>;
 
-  const filteredUsers = users.filter(user => 
-    `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const q = searchQuery.toLowerCase();
+    const matchesSearch = `${user.firstName} ${user.lastName}`.toLowerCase().includes(q) || user.email.toLowerCase().includes(q);
+    const matchesRole = roleFilter === "all" || ((user.role || "").toLowerCase() === roleFilter);
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "active" ? user.status === "active" : user.status !== "active");
+    return matchesSearch && matchesRole && matchesStatus;
+  });
 
   return (
     <div className="min-h-screen bg-background">
@@ -211,9 +218,46 @@ export default function AdminUsers() {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
+                  <TableHead>
+                    <div className="inline-flex items-center gap-1">
+                      <span>Role</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" data-testid="column-role-filter">
+                            <Filter className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => setRoleFilter("all")}>All</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("student")}>student</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("staff")}>staff</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("ta")}>ta</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("professor")}>professor</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("vendor")}>vendor</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("admin")}>admin</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setRoleFilter("events_office")}>events_office</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableHead>
                   <TableHead>ID</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>
+                    <div className="inline-flex items-center gap-1">
+                      <span>Status</span>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-6 w-6" data-testid="column-status-filter">
+                            <Filter className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="start">
+                          <DropdownMenuItem onClick={() => setStatusFilter("all")}>All</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setStatusFilter("active")}>Active</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => setStatusFilter("blocked")}>Blocked</DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>

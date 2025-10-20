@@ -348,6 +348,7 @@ export default function EditWorkshop() {
                     <Input
                       id="startDate"
                       type="date"
+                      min={new Date().toISOString().split('T')[0]}
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
@@ -389,6 +390,7 @@ export default function EditWorkshop() {
                     <Input
                       id="endDate"
                       type="date"
+                      min={new Date().toISOString().split('T')[0]}
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
@@ -540,7 +542,7 @@ export default function EditWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="resources">Extra Resources</Label>
+                <Label htmlFor="resources">Extra Resources <span className="text-red-500">*</span></Label>
                 <Textarea
                   id="resources"
                   placeholder="e.g., Projector, laptops..."
@@ -549,6 +551,7 @@ export default function EditWorkshop() {
                   onChange={(e) =>
                     setFormData({ ...formData, resources: e.target.value })
                   }
+                  required
                 />
               </div>
 
@@ -577,6 +580,7 @@ export default function EditWorkshop() {
                     <Input
                       id="deadline"
                       type="date"
+                      min={new Date().toISOString().split('T')[0]}
                       value={formData.deadline}
                       onChange={(e) =>
                         setFormData({ ...formData, deadline: e.target.value })

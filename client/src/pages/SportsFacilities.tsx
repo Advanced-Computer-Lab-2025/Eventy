@@ -191,30 +191,6 @@ export default function SportsFacilities() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Back Button for Professors */}
-        {userRole === "professor" && (
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation("/professor")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        )}
-
-        {/* Back Button for Staff/TA */}
-        {(userRole === "staff" || userRole === "ta") && (
-          <Button 
-            variant="ghost" 
-            onClick={() => setLocation("/staff-ta")}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        )}
-
         {/* Left-aligned title */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Sports Facilities</h1>

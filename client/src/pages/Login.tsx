@@ -1,79 +1,95 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Link, useLocation } from "wouter"
-import { Mail, Lock } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { useState } from "react";
+import { Link, useLocation } from "wouter";
+import { Mail, Lock } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
-import Logo from "@/components/Logo"
-import { useToast } from "@/hooks/use-toast"
-import { ToastProvider, ToastViewport } from "@/components/ui/toast"
+} from "@/components/ui/card";
+import Logo from "@/components/Logo";
+import { useToast } from "@/hooks/use-toast";
+import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 
 export default function Login() {
-  const [, setLocation] = useLocation()
-  const { toast } = useToast()
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
 
   const [formData, setFormData] = useState({
     email: "",
     password: "",
-  })
+  });
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+    e.preventDefault();
 
     try {
       const res = await fetch("http://localhost:4000/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
-      })
+      });
 
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Login failed");
 
-  const data = await res.json()
-  if (!res.ok) throw new Error(data?.message || "Login failed")
-
-      localStorage.setItem("token", data.token)
-      localStorage.setItem("user", JSON.stringify(data.user))
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
       toast({
         title: "Login successful 🎉",
         description: `Welcome back, ${data.user.firstName || "user"}!`,
-      })
+      });
 
-      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase()
+      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
 
       setTimeout(() => {
         // Prefer the normalized `role` variable for comparisons
         if (role === "vendor") {
-          setLocation("/vendor/dashboard")
+          setLocation("/vendor/dashboard");
         } else if (role === "events_office") {
-          setLocation("/events-office/dashboard")
+          setLocation("/events-office/dashboard");
         } else if (role === "admin") {
-          setLocation("/admin")
+          setLocation("/admin");
         } else if (role === "staff" || role === "ta") {
-          setLocation("/staff-ta")
+          setLocation("/staff-ta");
         } else if (role === "professor") {
-          setLocation("/professor")
+          setLocation("/professor");
         } else {
-          setLocation("/")
+          setLocation("/home");
         }
-      }, 1000) // small delay so toast shows briefly
+      }, 1000); // small delay so toast shows briefly
     } catch (err: any) {
-      toast({
-        variant: "destructive",
-        title: "Login failed ❌",
-        description: err.message || "Something went wrong. Please try again.",
-      })
+      // Handle specific verification error message
+      const errorMessage = err.message || "Something went wrong. Please try again.";
+      
+      // Check if it's a verification error, null pointer error, or other specific cases
+      if (
+        errorMessage.includes("verified yet") || 
+        errorMessage.includes("verification") ||
+        errorMessage.includes("Cannot read properties of null") ||
+        errorMessage.includes("toLowerCase")
+      ) {
+        toast({
+          variant: "destructive",
+          title: "Cannot login yet ⏳",
+          description: "Please check your email for verification",
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Login failed ❌",
+          description: errorMessage,
+        });
+      }
     }
-  }
+  };
 
   return (
     <ToastProvider>
@@ -156,5 +172,5 @@ export default function Login() {
       {/* ✅ Toast viewport to render notifications */}
       <ToastViewport />
     </ToastProvider>
-  )
+  );
 }

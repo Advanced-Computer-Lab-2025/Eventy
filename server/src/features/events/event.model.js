@@ -21,7 +21,10 @@ const eventSchema = new Schema(
       type: String,
       required: true,
       enum: ["pending", "approved", "rejected", "needs_revision"],
-      default: "pending",
+      default: function () {
+        // If eventType is 'workshop', default to 'pending', else 'approved'
+        return this.eventType === "workshop" ? "pending" : "approved";
+      },
     },
 
     revisionComments: {
@@ -79,7 +82,6 @@ const eventSchema = new Schema(
       required: function () {
         return ["workshop", "conference"].includes(this.eventType);
       },
-      lowercase: true,
     },
     extraResources: { type: String },
     faculty: {

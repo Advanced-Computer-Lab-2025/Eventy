@@ -153,7 +153,7 @@ export const updateConferenceService = async (
 
 // Get events with optional filter (e.g., for bazaar, published, upcoming)
 export const getEvents = async (filter = {}) => {
-  return Event.find(filter).sort({ startDate: 1 });
+  return Event.find(filter).sort({ startDate: 1 }).lean();
 };
 
 export const createWorkshop = async (workshopData, professorId) => {
@@ -194,6 +194,23 @@ export async function editWorkshop(workshopId, updateData, user) {
     throw new ApiError(
       403,
       "Forbidden: Workshop can only be edited if its status is 'pending' or 'needs_revision'"
+    );
+  }
+
+  // Check if workshop has already started
+  const now = new Date();
+  const workshopStartDateTime = new Date(workshop.startDate);
+  
+  // If startTime exists, combine it with startDate
+  if (workshop.startTime) {
+    const [hours, minutes] = workshop.startTime.split(':').map(Number);
+    workshopStartDateTime.setHours(hours, minutes, 0, 0);
+  }
+
+  if (workshopStartDateTime <= now) {
+    throw new ApiError(
+      403,
+      "Forbidden: Cannot edit workshop that has already started"
     );
   }
 

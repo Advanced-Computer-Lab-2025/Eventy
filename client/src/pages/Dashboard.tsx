@@ -172,7 +172,7 @@ export default function Dashboard() {
                             : "TBA"
                         }
                         location={event.location || "Unknown location"}
-                        attendees={event.attendeesCount || 0}
+                        attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
                         vendors={event.vendors || []}
                         onRegister={() => console.log("hakoona batata")}
                         onSave={() => console.log("Save:", event.name)}

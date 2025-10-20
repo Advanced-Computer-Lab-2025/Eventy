@@ -12,6 +12,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
 } from "./event.validation.js";
+import { User } from "../users/user.model.js"; // adjust path if needed
 
 //Write your code in this class!!!
 
@@ -223,6 +224,23 @@ export class EventsController {
 
       const { error } = createWorkshopSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
+
+      // Check professors are active
+      const professorIds = req.body.professors;
+      const activeProfessors = await User.find({
+        _id: { $in: professorIds },
+        role: "professor",
+        status: "active", // Only active professors
+        deletedAt: null, // Not soft deleted
+      }).select("_id");
+
+      if (activeProfessors.length !== professorIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "All professors must be active and not pending, blocked, or deleted.",
+        });
+      }
 
       const newWorkshop = await eventService.createWorkshop(
         req.body,

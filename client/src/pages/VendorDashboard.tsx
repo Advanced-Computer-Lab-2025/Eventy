@@ -615,7 +615,7 @@ export default function VendorDashboard() {
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
+                          {application.attendees?.length || '0'} attendee
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -687,7 +687,7 @@ export default function VendorDashboard() {
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
+                          {application.attendees?.length || '0'}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -766,7 +766,7 @@ export default function VendorDashboard() {
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
                             <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees.length} attendee{application.attendees.length !== 1 ? 's' : ''}
+                          {application.attendees?.length || '0'}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
