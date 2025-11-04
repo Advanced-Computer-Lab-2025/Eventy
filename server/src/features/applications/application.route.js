@@ -40,6 +40,12 @@ router.get(
   ApplicationController.getAllApplications
 );
 
+/**
+ * @route   POST /api/applications/bazaars/:eventId/apply
+ * @desc    Apply to a bazaar event as a vendor
+ * @access  Vendor
+ * @body    { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize }
+ */
 router.post(
   "/bazaars/:eventId/apply",
   authMiddleware,
@@ -47,6 +53,12 @@ router.post(
   applicationController.applyToBazaar.bind(applicationController)
 );
 
+/**
+ * @route   POST /api/applications/booths/apply
+ * @desc    Apply for a platform booth as a vendor
+ * @access  Vendor
+ * @body    { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize, durationWeeks, locationPreference }
+ */
 router.post(
   "/booths/apply",
   authMiddleware,
