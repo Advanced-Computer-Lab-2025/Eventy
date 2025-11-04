@@ -76,3 +76,13 @@ export const createGymSessionSchema = Joi.object({
 
     }),
 });
+
+export const cancelGymSessionSchema = Joi.object({
+  sessionId: Joi.string()
+    .regex(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({
+      "any.required": "Session ID is required",
+      "string.pattern.base": "Session ID must be a valid MongoDB ObjectId",
+    }),
+});
