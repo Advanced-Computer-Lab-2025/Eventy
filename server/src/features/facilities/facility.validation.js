@@ -86,3 +86,24 @@ export const cancelGymSessionSchema = Joi.object({
       "string.pattern.base": "Session ID must be a valid MongoDB ObjectId",
     }),
 });
+
+export const editGymSessionSchema = Joi.object({
+  date: Joi.date().optional().messages({
+    "date.base": "Date must be a valid date",
+  }),
+
+  time: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i)
+    .optional()
+    .messages({
+      "string.pattern.base": "Time must be in format hh:mm AM/PM (e.g., 02:00 PM)",
+    }),
+
+  duration: Joi.number().integer().min(15).max(240).optional().messages({
+    "number.base": "Duration must be a number",
+    "number.min": "Duration must be at least 15 minutes",
+    "number.max": "Duration cannot exceed 240 minutes",
+  }),
+}).min(1).messages({
+  "object.min": "At least one field (date, time, or duration) must be provided",
+});

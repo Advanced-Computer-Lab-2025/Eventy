@@ -1,5 +1,5 @@
 import { CourtBooking, GymSession } from "./facility.model.js";
-import { sendGymSessionCancellationEmail } from "../auth/email.service.js";
+import { sendGymSessionCancellationEmail, sendGymSessionUpdateEmail } from "../auth/email.service.js";
 
 class FacilitiesServiceClass {
 async getCourtSchedules() {
@@ -158,6 +158,84 @@ async getCourtSchedules() {
         const succeeded = results.filter(r => r.status === 'fulfilled').length;
         const failed = results.filter(r => r.status === 'rejected').length;
         console.log(`✅ Email notifications completed: ${succeeded} sent, ${failed} failed`);
+      });
+    }
+
+    return {
+      session,
+      notificationsSent: session.attendees ? session.attendees.length : 0,
+    };
+  }
+
+  /**
+   * Edits a gym session and notifies all registered participants.
+   * @param {string} sessionId - The ID of the gym session to edit
+   * @param {Object} updates - Object containing date, time, and/or duration
+   * @returns {Object} The updated session and notification count
+   * @throws {Error} If session not found or is cancelled
+   */
+  async editGymSession(sessionId, updates) {
+    // Find the session and populate attendees with role for professor prefix
+    const session = await GymSession.findById(sessionId).populate('attendees', 'email firstName lastName name role');
+    
+    if (!session) {
+      const error = new Error("Gym session not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Check if session is cancelled
+    if (session.status === "cancelled") {
+      const error = new Error("Cannot edit a cancelled gym session");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Store old values before updating
+    const oldSession = {
+      date: session.date,
+      startTime: session.startTime,
+      durationMinutes: session.durationMinutes,
+      type: session.type,
+      instructor: session.instructor,
+    };
+
+    // Update only the allowed fields
+    if (updates.date !== undefined) {
+      session.date = updates.date;
+    }
+    if (updates.startTime !== undefined) {
+      session.startTime = updates.startTime;
+    }
+    if (updates.durationMinutes !== undefined) {
+      session.durationMinutes = updates.durationMinutes;
+    }
+
+    // Save the updated session
+    await session.save();
+
+    // Notify all attendees if there are any
+    if (session.attendees && session.attendees.length > 0) {
+      console.log(`📧 Notifying ${session.attendees.length} participants about session update...`);
+      
+      const newSession = {
+        date: session.date,
+        startTime: session.startTime,
+        durationMinutes: session.durationMinutes,
+        type: session.type,
+        instructor: session.instructor,
+      };
+
+      // Send notifications in parallel (don't wait for all to complete)
+      const emailPromises = session.attendees.map(attendee => 
+        sendGymSessionUpdateEmail(attendee, oldSession, newSession)
+      );
+
+      // Don't await - let emails send in background
+      Promise.allSettled(emailPromises).then(results => {
+        const succeeded = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+        console.log(`✅ Update email notifications completed: ${succeeded} sent, ${failed} failed`);
       });
     }
 

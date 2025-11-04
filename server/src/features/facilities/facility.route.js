@@ -42,4 +42,15 @@ router.patch(
   facilitiesController.cancelGymSession.bind(facilitiesController)
 );
 
+/**
+ * @route   PATCH /api/facilities/gym/sessions/:sessionId
+ * @desc    Edit a gym session (date, time, duration only) (Events Office only)
+ * @access  Private
+ */
+router.patch(
+  "/gym/sessions/:sessionId",
+  authMiddleware,
+  facilitiesController.editGymSession.bind(facilitiesController)
+);
+
 export default router;
