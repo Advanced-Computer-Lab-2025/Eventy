@@ -8,6 +8,10 @@ class ApplicationServiceClass {
   /**
    * Creates a new application in the database.
    * @param {object} applicationData - The data for the new application.
+   * @param {Array} applicationData.attendees - Array of attendee objects, each containing:
+   *   - name: string
+   *   - email: string
+   *   - individualID: string (URL to uploaded ID card image)
    * @returns {Promise<Document>} The saved application document.
    */
   async createApplication(applicationData) {

@@ -13,6 +13,7 @@ export class ApplicationController {
       const user = req.user;
 
       // Validate input (body should NOT include event)
+      // Expects: { attendees: [{ name, email, individualID (URL from /api/upload) }], boothSize }
       const { error } = validateBazaarApplication.validate(req.body);
       if (error)
         return res
@@ -20,7 +21,7 @@ export class ApplicationController {
           .json({ success: false, message: error.details[0].message });
 
       const applicationDetails = {
-        ...req.body,
+        ...req.body, // Includes attendees with individualID URLs
         event: eventId, // Set event from path param
         type: "bazaar",
         createdBy: vendorId,
@@ -63,6 +64,7 @@ export class ApplicationController {
       const user = req.user;
 
       // Validate input
+      // Expects: { attendees: [{ name, email, individualID (URL from /api/upload) }], boothSize, durationWeeks, locationPreference }
       const { error } = validateBoothApplication.validate(req.body);
       if (error)
         return res
@@ -70,7 +72,7 @@ export class ApplicationController {
           .json({ success: false, message: error.details[0].message });
 
       const applicationDetails = {
-        ...req.body,
+        ...req.body, // Includes attendees with individualID URLs
         event: null, // Platform booths don't need a specific event reference
         type: "booth",
         createdBy: vendorId,

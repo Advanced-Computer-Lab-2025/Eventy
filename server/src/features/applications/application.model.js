@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const attendeeSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true },
+  individualID: { type: String, required: true }, // URL to uploaded ID card image for this attendee
 });
 
 const applicationSchema = new mongoose.Schema(
