@@ -51,7 +51,29 @@ const upload = multer({
 router.post(
   "/",
   authMiddleware,
-  upload.single("file"), // Expect a single file in the 'file' field
+  (req, res, next) => {
+    upload.single("file")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "File too large. Maximum size is 5MB.",
+          });
+        }
+        if (err.message === "Field name missing") {
+          return res.status(400).json({
+            success: false,
+            message: "Field name 'file' is required. Please set the form-data key to 'file'.",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: err.message || "File upload error",
+        });
+      }
+      next();
+    });
+  },
   uploadController.upload.bind(uploadController)
 );
 
