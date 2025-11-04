@@ -1,6 +1,6 @@
 import { FacilitiesService } from "./facility.service.js";
 import ApiError from "../../utils/ApiError.js";
-import { createGymSessionSchema, gymSessionsQuerySchema } from "./facility.validation.js";
+import { createGymSessionSchema, gymSessionsQuerySchema, cancelGymSessionSchema } from "./facility.validation.js";
 
 export class FacilitiesController {
   /**
@@ -76,6 +76,35 @@ export class FacilitiesController {
         success: true,
         message: "Gym session created successfully.",
         data: session,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+   /**
+   * Handles the request to cancel a gym session.
+   */
+  async cancelGymSession(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(403, "Only Events Office can cancel gym sessions.");
+      }
+
+      const { error } = cancelGymSessionSchema.validate({ sessionId: req.params.sessionId });
+      if (error) throw new ApiError(400, error.details[0].message);
+      
+      const { sessionId } = req.params;
+      const result = await FacilitiesService.cancelGymSession(sessionId);
+
+      res.status(200).json({
+        success: true,
+        message: "Gym session cancelled successfully.",
+        data: result,
       });
     } catch (error) {
       next(error);

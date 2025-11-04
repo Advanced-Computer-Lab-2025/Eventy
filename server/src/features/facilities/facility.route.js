@@ -19,6 +19,7 @@ router.get(
 );
 
 router.get("/gym/sessions", authMiddleware, facilitiesController.getGymSessions.bind(facilitiesController));
+
 /**
  * @route   POST /api/facilities/admin/gym/sessions
  * @desc    Create a new gym session (Admin or Events Office only)
@@ -28,6 +29,17 @@ router.post(
   "/admin/gym/sessions",
   authMiddleware,
   facilitiesController.createGymSession.bind(facilitiesController)
+);
+
+/**
+ * @route   PATCH /api/facilities/gym/sessions/:sessionId/cancel
+ * @desc    Cancel a gym session by ID (Events Office only)
+ * @access  Private
+ */
+router.patch(
+  "/gym/sessions/:sessionId/cancel",
+  authMiddleware,
+  facilitiesController.cancelGymSession.bind(facilitiesController)
 );
 
 export default router;
