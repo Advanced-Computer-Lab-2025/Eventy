@@ -54,4 +54,16 @@ router.post(
   applicationController.applyToBooth.bind(applicationController)
 );
 
+/**
+ * @route   DELETE /api/applications/:applicationId/cancel
+ * @desc    Cancel a vendor's participation request
+ * @access  Vendor (only their own applications)
+ */
+router.delete(
+  "/:applicationId/cancel",
+  authMiddleware,
+  role(["vendor"]),
+  applicationController.cancelApplication.bind(applicationController)
+);
+
 export default router;

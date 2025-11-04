@@ -41,6 +41,10 @@ const applicationSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

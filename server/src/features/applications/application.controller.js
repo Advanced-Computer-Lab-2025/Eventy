@@ -191,4 +191,42 @@ export class ApplicationController {
       next(error);
     }
   }
+
+  async cancelApplication(req, res, next) {
+    try {
+      const { applicationId } = req.params;
+      const vendorId = req.user._id;
+
+      const cancelledApplication = await ApplicationService.cancelApplication(
+        applicationId,
+        vendorId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Application cancelled successfully",
+        data: cancelledApplication,
+      });
+    } catch (error) {
+      // Handle specific error cases
+      if (
+        error.message === "Application not found" ||
+        error.message === "You can only cancel your own applications"
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      if (error.message.includes("Payment has already been made")) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      next(error);
+    }
+  }
 }

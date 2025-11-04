@@ -1,6 +1,7 @@
 // features/applications/application.service.js
 
 import Application from "./application.model.js";
+import { Transaction } from "../transactions/transaction.model.js";
 
 class ApplicationServiceClass {
   /**
@@ -132,7 +133,7 @@ async getAllApplications() {
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
-    const query = { createdBy: vendorId };
+    const query = { createdBy: vendorId, deletedAt: null };
 
     // Conditionally add the status to the query if it exists in the filters
     if (filters.status) {
@@ -205,6 +206,50 @@ async getAllApplications() {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * Cancels a vendor's participation request
+   * @param {string} applicationId - The ID of the application to cancel
+   * @param {string} vendorId - The ID of the vendor requesting cancellation
+   * @returns {Promise<Document>} The deleted application document
+   * @throws {Error} If application not found, doesn't belong to vendor, or payment has been made
+   */
+  async cancelApplication(applicationId, vendorId) {
+    // Find the application
+    const application = await Application.findOne({
+      _id: applicationId,
+      deletedAt: null, // Only find non-deleted applications
+    });
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Verify the application belongs to the vendor
+    if (application.createdBy.toString() !== vendorId.toString()) {
+      throw new Error("You can only cancel your own applications");
+    }
+
+    // Check if payment has been made for this application
+    // Look for completed payment transactions related to this application
+    const completedPayment = await Transaction.findOne({
+      userId: vendorId,
+      type: "payment",
+      status: "completed",
+      "relatedEntity.type": "application",
+      "relatedEntity.id": applicationId,
+    });
+
+    if (completedPayment) {
+      throw new Error("Cannot cancel application. Payment has already been made.");
+    }
+
+    // Soft delete the application by setting deletedAt
+    application.deletedAt = new Date();
+    await application.save();
+
+    return application;
   }
 
 }
