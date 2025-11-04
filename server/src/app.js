@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import path from "path";
 import allRoutes from "./routes/index.js";
 import userRoutes from "./features/users/user.route.js";
 
@@ -19,6 +20,9 @@ app.use(
 );
 
 app.use(express.json()); // Parse JSON request bodies
+
+// Serve static files from uploads directory
+app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Log all incoming requests
 app.use((req, res, next) => {

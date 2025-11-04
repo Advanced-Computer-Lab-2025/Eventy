@@ -10,6 +10,7 @@ export const validateBazaarApplication = Joi.object({
       Joi.object({
         name: Joi.string().required(),
         email: Joi.string().email().required(),
+        individualID: Joi.string().uri().required(), // URL to uploaded ID card image
       })
     )
     .min(1)
@@ -24,6 +25,7 @@ export const validateBoothApplication = Joi.object({
       Joi.object({
         name: Joi.string().required(),
         email: Joi.string().email().required(),
+        individualID: Joi.string().uri().required(), // URL to uploaded ID card image
       })
     )
     .min(1)
