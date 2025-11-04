@@ -34,17 +34,13 @@ const applicationSchema = new mongoose.Schema(
     locationPreference: { type: String }, // Only for booth
     status: {
       type: String,
-      enum: ["pending", "approved", "rejected"],
+      enum: ["pending", "approved", "rejected", "cancelled"],
       default: "pending",
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-    },
-    deletedAt: {
-      type: Date,
-      default: null,
     },
   },
   { timestamps: true }
