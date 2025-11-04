@@ -217,14 +217,17 @@ async getAllApplications() {
    * @throws {Error} If application not found, doesn't belong to vendor, or payment has been made
    */
   async cancelApplication(applicationId, vendorId) {
-    // Find the application
-    const application = await Application.findOne({
-      _id: applicationId,
-      deletedAt: null, // Only find non-deleted applications
-    });
+    // Find the application without filtering by deletedAt first
+    const application = await Application.findById(applicationId);
 
+    // Scenario B: Application not found at all (404 Not Found)
     if (!application) {
       throw new Error("Application not found");
+    }
+
+    // Scenario A: Application found but soft-deleted (400 Bad Request)
+    if (application.deletedAt !== null) {
+      throw new Error("Application has already been cancelled");
     }
 
     // Verify the application belongs to the vendor
