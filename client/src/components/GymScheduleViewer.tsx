@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
+import EditGymSessionDialog from "@/components/EditGymSessionDialog";
 
 type GymSession = {
   _id: string;
@@ -44,6 +45,8 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   const [sessions, setSessions] = useState<GymSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [selectedSession, setSelectedSession] = useState<GymSession | null>(null);
   const { toast } = useToast();
 
   const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
@@ -115,6 +118,15 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
     });
   };
 
+  const handleEditClick = (session: GymSession) => {
+    setSelectedSession(session);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    fetchGymSessions(); // Refresh the sessions list
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -129,6 +141,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   });
 
   const canCreateSession = userRole === "events_office";
+  const canEditSession = userRole === "events_office";
   const canRegister = userRole === "student" || userRole === "staff" || userRole === "ta" || userRole === "professor";
 
   return (
@@ -180,6 +193,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                   <TableHead>Instructor</TableHead>
                   <TableHead>Capacity</TableHead>
                   {canRegister && <TableHead>Registration</TableHead>}
+                  {canEditSession && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -200,8 +214,8 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                         {session.instructor || "TBA"}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span>
+                        <div className="flex items-center gap-3">
+                          <span className="min-w-[3rem]">
                             {enrolled}/{capacity}
                           </span>
                           {isFull ? (
@@ -232,6 +246,17 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                           </Button>
                         </TableCell>
                       )}
+                      {canEditSession && (
+                        <TableCell>
+                          <button
+                            onClick={() => handleEditClick(session)}
+                            className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer"
+                            aria-label="Edit session"
+                          >
+                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                          </button>
+                        </TableCell>
+                      )}
                     </TableRow>
                   );
                 })}
@@ -240,6 +265,14 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Gym Session Dialog */}
+      <EditGymSessionDialog
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+        session={selectedSession}
+        onSuccess={handleEditSuccess}
+      />
     </div>
   );
 }
