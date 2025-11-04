@@ -44,7 +44,8 @@ router.get(
  * @route   POST /api/applications/bazaars/:eventId/apply
  * @desc    Apply to a bazaar event as a vendor
  * @access  Vendor
- * @body    { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize }
+ * @body    { attendees: [{ name, email, individualID (URL from /api/upload endpoint) }], boothSize }
+ * @note    Upload ID images first using POST /api/upload to get the individualID URL
  */
 router.post(
   "/bazaars/:eventId/apply",
@@ -57,7 +58,8 @@ router.post(
  * @route   POST /api/applications/booths/apply
  * @desc    Apply for a platform booth as a vendor
  * @access  Vendor
- * @body    { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize, durationWeeks, locationPreference }
+ * @body    { attendees: [{ name, email, individualID (URL from /api/upload endpoint) }], boothSize, durationWeeks, locationPreference }
+ * @note    Upload ID images first using POST /api/upload to get the individualID URL
  */
 router.post(
   "/booths/apply",
