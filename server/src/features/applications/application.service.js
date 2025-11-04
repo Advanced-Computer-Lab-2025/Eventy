@@ -1,6 +1,8 @@
 // features/applications/application.service.js
 
+import mongoose from "mongoose";
 import Application from "./application.model.js";
+import { Transaction } from "../transactions/transaction.model.js";
 
 class ApplicationServiceClass {
   /**
@@ -53,12 +55,12 @@ class ApplicationServiceClass {
       throw new Error("Event and vendor information are required");
     }
 
-    // Check if vendor has already applied to this bazaar
+    // Check if vendor has already applied to this bazaar (excluding cancelled applications)
     const existingApplication = await Application.findOne({
       event: event,
       createdBy: createdBy,
       type: "bazaar",
-      deletedAt: null // Only check non-deleted applications
+      status: { $ne: "cancelled" } // Only check non-cancelled applications
     });
 
     if (existingApplication) {
@@ -107,7 +109,7 @@ class ApplicationServiceClass {
     }
   }
 async getAllApplications() {
-  const applications = await Application.find({ deletedAt: null })
+  const applications = await Application.find({ status: { $ne: "cancelled" } })
     .populate({
       path: "createdBy",
       select: "companyName email companyLogoUrl taxCardUrl status",
@@ -136,7 +138,7 @@ async getAllApplications() {
    * @returns {Promise<Array>} A list of application documents.
    */
   async findVendorApplications(vendorId, filters = {}) {
-    const query = { createdBy: vendorId };
+    const query = { createdBy: vendorId, status: { $ne: "cancelled" } };
 
     // Conditionally add the status to the query if it exists in the filters
     if (filters.status) {
@@ -209,6 +211,60 @@ async getAllApplications() {
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * Cancels a vendor's participation request
+   * @param {string} applicationId - The ID of the application to cancel
+   * @param {string} vendorId - The ID of the vendor requesting cancellation
+   * @returns {Promise<Document>} The cancelled application document
+   * @throws {Error} If application not found, doesn't belong to vendor, or payment has been made
+   */
+  async cancelApplication(applicationId, vendorId) {
+    // Find the application
+    const application = await Application.findById(applicationId);
+
+    // Scenario B: Application not found at all (404 Not Found)
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Scenario A: Application found but already cancelled (400 Bad Request)
+    if (application.status === "cancelled") {
+      throw new Error("Application has already been cancelled");
+    }
+
+    // Verify the application belongs to the vendor
+    if (application.createdBy.toString() !== vendorId.toString()) {
+      throw new Error("You can only cancel your own applications");
+    }
+
+    // Check if payment has been made for this application
+    // Use $expr with $toString to handle both ObjectId and string formats
+    const vendorIdString = vendorId.toString();
+    const applicationIdString = applicationId.toString();
+    
+    const completedPayment = await Transaction.findOne({
+      $expr: {
+        $and: [
+          { $eq: [{ $toString: "$userId" }, vendorIdString] },
+          { $eq: [{ $toString: "$relatedEntity.id" }, applicationIdString] },
+          { $eq: ["$type", "payment"] },
+          { $eq: ["$status", "completed"] },
+          { $eq: ["$relatedEntity.type", "application"] }
+        ]
+      }
+    });
+
+    if (completedPayment) {
+      throw new Error("Cannot cancel application. Payment has already been made.");
+    }
+
+    // Set the status to cancelled
+    application.status = "cancelled";
+    await application.save();
+
+    return application;
   }
 
 }

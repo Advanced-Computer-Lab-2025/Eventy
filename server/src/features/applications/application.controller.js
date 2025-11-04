@@ -3,6 +3,7 @@ import {
   validateBazaarApplication,
   validateBoothApplication,
 } from "./application.validation.js";
+import ApiError from "../../utils/ApiError.js";
 
 export class ApplicationController {
   async applyToBazaar(req, res, next) {
@@ -190,6 +191,65 @@ export class ApplicationController {
         data: applications,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async cancelApplication(req, res, next) {
+    try {
+      // Check for unauthorized access (401 Unauthorized)
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Check for wrong role (403 Forbidden)
+      if (req.user.role !== "vendor") {
+        throw new ApiError(403, "Only Vendors can cancel their applications.");
+      }
+
+      const { applicationId } = req.params;
+      const vendorId = req.user._id;
+
+      const cancelledApplication = await ApplicationService.cancelApplication(
+        applicationId,
+        vendorId
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Application cancelled successfully",
+        data: cancelledApplication,
+      });
+    } catch (error) {
+      // Handle ApiError instances (401, 403, etc.)
+      if (error.statusCode) {
+        return res.status(error.statusCode).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      // Handle specific error cases
+      if (
+        error.message === "Application not found" ||
+        error.message === "You can only cancel your own applications"
+      ) {
+        return res.status(404).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
+      if (
+        error.message.includes("Payment has already been made") ||
+        error.message.includes("Application has already been cancelled")
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
+      }
+
       next(error);
     }
   }
