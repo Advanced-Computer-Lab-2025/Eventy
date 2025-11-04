@@ -1,4 +1,5 @@
 import { CourtBooking, GymSession } from "./facility.model.js";
+import { sendGymSessionCancellationEmail } from "../auth/email.service.js";
 
 class FacilitiesServiceClass {
 async getCourtSchedules() {
@@ -82,6 +83,7 @@ async getCourtSchedules() {
     const sessions = await GymSession.find({
       date: { $gte: startOfMonth, $lte: endOfMonth },
       deletedAt: null,
+      status: { $ne: "cancelled" }, // Exclude cancelled sessions
     })
       .sort({ date: 1, startTime: 1 });
 
@@ -108,5 +110,61 @@ async getCourtSchedules() {
   await newSession.save();
   return newSession;
 }
+
+  /**
+   * Cancels a gym session and notifies all registered participants.
+   * @param {string} sessionId - The ID of the gym session to cancel
+   * @returns {Object} The cancelled session
+   * @throws {Error} If session not found or already cancelled
+   */
+  async cancelGymSession(sessionId) {
+    // Find the session
+    const session = await GymSession.findById(sessionId).populate('attendees', 'email firstName lastName name');
+    
+    if (!session) {
+      const error = new Error("Gym session not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Check if already cancelled
+    if (session.status === "cancelled") {
+      const error = new Error("This gym session is already cancelled");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // Mark as cancelled (don't delete for record-keeping)
+    session.status = "cancelled";
+    await session.save();
+
+    // Notify all attendees if there are any
+    if (session.attendees && session.attendees.length > 0) {
+      console.log(`📧 Notifying ${session.attendees.length} participants about cancellation...`);
+      
+      // Send notifications in parallel (don't wait for all to complete)
+      const emailPromises = session.attendees.map(attendee => 
+        sendGymSessionCancellationEmail(attendee, {
+          type: session.type,
+          date: session.date,
+          startTime: session.startTime,
+          durationMinutes: session.durationMinutes,
+          instructor: session.instructor,
+        })
+      );
+
+      // Don't await - let emails send in background
+      Promise.allSettled(emailPromises).then(results => {
+        const succeeded = results.filter(r => r.status === 'fulfilled').length;
+        const failed = results.filter(r => r.status === 'rejected').length;
+        console.log(`✅ Email notifications completed: ${succeeded} sent, ${failed} failed`);
+      });
+    }
+
+    return {
+      session,
+      notificationsSent: session.attendees ? session.attendees.length : 0,
+    };
+  }
 }
 export const FacilitiesService = new FacilitiesServiceClass();

@@ -108,7 +108,7 @@ export const sendVerificationEmail = async (user) => {
                 
                 <!-- Header with gradient -->
                 <tr>
-                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative;">
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
                     <img src="cid:logo" alt="Eventy Logo" style="height: 100px; width: auto; display: block; margin: 0 auto;" />
                   </td>
                 </tr>
@@ -218,5 +218,214 @@ export const sendVerificationEmail = async (user) => {
   } catch (error) {
     console.error("❌ Error sending verification email:", error?.message || error);
     throw new Error("Failed to send verification email");
+  }
+};
+
+/**
+ * Send cancellation notification email to gym session participants
+ * @param {Object} user - User object with email and name
+ * @param {Object} session - Gym session details
+ */
+export const sendGymSessionCancellationEmail = async (user, session) => {
+  // Add title prefix for professors
+  const namePrefix = user?.role?.toLowerCase() === 'professor' ? 'Professor ' : '';
+  const displayName = (user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim() || "there";
+  const fullDisplayName = namePrefix + displayName;
+  
+  // Format date and time
+  const sessionDate = new Date(session.date).toLocaleDateString('en-US', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+  
+  // Format session type
+  const sessionTypeFormatted = session.type
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+
+  // Path to logo image
+  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `Gym Session Cancelled - ${sessionTypeFormatted}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Gym Session Cancelled</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 100px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 16px 24px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                      <h1 style="margin: 0; font-size: 28px; font-weight: 700; color: #991b1b; line-height: 1.2;">
+                        Session Cancelled
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${fullDisplayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      We regret to inform you that the following gym session has been cancelled:
+                    </p>
+                    
+                    <!-- Session Details Box with Icon -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #ef4444; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Session Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Session Type:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${sessionTypeFormatted}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${sessionDate}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Time:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${session.startTime}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Duration:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${session.durationMinutes} minutes</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Instructor:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${session.instructor}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      We sincerely apologize for any inconvenience this may cause. Please check our gym schedule to find alternative sessions that fit your schedule.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <table role="presentation" style="width: 100%; margin: 32px 0;">
+                      <tr>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/sports" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Gym Schedule</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="http://localhost:5000/sports" 
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
+                            View Gym Schedule
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Alternative Link Fallback -->
+                    <div style="background-color: #f7fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px; font-size: 13px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Button not working?
+                      </p>
+                      <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
+                        <a href="http://localhost:5000/sports" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view the gym schedule</a>
+                      </p>
+                    </div>
+                    
+                    <!-- Info Notice -->
+                    <div style="margin-top: 32px; padding: 16px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">
+                        <strong>Tip:</strong> You can register for other available gym sessions through your dashboard or by visiting the sports facilities page.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      If you have any questions or concerns, please don't hesitate to contact the Events Office.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © 2025 Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      {
+        filename: 'logo-light.png',
+        path: logoPath,
+        cid: 'logo' // Content ID for embedding in HTML
+      }
+    ]
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Cancellation email sent to ${user.email}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+  } catch (error) {
+    console.error(`❌ Error sending cancellation email to ${user.email}:`, error?.message || error);
+    // Don't throw - log error but don't fail the cancellation
   }
 };
