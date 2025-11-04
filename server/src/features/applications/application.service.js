@@ -1,5 +1,6 @@
 // features/applications/application.service.js
 
+import mongoose from "mongoose";
 import Application from "./application.model.js";
 import { Transaction } from "../transactions/transaction.model.js";
 
@@ -232,13 +233,20 @@ async getAllApplications() {
     }
 
     // Check if payment has been made for this application
-    // Look for completed payment transactions related to this application
+    // Use $expr with $toString to handle both ObjectId and string formats
+    const vendorIdString = vendorId.toString();
+    const applicationIdString = applicationId.toString();
+    
     const completedPayment = await Transaction.findOne({
-      userId: vendorId,
-      type: "payment",
-      status: "completed",
-      "relatedEntity.type": "application",
-      "relatedEntity.id": applicationId,
+      $expr: {
+        $and: [
+          { $eq: [{ $toString: "$userId" }, vendorIdString] },
+          { $eq: [{ $toString: "$relatedEntity.id" }, applicationIdString] },
+          { $eq: ["$type", "payment"] },
+          { $eq: ["$status", "completed"] },
+          { $eq: ["$relatedEntity.type", "application"] }
+        ]
+      }
     });
 
     if (completedPayment) {
