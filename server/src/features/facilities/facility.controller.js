@@ -1,6 +1,6 @@
 import { FacilitiesService } from "./facility.service.js";
 import ApiError from "../../utils/ApiError.js";
-import { createGymSessionSchema, gymSessionsQuerySchema, cancelGymSessionSchema } from "./facility.validation.js";
+import { createGymSessionSchema, gymSessionsQuerySchema, cancelGymSessionSchema, editGymSessionSchema } from "./facility.validation.js";
 
 export class FacilitiesController {
   /**
@@ -104,6 +104,42 @@ export class FacilitiesController {
       res.status(200).json({
         success: true,
         message: "Gym session cancelled successfully.",
+        data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Handles the request to edit a gym session.
+   */
+  async editGymSession(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(403, "Only Events Office can edit gym sessions.");
+      }
+
+      const { error } = editGymSessionSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+      
+      const { sessionId } = req.params;
+      
+      // Transform API fields to model fields
+      const updates = {};
+      if (req.body.date !== undefined) updates.date = req.body.date;
+      if (req.body.time !== undefined) updates.startTime = req.body.time;
+      if (req.body.duration !== undefined) updates.durationMinutes = req.body.duration;
+      
+      const result = await FacilitiesService.editGymSession(sessionId, updates);
+
+      res.status(200).json({
+        success: true,
+        message: "Gym session updated successfully.",
         data: result,
       });
     } catch (error) {
