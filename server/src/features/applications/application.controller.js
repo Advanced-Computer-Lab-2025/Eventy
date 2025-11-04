@@ -12,7 +12,7 @@ export class ApplicationController {
       const user = req.user;
 
       // Validate input (body should NOT include event)
-      // Expects: { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize }
+      // Expects: { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize }
       const { error } = validateBazaarApplication.validate(req.body);
       if (error)
         return res
@@ -63,7 +63,7 @@ export class ApplicationController {
       const user = req.user;
 
       // Validate input
-      // Expects: { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize, durationWeeks, locationPreference }
+      // Expects: { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize, durationWeeks, locationPreference }
       const { error } = validateBoothApplication.validate(req.body);
       if (error)
         return res

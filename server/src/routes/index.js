@@ -6,7 +6,6 @@ import eventRoutes from "../features/events/event.route.js";
 import applicationRoutes from "../features/applications/application.route.js";
 import facilityRoutes from "../features/facilities/facility.route.js";
 import notificationRoutes from "../features/notifications/notification.route.js";
-import blobRoutes from "../features/blob/blob.route.js";
 
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
@@ -42,7 +41,5 @@ router.use("/applications", applicationRoutes);
 router.use("/facilities", facilityRoutes);
 // notifications routes
 router.use("/notifications", notificationRoutes);
-// blob routes
-router.use("/blob", blobRoutes);
 
 export default router;

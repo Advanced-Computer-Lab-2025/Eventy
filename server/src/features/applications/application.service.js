@@ -9,7 +9,7 @@ class ApplicationServiceClass {
    * @param {Array} applicationData.attendees - Array of attendee objects, each containing:
    *   - name: string
    *   - email: string
-   *   - individualID: string (URL from Vercel Blob upload)
+   *   - individualID: string (URL to uploaded ID card image)
    * @returns {Promise<Document>} The saved application document.
    */
   async createApplication(applicationData) {

@@ -44,7 +44,7 @@ router.get(
  * @route   POST /api/applications/bazaars/:eventId/apply
  * @desc    Apply to a bazaar event as a vendor
  * @access  Vendor
- * @body    { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize }
+ * @body    { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize }
  */
 router.post(
   "/bazaars/:eventId/apply",
@@ -57,7 +57,7 @@ router.post(
  * @route   POST /api/applications/booths/apply
  * @desc    Apply for a platform booth as a vendor
  * @access  Vendor
- * @body    { attendees: [{ name, email, individualID (URL from blob upload) }], boothSize, durationWeeks, locationPreference }
+ * @body    { attendees: [{ name, email, individualID (URL to uploaded ID image) }], boothSize, durationWeeks, locationPreference }
  */
 router.post(
   "/booths/apply",
