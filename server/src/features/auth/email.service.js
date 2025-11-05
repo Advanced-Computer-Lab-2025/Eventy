@@ -5,6 +5,12 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { format } from "date-fns";
 import QRCode from "qrcode";
+import {
+  generateQRCodeDataURL,
+  generateQRCodeBuffer,
+  generateAttendeeToken,
+  createAttendeeQRData,
+} from "../../utils/qrcode.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1167,6 +1173,260 @@ export const sendVisitorQRCodesEmail = async (
   } catch (error) {
     console.error(`❌ Error sending QR codes email:`, error?.message || error);
     // Do not throw
+  }
+};
+
+/**
+ * Send individual QR code email to an attendee
+ * @param {Object} attendee - Attendee object with name, email, individualID
+ * @param {Object} application - Application object
+ * @param {Object} vendor - Vendor user object
+ * @param {Object} event - Event object (optional, may be null for booth)
+ */
+export const sendAttendeeQRCodeEmail = async (
+  attendee,
+  application,
+  vendor,
+  event = null
+) => {
+  try {
+    const attendeeEmail = attendee?.email;
+    const attendeeName = attendee?.name || "Visitor";
+
+    if (!attendeeEmail) {
+      console.error("❌ Attendee email not found");
+      return;
+    }
+
+    // Generate verification token for this attendee
+    const token = generateAttendeeToken(attendee, application._id.toString());
+
+    // Create verification URL (backend API URL that returns attendee details)
+    const apiBaseUrl =
+      process.env.API_BASE_URL ||
+      process.env.BACKEND_URL ||
+      "http://localhost:4000";
+    const verificationUrl = `${apiBaseUrl}/api/applications/attendee/${token}`;
+
+    // Create QR code data
+    const qrData = createAttendeeQRData(
+      attendee,
+      application,
+      vendor,
+      event,
+      verificationUrl
+    );
+
+    // Generate QR code as data URL (for embedding in email)
+    const qrCodeDataUrl = await generateQRCodeDataURL(qrData, {
+      width: 400,
+      margin: 2,
+    });
+
+    // Generate QR code as buffer (for attachment)
+    const qrCodeBuffer = await generateQRCodeBuffer(qrData, {
+      width: 400,
+      margin: 2,
+    });
+
+    // Determine application type and details
+    const applicationType =
+      application.type === "bazaar" ? "Bazaar" : "Platform Booth";
+    const eventName = event?.name || "Platform Booth";
+    const location = event?.location || application.locationPreference || "N/A";
+
+    // Calculate duration
+    let durationText = "";
+    if (application.type === "booth" && application.durationWeeks) {
+      durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
+    } else if (event && event.startDate && event.endDate) {
+      const startDate = new Date(event.startDate);
+      const endDate = new Date(event.endDate);
+      const diffTime = Math.abs(endDate - startDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
+    } else {
+      durationText = "N/A";
+    }
+
+    // Path to logo image
+    const logoPath = path.resolve(
+      __dirname,
+      "../../../../client/public/images/logo-light.png"
+    );
+
+    const mailOptions = {
+      from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+      to: attendeeEmail,
+      subject: `Your QR Code - ${applicationType} Access`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Your QR Code</title>
+        </head>
+        <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+            <tr>
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                  
+                  <!-- Header with Logo and Gradient -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                      <img src="cid:logo" alt="Eventy Logo" style="height: 100px; width: auto; display: block; margin: 0 auto;" />
+                    </td>
+                  </tr>
+                  
+                  <!-- Main Content -->
+                  <tr>
+                    <td style="padding: 50px 40px 40px;">
+                      <h2 style="margin: 0 0 16px; font-size: 28px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                        Your QR Code is Ready! 📱
+                      </h2>
+                      <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                        Hi ${attendeeName},
+                      </p>
+                      <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                        Your ${applicationType.toLowerCase()} application has been approved! Below is your personal QR code. Scan this code at the event entrance to verify your identity and access details.
+                      </p>
+                      
+                      <!-- QR Code Display -->
+                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 32px; margin: 32px 0; text-align: center; border-left: 4px solid #667eea;">
+                        <h3 style="margin: 0 0 24px; font-size: 20px; font-weight: 700; color: #2d3748;">
+                          Your Personal QR Code
+                        </h3>
+                        <div style="display: inline-block; padding: 20px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
+                          <img src="cid:qrcode" alt="QR Code for ${attendeeName}" style="width: 300px; height: 300px; display: block; border: 4px solid #ffffff; border-radius: 8px;" />
+                        </div>
+                        <p style="margin: 24px 0 0; font-size: 14px; color: #718096; line-height: 1.6;">
+                          Scan this QR code to view your attendee details
+                        </p>
+                      </div>
+                      
+                      <!-- Your Details -->
+                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #667eea;">
+                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Your Details
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Name:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${attendee.name}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Email:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${attendee.email}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Company:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${vendor?.companyName || "N/A"}</td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      <!-- Event Details -->
+                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #10b981;">
+                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Event Information
+                        </h3>
+                        <table style="width: 100%; border-collapse: collapse;">
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Type:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${applicationType}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Event/Booth:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${eventName}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Location:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${location}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Duration:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${durationText}</td>
+                          </tr>
+                          <tr>
+                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Booth Size:</td>
+                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${application.boothSize}</td>
+                          </tr>
+                        </table>
+                      </div>
+                      
+                      <!-- Instructions -->
+                      <div style="margin-top: 32px; padding: 20px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                        <p style="margin: 0 0 12px; font-size: 14px; color: #1e40af; font-weight: 600;">
+                          📋 How to Use Your QR Code:
+                        </p>
+                        <ul style="margin: 0; padding-left: 20px; font-size: 14px; color: #1e40af; line-height: 1.8;">
+                          <li>Save this QR code to your phone or print it</li>
+                          <li>Present it at the event entrance for verification</li>
+                          <li>When scanned, it will display your attendee details</li>
+                          <li>Keep this QR code secure - it's unique to you</li>
+                        </ul>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                      <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                        If you have any questions, please contact the Events Office or your vendor.
+                      </p>
+                      <div style="text-align: center; margin: 20px 0;">
+                        <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                          © 2025 Eventy Platform. All rights reserved.
+                        </p>
+                        <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                          Campus Event Management System
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      replyTo: process.env.EMAIL_USER,
+      attachments: [
+        {
+          filename: "logo-light.png",
+          path: logoPath,
+          cid: "logo",
+        },
+        {
+          filename: `QR_Code_${attendeeName.replace(/\s+/g, "_")}.png`,
+          content: qrCodeBuffer,
+          cid: "qrcode",
+        },
+      ],
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ QR code email sent to ${attendeeEmail}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+      attendeeName: attendeeName,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error sending QR code email to ${attendee?.email}:`,
+      error?.message || error
+    );
+    // Don't throw - log error but don't fail the approval process
   }
 };
 export const sendPaymentReceipt = async (user, transaction, event) => {
