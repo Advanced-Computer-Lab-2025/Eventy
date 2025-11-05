@@ -1305,27 +1305,6 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
                         </p>
                       </div>
                       
-                      <!-- Your Details -->
-                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #667eea;">
-                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
-                          Your Details
-                        </h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Name:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${attendee.name}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Email:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${attendee.email}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Company:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${vendor?.companyName || "N/A"}</td>
-                          </tr>
-                        </table>
-                      </div>
-                      
                       <!-- Event Details -->
                       <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #10b981;">
                         <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
