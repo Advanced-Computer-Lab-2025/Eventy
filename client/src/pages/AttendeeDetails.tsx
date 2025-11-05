@@ -1,20 +1,26 @@
 import { useEffect, useState } from "react";
 import { useRoute, useLocation } from "wouter";
-import { 
-  User, 
-  Mail, 
-  Building2, 
-  Calendar, 
-  MapPin, 
-  Clock, 
-  CheckCircle2, 
-  XCircle, 
+import {
+  User,
+  Mail,
+  Building2,
+  Calendar,
+  MapPin,
+  Clock,
+  CheckCircle2,
+  XCircle,
   Loader2,
   QrCode,
   Store,
-  CalendarDays
+  CalendarDays,
 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
@@ -42,11 +48,14 @@ interface AttendeeData {
 export default function AttendeeDetails() {
   const [, params] = useRoute("/attendee/:token");
   const [, setLocation] = useLocation();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
   const [data, setData] = useState<AttendeeData | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
   useEffect(() => {
     const fetchAttendeeData = async () => {
@@ -57,26 +66,37 @@ export default function AttendeeDetails() {
           setErrorMessage("Invalid QR code link");
           return;
         }
-        
-        const response = await fetch(`${API_BASE_URL}/api/applications/attendee/${token}`);
-        
+
+        const response = await fetch(
+          `${API_BASE_URL}/api/applications/attendee/${token}`
+        );
+
         // Read response as text first to see what we're actually getting
         const responseText = await response.text();
-        
+
         // Check if response is HTML (starts with <!DOCTYPE or <html)
-        if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
+        if (
+          responseText.trim().startsWith("<!DOCTYPE") ||
+          responseText.trim().startsWith("<html")
+        ) {
           setStatus("error");
-          setErrorMessage("Server returned HTML instead of JSON. The API route may not be registered correctly.");
+          setErrorMessage(
+            "Server returned HTML instead of JSON. The API route may not be registered correctly."
+          );
           return;
         }
-        
+
         // Try to parse as JSON
         let result;
         try {
           result = JSON.parse(responseText);
         } catch (parseError) {
           setStatus("error");
-          setErrorMessage(`Failed to parse server response: ${parseError instanceof Error ? parseError.message : "Unknown error"}`);
+          setErrorMessage(
+            `Failed to parse server response: ${
+              parseError instanceof Error ? parseError.message : "Unknown error"
+            }`
+          );
           return;
         }
 
@@ -85,11 +105,18 @@ export default function AttendeeDetails() {
           setStatus("success");
         } else {
           setStatus("error");
-          setErrorMessage(result.message || `Failed to load attendee details (${response.status})`);
+          setErrorMessage(
+            result.message ||
+              `Failed to load attendee details (${response.status})`
+          );
         }
-      } catch (error: any) {
+      } catch (error: unknown) {
         setStatus("error");
-        setErrorMessage(`An error occurred: ${error?.message || "Unknown error"}`);
+        setErrorMessage(
+          `An error occurred: ${
+            error instanceof Error ? error.message : "Unknown error"
+          }`
+        );
       }
     };
 
@@ -99,11 +126,23 @@ export default function AttendeeDetails() {
   const getStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "approved":
-        return <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20">Approved</Badge>;
+        return (
+          <Badge className="bg-green-500/15 text-green-600 dark:text-green-400 border-green-500/20">
+            Approved
+          </Badge>
+        );
       case "pending":
-        return <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">Pending</Badge>;
+        return (
+          <Badge className="bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border-yellow-500/20">
+            Pending
+          </Badge>
+        );
       case "rejected":
-        return <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">Rejected</Badge>;
+        return (
+          <Badge className="bg-red-500/15 text-red-600 dark:text-red-400 border-red-500/20">
+            Rejected
+          </Badge>
+        );
       default:
         return <Badge>{status}</Badge>;
     }
@@ -135,7 +174,8 @@ export default function AttendeeDetails() {
           </CardHeader>
           <CardContent className="text-center">
             <p className="text-sm text-muted-foreground mb-4">
-              The QR code may be invalid or expired. Please contact the Events Office for assistance.
+              The QR code may be invalid or expired. Please contact the Events
+              Office for assistance.
             </p>
             <Button onClick={() => setLocation("/")} variant="outline">
               Go to Home
@@ -183,7 +223,9 @@ export default function AttendeeDetails() {
                 <User className="h-5 w-5 text-primary" />
                 <CardTitle>Attendee Information</CardTitle>
               </div>
-              <CardDescription>Personal details of the attendee</CardDescription>
+              <CardDescription>
+                Personal details of the attendee
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -193,7 +235,7 @@ export default function AttendeeDetails() {
                 </div>
                 <p className="text-lg font-semibold">{data.attendee.name}</p>
               </div>
-              
+
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Mail className="h-4 w-4" />
@@ -221,7 +263,9 @@ export default function AttendeeDetails() {
                 <Calendar className="h-5 w-5 text-primary" />
                 <CardTitle>Event Information</CardTitle>
               </div>
-              <CardDescription>Details about the event or booth</CardDescription>
+              <CardDescription>
+                Details about the event or booth
+              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -288,9 +332,11 @@ export default function AttendeeDetails() {
                     <Building2 className="h-4 w-4" />
                     <span>Company Name</span>
                   </div>
-                  <p className="text-lg font-semibold">{data.vendor.companyName}</p>
+                  <p className="text-lg font-semibold">
+                    {data.vendor.companyName}
+                  </p>
                 </div>
-                
+
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Mail className="h-4 w-4" />
@@ -313,4 +359,3 @@ export default function AttendeeDetails() {
     </div>
   );
 }
-
