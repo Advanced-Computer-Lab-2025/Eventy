@@ -13,6 +13,34 @@ import validateQuery from "../../middlewares/validateQuery.middleware.js";
 const router = express.Router();
 const applicationController = new ApplicationController();
 
+// Public attendee routes - MUST come before parameterized routes to avoid conflicts
+/**
+ * @route   GET /api/applications/attendee/verify/:token
+ * @desc    Display attendee details as HTML page (for QR code scanning)
+ * @access  Public (via token)
+ */
+router.get(
+  "/attendee/verify/:token",
+  applicationController.getAttendeeByTokenHTML.bind(applicationController)
+);
+
+/**
+ * @route   GET /api/applications/attendee/:token
+ * @desc    Get attendee details via QR code token (public endpoint - JSON)
+ * @access  Public (via token)
+ */
+router.get(
+  "/attendee/:token",
+  (req, res, next) => {
+    console.log("🟡 Route Middleware: /attendee/:token route matched!");
+    console.log("🟡 Route Middleware: Request URL:", req.originalUrl);
+    console.log("🟡 Route Middleware: Request path:", req.path);
+    console.log("🟡 Route Middleware: Token param:", req.params.token);
+    next();
+  },
+  applicationController.getAttendeeByToken.bind(applicationController)
+);
+
 router.get(
   "/me",
   authMiddleware,
@@ -78,27 +106,6 @@ router.delete(
   authMiddleware,
   role(["vendor"]),
   applicationController.cancelApplication.bind(applicationController)
-);
-
-/**
- * @route   GET /api/applications/attendee/verify/:token
- * @desc    Display attendee details as HTML page (for QR code scanning)
- * @access  Public (via token)
- * @note    This route must come BEFORE /attendee/:token to avoid route conflicts
- */
-router.get(
-  "/attendee/verify/:token",
-  applicationController.getAttendeeByTokenHTML.bind(applicationController)
-);
-
-/**
- * @route   GET /api/applications/attendee/:token
- * @desc    Get attendee details via QR code token (public endpoint - JSON)
- * @access  Public (via token)
- */
-router.get(
-  "/attendee/:token",
-  applicationController.getAttendeeByToken.bind(applicationController)
 );
 
 export default router;

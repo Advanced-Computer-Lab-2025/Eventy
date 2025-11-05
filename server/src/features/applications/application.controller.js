@@ -299,7 +299,14 @@ export class ApplicationController {
   async getAttendeeByToken(req, res, next) {
     try {
       const { token } = req.params;
-      console.log(`🔍 Received request for attendee token: ${token?.substring(0, 20)}...`);
+      console.log("🟢 Backend: ========================================");
+      console.log("🟢 Backend: getAttendeeByToken ROUTE HIT!");
+      console.log("🟢 Backend: Request method:", req.method);
+      console.log("🟢 Backend: Request URL:", req.originalUrl);
+      console.log("🟢 Backend: Request path:", req.path);
+      console.log("🟢 Backend: Full URL:", req.protocol + "://" + req.get("host") + req.originalUrl);
+      console.log(`🟢 Backend: Token received (first 20 chars): ${token?.substring(0, 20)}...`);
+      console.log("🟢 Backend: Token length:", token?.length);
 
       // Verify the token
       let decoded;
@@ -311,7 +318,8 @@ export class ApplicationController {
           type: decoded.type 
         });
       } catch (error) {
-        console.error("❌ Token verification failed:", error.message);
+        console.error("🔴 Backend: Token verification failed:", error.message);
+        console.log("🟢 Backend: ========================================");
         return res.status(401).json({
           success: false,
           message: "Invalid or expired token",
@@ -338,11 +346,15 @@ export class ApplicationController {
         });
 
       if (!application) {
+        console.error("🔴 Backend: Application not found for ID:", decoded.applicationId);
+        console.log("🟢 Backend: ========================================");
         return res.status(404).json({
           success: false,
           message: "Application not found",
         });
       }
+
+      console.log("🟢 Backend: Application found:", application._id.toString());
 
       // Find the attendee
       const attendee = application.attendees.find(
@@ -350,11 +362,16 @@ export class ApplicationController {
       );
 
       if (!attendee) {
+        console.error("🔴 Backend: Attendee not found for email:", decoded.attendeeEmail);
+        console.log("🟢 Backend: Available attendees:", application.attendees.map(a => a.email));
+        console.log("🟢 Backend: ========================================");
         return res.status(404).json({
           success: false,
           message: "Attendee not found",
         });
       }
+
+      console.log("🟢 Backend: Attendee found:", attendee.email);
 
       // Determine application type and details
       const applicationType = application.type === "bazaar" ? "Bazaar" : "Platform Booth";
@@ -376,7 +393,7 @@ export class ApplicationController {
       }
 
       // Return attendee details
-      res.status(200).json({
+      const responseData = {
         success: true,
         data: {
           attendee: {
@@ -397,8 +414,17 @@ export class ApplicationController {
             email: application.createdBy?.email || "N/A",
           },
         },
-      });
+      };
+      
+      console.log("🟢 Backend: Sending JSON response with status 200");
+      console.log("🟢 Backend: Response data preview:", JSON.stringify(responseData).substring(0, 200) + "...");
+      console.log("🟢 Backend: ========================================");
+      
+      res.status(200).json(responseData);
     } catch (error) {
+      console.error("🔴 Backend: Error in getAttendeeByToken:", error);
+      console.error("🔴 Backend: Error stack:", error?.stack);
+      console.log("🟢 Backend: ========================================");
       next(error);
     }
   }

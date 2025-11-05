@@ -1001,7 +1001,9 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
     const token = generateAttendeeToken(attendee, application._id.toString());
     
     // Use frontend route URL for QR code (opens the React page)
-    const verificationUrl = `http://localhost:5000/attendee/${token}`;
+    // Get base URL from environment variable or default to localhost:5000
+    const baseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+    const verificationUrl = `${baseUrl}/attendee/${token}`;
     
     console.log(`📱 Generating QR code with frontend URL: ${verificationUrl}`);
     
