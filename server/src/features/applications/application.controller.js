@@ -4,6 +4,8 @@ import {
   validateBoothApplication,
 } from "./application.validation.js";
 import ApiError from "../../utils/ApiError.js";
+import { sendVisitorQRCodesEmail } from "../auth/email.service.js";
+import Application from "./application.model.js";
 
 export class ApplicationController {
   async applyToBazaar(req, res, next) {
@@ -161,6 +163,37 @@ export class ApplicationController {
           success: false,
           message: "Application not found.",
         });
+      }
+
+      // If application is approved, send QR codes email to vendor
+      if (status === "approved") {
+        try {
+          // Populate the application with vendor and event info
+          const populatedApplication = await Application.findById(applicationId)
+            .populate({
+              path: "createdBy",
+              select: "companyName email name firstName lastName"
+            })
+            .populate({
+              path: "event",
+              select: "name location startDate endDate"
+            });
+
+          if (populatedApplication && populatedApplication.createdBy) {
+            // Send QR codes email asynchronously (don't wait for it to complete)
+            sendVisitorQRCodesEmail(
+              populatedApplication,
+              populatedApplication.createdBy,
+              populatedApplication.event || null
+            ).catch(err => {
+              console.error("Failed to send QR codes email:", err);
+              // Don't fail the request if email fails
+            });
+          }
+        } catch (emailError) {
+          console.error("Error preparing QR codes email:", emailError);
+          // Don't fail the request if email preparation fails
+        }
       }
 
       res.status(200).json({
