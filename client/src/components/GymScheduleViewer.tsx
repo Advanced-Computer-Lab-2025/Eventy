@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ChevronLeft, ChevronRight, Plus, Pencil } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import EditGymSessionDialog from "@/components/EditGymSessionDialog";
 
@@ -46,7 +56,9 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
   const [selectedSession, setSelectedSession] = useState<GymSession | null>(null);
+  const [isCancelling, setIsCancelling] = useState(false);
   const { toast } = useToast();
 
   const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
@@ -127,6 +139,59 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
     fetchGymSessions(); // Refresh the sessions list
   };
 
+  const handleCancelClick = (session: GymSession) => {
+    setSelectedSession(session);
+    setIsCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!selectedSession) return;
+
+    setIsCancelling(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("Authentication required");
+      }
+
+      const response = await fetch(
+        `http://localhost:4000/api/facilities/gym/sessions/${selectedSession._id}/cancel`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to cancel session");
+      }
+
+      const data = await response.json();
+
+      toast({
+        title: "Success",
+        description: `Gym session cancelled successfully. ${data.data.notificationsSent || 0} participant(s) notified.`,
+      });
+
+      setIsCancelDialogOpen(false);
+      setSelectedSession(null);
+      fetchGymSessions(); // Refresh the sessions list
+    } catch (error) {
+      console.error("Cancel session error:", error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to cancel session",
+        variant: "destructive",
+      });
+    } finally {
+      setIsCancelling(false);
+    }
+  };
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -142,6 +207,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
 
   const canCreateSession = userRole === "events_office";
   const canEditSession = userRole === "events_office";
+  const canCancelSession = userRole === "events_office";
   const canRegister = userRole === "student" || userRole === "staff" || userRole === "ta" || userRole === "professor";
 
   return (
@@ -193,7 +259,7 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                   <TableHead>Instructor</TableHead>
                   <TableHead>Capacity</TableHead>
                   {canRegister && <TableHead>Registration</TableHead>}
-                  {canEditSession && <TableHead>Actions</TableHead>}
+                  {(canEditSession || canCancelSession) && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -246,15 +312,28 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                           </Button>
                         </TableCell>
                       )}
-                      {canEditSession && (
+                      {(canEditSession || canCancelSession) && (
                         <TableCell>
-                          <button
-                            onClick={() => handleEditClick(session)}
-                            className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer"
-                            aria-label="Edit session"
-                          >
-                            <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
-                          </button>
+                          <div className="flex items-center gap-1">
+                            {canEditSession && (
+                              <button
+                                onClick={() => handleEditClick(session)}
+                                className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer"
+                                aria-label="Edit session"
+                              >
+                                <Pencil className="h-4 w-4 text-muted-foreground hover:text-foreground" />
+                              </button>
+                            )}
+                            {canCancelSession && (
+                              <button
+                                onClick={() => handleCancelClick(session)}
+                                className="p-2 hover:bg-accent rounded-md transition-colors cursor-pointer"
+                                aria-label="Cancel session"
+                              >
+                                <X className="h-4 w-4 text-muted-foreground hover:text-destructive" />
+                              </button>
+                            )}
+                          </div>
                         </TableCell>
                       )}
                     </TableRow>
@@ -273,6 +352,47 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
         session={selectedSession}
         onSuccess={handleEditSuccess}
       />
+
+      {/* Cancel Confirmation Dialog */}
+      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Cancel Gym Session</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to cancel this gym session?
+              {selectedSession && selectedSession.attendees && selectedSession.attendees.length > 0 && (
+                <span> {selectedSession.attendees.length} registered participant{selectedSession.attendees.length !== 1 ? 's' : ''} will be notified via email.</span>
+              )}
+              {selectedSession && (
+                <div className="mt-4 p-3 bg-muted rounded-md">
+                  <p className="font-medium text-foreground">
+                    {GYM_SESSION_TYPES[selectedSession.type] || selectedSession.type}
+                  </p>
+                  <p className="text-sm mt-1">
+                    {formatDate(selectedSession.date)} at {selectedSession.startTime}
+                  </p>
+                  <p className="text-sm">
+                    Instructor: {selectedSession.instructor}
+                  </p>
+                </div>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isCancelling}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleCancelConfirm();
+              }}
+              disabled={isCancelling}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90 outline-none border-0 shadow-none focus:outline-none focus:border-0 focus:shadow-none focus-visible:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            >
+              {isCancelling ? "Cancelling..." : "Confirm Cancellation"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
