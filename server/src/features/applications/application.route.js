@@ -99,25 +99,4 @@ router.delete(
   applicationController.cancelApplication.bind(applicationController)
 );
 
-/**
- * @route   GET /api/applications/attendee/verify/:token
- * @desc    Display attendee details as HTML page (for QR code scanning)
- * @access  Public (via token)
- * @note    This route must come BEFORE /attendee/:token to avoid route conflicts
- */
-router.get(
-  "/attendee/verify/:token",
-  applicationController.getAttendeeByTokenHTML.bind(applicationController)
-);
-
-/**
- * @route   GET /api/applications/attendee/:token
- * @desc    Get attendee details via QR code token (public endpoint - JSON)
- * @access  Public (via token)
- */
-router.get(
-  "/attendee/:token",
-  applicationController.getAttendeeByToken.bind(applicationController)
-);
-
 export default router;
