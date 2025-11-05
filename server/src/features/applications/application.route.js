@@ -3,7 +3,7 @@ import { ApplicationController } from "./application.controller.js";
 import {
   validateBazaarApplication,
   validateBoothApplication,
-  getMyApplicationsSchema
+  getMyApplicationsSchema,
 } from "./application.validation.js";
 import validate from "../../middlewares/validate.middleware.js";
 import role from "../../middlewares/role.middleware.js";
@@ -56,10 +56,8 @@ router.post(
 
 /**
  * @route   POST /api/applications/booths/apply
- * @desc    Apply for a platform booth as a vendor
+ * @desc    Apply for a booth (no eventId needed)
  * @access  Vendor
- * @body    { attendees: [{ name, email, individualID (URL from /api/upload endpoint) }], boothSize, durationWeeks, locationPreference }
- * @note    Upload ID images first using POST /api/upload to get the individualID URL
  */
 router.post(
   "/booths/apply",
