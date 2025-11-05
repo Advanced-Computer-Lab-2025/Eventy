@@ -804,7 +804,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                   <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
                     <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
                     <div style="margin-top: 20px; padding: 8px 16px; background: ${statusBgColor}; border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px ${statusColor}40;">
-                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
+                      <h1 style="margin: 0; font-size: 14px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
                         Application ${statusText}
                       </h1>
                     </div>
@@ -862,14 +862,14 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#667eea" fillcolor="#667eea">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Reapply</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
                           <a href="http://localhost:5000/vendor/dashboard" 
-                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39); border: 1px solid rgba(102, 126, 234, 0.2); line-height: 20px; mso-hide: all;">
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
                             Reapply
                           </a>
                           <!--<![endif]-->
