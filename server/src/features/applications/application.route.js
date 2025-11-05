@@ -31,13 +31,6 @@ router.get(
  */
 router.get(
   "/attendee/:token",
-  (req, res, next) => {
-    console.log("🟡 Route Middleware: /attendee/:token route matched!");
-    console.log("🟡 Route Middleware: Request URL:", req.originalUrl);
-    console.log("🟡 Route Middleware: Request path:", req.path);
-    console.log("🟡 Route Middleware: Token param:", req.params.token);
-    next();
-  },
   applicationController.getAttendeeByToken.bind(applicationController)
 );
 

@@ -972,8 +972,6 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
     const baseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
     const verificationUrl = `${baseUrl}/attendee/${token}`;
     
-    console.log(`📱 Generating QR code with frontend URL: ${verificationUrl}`);
-    
     let qrCodeBuffer;
     let qrCodeDataUrl;
     try {
@@ -998,8 +996,6 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
           light: '#FFFFFF'
         }
       });
-      
-      console.log(`✅ QR code generated successfully (${qrCodeBuffer.length} bytes)`);
       
       // Verify buffer is valid
       if (!qrCodeBuffer || qrCodeBuffer.length === 0) {

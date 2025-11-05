@@ -57,25 +57,14 @@ export default function AttendeeDetails() {
           setErrorMessage("Invalid QR code link");
           return;
         }
-
-        console.log("🔵 Frontend: Fetching attendee data for token:", token);
-        console.log("🔵 Frontend: API URL:", `${API_BASE_URL}/api/applications/attendee/${token}`);
         
         const response = await fetch(`${API_BASE_URL}/api/applications/attendee/${token}`);
         
-        console.log("🔵 Frontend: Response status:", response.status);
-        console.log("🔵 Frontend: Response statusText:", response.statusText);
-        console.log("🔵 Frontend: Response headers:", Object.fromEntries(response.headers.entries()));
-        console.log("🔵 Frontend: Content-Type:", response.headers.get("content-type"));
-        
         // Read response as text first to see what we're actually getting
         const responseText = await response.text();
-        console.log("🔵 Frontend: Raw response text (first 500 chars):", responseText.substring(0, 500));
-        console.log("🔵 Frontend: Full response length:", responseText.length);
         
         // Check if response is HTML (starts with <!DOCTYPE or <html)
         if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
-          console.error("❌ Frontend: Received HTML instead of JSON! Response starts with:", responseText.substring(0, 100));
           setStatus("error");
           setErrorMessage("Server returned HTML instead of JSON. The API route may not be registered correctly.");
           return;
@@ -85,10 +74,7 @@ export default function AttendeeDetails() {
         let result;
         try {
           result = JSON.parse(responseText);
-          console.log("🔵 Frontend: Parsed JSON result:", result);
         } catch (parseError) {
-          console.error("❌ Frontend: Failed to parse response as JSON:", parseError);
-          console.error("❌ Frontend: Response text that failed to parse:", responseText.substring(0, 500));
           setStatus("error");
           setErrorMessage(`Failed to parse server response: ${parseError instanceof Error ? parseError.message : "Unknown error"}`);
           return;
@@ -104,8 +90,6 @@ export default function AttendeeDetails() {
       } catch (error: any) {
         setStatus("error");
         setErrorMessage(`An error occurred: ${error?.message || "Unknown error"}`);
-        console.error("❌ Frontend: Error fetching attendee data:", error);
-        console.error("❌ Frontend: Error stack:", error?.stack);
       }
     };
 
