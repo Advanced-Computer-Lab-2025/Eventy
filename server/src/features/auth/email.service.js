@@ -711,7 +711,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   const isApproved = application.status === "approved";
   const statusText = isApproved ? "Approved" : "Rejected";
   const statusColor = isApproved ? "#10b981" : "#ef4444";
-  const statusBgColor = isApproved ? "#d1fae5" : "#fee2e2";
+  const statusBgGradient = isApproved ? "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
   const statusTextColor = isApproved ? "#065f46" : "#991b1b";
   
   // Path to logo image
@@ -803,8 +803,8 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                 <tr>
                   <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
                     <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
-                    <div style="margin-top: 20px; padding: 8px 16px; background: ${statusBgColor}; border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px ${statusColor}40;">
-                      <h1 style="margin: 0; font-size: 14px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
+                    <div style="margin-top: 20px; padding: 8px 16px; background: ${statusBgGradient}; border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px ${statusColor}40;">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
                         Application ${statusText}
                       </h1>
                     </div>
@@ -829,7 +829,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     ${isApproved ? `
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
                     <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
-                      Your application has been reviewed and approved. We are excited to have you join us !. You can view all your application details through your vendor dashboard.
+                      Your application has been reviewed and approved. We are excited to have you join us ! You can view all your application details through your vendor dashboard.
                     </p>
                     
                     <!-- CTA Button -->
