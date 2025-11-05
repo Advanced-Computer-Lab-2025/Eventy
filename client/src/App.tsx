@@ -27,6 +27,7 @@ import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import EmailVerified from "@/pages/EmailVerified";
+import AttendeeDetails from "@/pages/AttendeeDetails";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/verify-email/:token" component={EmailVerified} />
+      <Route path="/attendee/:token" component={AttendeeDetails} />
       <Route path="/dashboard" component={Dashboard} />
 
       <Route path="/home">

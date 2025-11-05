@@ -1198,37 +1198,6 @@ export const sendAttendeeQRCodeEmail = async (
       return;
     }
 
-    // Generate verification token for this attendee
-    const token = generateAttendeeToken(attendee, application._id.toString());
-
-    // Create verification URL (backend API URL that returns attendee details)
-    const apiBaseUrl =
-      process.env.API_BASE_URL ||
-      process.env.BACKEND_URL ||
-      "http://localhost:4000";
-    const verificationUrl = `${apiBaseUrl}/api/applications/attendee/${token}`;
-
-    // Create QR code data
-    const qrData = createAttendeeQRData(
-      attendee,
-      application,
-      vendor,
-      event,
-      verificationUrl
-    );
-
-    // Generate QR code as data URL (for embedding in email)
-    const qrCodeDataUrl = await generateQRCodeDataURL(qrData, {
-      width: 400,
-      margin: 2,
-    });
-
-    // Generate QR code as buffer (for attachment)
-    const qrCodeBuffer = await generateQRCodeBuffer(qrData, {
-      width: 400,
-      margin: 2,
-    });
-
     // Determine application type and details
     const applicationType =
       application.type === "bazaar" ? "Bazaar" : "Platform Booth";
@@ -1247,6 +1216,52 @@ export const sendAttendeeQRCodeEmail = async (
       durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
     } else {
       durationText = "N/A";
+    }
+
+    // Generate JWT token for attendee verification
+    const token = generateAttendeeToken(attendee, application._id.toString());
+
+    // Use frontend route URL for QR code (opens the React page)
+    const verificationUrl = `http://localhost:5000/attendee/${token}`;
+
+    console.log(`📱 Generating QR code with frontend URL: ${verificationUrl}`);
+
+    let qrCodeBuffer;
+    let qrCodeDataUrl;
+    try {
+      // Generate QR code as buffer (for attachment)
+      qrCodeBuffer = await QRCode.toBuffer(verificationUrl, {
+        width: 400,
+        margin: 2,
+        errorCorrectionLevel: "M", // Medium error correction for reliability
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
+
+      // Also generate as data URL for direct embedding in email HTML (backup)
+      qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
+        width: 400,
+        margin: 2,
+        errorCorrectionLevel: "M",
+        color: {
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
+      });
+
+      console.log(
+        `✅ QR code generated successfully (${qrCodeBuffer.length} bytes)`
+      );
+
+      // Verify buffer is valid
+      if (!qrCodeBuffer || qrCodeBuffer.length === 0) {
+        throw new Error("QR code buffer is empty");
+      }
+    } catch (qrError) {
+      console.error(`❌ Error generating QR code:`, qrError);
+      throw new Error(`Failed to generate QR code: ${qrError.message}`);
     }
 
     // Path to logo image
@@ -1299,8 +1314,12 @@ export const sendAttendeeQRCodeEmail = async (
                           Your Personal QR Code
                         </h3>
                         <div style="display: inline-block; padding: 20px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);">
-                          <img src="cid:qrcode" alt="QR Code for ${attendeeName}" style="width: 300px; height: 300px; display: block; border: 4px solid #ffffff; border-radius: 8px;" />
+                          <!-- Use CID attachment for QR code (more reliable than data URLs) -->
+                          <img src="cid:qrcode" alt="QR Code for ${attendeeName}" style="width: 300px; height: 300px; display: block; border: 4px solid #ffffff; border-radius: 8px; margin: 0 auto;" />
                         </div>
+                        <p style="margin: 16px 0 0; font-size: 12px; color: #718096; text-align: center;">
+                          <a href="${verificationUrl}" style="color: #667eea; text-decoration: none;">Or click here to view details</a>
+                        </p>
                         <p style="margin: 24px 0 0; font-size: 14px; color: #718096; line-height: 1.6;">
                           Scan this QR code to view your attendee details
                         </p>
@@ -1406,6 +1425,8 @@ export const sendAttendeeQRCodeEmail = async (
           filename: `QR_Code_${attendeeName.replace(/\s+/g, "_")}.png`,
           content: qrCodeBuffer,
           cid: "qrcode",
+          contentType: "image/png",
+          contentDisposition: "inline",
         },
       ],
     };
