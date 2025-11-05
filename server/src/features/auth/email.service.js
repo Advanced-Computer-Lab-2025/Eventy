@@ -690,3 +690,242 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
     // Don't throw - log error but don't fail the update
   }
 };
+
+/**
+ * Send application status notification email to vendor
+ * @param {Object} vendor - Vendor user object with email and companyName
+ * @param {Object} application - Application object with type, status, and event details
+ */
+export const sendVendorApplicationStatusEmail = async (vendor, application) => {
+  // Get vendor display name (company name for vendors)
+  const displayName = vendor?.companyName || vendor?.name || [vendor?.firstName, vendor?.lastName].filter(Boolean).join(" ") || "Vendor";
+  
+  // Determine application type display name
+  const applicationType = application.type === "bazaar" ? "Bazaar" : "Booth";
+  const applicationTypeLower = application.type === "bazaar" ? "bazaar" : "booth";
+  
+  // Get event/bazaar name
+  const eventName = application.event?.name || "the event";
+  
+  // Determine status display
+  const isApproved = application.status === "approved";
+  const statusText = isApproved ? "Approved" : "Rejected";
+  const statusColor = isApproved ? "#10b981" : "#ef4444";
+  const statusBgColor = isApproved ? "#d1fae5" : "#fee2e2";
+  const statusTextColor = isApproved ? "#065f46" : "#991b1b";
+  const statusIcon = isApproved ? "✅" : "❌";
+  
+  // Path to logo image
+  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+
+  // Build application details HTML
+  let applicationDetailsHtml = `
+    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid ${statusColor}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+          Application Details
+        </h3>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Application Type:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${applicationType}</td>
+        </tr>
+  `;
+
+  if (application.type === "bazaar") {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Bazaar Name:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventName}</td>
+        </tr>
+    `;
+  }
+
+  applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Booth Size:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.boothSize || "N/A"}</td>
+        </tr>
+  `;
+
+  if (application.type === "booth" && application.durationWeeks) {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Duration:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? 's' : ''}</td>
+        </tr>
+    `;
+  }
+
+  if (application.type === "booth" && application.locationPreference) {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Location:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.locationPreference}</td>
+        </tr>
+    `;
+  }
+
+  applicationDetailsHtml += `
+      </table>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: vendor?.email,
+    subject: `${applicationType} Application ${statusText} - ${eventName}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Application ${statusText}</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: ${statusBgColor}; border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px ${statusColor}40;">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
+                        ${statusIcon} Application ${statusText}
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${displayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      ${isApproved 
+                        ? `Great news! Your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>. We're excited to have you participate!`
+                        : `We regret to inform you that your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>.`
+                      }
+                    </p>
+                    
+                    ${applicationDetailsHtml}
+                    
+                    ${isApproved ? `
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Next steps: Please proceed with the payment process to confirm your participation. You can do this through your vendor dashboard.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <table role="presentation" style="width: 100%; margin: 32px 0;">
+                      <tr>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Dashboard</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="http://localhost:5000/vendor/dashboard" 
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
+                            View Dashboard
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                    ` : `
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      We appreciate your interest in participating. If you have any questions about this decision or would like to apply for other events, please don't hesitate to contact the Events Office.
+                    </p>
+                    `}
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Alternative Link Fallback -->
+                    <div style="background-color: #f7fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px; font-size: 13px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ${isApproved ? 'Button not working?' : 'Need help?'}
+                      </p>
+                      <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
+                        ${isApproved 
+                          ? `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your dashboard</a>`
+                          : `If you have any questions, please contact the <a href="mailto:events@guc.edu.eg" style="color: #667eea; text-decoration: underline; font-weight: 600;">Events Office</a>`
+                        }
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      If you have any questions or concerns, please don't hesitate to contact the Events Office.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © 2025 Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      {
+        filename: 'logo-light.png',
+        path: logoPath,
+        cid: 'logo' // Content ID for embedding in HTML
+      }
+    ]
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Vendor application status email sent to ${vendor.email}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+      applicationType: application.type,
+      status: application.status,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+  } catch (error) {
+    console.error(`❌ Error sending vendor application status email to ${vendor.email}:`, error?.message || error);
+    // Don't throw - log error but don't fail the status update
+  }
+};
