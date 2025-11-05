@@ -705,7 +705,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   const applicationTypeLower = application.type === "bazaar" ? "bazaar" : "booth";
   
   // Get event/bazaar name
-  const eventName = application.event?.name || "the event";
+  const eventName = application.event?.name || null;
   
   // Determine status display
   const isApproved = application.status === "approved";
@@ -784,7 +784,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
     to: vendor?.email,
-    subject: `${applicationType} Application ${statusText} - ${eventName}`,
+    subject: `${applicationType} Application ${statusText}` + (eventName ? ` - ${eventName}` : ''),
     html: `
       <!DOCTYPE html>
       <html lang="en">
