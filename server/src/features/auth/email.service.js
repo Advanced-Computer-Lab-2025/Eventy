@@ -853,39 +853,6 @@ export const sendVisitorQRCodesEmail = async (application, vendor, event = null)
                         Your ${applicationType.toLowerCase()} application has been approved! Below are the QR codes for all registered visitors. Each QR code contains the visitor's information and can be used for verification at the event.
                       </p>
                       
-                      <!-- Application Details -->
-                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #667eea;">
-                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
-                          Application Details
-                        </h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Type:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${applicationType}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Event/Booth:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${eventName}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Location:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${location}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Duration:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${durationText}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Booth Size:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${application.boothSize}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Number of Visitors:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${application.attendees.length}</td>
-                          </tr>
-                        </table>
-                      </div>
-                      
                       <!-- QR Codes Section -->
                       <div style="margin: 32px 0;">
                         <h3 style="margin: 0 0 24px; font-size: 20px; font-weight: 700; color: #2d3748; text-align: center;">
@@ -1099,35 +1066,6 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
                         <p style="margin: 24px 0 0; font-size: 14px; color: #718096; line-height: 1.6;">
                           Scan this QR code to view your attendee details
                         </p>
-                      </div>
-                      
-                      <!-- Event Details -->
-                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #10b981;">
-                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
-                          Event Information
-                        </h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Type:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${applicationType}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Event/Booth:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${eventName}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Location:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${location}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Duration:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${durationText}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Booth Size:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${application.boothSize}</td>
-                          </tr>
-                        </table>
                       </div>
                       
                       <!-- Instructions -->
