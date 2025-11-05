@@ -66,19 +66,14 @@ export default function AttendeeDetails() {
           setErrorMessage("Invalid QR code link");
           return;
         }
-
-        const response = await fetch(
-          `${API_BASE_URL}/api/applications/attendee/${token}`
-        );
-
+        
+        const response = await fetch(`${API_BASE_URL}/api/applications/attendee/${token}`);
+        
         // Read response as text first to see what we're actually getting
         const responseText = await response.text();
-
+        
         // Check if response is HTML (starts with <!DOCTYPE or <html)
-        if (
-          responseText.trim().startsWith("<!DOCTYPE") ||
-          responseText.trim().startsWith("<html")
-        ) {
+        if (responseText.trim().startsWith("<!DOCTYPE") || responseText.trim().startsWith("<html")) {
           setStatus("error");
           setErrorMessage(
             "Server returned HTML instead of JSON. The API route may not be registered correctly."
@@ -112,11 +107,7 @@ export default function AttendeeDetails() {
         }
       } catch (error: unknown) {
         setStatus("error");
-        setErrorMessage(
-          `An error occurred: ${
-            error instanceof Error ? error.message : "Unknown error"
-          }`
-        );
+        setErrorMessage(`An error occurred: ${error?.message || "Unknown error"}`);
       }
     };
 
