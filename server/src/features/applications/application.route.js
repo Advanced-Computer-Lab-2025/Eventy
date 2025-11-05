@@ -99,4 +99,14 @@ router.delete(
   applicationController.cancelApplication.bind(applicationController)
 );
 
+/**
+ * @route   GET /api/applications/attendee/:token
+ * @desc    Get attendee details via QR code token (public endpoint)
+ * @access  Public (via token)
+ */
+router.get(
+  "/attendee/:token",
+  applicationController.getAttendeeByToken.bind(applicationController)
+);
+
 export default router;
