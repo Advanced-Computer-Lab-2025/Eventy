@@ -4,7 +4,10 @@ import {
   validateBoothApplication,
 } from "./application.validation.js";
 import ApiError from "../../utils/ApiError.js";
-import { sendVisitorQRCodesEmail, sendAttendeeQRCodeEmail } from "../auth/email.service.js";
+import {
+  sendVisitorQRCodesEmail,
+  sendAttendeeQRCodeEmail,
+} from "../auth/email.service.js";
 import Application from "./application.model.js";
 import jwt from "jsonwebtoken";
 import { generateAttendeeToken } from "../../utils/qrcode.service.js";
@@ -179,11 +182,11 @@ export class ApplicationController {
           const populatedApplication = await Application.findById(applicationId)
             .populate({
               path: "createdBy",
-              select: "companyName email name firstName lastName"
+              select: "companyName email name firstName lastName",
             })
             .populate({
               path: "event",
-              select: "name location startDate endDate"
+              select: "name location startDate endDate",
             });
 
           if (populatedApplication && populatedApplication.createdBy) {
@@ -194,8 +197,11 @@ export class ApplicationController {
                 populatedApplication,
                 populatedApplication.createdBy,
                 populatedApplication.event || null
-              ).catch(err => {
-                console.error(`Failed to send QR code email to ${attendee.email}:`, err);
+              ).catch((err) => {
+                console.error(
+                  `Failed to send QR code email to ${attendee.email}:`,
+                  err
+                );
                 // Don't fail the request if email fails
               });
             });
@@ -328,11 +334,11 @@ export class ApplicationController {
       const application = await Application.findById(decoded.applicationId)
         .populate({
           path: "createdBy",
-          select: "companyName email name firstName lastName"
+          select: "companyName email name firstName lastName",
         })
         .populate({
           path: "event",
-          select: "name location startDate endDate"
+          select: "name location startDate endDate",
         });
 
       if (!application) {
@@ -355,20 +361,26 @@ export class ApplicationController {
       }
 
       // Determine application type and details
-      const applicationType = application.type === "bazaar" ? "Bazaar" : "Platform Booth";
+      const applicationType =
+        application.type === "bazaar" ? "Bazaar" : "Platform Booth";
       const eventName = application.event?.name || "Platform Booth";
-      const location = application.event?.location || application.locationPreference || "N/A";
-      
+      const location =
+        application.event?.location || application.locationPreference || "N/A";
+
       // Calculate duration
       let durationText = "";
       if (application.type === "booth" && application.durationWeeks) {
-        durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? 's' : ''}`;
-      } else if (application.event && application.event.startDate && application.event.endDate) {
+        durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
+      } else if (
+        application.event &&
+        application.event.startDate &&
+        application.event.endDate
+      ) {
         const startDate = new Date(application.event.startDate);
         const endDate = new Date(application.event.endDate);
         const diffTime = Math.abs(endDate - startDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        durationText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+        durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
       } else {
         durationText = "N/A";
       }
@@ -396,7 +408,7 @@ export class ApplicationController {
           },
         },
       };
-      
+
       res.status(200).json(responseData);
     } catch (error) {
       next(error);
@@ -449,11 +461,11 @@ export class ApplicationController {
       const application = await Application.findById(decoded.applicationId)
         .populate({
           path: "createdBy",
-          select: "companyName email name firstName lastName"
+          select: "companyName email name firstName lastName",
         })
         .populate({
           path: "event",
-          select: "name location startDate endDate"
+          select: "name location startDate endDate",
         });
 
       if (!application) {
@@ -488,37 +500,47 @@ export class ApplicationController {
       }
 
       // Determine application type and details
-      const applicationType = application.type === "bazaar" ? "Bazaar" : "Platform Booth";
+      const applicationType =
+        application.type === "bazaar" ? "Bazaar" : "Platform Booth";
       const eventName = application.event?.name || "Platform Booth";
-      const location = application.event?.location || application.locationPreference || "N/A";
-      
+      const location =
+        application.event?.location || application.locationPreference || "N/A";
+
       // Calculate duration
       let durationText = "";
       if (application.type === "booth" && application.durationWeeks) {
-        durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? 's' : ''}`;
-      } else if (application.event && application.event.startDate && application.event.endDate) {
+        durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
+      } else if (
+        application.event &&
+        application.event.startDate &&
+        application.event.endDate
+      ) {
         const startDate = new Date(application.event.startDate);
         const endDate = new Date(application.event.endDate);
         const diffTime = Math.abs(endDate - startDate);
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        durationText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+        durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
       } else {
         durationText = "N/A";
       }
 
       // Escape HTML
       const escapeHtml = (str) => {
-        if (!str) return '';
+        if (!str) return "";
         return String(str)
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#039;');
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
       };
 
       // Return HTML page
-      res.status(200).send(`<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Attendee Verification</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f0f9ff,#e0e7ff,#fce7f3);min-height:100vh;padding:20px}.c{max-width:500px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.1);overflow:hidden}.h{background:linear-gradient(135deg,#dbeafe,#e0e7ff,#fce7f3);padding:25px;text-align:center}.h h1{font-size:22px;font-weight:700;color:#1a202c;margin:0 0 5px}.h p{color:#4a5568;font-size:13px;margin:0}.co{padding:20px}.s{background:#f7fafc;border-radius:6px;padding:15px;margin-bottom:12px;border-left:3px solid #667eea}.s h2{font-size:15px;font-weight:700;color:#2d3748;margin:0 0 10px}.r{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}.r:last-child{border-bottom:none}.l{font-size:12px;color:#718096;font-weight:600}.v{font-size:12px;color:#1a202c;text-align:right}.b{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;background:#10b981;color:#fff}.f{background:#f7fafc;padding:15px;text-align:center;border-top:1px solid #e2e8f0;color:#718096;font-size:10px}${attendee.individualID ? '.id{max-width:100%;margin-top:10px;border-radius:6px;border:2px solid #e2e8f0}' : ''}</style></head><body><div class=c><div class=h><h1>✅ Verified</h1><p>QR Code Verification</p></div><div class=co><div class=s><h2>👤 Attendee</h2><div class=r><span class=l>Name:</span><span class=v>${escapeHtml(attendee.name)}</span></div><div class=r><span class=l>Email:</span><span class=v>${escapeHtml(attendee.email)}</span></div>${attendee.individualID ? `<div style="margin-top:10px"><img src="${escapeHtml(attendee.individualID)}" alt="ID Card" class=id /></div>` : ''}</div><div class=s><h2>📅 Event</h2><div class=r><span class=l>Type:</span><span class=v>${escapeHtml(applicationType)}</span></div><div class=r><span class=l>Event:</span><span class=v>${escapeHtml(eventName)}</span></div><div class=r><span class=l>Location:</span><span class=v>${escapeHtml(location)}</span></div><div class=r><span class=l>Duration:</span><span class=v>${escapeHtml(durationText)}</span></div><div class=r><span class=l>Booth:</span><span class=v>${escapeHtml(application.boothSize)}</span></div><div class=r><span class=l>Status:</span><span class=v><span class=b>Approved</span></span></div></div><div class=s><h2>🏢 Vendor</h2><div class=r><span class=l>Company:</span><span class=v>${escapeHtml(application.createdBy?.companyName || "N/A")}</span></div></div></div><div class=f><p>© 2025 Eventy Platform</p></div></div></body></html>`);
+      res
+        .status(200)
+        .send(
+          `<!DOCTYPE html><html><head><meta charset=UTF-8><meta name=viewport content="width=device-width,initial-scale=1"><title>Attendee Verification</title><style>*{margin:0;padding:0;box-sizing:border-box}body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#f0f9ff,#e0e7ff,#fce7f3);min-height:100vh;padding:20px}.c{max-width:500px;margin:0 auto;background:#fff;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.1);overflow:hidden}.h{background:linear-gradient(135deg,#dbeafe,#e0e7ff,#fce7f3);padding:25px;text-align:center}.h h1{font-size:22px;font-weight:700;color:#1a202c;margin:0 0 5px}.h p{color:#4a5568;font-size:13px;margin:0}.co{padding:20px}.s{background:#f7fafc;border-radius:6px;padding:15px;margin-bottom:12px;border-left:3px solid #667eea}.s h2{font-size:15px;font-weight:700;color:#2d3748;margin:0 0 10px}.r{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #e2e8f0}.r:last-child{border-bottom:none}.l{font-size:12px;color:#718096;font-weight:600}.v{font-size:12px;color:#1a202c;text-align:right}.b{display:inline-block;padding:2px 8px;border-radius:3px;font-size:10px;font-weight:600;background:#10b981;color:#fff}.f{background:#f7fafc;padding:15px;text-align:center;border-top:1px solid #e2e8f0;color:#718096;font-size:10px}${attendee.individualID ? ".id{max-width:100%;margin-top:10px;border-radius:6px;border:2px solid #e2e8f0}" : ""}</style></head><body><div class=c><div class=h><h1>✅ Verified</h1><p>QR Code Verification</p></div><div class=co><div class=s><h2>👤 Attendee</h2><div class=r><span class=l>Name:</span><span class=v>${escapeHtml(attendee.name)}</span></div><div class=r><span class=l>Email:</span><span class=v>${escapeHtml(attendee.email)}</span></div>${attendee.individualID ? `<div style="margin-top:10px"><img src="${escapeHtml(attendee.individualID)}" alt="ID Card" class=id /></div>` : ""}</div><div class=s><h2>📅 Event</h2><div class=r><span class=l>Type:</span><span class=v>${escapeHtml(applicationType)}</span></div><div class=r><span class=l>Event:</span><span class=v>${escapeHtml(eventName)}</span></div><div class=r><span class=l>Location:</span><span class=v>${escapeHtml(location)}</span></div><div class=r><span class=l>Duration:</span><span class=v>${escapeHtml(durationText)}</span></div><div class=r><span class=l>Booth:</span><span class=v>${escapeHtml(application.boothSize)}</span></div><div class=r><span class=l>Status:</span><span class=v><span class=b>Approved</span></span></div></div><div class=s><h2>🏢 Vendor</h2><div class=r><span class=l>Company:</span><span class=v>${escapeHtml(application.createdBy?.companyName || "N/A")}</span></div></div></div><div class=f><p>© 2025 Eventy Platform</p></div></div></body></html>`
+        );
     } catch (error) {
       next(error);
     }
