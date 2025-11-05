@@ -713,7 +713,6 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   const statusColor = isApproved ? "#10b981" : "#ef4444";
   const statusBgColor = isApproved ? "#d1fae5" : "#fee2e2";
   const statusTextColor = isApproved ? "#065f46" : "#991b1b";
-  const statusIcon = isApproved ? "✅" : "❌";
   
   // Path to logo image
   const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
@@ -806,7 +805,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
                     <div style="margin-top: 20px; padding: 8px 16px; background: ${statusBgColor}; border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px ${statusColor}40;">
                       <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: ${statusTextColor}; line-height: 1.2;">
-                        ${statusIcon} Application ${statusText}
+                        Application ${statusText}
                       </h1>
                     </div>
                   </td>
@@ -830,7 +829,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     ${isApproved ? `
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
                     <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
-                      Next steps: Please proceed with the payment process to confirm your participation. You can do this through your vendor dashboard.
+                      Your application has been reviewed and approved. We are excited to have you join us !. You can view all your application details through your vendor dashboard.
                     </p>
                     
                     <!-- CTA Button -->
@@ -855,8 +854,28 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     ` : `
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
                     <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
-                      We appreciate your interest in participating. If you have any questions about this decision or would like to apply for other events, please don't hesitate to contact the Events Office.
+                      We sincerely apologize for any inconvenience this may cause. We appreciate your interest in participating. If you have any questions about this decision or would like to apply for other events, please don't hesitate to contact the Events Office.
                     </p>
+                    
+                    <!-- Reapply CTA Button -->
+                    <table role="presentation" style="width: 100%; margin: 32px 0;">
+                      <tr>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#667eea" fillcolor="#667eea">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">Reapply</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="http://localhost:5000/vendor/dashboard" 
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #667eea 0%, #5a67d8 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39); border: 1px solid rgba(102, 126, 234, 0.2); line-height: 20px; mso-hide: all;">
+                            Reapply
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
                     `}
                     
                     <!-- Divider -->
@@ -870,7 +889,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                       <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
                         ${isApproved 
                           ? `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your dashboard</a>`
-                          : `If you have any questions, please contact the <a href="mailto:events@guc.edu.eg" style="color: #667eea; text-decoration: underline; font-weight: 600;">Events Office</a>`
+                          : `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to reapply</a> or contact the <a href="mailto:events@guc.edu.eg" style="color: #667eea; text-decoration: underline; font-weight: 600;">Events Office</a>`
                         }
                       </p>
                     </div>
