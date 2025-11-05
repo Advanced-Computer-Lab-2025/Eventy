@@ -3,9 +3,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
-import {
-  generateAttendeeToken
-} from "../../utils/qrcode.service.js";
+import { generateAttendeeToken } from "../../utils/qrcode.service.js";
 import QRCode from "qrcode";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -1115,6 +1113,15 @@ export const sendVisitorQRCodesEmail = async (
                       </div>
                       <div style="margin:32px 0;">
                         <h3 style="margin:0 0 24px;font-size:20px;font-weight:700;color:#2d3748;text-align:center;">Visitor QR Codes</h3>
+                      <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                        Your ${applicationType.toLowerCase()} application has been approved! Below are the QR codes for all registered visitors. Each QR code contains the visitor's information and can be used for verification at the event.
+                      </p>
+                      
+                      <!-- QR Codes Section -->
+                      <div style="margin: 32px 0;">
+                        <h3 style="margin: 0 0 24px; font-size: 20px; font-weight: 700; color: #2d3748; text-align: center;">
+                          Visitor QR Codes
+                        </h3>
                         ${qrCodesHTML}
                       </div>
                       <div style="margin-top:32px;padding:20px;background-color:#eff6ff;border-left:4px solid #3b82f6;border-radius:4px;">
@@ -1174,7 +1181,12 @@ export const sendVisitorQRCodesEmail = async (
  * @param {Object} vendor - Vendor user object
  * @param {Object} event - Event object (optional, may be null for booth)
  */
-export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, event = null) => {
+export const sendAttendeeQRCodeEmail = async (
+  attendee,
+  application,
+  vendor,
+  event = null
+) => {
   try {
     const attendeeEmail = attendee?.email;
     const attendeeName = attendee?.name || "Visitor";
@@ -1185,34 +1197,38 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
     }
 
     // Determine application type and details
-    const applicationType = application.type === "bazaar" ? "Bazaar" : "Platform Booth";
+    const applicationType =
+      application.type === "bazaar" ? "Bazaar" : "Platform Booth";
     const eventName = event?.name || "Platform Booth";
     const location = event?.location || application.locationPreference || "N/A";
-    
+
     // Calculate duration
     let durationText = "";
     if (application.type === "booth" && application.durationWeeks) {
-      durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? 's' : ''}`;
+      durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
     } else if (event && event.startDate && event.endDate) {
       const startDate = new Date(event.startDate);
       const endDate = new Date(event.endDate);
       const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      durationText = `${diffDays} day${diffDays > 1 ? 's' : ''}`;
+      durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
     } else {
       durationText = "N/A";
     }
 
     // Generate JWT token for attendee verification
     const token = generateAttendeeToken(attendee, application._id.toString());
-    
+
     // Use frontend route URL for QR code (opens the React page)
     // Get base URL from environment variable or default to localhost:5000
-    const baseUrl = process.env.CLIENT_URL || process.env.FRONTEND_URL || 'http://localhost:5000';
+    const baseUrl =
+      process.env.CLIENT_URL ||
+      process.env.FRONTEND_URL ||
+      "http://localhost:5000";
     const verificationUrl = `${baseUrl}/attendee/${token}`;
-    
+
     console.log(`📱 Generating QR code with frontend URL: ${verificationUrl}`);
-    
+
     let qrCodeBuffer;
     let qrCodeDataUrl;
     try {
@@ -1220,29 +1236,31 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
       qrCodeBuffer = await QRCode.toBuffer(verificationUrl, {
         width: 400,
         margin: 2,
-        errorCorrectionLevel: 'M', // Medium error correction for reliability
+        errorCorrectionLevel: "M", // Medium error correction for reliability
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
       });
-      
+
       // Also generate as data URL for direct embedding in email HTML (backup)
       qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
         width: 400,
         margin: 2,
-        errorCorrectionLevel: 'M',
+        errorCorrectionLevel: "M",
         color: {
-          dark: '#000000',
-          light: '#FFFFFF'
-        }
+          dark: "#000000",
+          light: "#FFFFFF",
+        },
       });
-      
-      console.log(`✅ QR code generated successfully (${qrCodeBuffer.length} bytes)`);
-      
+
+      console.log(
+        `✅ QR code generated successfully (${qrCodeBuffer.length} bytes)`
+      );
+
       // Verify buffer is valid
       if (!qrCodeBuffer || qrCodeBuffer.length === 0) {
-        throw new Error('QR code buffer is empty');
+        throw new Error("QR code buffer is empty");
       }
     } catch (qrError) {
       console.error(`❌ Error generating QR code:`, qrError);
@@ -1250,7 +1268,10 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
     }
 
     // Path to logo image
-    const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+    const logoPath = path.resolve(
+      __dirname,
+      "../../../../client/public/images/logo-light.png"
+    );
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1307,35 +1328,6 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
                         </p>
                       </div>
                       
-                      <!-- Event Details -->
-                      <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 24px; margin: 32px 0; border-left: 4px solid #10b981;">
-                        <h3 style="margin: 0 0 20px; font-size: 18px; font-weight: 700; color: #2d3748;">
-                          Event Information
-                        </h3>
-                        <table style="width: 100%; border-collapse: collapse;">
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Type:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${applicationType}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Event/Booth:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${eventName}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Location:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${location}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Duration:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${durationText}</td>
-                          </tr>
-                          <tr>
-                            <td style="padding: 8px 0; font-size: 14px; color: #718096; font-weight: 600;">Booth Size:</td>
-                            <td style="padding: 8px 0; font-size: 14px; color: #1a202c; text-align: right;">${application.boothSize}</td>
-                          </tr>
-                        </table>
-                      </div>
-                      
                       <!-- Instructions -->
                       <div style="margin-top: 32px; padding: 20px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
                         <p style="margin: 0 0 12px; font-size: 14px; color: #1e40af; font-weight: 600;">
@@ -1378,18 +1370,18 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
       replyTo: process.env.EMAIL_USER,
       attachments: [
         {
-          filename: 'logo-light.png',
+          filename: "logo-light.png",
           path: logoPath,
-          cid: 'logo'
+          cid: "logo",
         },
         {
-          filename: `QR_Code_${attendeeName.replace(/\s+/g, '_')}.png`,
+          filename: `QR_Code_${attendeeName.replace(/\s+/g, "_")}.png`,
           content: qrCodeBuffer,
-          cid: 'qrcode',
-          contentType: 'image/png',
-          contentDisposition: 'inline'
-        }
-      ]
+          cid: "qrcode",
+          contentType: "image/png",
+          contentDisposition: "inline",
+        },
+      ],
     };
 
     const info = await transporter.sendMail(mailOptions);
@@ -1397,14 +1389,17 @@ export const sendAttendeeQRCodeEmail = async (attendee, application, vendor, eve
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
-      attendeeName: attendeeName
+      attendeeName: attendeeName,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(`❌ Error sending QR code email to ${attendee?.email}:`, error?.message || error);
+    console.error(
+      `❌ Error sending QR code email to ${attendee?.email}:`,
+      error?.message || error
+    );
     // Don't throw - log error but don't fail the approval process
   }
 };
