@@ -37,8 +37,10 @@ export const getEventFeedback = async (req, res) => {
   try {
     const { eventId } = req.params;
 
+    // populate user fields that exist in our User model
+    // some users (vendors) have companyName while others have firstName/lastName
     const feedback = await Feedback.find({ eventId })
-      .populate("userId", "name email")
+      .populate("userId", "firstName lastName companyName email")
       .sort("-createdAt");
 
     // Calculate average rating
@@ -68,7 +70,10 @@ export const getUserEventFeedback = async (req, res) => {
     const { eventId } = req.params;
     const userId = req.user._id;
 
-    const feedback = await Feedback.findOne({ eventId, userId });
+    const feedback = await Feedback.findOne({ eventId, userId }).populate(
+      "userId",
+      "firstName lastName companyName email"
+    );
 
     return res.status(200).json({
       success: true,
