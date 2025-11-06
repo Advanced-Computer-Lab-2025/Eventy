@@ -85,11 +85,13 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  isRegistered?: boolean;
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
+  onFeedback?: () => void;
   canDelete?: boolean;
   className?: string;
 }
@@ -116,6 +118,8 @@ export default function EventCard({
   onShare,
   onDelete,
   onViewDetails,
+  onFeedback,
+  isRegistered = false,
   canDelete = false,
   className,
 }: EventCardProps) {
@@ -166,7 +170,9 @@ export default function EventCard({
 
   return (
     <Card
-      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${className || ""}`}
+      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${
+        className || ""
+      }`}
       data-testid={`card-event-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -314,14 +320,24 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {canRegister && (
+              {isRegistered && startDate && new Date() > new Date(startDate) ? (
                 <Button
                   className="flex-1"
-                  onClick={onRegister}
-                  data-testid={`button-register-${id}`}
+                  onClick={onFeedback}
+                  data-testid={`button-feedback-${id}`}
                 >
-                  Register
+                  Give Feedback
                 </Button>
+              ) : (
+                canRegister && (
+                  <Button
+                    className="flex-1"
+                    onClick={onRegister}
+                    data-testid={`button-register-${id}`}
+                  >
+                    Register
+                  </Button>
+                )
               )}
               {onViewDetails && (
                 <Button
@@ -427,14 +443,26 @@ export default function EventCard({
 
             {showActions && (
               <div className="flex gap-2 pt-2">
-                {isRegisterable && (
+                {isRegistered &&
+                startDate &&
+                new Date() > new Date(startDate) ? (
                   <Button
-                    onClick={onRegister}
+                    onClick={onFeedback}
                     className="flex-1"
-                    data-testid={`button-register-${id}`}
+                    data-testid={`button-feedback-${id}`}
                   >
-                    Register
+                    Give Feedback
                   </Button>
+                ) : (
+                  isRegisterable && (
+                    <Button
+                      onClick={onRegister}
+                      className="flex-1"
+                      data-testid={`button-register-${id}`}
+                    >
+                      Register
+                    </Button>
+                  )
                 )}
                 <Button
                   variant="outline"
