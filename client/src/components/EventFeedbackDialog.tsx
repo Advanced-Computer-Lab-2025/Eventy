@@ -22,9 +22,12 @@ interface EventFeedbackDialogProps {
 interface Comment {
   _id: string;
   userId: {
-    name: string;
-    email: string;
-  };
+    // backend may populate different name fields depending on user model
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null;
   rating: number;
   comment: string;
   createdAt: string;
@@ -58,6 +61,9 @@ export default function EventFeedbackDialog({
       );
       if (!response.ok) throw new Error("Failed to fetch feedback");
       const data = await response.json();
+      // debug: log returned feedback to inspect populated user fields
+      // eslint-disable-next-line no-console
+      console.log("fetched feedback:", data.data.feedback);
       setComments(data.data.feedback);
     } catch (error) {
       console.error("Error fetching feedback:", error);
@@ -201,33 +207,44 @@ export default function EventFeedbackDialog({
                     No feedback yet
                   </div>
                 ) : (
-                  comments.map((comment) => (
-                    <div key={comment._id} className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium">
-                          {comment.userId.name}
-                        </span>
-                        <span className="text-sm text-muted-foreground">
-                          {formatDate(comment.createdAt)}
-                        </span>
+                  comments.map((comment) => {
+                    const user = comment.userId || ({} as any);
+                    const displayName =
+                      (user.name && String(user.name).trim()) ||
+                      ((user.firstName || user.lastName) &&
+                        `${user.firstName || ""} ${
+                          user.lastName || ""
+                        }`.trim()) ||
+                      (user.companyName && String(user.companyName).trim()) ||
+                      user.email ||
+                      "Anonymous";
+
+                    return (
+                      <div key={comment._id} className="space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{displayName}</span>
+                          <span className="text-sm text-muted-foreground">
+                            {formatDate(comment.createdAt)}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-yellow-400">
+                          {[...Array(5)].map((_, index) => (
+                            <Star
+                              key={index}
+                              className={`w-4 h-4 ${
+                                index < comment.rating
+                                  ? "fill-current"
+                                  : "text-muted"
+                              }`}
+                            />
+                          ))}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {comment.comment}
+                        </p>
                       </div>
-                      <div className="flex items-center gap-1 text-yellow-400">
-                        {[...Array(5)].map((_, index) => (
-                          <Star
-                            key={index}
-                            className={`w-4 h-4 ${
-                              index < comment.rating
-                                ? "fill-current"
-                                : "text-muted"
-                            }`}
-                          />
-                        ))}
-                      </div>
-                      <p className="text-sm text-muted-foreground mt-1">
-                        {comment.comment}
-                      </p>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
             </ScrollArea>
