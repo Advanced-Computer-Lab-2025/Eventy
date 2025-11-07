@@ -115,15 +115,18 @@ const eventSchema = new Schema(
         return this.eventType === "workshop";
       },
     },
-    professors: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: function () {
-          return this.eventType === "workshop";
+    professors: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
         },
+      ],
+      required: function () {
+        return this.eventType === "workshop";
       },
-    ],
+      default: undefined,
+    },
     websiteUrl: {
       type: String,
       required: function () {
