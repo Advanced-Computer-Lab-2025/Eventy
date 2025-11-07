@@ -4,82 +4,28 @@ const { Schema } = mongoose;
 const eventSchema = new Schema(
   {
     name: { type: String, required: true, trim: true },
-    type: { type: String, enum: ["workshop", "trip", "booth"], required: true },
-
-    // Fields required for non-booth events
-    registrationDeadline: {
-      type: Date,
-      required: function () {
-        return this.type !== "booth";
-      },
-    },
-    startDate: {
-      type: Date,
-      required: function () {
-        return this.type !== "booth";
-      },
-    },
-    endDate: {
-      type: Date,
-      required: function () {
-        return this.type !== "booth";
-      },
-    },
-    location: {
-      type: String,
-      required: function () {
-        return this.type !== "booth";
-      },
-    },
-    description: {
-      type: String,
-      required: function () {
-        return this.type !== "booth";
-      },
-    },
     eventType: {
       type: String,
-      required: function () {
-        return this.type !== "booth";
-      },
+      required: true,
+      enum: ["bazaar", "trip", "workshop", "conference", "platform_booth"],
     },
-
-    // Booth-specific fields
-    boothSize: {
-      type: String,
-      enum: ["2x2", "4x4"],
-      required: function () {
-        return this.type === "booth";
-      },
-    },
-    durationWeeks: {
-      type: Number,
-      min: 1,
-      max: 4,
-      required: function () {
-        return this.type === "booth";
-      },
-    },
-    locationPreference: {
-      type: String,
-      required: function () {
-        return this.type === "booth";
-      },
-    },
-    attendees: {
-      type: [
-        {
-          name: String,
-          email: String,
-          individualID: String,
-        },
-      ],
-      required: function () {
-        return this.type === "booth";
-      },
-    },
-    application: { type: mongoose.Schema.Types.ObjectId, ref: "Application" },
-    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    description: { type: String, required: function () {
+        return this.eventType !== "platform_booth";
+      }, },
+    location: { type: String, required: function () {
+        return this.eventType !== "platform_booth";
+      }, },
+    startDate: { type: Date, required: function () {
+        return this.eventType !== "platform_booth";
+      }, },
+    startTime: { type: String },
+    endDate: { type: Date, required: function () {
+        return this.eventType !== "platform_booth";
+      }, },
+    endTime: { type: String },
+    registrationDeadline: { type: Date, required: function () {
+        return this.eventType !== "platform_booth";
+      }, },
 
     status: {
       type: String,
@@ -113,6 +59,12 @@ const eventSchema = new Schema(
     capacity: { type: Number },
 
     bannerImage: { type: String }, // URL to the banner image
+
+    createdBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true, // professor or events office/admin
+    },
 
     deletedAt: { type: Date, default: null }, // soft delete,
 
@@ -163,8 +115,43 @@ const eventSchema = new Schema(
         return this.eventType === "conference";
       },
     },
+  // Booth-specific fields
+  boothSize: {
+    type: String,
+    enum: ["2x2", "4x4"],
+    required: function () {
+      return this.eventType === "platform_booth";
+    },
   },
-  { timestamps: true }
+  durationWeeks: {
+    type: Number,
+    min: 1,
+    max: 4,
+    required: function () {
+      return this.eventType === "platform_booth";
+    },
+  },
+  locationPreference: {
+    type: String,
+    required: function () {
+      return this.eventType === "platform_booth";
+    },
+  },
+  boothAttendees: {
+    type: [
+      {
+        name: String,
+        email: String,
+        individualID: String,
+      },
+    ],
+    required: function () {
+      return this.eventType === "platform_booth";
+    },
+  },
+  application: { type: mongoose.Schema.Types.ObjectId, ref: "Application" },
+  // timestamps option for mongoose schema
+}, { timestamps: true }
 );
 
 // Add indexes for search performance
