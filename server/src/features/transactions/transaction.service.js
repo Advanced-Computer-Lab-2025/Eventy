@@ -6,6 +6,16 @@ import { Event } from "../events/event.model.js"; // Import your Event model
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export class TransactionService {
+  /**
+   * Handles payment for an event by a user.
+   * Prevents duplicate payments and supports wallet or Stripe payments.
+   * @param {Object} params
+   * @param {string} params.userId - User's ID
+   * @param {string} params.eventId - Event's ID
+   * @param {string} params.paymentMethod - Payment method ("wallet", "credit_card", "debit_card")
+   * @returns {Promise<Object>} Payment result and transaction details
+   * @throws {Error} If already paid, event not found, not registered, invalid price, or insufficient balance
+   */
   async payForEvent({ userId, eventId, paymentMethod }) {
     // Check if user already paid for this event
     const existingTransaction = await Transaction.findOne({
@@ -95,6 +105,13 @@ export class TransactionService {
     throw new Error("Invalid payment method");
   }
 
+  /**
+   * Confirms a Stripe payment intent and updates the transaction status.
+   * Also handles wallet top-up confirmation.
+   * @param {string} stripePaymentIntentId - Stripe payment intent ID
+   * @returns {Promise<Object>} Confirmation message and transaction details
+   * @throws {Error} If payment not completed or transaction not found
+   */
   async confirmStripePayment(paymentIntentId) {
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
@@ -149,6 +166,15 @@ export class TransactionService {
     return { message: "Payment confirmed", transaction };
   }
 
+  /**
+   * Initiates a wallet top-up via Stripe for a user.
+   * @param {Object} params
+   * @param {string} params.userId - User's ID
+   * @param {number} params.amount - Top-up amount
+   * @param {string} params.paymentMethod - Payment method ("credit_card", "debit_card")
+   * @returns {Promise<Object>} Top-up initiation result and transaction details
+   * @throws {Error} If payment method is invalid
+   */
   async topUpWallet({ userId, amount, paymentMethod }) {
     if (paymentMethod === "credit_card" || paymentMethod === "debit_card") {
       const paymentIntent = await stripe.paymentIntents.create({
