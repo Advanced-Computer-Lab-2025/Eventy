@@ -88,7 +88,6 @@ export class ApplicationController {
         data: newApplication,
       });
     } catch (error) {
-      console.error("Error in applyToBooth:", error);
 
       // Handle booth availability errors specifically
       if (
@@ -145,7 +144,7 @@ export class ApplicationController {
     try {
       const { applicationId } = req.params;
       const { status } = req.body;
-      console.log(applicationId, status);
+
       if (!["admin", "events_office"].includes(req.user.role)) {
         return res.status(403).json({
           success: false,
