@@ -190,9 +190,6 @@ class ApplicationServiceClass {
   // }
 
   async updateApplicationStatus(applicationId, status) {
-    console.log("applicationId:", applicationId, "type:", typeof applicationId);
-
-    // Ensure applicationId is a valid ObjectId
     let objectId;
     try {
       objectId = new mongoose.Types.ObjectId(applicationId);
@@ -200,19 +197,23 @@ class ApplicationServiceClass {
       throw new Error("Invalid application ID format");
     }
 
+    // Find the application first
     const application = await Application.findById(objectId).populate(
       "createdBy"
     );
     if (!application) throw new Error("Application not found");
-
-    // Only allow status change if not already cancelled
     if (application.status === "cancelled") {
       throw new Error("Application has already been cancelled");
     }
+    if (application.status !== "pending") {
+      throw new Error(
+        "You can only update the status of pending applications."
+      );
+    }
 
-    application.status = status;
+    let eventId = application.event;
 
-    // If approving a booth application, create the event and link it
+    // If approving a platform booth application, create the event and link it
     if (
       status === "approved" &&
       application.type === "booth" &&
@@ -221,28 +222,35 @@ class ApplicationServiceClass {
       const vendor = application.createdBy;
       const eventName = `${
         vendor.firstName || vendor.companyName || "Vendor"
-      } booth`;
+      }'s platform booth`;
 
       const eventData = {
         name: eventName,
-        type: "booth",
+        eventType: "platform_booth",
         boothSize: application.boothSize,
         durationWeeks: application.durationWeeks,
         locationPreference: application.locationPreference,
-        attendees: application.attendees,
+        boothAttendees: application.attendees,
         createdBy: vendor._id,
         application: application._id,
-        // Add any other required event fields here
+        status: "approved",
       };
 
       const createdEvent = await Event.create(eventData);
-
-      // Link the event to the application
-      application.event = createdEvent._id;
+      eventId = createdEvent._id;
     }
 
-    await application.save();
-    return application;
+    // Now update the application status and event field atomically
+    const updatedApplication = await Application.findByIdAndUpdate(
+      objectId,
+      {
+        status,
+        ...(eventId && { event: eventId }),
+      },
+      { new: true }
+    ).populate("createdBy");
+
+    return updatedApplication;
   }
 
   /**
