@@ -137,19 +137,9 @@ const eventSchema = new Schema(
       return this.eventType === "platform_booth";
     },
   },
-  boothAttendees: {
-    type: [
-      {
-        name: String,
-        email: String,
-        individualID: String,
-      },
-    ],
-    required: function () {
+  application: { type: mongoose.Schema.Types.ObjectId, ref: "Application",required: function () {
       return this.eventType === "platform_booth";
-    },
-  },
-  application: { type: mongoose.Schema.Types.ObjectId, ref: "Application" },
+    },}
   // timestamps option for mongoose schema
 }, { timestamps: true }
 );
