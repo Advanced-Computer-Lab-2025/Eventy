@@ -200,10 +200,10 @@ export async function editWorkshop(workshopId, updateData, user) {
   // Check if workshop has already started
   const now = new Date();
   const workshopStartDateTime = new Date(workshop.startDate);
-  
+
   // If startTime exists, combine it with startDate
   if (workshop.startTime) {
-    const [hours, minutes] = workshop.startTime.split(':').map(Number);
+    const [hours, minutes] = workshop.startTime.split(":").map(Number);
     workshopStartDateTime.setHours(hours, minutes, 0, 0);
   }
 

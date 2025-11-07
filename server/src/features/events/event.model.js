@@ -9,23 +9,38 @@ const eventSchema = new Schema(
       required: true,
       enum: ["bazaar", "trip", "workshop", "conference", "platform_booth"],
     },
-    description: { type: String, required: function () {
+    description: {
+      type: String,
+      required: function () {
         return this.eventType !== "platform_booth";
-      }, },
-    location: { type: String, required: function () {
+      },
+    },
+    location: {
+      type: String,
+      required: function () {
         return this.eventType !== "platform_booth";
-      }, },
-    startDate: { type: Date, required: function () {
+      },
+    },
+    startDate: {
+      type: Date,
+      required: function () {
         return this.eventType !== "platform_booth";
-      }, },
+      },
+    },
     startTime: { type: String },
-    endDate: { type: Date, required: function () {
+    endDate: {
+      type: Date,
+      required: function () {
         return this.eventType !== "platform_booth";
-      }, },
+      },
+    },
     endTime: { type: String },
-    registrationDeadline: { type: Date, required: function () {
+    registrationDeadline: {
+      type: Date,
+      required: function () {
         return this.eventType !== "platform_booth";
-      }, },
+      },
+    },
 
     status: {
       type: String,
@@ -115,33 +130,38 @@ const eventSchema = new Schema(
         return this.eventType === "conference";
       },
     },
-  // Booth-specific fields
-  boothSize: {
-    type: String,
-    enum: ["2x2", "4x4"],
-    required: function () {
-      return this.eventType === "platform_booth";
+    // Booth-specific fields
+    boothSize: {
+      type: String,
+      enum: ["2x2", "4x4"],
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
     },
-  },
-  durationWeeks: {
-    type: Number,
-    min: 1,
-    max: 4,
-    required: function () {
-      return this.eventType === "platform_booth";
+    durationWeeks: {
+      type: Number,
+      min: 1,
+      max: 4,
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
     },
-  },
-  locationPreference: {
-    type: String,
-    required: function () {
-      return this.eventType === "platform_booth";
+    locationPreference: {
+      type: String,
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
     },
+    application: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Application",
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
+    },
+    // timestamps option for mongoose schema
   },
-  application: { type: mongoose.Schema.Types.ObjectId, ref: "Application",required: function () {
-      return this.eventType === "platform_booth";
-    },}
-  // timestamps option for mongoose schema
-}, { timestamps: true }
+  { timestamps: true }
 );
 
 // Add indexes for search performance
