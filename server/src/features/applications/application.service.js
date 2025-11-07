@@ -230,7 +230,7 @@ class ApplicationServiceClass {
         boothSize: application.boothSize,
         durationWeeks: application.durationWeeks,
         locationPreference: application.locationPreference,
-        boothAttendees: application.attendees,
+        attendees: application.attendees,
         createdBy: vendor._id,
         application: application._id,
         status: "approved",
