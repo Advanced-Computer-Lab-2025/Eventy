@@ -125,6 +125,12 @@ const eventSchema = new Schema(
       required: function () {
         return this.eventType === "workshop";
       },
+      validate: {
+        validator: function (value) {
+          return this.eventType !== "workshop" || (value && value.length > 0);
+        },
+        message: "Workshop must have at least one professor",
+      },
       default: undefined,
     },
     websiteUrl: {
