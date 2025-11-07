@@ -1,10 +1,19 @@
 import { TransactionService } from "./transaction.service.js";
 
+/**
+ * Controller for handling transaction-related requests.
+ */
 export class TransactionController {
   constructor() {
     this.transactionService = new TransactionService();
   }
 
+  /**
+   * Handles payment for an event.
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   async payForEvent(req, res) {
     try {
       const { paymentMethod } = req.body;
@@ -34,6 +43,12 @@ export class TransactionController {
     }
   }
 
+  /**
+   * Confirms a Stripe payment intent and updates transaction status.
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   async confirmStripePayment(req, res) {
     try {
       const { paymentIntentId } = req.body;
@@ -47,6 +62,12 @@ export class TransactionController {
     }
   }
 
+  /**
+   * Initiates a wallet top-up via Stripe for a user.
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
   async topUpWallet(req, res) {
     try {
       const { amount, paymentMethod } = req.body;
