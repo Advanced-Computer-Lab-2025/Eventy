@@ -48,20 +48,20 @@ export class TransactionController {
   }
 
   async topUpWallet(req, res) {
-  try {
-    const { amount, paymentMethod } = req.body;
-    const userId = req.user._id;
+    try {
+      const { amount, paymentMethod } = req.body;
+      const userId = req.user._id;
 
-    const result = await this.transactionService.topUpWallet({
-      userId,
-      amount,
-      paymentMethod,
-    });
+      const result = await this.transactionService.topUpWallet({
+        userId,
+        amount,
+        paymentMethod,
+      });
 
-    res.status(200).json(result);
-  } catch (error) {
-    console.error("Wallet top-up error:", error);
-    res.status(400).json({ error: error.message });
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Wallet top-up error:", error);
+      res.status(400).json({ error: error.message });
+    }
   }
-}
 }
