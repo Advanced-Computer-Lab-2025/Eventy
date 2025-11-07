@@ -57,6 +57,7 @@ server/config/firebaseServiceAccount.json
 # IDE
 .vscode/
 .idea/
+.local/
 
 # OS
 .DS_Store
