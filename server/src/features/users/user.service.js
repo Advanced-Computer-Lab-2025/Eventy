@@ -89,6 +89,28 @@ class UserService {
       throw new ApiError(500, `Error retrieving users: ${err.message}`);
     }
   }
+
+  async toggleBlockStatus(currentAdminId, userId, action) {
+    // Prevent blocking self
+    if (currentAdminId.toString() === userId.toString()) {
+      throw new ApiError(403, 'You cannot block or unblock yourself');
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new ApiError(404, 'User not found');
+    }
+
+    // Update user status
+    user.status = action === 'block' ? 'blocked' : 'active';
+    await user.save();
+
+    return {
+      userId: user._id,
+      status: user.status,
+      message: `User ${action === 'block' ? 'blocked' : 'unblocked'} successfully`
+    };
+  }
 }
 
 export default new UserService();

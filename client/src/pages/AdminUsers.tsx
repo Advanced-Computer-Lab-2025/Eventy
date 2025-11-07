@@ -78,6 +78,25 @@ export default function AdminUsers() {
   const currentUserId = localStorage.getItem('userId') || localStorage.getItem('id') || tokenUserId;
   const currentUserEmail = localStorage.getItem('userEmail') || localStorage.getItem('email') || tokenUserEmail;
 
+  const handleBlockUser = async (userId: string, action: 'block' | 'unblock') => {
+    try {
+      await axios.patch(
+        `http://localhost:4000/api/users/${userId}/block-status`,
+        { action },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        }
+      );
+      setError(null);
+      fetchUsers(); // Refresh the users list
+    } catch (error: any) {
+      console.error(`${action} error:`, error);
+      setError(error.response?.data?.message || `Failed to ${action} user`);
+    }
+  };
+
   const handleDeleteUser = async (userId: string) => {
     try {
       await axios.delete(`http://localhost:4000/api/users/${userId}/delete`, {
@@ -267,65 +286,69 @@ export default function AdminUsers() {
                     <TableCell className="font-medium"> {`${user.firstName} ${user.lastName}`}</TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <Badge className="capitalize"> {user.role}
-                      </Badge>
+                      <div className="w-32">
+                        <Badge className="capitalize w-full justify-center">
+                          {user.role || 'Unassigned'}
+                        </Badge>
+                      </div>
                     </TableCell>
                     <TableCell>{user.studentStaffId || 'N/A'}</TableCell>
                     <TableCell>
-                      {user.status === "active" ? (
-                        <Badge className="bg-green-500 hover:bg-green-600">Active</Badge>
-                      ) : (
-                        <Badge variant="destructive">Blocked</Badge>
-                      )}
+                      <div className="w-20">
+                        {user.status === "active" ? (
+                          <Badge className="w-full justify-center bg-green-500 hover:bg-green-600">Active</Badge>
+                        ) : (
+                          <Badge variant="destructive" className="w-full justify-center">Blocked</Badge>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" data-testid={`button-actions-${user._id}`}>
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem 
-                            onClick={() => console.log("Verify role for:", user._id)}
-                            data-testid={`action-verify-${user._id}`}
-                          >
-                            <Shield className="h-4 w-4 mr-2" />
-                            Verify Role
-                          </DropdownMenuItem>
-                          {user.status === "active" ? (
-                            <DropdownMenuItem 
-                              className="text-destructive"
-                              onClick={() => console.log("Block user:", user._id)}
-                              data-testid={`action-block-${user._id}`}
+                      {user._id !== currentUserId && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8 hover:bg-accent/50"
+                              data-testid={`button-actions-${user._id}`}
                             >
-                              <UserX className="h-4 w-4 mr-2" />
-                              Block User
-                            </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem 
-                              onClick={() => console.log("Unblock user:", user._id)}
-                              data-testid={`action-unblock-${user._id}`}
-                            >
-                              <UserCheck className="h-4 w-4 mr-2" />
-                              Unblock User
-                            </DropdownMenuItem>
-                          )}
-
-  {(currentUserId ? user._id !== currentUserId : true) && (currentUserEmail ? user.email !== currentUserEmail : true) && (user.role === 'admin' || user.role === 'events_office') && (
-    <DropdownMenuItem 
-      className="text-destructive"
-      onClick={() => setUserToDelete(user._id)}
-      data-testid={`action-delete-${user._id}`}
-    >
-      <UserX className="h-4 w-4 mr-2" />
-      Delete Account
-    </DropdownMenuItem>
-  )}
-</DropdownMenuContent>
-                          
-                        
-                      </DropdownMenu>
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            {user.status === "active" ? (
+                              <DropdownMenuItem 
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => handleBlockUser(user._id, 'block')}
+                                data-testid={`action-block-${user._id}`}
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Block User
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem 
+                                className="text-green-600 focus:bg-green-50 focus:text-green-700"
+                                onClick={() => handleBlockUser(user._id, 'unblock')}
+                                data-testid={`action-unblock-${user._id}`}
+                              >
+                                <UserCheck className="h-4 w-4 mr-2" />
+                                Unblock User
+                              </DropdownMenuItem>
+                            )}
+                            
+                            {(user.role === 'admin' || user.role === 'events_office') && (
+                              <DropdownMenuItem 
+                                className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                onClick={() => setUserToDelete(user._id)}
+                                data-testid={`action-delete-${user._id}`}
+                              >
+                                <UserX className="h-4 w-4 mr-2" />
+                                Delete Account
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}

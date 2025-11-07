@@ -40,6 +40,12 @@ const userSchema = new mongoose.Schema(
     taxCardUrl: {
       type: String,
     },
+    status: {
+      type: String,
+      enum: ['active', 'blocked'],
+      default: 'active',
+      index: true
+    },
     role: {
       type: String,
       required: false,
@@ -85,6 +91,7 @@ userSchema.index({ firstName: 1 }); // Index for firstName search
 userSchema.index({ lastName: 1 }); // Index for lastName search
 userSchema.index({ firstName: 1, lastName: 1 }); // Compound index for full name search
 userSchema.index({ role: 1 }); // Index for role filtering
+userSchema.index({ status: 1 }); // Index for status filtering
 
 userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);

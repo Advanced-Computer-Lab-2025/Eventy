@@ -41,3 +41,23 @@ export const deleteUserSchema = Joi.object({
       'any.required': 'User ID is required.'
     }),
 });
+
+// Schema for blocking/unblocking users
+export const toggleBlockUserSchema = Joi.object({
+  userId: Joi.string()
+    .hex()
+    .length(24)
+    .required()
+    .messages({
+      'string.hex': 'User ID must be a valid MongoDB ID.',
+      'string.length': 'User ID must be 24 characters long.',
+      'any.required': 'User ID is required.'
+    }),
+  action: Joi.string()
+    .valid('block', 'unblock')
+    .required()
+    .messages({
+      'any.required': 'Action is required (block/unblock)',
+      'any.only': 'Action must be either "block" or "unblock"'
+    })
+});

@@ -49,4 +49,12 @@ router.delete(
     UserController.deleteManagementAccount
 );
 
+// PATCH /api/users/:userId/block-status - Block/Unblock a user (admin only)
+router.patch(
+  "/:userId/block-status",
+  authMiddleware,
+  role(['admin']),
+  UserController.toggleBlockStatus
+);
+
 export default router;
