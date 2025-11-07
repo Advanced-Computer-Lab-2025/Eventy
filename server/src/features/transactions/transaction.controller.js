@@ -52,6 +52,14 @@ export class TransactionController {
   async confirmStripePayment(req, res) {
     try {
       const { paymentIntentId } = req.body;
+      const allowedRoles = ["student", "staff", "ta", "professor"];
+      if (!allowedRoles.includes(userRole)) {
+        return res.status(403).json({
+          error: `Access denied. Only ${allowedRoles.join(
+            ", "
+          )} can perform this action.`,
+        });
+      }
       const result = await this.transactionService.confirmStripePayment(
         paymentIntentId
       );
