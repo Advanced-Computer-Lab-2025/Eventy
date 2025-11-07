@@ -3,6 +3,7 @@
 import mongoose from "mongoose";
 import Application from "./application.model.js";
 import { Transaction } from "../transactions/transaction.model.js";
+import { sendVendorApplicationStatusEmail } from "../auth/email.service.js";
 import { Event } from "../events/event.model.js";
 import { User } from "../users/user.model.js";
 
@@ -250,7 +251,32 @@ class ApplicationServiceClass {
       { new: true }
     ).populate("createdBy");
 
-    return updatedApplication;
+    if (!updatedApplication) {
+      throw new Error("Application not found");
+    }
+
+    // Populate vendor and event data for email notification
+    const populatedApp = await Application.findById(applicationId)
+      .populate({
+        path: "createdBy",
+        select: "email companyName firstName lastName name role",
+      })
+      .populate({
+        path: "event",
+        select: "name description startDate endDate location",
+      });
+
+    // Send email notification to vendor if application status is approved or rejected
+    if (populatedApp && populatedApp.createdBy && (status === "approved" || status === "rejected")) {
+      try {
+        await sendVendorApplicationStatusEmail(populatedApp.createdBy, populatedApp);
+      } catch (error) {
+        // Log error but don't fail the status update if email fails
+        console.error("Failed to send application status email:", error);
+      }
+    }
+
+    return updatedApp;
   }
 
   /**
