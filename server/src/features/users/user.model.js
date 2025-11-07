@@ -77,11 +77,18 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // ✅ New fields for verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page"
-    isVerified: { type: Boolean, default: true }, // changed this 
+    // New fields for verification email after the admin verifies their role
+    isVerified: { type: Boolean, default: true }, 
     verificationToken: { type: String },
 
-    deletedAt: { type: Date, default: null },
+    deletedAt: { type: Date, default: null }, 
+
+    // Store favorite events for students, staff, TAs, and professors
+    favoriteEvents: [{
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Event',
+      default: []
+    }],
   },
   { timestamps: true }
 );
