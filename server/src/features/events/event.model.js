@@ -27,20 +27,24 @@ const eventSchema = new Schema(
         return this.eventType !== "platform_booth";
       },
     },
-    startTime: { type: String },
     endDate: {
       type: Date,
       required: function () {
         return this.eventType !== "platform_booth";
       },
     },
-    endTime: { type: String },
     registrationDeadline: {
       type: Date,
       required: function () {
         return this.eventType !== "platform_booth";
       },
     },
+    startTime: { type: String, required: function () {
+      return this.eventType !== "platform_booth";
+    }},
+    endTime: { type: String, required: function () {
+      return this.eventType !== "platform_booth";
+    }},
 
     status: {
       type: String,
