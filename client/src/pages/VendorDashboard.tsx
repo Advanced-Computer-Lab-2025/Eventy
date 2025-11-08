@@ -212,6 +212,25 @@ export default function VendorDashboard() {
     fetchUpcomingBazaars();
   };
 
+  const handleCancel = async (applicationId: string) => {
+    try {
+      await bazaarApiService.cancelApplication(applicationId);
+      toast({
+        title: "Application Cancelled",
+        description: "Your application has been cancelled successfully.",
+      });
+      // Refresh applications data to update the UI
+      fetchApplicationsData();
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to cancel application";
+      toast({
+        title: "Cancellation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
+  };
+
 
   // Platform booth form helpers
   const addPlatformBoothAttendee = () => {
@@ -701,6 +720,7 @@ export default function VendorDashboard() {
                       <Button 
                         variant="destructive" 
                         className="w-full"
+                        onClick={() => handleCancel(application._id)}
                         data-testid={`button-cancel-${application._id}`}
                       >
                         Cancel Request
