@@ -18,7 +18,7 @@ interface BoothApplicationDialogProps {
   onOpenChange: (open: boolean) => void;
   boothId: string;
   boothNumber: number | string;
-  attendees: Array<{ name: string; email: string }>;
+  attendees: Array<{ name: string; email: string; individualID?: string }>;
   boothSize: "2x2" | "4x4";
   durationWeeks: number;
 }
@@ -61,6 +61,15 @@ export default function BoothApplicationDialog({
         });
         return false;
       }
+      
+      if (!attendee.individualID) {
+        toast({
+          title: "Validation Error",
+          description: `Please upload an ID card for ${attendee.name || 'attendee'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     return true;
@@ -87,7 +96,11 @@ export default function BoothApplicationDialog({
       });
 
       await bazaarApiService.applyToBooth(boothId, {
-        attendees: validAttendees,
+        attendees: validAttendees.map(attendee => ({
+          name: attendee.name,
+          email: attendee.email,
+          individualID: attendee.individualID || "",
+        })),
         boothSize,
         durationWeeks, // Use the actual duration from the form
         locationPreference: `Booth ${boothNumber}`, // Use booth number as location preference
@@ -154,13 +167,20 @@ export default function BoothApplicationDialog({
                 <Users className="h-4 w-4" />
                 Attendees ({attendees.filter(a => a.name.trim() && a.email.trim()).length})
               </h4>
-              <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="space-y-2 text-sm text-muted-foreground">
                 {attendees
                   .filter(attendee => attendee.name.trim() && attendee.email.trim())
                   .map((attendee, index) => (
-                    <p key={index}>
-                      <strong>{attendee.name}</strong> - {attendee.email}
-                    </p>
+                    <div key={index} className="flex items-center justify-between">
+                      <p>
+                        <strong>{attendee.name}</strong> - {attendee.email}
+                      </p>
+                      {attendee.individualID ? (
+                        <span className="text-green-600 text-xs">✓ ID Uploaded</span>
+                      ) : (
+                        <span className="text-red-600 text-xs">⚠ ID Required</span>
+                      )}
+                    </div>
                   ))}
               </div>
             </CardContent>

@@ -199,7 +199,7 @@ class BazaarApiService {
   }
 
   async applyToBazaar(bazaarId: string, applicationData: {
-    attendees: Array<{ name: string; email: string }>;
+    attendees: Array<{ name: string; email: string; individualID?: string }>;
     boothSize: "2x2" | "4x4";
   }): Promise<Application> {
     try {
@@ -224,7 +224,7 @@ class BazaarApiService {
   }
 
   async applyToBooth(boothId: string, applicationData: {
-    attendees: Array<{ name: string; email: string }>;
+    attendees: Array<{ name: string; email: string; individualID?: string }>;
     boothSize: "2x2" | "4x4";
     durationWeeks: number;
     locationPreference: string;
@@ -251,6 +251,34 @@ class BazaarApiService {
       return apiResponse.data;
     } catch (error) {
       console.error("Error applying to booth:", error);
+      throw error;
+    }
+  }
+
+  async uploadIdCard(file: File): Promise<{ url: string; filename: string }> {
+    try {
+      const token = localStorage.getItem("token");
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(`${API_BASE_URL}/api/upload`, {
+        method: "POST",
+        headers: {
+          ...(token && { Authorization: `Bearer ${token}` }),
+        },
+        credentials: "include",
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+      }
+
+      const apiResponse: ApiResponse<{ url: string; filename: string }> = await response.json();
+      return apiResponse.data;
+    } catch (error) {
+      console.error("Error uploading ID card:", error);
       throw error;
     }
   }
