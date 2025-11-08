@@ -202,6 +202,26 @@ export default function VendorDashboard() {
   }, []);
 
   const handleRegister = (bazaarId: string) => {
+    // Check if user has already applied to this bazaar
+    const allApplications = [
+      ...pendingApplications,
+      ...rejectedApplications,
+      ...approvedApplications,
+    ];
+    
+    const existingApplication = allApplications.find(
+      (app) => app.type === "bazaar" && app.event?._id === bazaarId
+    );
+    
+    if (existingApplication) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied to this bazaar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
     if (bazaar) {
       setSelectedBazaar(bazaar);
