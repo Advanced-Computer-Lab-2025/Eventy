@@ -610,20 +610,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredApprovedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-participation-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-participation-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge className="bg-green-500 hover:bg-green-600 w-fit">Approved</Badge>
+                          <Badge className="bg-green-500 hover:bg-green-600 w-fit min-w-[4.5rem]">Approved</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -682,25 +682,25 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredPendingApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-request-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-request-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="outline" className="w-fit">Pending Review</Badge>
+                          <Badge variant="outline" className="w-fit min-w-[4.5rem]">Pending</Badge>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm mb-4">
+                    <CardContent className="flex flex-col flex-grow">
+                      <div className="space-y-2 text-sm mb-4 flex-grow">
                         {application.type === 'bazaar' && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -740,7 +740,7 @@ export default function VendorDashboard() {
                       </div>
                       <Button 
                         variant="destructive" 
-                        className="w-full"
+                        className="w-full mt-auto"
                         onClick={() => handleCancelClick(application._id)}
                         data-testid={`button-cancel-${application._id}`}
                       >
@@ -762,20 +762,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredRejectedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-rejected-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="destructive" className="w-fit">Rejected</Badge>
+                          <Badge variant="destructive" className="w-fit min-w-[4.5rem]">Rejected</Badge>
                         </div>
                       </div>
                     </CardHeader>
