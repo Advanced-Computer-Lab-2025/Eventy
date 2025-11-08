@@ -184,7 +184,7 @@ export default function VendorApplicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store className="h-5 w-5" />
@@ -234,8 +234,8 @@ export default function VendorApplicationDialog({
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-2">
+                    <div className="flex flex-col md:flex-row gap-3 items-end">
+                      <div className="space-y-2 flex-1">
                         <Label htmlFor={`name-${index}`}>Name</Label>
                         <Input
                           id={`name-${index}`}
@@ -243,9 +243,10 @@ export default function VendorApplicationDialog({
                           value={attendee.name}
                           onChange={(e) => updateAttendee(index, "name", e.target.value)}
                           required={index === 0}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1">
                         <Label htmlFor={`email-${index}`}>Email</Label>
                         <Input
                           id={`email-${index}`}
@@ -254,18 +255,19 @@ export default function VendorApplicationDialog({
                           value={attendee.email}
                           onChange={(e) => updateAttendee(index, "email", e.target.value)}
                           required={index === 0}
+                          className="w-full"
                         />
                       </div>
-                    </div>
-                    
-                    <div className="mt-3">
-                      <IdUploadButton
-                        index={index}
-                        attendeeName={attendee.name}
-                        individualID={attendee.individualID}
-                        onUploadSuccess={handleIdUploadSuccess}
-                        buttonClassName="flex-1"
-                      />
+                      <div className="space-y-2 flex-shrink-0">
+                        <Label className="opacity-0 pointer-events-none">Upload</Label>
+                        <IdUploadButton
+                          index={index}
+                          attendeeName={attendee.name}
+                          individualID={attendee.individualID}
+                          onUploadSuccess={handleIdUploadSuccess}
+                          buttonClassName="h-9 min-w-[120px]"
+                        />
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -276,6 +278,9 @@ export default function VendorApplicationDialog({
           {/* Booth Size Section */}
           <div className="space-y-2">
             <Label htmlFor="boothSize" className="text-base font-semibold">Booth Size</Label>
+            <p className="text-sm text-muted-foreground">
+              Choose the size of your booth space. Larger booths may have additional fees.
+            </p>
             <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
               <SelectTrigger id="boothSize">
                 <SelectValue placeholder="Select booth size" />
@@ -285,9 +290,6 @@ export default function VendorApplicationDialog({
                 <SelectItem value="4x4">4x4</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">
-              Choose the size of your booth space. Larger booths may have additional fees.
-            </p>
           </div>
 
           <DialogFooter>
