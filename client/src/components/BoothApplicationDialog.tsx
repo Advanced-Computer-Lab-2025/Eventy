@@ -61,11 +61,34 @@ export default function BoothApplicationDialog({
         });
         return false;
       }
+    }
+    
+    // Check for missing IDs and collect all attendees without IDs
+    // Check all attendees that have at least a name (so we can display them)
+    const attendeesToCheck = attendees.filter(attendee => attendee.name && attendee.name.trim());
+    const attendeesWithoutID = attendeesToCheck.filter(attendee => !attendee.individualID);
+    
+    if (attendeesWithoutID.length > 0) {
+      const firstNames = attendeesWithoutID
+        .map(attendee => {
+          const trimmedName = attendee.name.trim();
+          return trimmedName.split(' ')[0]; // Get first name only
+        })
+        .filter(name => name.length > 0);
       
-      if (!attendee.individualID) {
+      if (firstNames.length > 0) {
+        let namesList: string;
+        if (firstNames.length === 1) {
+          namesList = firstNames[0];
+        } else if (firstNames.length === 2) {
+          namesList = `${firstNames[0]} and ${firstNames[1]}`;
+        } else {
+          namesList = `${firstNames.slice(0, -1).join(', ')}, and ${firstNames[firstNames.length - 1]}`;
+        }
+        
         toast({
           title: "Validation Error",
-          description: `Please upload an ID card for ${attendee.name || 'attendee'}.`,
+          description: `Please upload an ID card for ${namesList}.`,
           variant: "destructive",
         });
         return false;
