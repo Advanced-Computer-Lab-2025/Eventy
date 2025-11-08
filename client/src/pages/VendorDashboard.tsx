@@ -859,16 +859,24 @@ export default function VendorDashboard() {
 
       {/* Cancel Confirmation Dialog */}
       <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Cancel Application</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to cancel this request? This action cannot be undone.
-            </DialogDescription>
+            <div className="flex flex-col items-center text-center space-y-4 py-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="space-y-2">
+                <DialogTitle className="text-2xl font-semibold">Cancel Application?</DialogTitle>
+                <DialogDescription className="text-base pt-2">
+                  Are you sure you want to cancel this request? This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
             <Button
               variant="outline"
+              className="w-full sm:w-auto"
               onClick={() => {
                 setCancelDialogOpen(false);
                 setApplicationToCancel(null);
@@ -878,6 +886,7 @@ export default function VendorDashboard() {
             </Button>
             <Button
               variant="destructive"
+              className="w-full sm:w-auto"
               onClick={handleCancelConfirm}
             >
               Yes, Cancel Request
