@@ -202,14 +202,14 @@ export default function VendorDashboard() {
   }, []);
 
   const handleRegister = (bazaarId: string) => {
-    // Check if user has already applied to this bazaar
-    const allApplications = [
+    // Check if user has already applied to this bazaar (excluding rejected applications)
+    // Users should be able to reapply if their application was rejected
+    const activeApplications = [
       ...pendingApplications,
-      ...rejectedApplications,
       ...approvedApplications,
     ];
     
-    const existingApplication = allApplications.find(
+    const existingApplication = activeApplications.find(
       (app) => app.type === "bazaar" && app.event?._id === bazaarId
     );
     
