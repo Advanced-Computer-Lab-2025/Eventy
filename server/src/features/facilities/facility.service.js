@@ -1,70 +1,123 @@
 import { CourtBooking, GymSession } from "./facility.model.js";
-import { sendGymSessionCancellationEmail, sendGymSessionUpdateEmail } from "../auth/email.service.js";
+import {
+  sendGymSessionCancellationEmail,
+  sendGymSessionUpdateEmail,
+} from "../auth/email.service.js";
 
 class FacilitiesServiceClass {
-async getCourtSchedules() {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  async reserveCourt(userId, reservationData) {
+    const { courtType, date, startTime, endTime } = reservationData;
 
-  const weekAhead = new Date(today);
-  weekAhead.setDate(today.getDate() + 6);
+    // Validate availability
+    const schedules = await this.getCourtSchedules();
+    const courtSchedule = schedules[courtType];
 
-  const activeBookings = await CourtBooking.find({
-    status: "active",
-    date: { $gte: today, $lte: weekAhead },
-  }).sort({ date: 1, startTime: 1 });
+    if (!courtSchedule) {
+      throw new Error(`Invalid court type: ${courtType}`);
+    }
 
-  const courtTypes = ["basketball", "tennis", "football"];
-  const startHour = 10;
-  const endHour = 17;
+    const bookingDate = new Date(date);
+    const formattedDate = this.getLocalDateString(bookingDate);
 
-  const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => ({
-    startTime: `${(startHour + i).toString().padStart(2, "0")}:00`,
-    endTime: `${(startHour + i + 1).toString().padStart(2, "0")}:00`,
-  }));
+    const daySchedule = courtSchedule.find((d) => d.date === formattedDate);
+    if (!daySchedule) {
+      throw new Error("Date is not available for booking");
+    }
 
-  // ✅ use local date strings instead of UTC
-  const getLocalDateString = (d) => {
+    const slot = daySchedule.slots.find(
+      (s) => s.startTime === startTime && s.endTime === endTime
+    );
+    if (!slot) {
+      throw new Error("Invalid time slot");
+    }
+
+    if (slot.status !== "available") {
+      throw new Error("This time slot is already booked");
+    }
+
+    // Create the booking
+    const booking = new CourtBooking({
+      courtType,
+      date: bookingDate,
+      startTime,
+      endTime,
+      bookedBy: userId,
+      status: "active",
+    });
+
+    await booking.save();
+    return booking;
+  }
+
+  getLocalDateString(d) {
     const year = d.getFullYear();
     const month = String(d.getMonth() + 1).padStart(2, "0");
     const day = String(d.getDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
-  };
-
-  const dates = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    return getLocalDateString(d);
-  });
-
-  const schedules = {};
-  courtTypes.forEach((type) => {
-    schedules[type] = dates.map((date) => ({
-      date,
-      slots: timeSlots.map((slot) => ({
-        ...slot,
-        status: "available",
-      })),
-    }));
-  });
-
-  for (const booking of activeBookings) {
-    const { courtType, startTime, date } = booking;
-    const bookingDate = getLocalDateString(new Date(date));
-    const courtSchedule = schedules[courtType];
-    if (!courtSchedule) continue;
-
-    const dayEntry = courtSchedule.find((d) => d.date === bookingDate);
-    if (!dayEntry) continue;
-
-    const slot = dayEntry.slots.find((s) => s.startTime === startTime);
-    if (slot) slot.status = "booked";
   }
 
-  return schedules;
-}
+  async getCourtSchedules() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const weekAhead = new Date(today);
+    weekAhead.setDate(today.getDate() + 6);
 
-    /**
+    const activeBookings = await CourtBooking.find({
+      status: "active",
+      date: { $gte: today, $lte: weekAhead },
+    }).sort({ date: 1, startTime: 1 });
+
+    const courtTypes = ["basketball", "tennis", "football"];
+    const startHour = 10;
+    const endHour = 17;
+
+    const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => ({
+      startTime: `${(startHour + i).toString().padStart(2, "0")}:00`,
+      endTime: `${(startHour + i + 1).toString().padStart(2, "0")}:00`,
+    }));
+
+    // ✅ use local date strings instead of UTC
+    const getLocalDateString = (d) => {
+      const year = d.getFullYear();
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const day = String(d.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
+    const dates = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(today.getDate() + i);
+      return getLocalDateString(d);
+    });
+
+    const schedules = {};
+    courtTypes.forEach((type) => {
+      schedules[type] = dates.map((date) => ({
+        date,
+        slots: timeSlots.map((slot) => ({
+          ...slot,
+          status: "available",
+        })),
+      }));
+    });
+
+    for (const booking of activeBookings) {
+      const { courtType, startTime, date } = booking;
+      const bookingDate = getLocalDateString(new Date(date));
+      const courtSchedule = schedules[courtType];
+      if (!courtSchedule) continue;
+
+      const dayEntry = courtSchedule.find((d) => d.date === bookingDate);
+      if (!dayEntry) continue;
+
+      const slot = dayEntry.slots.find((s) => s.startTime === startTime);
+      if (slot) slot.status = "booked";
+    }
+
+    return schedules;
+  }
+
+  /**
    * @route   GET /api/facilities/gym/sessions
    * @desc    Get all gym sessions for a specific month and year.
    * @access  Private (All authenticated users)
@@ -84,8 +137,7 @@ async getCourtSchedules() {
       date: { $gte: startOfMonth, $lte: endOfMonth },
       deletedAt: null,
       status: { $ne: "cancelled" }, // Exclude cancelled sessions
-    })
-      .sort({ date: 1, startTime: 1 });
+    }).sort({ date: 1, startTime: 1 });
 
     return sessions;
   }
@@ -96,20 +148,20 @@ async getCourtSchedules() {
    * @param {Object} user - Authenticated user
    */
   async createGymSession(data) {
-  const { date, time, duration, type, instructor, maxParticipants } = data;
+    const { date, time, duration, type, instructor, maxParticipants } = data;
 
-  const newSession = new GymSession({
-    date,
-    startTime: time,
-    durationMinutes: duration,
-    type,
-    instructor: instructor,
-    maxParticipants: maxParticipants
-  });
+    const newSession = new GymSession({
+      date,
+      startTime: time,
+      durationMinutes: duration,
+      type,
+      instructor: instructor,
+      maxParticipants: maxParticipants,
+    });
 
-  await newSession.save();
-  return newSession;
-}
+    await newSession.save();
+    return newSession;
+  }
 
   /**
    * Cancels a gym session and notifies all registered participants.
@@ -119,8 +171,11 @@ async getCourtSchedules() {
    */
   async cancelGymSession(sessionId) {
     // Find the session
-    const session = await GymSession.findById(sessionId).populate('attendees', 'email firstName lastName name');
-    
+    const session = await GymSession.findById(sessionId).populate(
+      "attendees",
+      "email firstName lastName name"
+    );
+
     if (!session) {
       const error = new Error("Gym session not found");
       error.statusCode = 404;
@@ -140,10 +195,12 @@ async getCourtSchedules() {
 
     // Notify all attendees if there are any
     if (session.attendees && session.attendees.length > 0) {
-      console.log(`📧 Notifying ${session.attendees.length} participants about cancellation...`);
-      
+      console.log(
+        `📧 Notifying ${session.attendees.length} participants about cancellation...`
+      );
+
       // Send notifications in parallel (don't wait for all to complete)
-      const emailPromises = session.attendees.map(attendee => 
+      const emailPromises = session.attendees.map((attendee) =>
         sendGymSessionCancellationEmail(attendee, {
           type: session.type,
           date: session.date,
@@ -154,10 +211,14 @@ async getCourtSchedules() {
       );
 
       // Don't await - let emails send in background
-      Promise.allSettled(emailPromises).then(results => {
-        const succeeded = results.filter(r => r.status === 'fulfilled').length;
-        const failed = results.filter(r => r.status === 'rejected').length;
-        console.log(`✅ Email notifications completed: ${succeeded} sent, ${failed} failed`);
+      Promise.allSettled(emailPromises).then((results) => {
+        const succeeded = results.filter(
+          (r) => r.status === "fulfilled"
+        ).length;
+        const failed = results.filter((r) => r.status === "rejected").length;
+        console.log(
+          `✅ Email notifications completed: ${succeeded} sent, ${failed} failed`
+        );
       });
     }
 
@@ -176,8 +237,11 @@ async getCourtSchedules() {
    */
   async editGymSession(sessionId, updates) {
     // Find the session and populate attendees with role for professor prefix
-    const session = await GymSession.findById(sessionId).populate('attendees', 'email firstName lastName name role');
-    
+    const session = await GymSession.findById(sessionId).populate(
+      "attendees",
+      "email firstName lastName name role"
+    );
+
     if (!session) {
       const error = new Error("Gym session not found");
       error.statusCode = 404;
@@ -216,8 +280,10 @@ async getCourtSchedules() {
 
     // Notify all attendees if there are any
     if (session.attendees && session.attendees.length > 0) {
-      console.log(`📧 Notifying ${session.attendees.length} participants about session update...`);
-      
+      console.log(
+        `📧 Notifying ${session.attendees.length} participants about session update...`
+      );
+
       const newSession = {
         date: session.date,
         startTime: session.startTime,
@@ -227,15 +293,19 @@ async getCourtSchedules() {
       };
 
       // Send notifications in parallel (don't wait for all to complete)
-      const emailPromises = session.attendees.map(attendee => 
+      const emailPromises = session.attendees.map((attendee) =>
         sendGymSessionUpdateEmail(attendee, oldSession, newSession)
       );
 
       // Don't await - let emails send in background
-      Promise.allSettled(emailPromises).then(results => {
-        const succeeded = results.filter(r => r.status === 'fulfilled').length;
-        const failed = results.filter(r => r.status === 'rejected').length;
-        console.log(`✅ Update email notifications completed: ${succeeded} sent, ${failed} failed`);
+      Promise.allSettled(emailPromises).then((results) => {
+        const succeeded = results.filter(
+          (r) => r.status === "fulfilled"
+        ).length;
+        const failed = results.filter((r) => r.status === "rejected").length;
+        console.log(
+          `✅ Update email notifications completed: ${succeeded} sent, ${failed} failed`
+        );
       });
     }
 

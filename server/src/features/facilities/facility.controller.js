@@ -1,6 +1,11 @@
 import { FacilitiesService } from "./facility.service.js";
 import ApiError from "../../utils/ApiError.js";
-import { createGymSessionSchema, gymSessionsQuerySchema, cancelGymSessionSchema, editGymSessionSchema } from "./facility.validation.js";
+import {
+  createGymSessionSchema,
+  gymSessionsQuerySchema,
+  cancelGymSessionSchema,
+  editGymSessionSchema,
+} from "./facility.validation.js";
 
 export class FacilitiesController {
   /**
@@ -20,6 +25,26 @@ export class FacilitiesController {
     }
   }
 
+  async reserveCourt(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+      const reservation = await FacilitiesService.reserveCourt(
+        req.user.id,
+        req.body
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Court reserved successfully.",
+        data: reservation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * Handles the request to get all gym sessions during a specific month and year.
    */
@@ -30,14 +55,23 @@ export class FacilitiesController {
       }
 
       // Only allow specific roles to view gym schedules
-      const allowedRoles = ["student", "staff", "events_office", "ta", "professor"];
+      const allowedRoles = [
+        "student",
+        "staff",
+        "events_office",
+        "ta",
+        "professor",
+      ];
       if (!allowedRoles.includes(req.user.role)) {
-        throw new ApiError(403, "Forbidden: You do not have permission to view gym schedules");
+        throw new ApiError(
+          403,
+          "Forbidden: You do not have permission to view gym schedules"
+        );
       }
 
       const { error } = gymSessionsQuerySchema.validate(req.query);
       if (error) throw new ApiError(400, error.details[0].message);
-      
+
       const { month, year } = req.query;
       const sessions = await FacilitiesService.getGymSessions(
         parseInt(month),
@@ -62,11 +96,14 @@ export class FacilitiesController {
       if (!req.user) {
         throw new ApiError(401, "Unauthorized");
       }
-      
+
       if (req.user.role !== "events_office" && req.user.role !== "admin") {
-        throw new ApiError(403, "Only Events Office or Admin can create gym sessions.");
+        throw new ApiError(
+          403,
+          "Only Events Office or Admin can create gym sessions."
+        );
       }
-          
+
       const { error } = createGymSessionSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
 
@@ -82,7 +119,7 @@ export class FacilitiesController {
     }
   }
 
-   /**
+  /**
    * Handles the request to cancel a gym session.
    */
   async cancelGymSession(req, res, next) {
@@ -95,9 +132,11 @@ export class FacilitiesController {
         throw new ApiError(403, "Only Events Office can cancel gym sessions.");
       }
 
-      const { error } = cancelGymSessionSchema.validate({ sessionId: req.params.sessionId });
+      const { error } = cancelGymSessionSchema.validate({
+        sessionId: req.params.sessionId,
+      });
       if (error) throw new ApiError(400, error.details[0].message);
-      
+
       const { sessionId } = req.params;
       const result = await FacilitiesService.cancelGymSession(sessionId);
 
@@ -126,15 +165,16 @@ export class FacilitiesController {
 
       const { error } = editGymSessionSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
-      
+
       const { sessionId } = req.params;
-      
+
       // Transform API fields to model fields
       const updates = {};
       if (req.body.date !== undefined) updates.date = req.body.date;
       if (req.body.time !== undefined) updates.startTime = req.body.time;
-      if (req.body.duration !== undefined) updates.durationMinutes = req.body.duration;
-      
+      if (req.body.duration !== undefined)
+        updates.durationMinutes = req.body.duration;
+
       const result = await FacilitiesService.editGymSession(sessionId, updates);
 
       res.status(200).json({
