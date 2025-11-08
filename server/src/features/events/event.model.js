@@ -102,6 +102,13 @@ const eventSchema = new Schema(
         return this.archivedAt !== null;
       },
     },
+    
+    // Array of roles that are restricted from accessing this event
+    restrictedRoles: [{
+      type: String,
+      enum: ["student", "staff", "ta", "professor", "vendor"],
+      default: [],
+    }],
 
     price: {
       type: Number,
@@ -208,5 +215,6 @@ eventSchema.index({ archivedBy: 1 }); // Index for archive auditing
 eventSchema.index({ status: 1, startDate: 1, deletedAt: 1, archivedAt: 1 }); // For upcoming/active events query
 eventSchema.index({ archivedAt: 1, archivedBy: 1 }); // For archive auditing queries
 eventSchema.index({ name: "text", description: "text" }); // Text index for name and description search
+eventSchema.index({ restrictedRoles: 1 }); // Index for checking role restrictions
 
 export const Event = mongoose.model("Event", eventSchema);
