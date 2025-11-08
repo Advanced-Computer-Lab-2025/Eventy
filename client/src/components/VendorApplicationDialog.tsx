@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Trash2, Store } from "lucide-react";
+import { useState, useRef } from "react";
+import { Plus, Trash2, Store, Upload, Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,6 +33,7 @@ interface VendorApplicationDialogProps {
 interface Attendee {
   name: string;
   email: string;
+  individualID?: string;
 }
 
 export default function VendorApplicationDialog({
@@ -48,6 +49,8 @@ export default function VendorApplicationDialog({
   ]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [uploadingIds, setUploadingIds] = useState<{ [key: number]: boolean }>({});
+  const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
 
   const addAttendee = () => {
     if (attendees.length < 5) {
@@ -66,6 +69,36 @@ export default function VendorApplicationDialog({
       i === index ? { ...attendee, [field]: value } : attendee
     );
     setAttendees(updatedAttendees);
+  };
+
+  const handleUploadId = async (index: number, file: File) => {
+    setUploadingIds(prev => ({ ...prev, [index]: true }));
+    
+    try {
+      const result = await bazaarApiService.uploadIdCard(file);
+      
+      const updatedAttendees = attendees.map((attendee, i) =>
+        i === index ? { ...attendee, individualID: result.url } : attendee
+      );
+      setAttendees(updatedAttendees);
+      
+      toast({
+        title: "ID Uploaded Successfully",
+        description: `ID card for ${attendees[index].name || 'attendee'} has been uploaded.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Upload Failed",
+        description: error instanceof Error ? error.message : "Failed to upload ID card. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setUploadingIds(prev => ({ ...prev, [index]: false }));
+    }
+  };
+
+  const triggerFileInput = (index: number) => {
+    fileInputRefs.current[index]?.click();
   };
 
   const validateForm = () => {
@@ -94,6 +127,15 @@ export default function VendorApplicationDialog({
         });
         return false;
       }
+      
+      if (!attendee.individualID) {
+        toast({
+          title: "Validation Error",
+          description: `Please upload an ID card for ${attendee.name || 'attendee'}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
     }
 
     return true;
@@ -114,7 +156,11 @@ export default function VendorApplicationDialog({
       );
 
       await bazaarApiService.applyToBazaar(bazaarId, {
-        attendees: validAttendees,
+        attendees: validAttendees.map(attendee => ({
+          name: attendee.name,
+          email: attendee.email,
+          individualID: attendee.individualID || "",
+        })),
         boothSize,
       });
 
@@ -234,6 +280,46 @@ export default function VendorApplicationDialog({
                           required={index === 0}
                         />
                       </div>
+                    </div>
+                    
+                    <div className="mt-3">
+                      <input
+                        type="file"
+                        ref={(el) => (fileInputRefs.current[index] = el)}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            handleUploadId(index, file);
+                          }
+                        }}
+                        accept="image/jpeg,image/jpg,image/png,image/webp"
+                        className="hidden"
+                      />
+                      <Button
+                        type="button"
+                        variant={attendee.individualID ? "outline" : "default"}
+                        size="sm"
+                        onClick={() => triggerFileInput(index)}
+                        disabled={uploadingIds[index]}
+                        className="w-full flex items-center gap-2"
+                      >
+                        {uploadingIds[index] ? (
+                          <>
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                            Uploading...
+                          </>
+                        ) : attendee.individualID ? (
+                          <>
+                            <Check className="h-4 w-4 text-green-600" />
+                            ID Uploaded
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="h-4 w-4" />
+                            Upload ID
+                          </>
+                        )}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
