@@ -276,7 +276,7 @@ class ApplicationServiceClass {
       }
     }
 
-    return updatedApp;
+    return updatedApplication;
   }
 
   /**
