@@ -20,7 +20,7 @@ const eventSchema = new Schema(
     status: {
       type: String,
       required: true,
-      enum: ["pending", "approved", "rejected", "needs_revision"],
+      enum: ["pending", "approved", "rejected", "needs_revision", "archived"],
       default: function () {
         // If eventType is 'workshop', default to 'pending', else 'approved'
         return this.eventType === "workshop" ? "pending" : "approved";
@@ -57,6 +57,8 @@ const eventSchema = new Schema(
     },
 
     deletedAt: { type: Date, default: null }, // soft delete,
+    // Timestamp when an event was archived by Events Office (null if not archived)
+    archivedAt: { type: Date, default: null },
 
     price: {
       type: Number,
