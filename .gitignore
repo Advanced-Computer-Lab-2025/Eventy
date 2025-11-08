@@ -153,5 +153,8 @@ server/config/firebaseServiceAccount.json
 # Uploaded files - user-generated content (ID cards, etc.)
 # This directory contains sensitive user data and should not be committed
 uploads/
+server/uploads/
 !uploads/.gitkeep
 !uploads/id-cards/.gitkeep
+!server/uploads/.gitkeep
+!server/uploads/id-cards/.gitkeep
