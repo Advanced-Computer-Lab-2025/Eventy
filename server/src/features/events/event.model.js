@@ -12,9 +12,13 @@ const eventSchema = new Schema(
     description: { type: String, required: true },
     location: { type: String, required: true },
     startDate: { type: Date, required: true },
-    startTime: { type: String },
+    startTime: { type: String, required: function () {
+      return this.eventType !== "platform_booth";
+    }},
     endDate: { type: Date, required: true },
-    endTime: { type: String },
+    endTime: { type: String, required: function () {
+      return this.eventType !== "platform_booth";
+    }},
     registrationDeadline: { type: Date, required: true },
 
     status: {
