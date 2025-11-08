@@ -593,4 +593,39 @@ export class EventsController {
       next(err);
     }
   }
+async getAttendeesReport(req, res, next) {
+  try {
+    // Fetch all events with attendee information
+    const events = await Event.find()
+      .select('name eventType startDate location attendees attendeesCount')
+      .lean();
+    
+    // Calculate total attendees across all events
+    let totalAttendees = 0;
+    const eventStats = events.map(event => {
+      const count = event.attendeesCount || (event.attendees ? event.attendees.length : 0);
+      totalAttendees += count;
+      
+      return {
+        eventId: event._id,
+        eventName: event.name,
+        eventType: event.eventType,
+        startDate: event.startDate,
+        location: event.location,
+        attendeesCount: count,
+      };
+    });
+    
+    res.json({
+      success: true,
+      data: {
+        totalAttendees,
+        totalEvents: events.length,
+        events: eventStats,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 }
