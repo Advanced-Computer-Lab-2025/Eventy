@@ -5,10 +5,60 @@ import {
 } from "../auth/email.service.js";
 
 class FacilitiesServiceClass {
+  async reserveCourt(userId, reservationData) {
+    const { courtType, date, startTime, endTime } = reservationData;
+
+    // Validate availability
+    const schedules = await this.getCourtSchedules();
+    const courtSchedule = schedules[courtType];
+
+    if (!courtSchedule) {
+      throw new Error(`Invalid court type: ${courtType}`);
+    }
+
+    const bookingDate = new Date(date);
+    const formattedDate = this.getLocalDateString(bookingDate);
+
+    const daySchedule = courtSchedule.find((d) => d.date === formattedDate);
+    if (!daySchedule) {
+      throw new Error("Date is not available for booking");
+    }
+
+    const slot = daySchedule.slots.find(
+      (s) => s.startTime === startTime && s.endTime === endTime
+    );
+    if (!slot) {
+      throw new Error("Invalid time slot");
+    }
+
+    if (slot.status !== "available") {
+      throw new Error("This time slot is already booked");
+    }
+
+    // Create the booking
+    const booking = new CourtBooking({
+      courtType,
+      date: bookingDate,
+      startTime,
+      endTime,
+      bookedBy: userId,
+      status: "active",
+    });
+
+    await booking.save();
+    return booking;
+  }
+
+  getLocalDateString(d) {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
   async getCourtSchedules() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-
     const weekAhead = new Date(today);
     weekAhead.setDate(today.getDate() + 6);
 

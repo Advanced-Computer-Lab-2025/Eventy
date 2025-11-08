@@ -25,6 +25,26 @@ export class FacilitiesController {
     }
   }
 
+  async reserveCourt(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+      const reservation = await FacilitiesService.reserveCourt(
+        req.user.id,
+        req.body
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Court reserved successfully.",
+        data: reservation,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   /**
    * Handles the request to get all gym sessions during a specific month and year.
    */
