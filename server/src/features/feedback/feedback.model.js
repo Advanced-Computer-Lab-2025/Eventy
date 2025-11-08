@@ -20,8 +20,12 @@ const feedbackSchema = new mongoose.Schema(
     },
     comment: {
       type: String,
-      required: true,
+      required: false,
       maxlength: 1000,
+    },
+    deletedAt: {
+      type: Date,
+      default: null, // null means not deleted
     },
   },
   {
