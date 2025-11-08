@@ -8,6 +8,14 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
@@ -48,6 +56,10 @@ export default function VendorDashboard() {
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
   const [selectedBooth, setSelectedBooth] = useState<{id: string, number: number | string} | null>(null);
+  
+  // Cancel confirmation dialog state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [applicationToCancel, setApplicationToCancel] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -212,15 +224,24 @@ export default function VendorDashboard() {
     fetchUpcomingBazaars();
   };
 
-  const handleCancel = async (applicationId: string) => {
+  const handleCancelClick = (applicationId: string) => {
+    setApplicationToCancel(applicationId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!applicationToCancel) return;
+
     try {
-      await bazaarApiService.cancelApplication(applicationId);
+      await bazaarApiService.cancelApplication(applicationToCancel);
       toast({
         title: "Application Cancelled",
         description: "Your application has been cancelled successfully.",
       });
       // Refresh applications data to update the UI
       fetchApplicationsData();
+      setCancelDialogOpen(false);
+      setApplicationToCancel(null);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : "Failed to cancel application";
       toast({
@@ -720,7 +741,7 @@ export default function VendorDashboard() {
                       <Button 
                         variant="destructive" 
                         className="w-full"
-                        onClick={() => handleCancel(application._id)}
+                        onClick={() => handleCancelClick(application._id)}
                         data-testid={`button-cancel-${application._id}`}
                       >
                         Cancel Request
@@ -835,6 +856,35 @@ export default function VendorDashboard() {
           durationWeeks={durationWeeks}
         />
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Cancel Application</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to cancel this request? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setCancelDialogOpen(false);
+                setApplicationToCancel(null);
+              }}
+            >
+              No, Keep It
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleCancelConfirm}
+            >
+              Yes, Cancel Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
