@@ -158,7 +158,6 @@ export default function StaffUpcomingEvents() {
                 vendors={event.vendors || []}
                 showDetailedView={true}
                 onRegister={() => handleRegisterEvent(event._id)}
-                onSave={() => console.log("Save:", event.name)}
                 onShare={() => console.log("Share:", event.name)}
                 onViewDetails={() => console.log("View details:", event.name)}
               />

@@ -1,5 +1,6 @@
-import { Calendar, MapPin, Users, Bookmark, Share2, Store, Trash2, Clock } from "lucide-react";
+import { Calendar, MapPin, Users, Share2, Store, Trash2, Clock } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FavoriteButton } from "./FavoriteButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
@@ -297,15 +298,21 @@ export default function EventCard({
                   Register
                 </Button>
               )}
-              {onViewDetails && (
-                <Button
-                  className={canRegister ? "flex-1" : "w-full"}
-                  variant="outline"
-                  onClick={onViewDetails}
-                >
-                  View Details
-                </Button>
-              )}
+              <div className="flex gap-2">
+                {onViewDetails && (
+                  <Button
+                    className={canRegister ? "flex-1" : "flex-1"}
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails();
+                    }}
+                  >
+                    View Details
+                  </Button>
+                )}
+                <FavoriteButton eventId={id} />
+              </div>
               {canShowDelete && !hasRegistrations && (
                 <Button
                   variant="destructive"
@@ -387,32 +394,32 @@ export default function EventCard({
             )}
 
             {showActions && (
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
                 {isRegisterable && (
                   <Button
                     onClick={onRegister}
-                    className="flex-1"
+                    className="w-full"
                     data-testid={`button-register-${id}`}
                   >
                     Register
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onSave}
-                  data-testid={`button-save-${id}`}
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onShare}
-                  data-testid={`button-share-${id}`}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2">
+                  <div className="relative" onClick={(e) => e.stopPropagation()}>
+                    <FavoriteButton eventId={id} />
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShare?.();
+                    }}
+                    data-testid={`button-share-${id}`}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 {canShowDelete && !hasRegistrations && (
                   <Button
                     variant="destructive"

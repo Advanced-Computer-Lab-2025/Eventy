@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { User } from "./user.model.js";
 import {
   UserValidation,
@@ -6,7 +7,6 @@ import {
   favoriteEventSchema,
 } from "./user.validation.js";
 import { sendRegistrationEmail, sendVerificationEmail } from "../auth/email.service.js";
-
 import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes
@@ -181,38 +181,87 @@ export default class UserController {
       const { eventId } = req.body;
       const userId = req.user._id;
 
+      console.log('Adding to favorites:', { userId, eventId });
+
       // Validate request
       const { error } = favoriteEventSchema.validate({ eventId });
       if (error) {
+        console.error('Validation error:', error);
         return res.status(400).json({
           success: false,
-          message: error.details[0].message,
+          message: `Invalid event ID: ${error.details[0].message}`,
         });
       }
 
       // Check if user is allowed to add to favorites
       const allowedRoles = ['student', 'staff', 'ta', 'professor'];
       if (!allowedRoles.includes(req.user.role)) {
+        console.error('Unauthorized role:', req.user.role);
         return res.status(403).json({
           success: false,
           message: 'Only students, staff, TAs, and professors can add events to favorites',
         });
       }
 
-      // Check if event exists
-      const event = await mongoose.model('Event').findById(eventId);
+      // Import the Event model
+      const { Event } = await import('../events/event.model.js');
+      
+      // Verify the event exists and is not deleted
+      const event = await Event.findOne({ _id: eventId, deletedAt: null });
+      
       if (!event) {
+        console.log('Event not found or deleted:', eventId);
         return res.status(404).json({
           success: false,
-          message: 'Event not found',
+          message: 'Event not found or has been deleted',
         });
       }
 
       // Add to favorites if not already added
+      console.log('Finding user:', userId);
       const user = await User.findById(userId);
-      if (!user.favoriteEvents.includes(eventId)) {
+      
+      if (!user) {
+        console.error('User not found:', userId);
+        return res.status(404).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+
+      // Convert both to strings for comparison to avoid ObjectId issues
+      const eventIdStr = eventId.toString();
+      const favoriteIds = user.favoriteEvents.map(id => id.toString());
+      
+      console.log('Current user favorites:', favoriteIds);
+      
+      if (!favoriteIds.includes(eventIdStr)) {
+        console.log('Adding event to favorites');
         user.favoriteEvents.push(eventId);
-        await user.save();
+        try {
+          await user.save();
+          console.log('Successfully saved user with updated favorites');
+        } catch (saveError) {
+          console.error('Error saving user:', saveError);
+          if (saveError.name === 'ValidationError') {
+            return res.status(400).json({
+              success: false,
+              message: 'Validation error',
+              error: saveError.message
+            });
+          }
+          throw saveError;
+        }
+      } else {
+        console.log('Event already in favorites');
+        return res.status(200).json({
+          success: true,
+          message: 'Event already in favorites',
+          data: {
+            eventId,
+            favoritesCount: user.favoriteEvents.length,
+          },
+        });
       }
 
       return res.status(200).json({
@@ -288,11 +337,16 @@ export default class UserController {
    */
   static async getFavoriteEvents(req, res, next) {
     try {
+      console.log('[getFavoriteEvents] Request received');
+      console.log('[getFavoriteEvents] User ID:', req.user?._id);
+      console.log('[getFavoriteEvents] User role:', req.user?.role);
+
       const userId = req.user._id;
 
       // Check if user is allowed to view favorites
       const allowedRoles = ['student', 'staff', 'ta', 'professor'];
       if (!allowedRoles.includes(req.user.role)) {
+        console.log('[getFavoriteEvents] User role not allowed:', req.user.role);
         return res.status(403).json({
           success: false,
           message: 'Only students, staff, TAs, and professors can view favorite events',
@@ -300,6 +354,7 @@ export default class UserController {
       }
 
       // Get user with populated favorite events
+      console.log('[getFavoriteEvents] Fetching user and populating favorite events...');
       const user = await User.findById(userId).populate({
         path: 'favoriteEvents',
         select: 'name description location startDate endDate bannerImage status',
@@ -307,17 +362,22 @@ export default class UserController {
       });
 
       if (!user) {
+        console.log('[getFavoriteEvents] User not found');
         return res.status(404).json({
           success: false,
           message: 'User not found',
         });
       }
 
+      console.log('[getFavoriteEvents] User found, favorite events count:', user.favoriteEvents?.length || 0);
+      console.log('[getFavoriteEvents] Favorite events:', user.favoriteEvents);
+
       return res.status(200).json({
         success: true,
         data: user.favoriteEvents,
       });
     } catch (err) {
+      console.error('[getFavoriteEvents] Error:', err);
       next(err);
     }
   }

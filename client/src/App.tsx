@@ -30,6 +30,7 @@ import EmailVerified from "@/pages/EmailVerified";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
+import FavoritesPage from "@/pages/FavoritesPage";
 
 function Router() {
   return (
@@ -156,6 +157,19 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/events" component={EventListPage} />
+
+      <Route path="/favorites">
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "ta",
+            "professor",
+          ]}
+        >
+          <FavoritesPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>
