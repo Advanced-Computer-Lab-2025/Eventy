@@ -8,13 +8,17 @@ import {
 
 const router = express.Router();
 
-// Submit feedback for an event
-router.post("/", authMiddleware, submitFeedback);
+// Submit feedback for a specific event
+router.post("/events/:eventId/feedback", authMiddleware, submitFeedback);
 
-// Get all feedback for an event
-router.get("/events/:eventId", getEventFeedback);
+// Get all feedback for a specific event
+router.get("/events/:eventId/feedback", getEventFeedback);
 
-// Get user's feedback for a specific event
-router.get("/events/:eventId/user", authMiddleware, getUserEventFeedback);
+// Get the authenticated user's feedback for a specific event
+router.get(
+  "/events/:eventId/feedback/user",
+  authMiddleware,
+  getUserEventFeedback
+);
 
 export default router;
