@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target, Upload, Check, RefreshCw } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,7 @@ import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
 import StatCard from "@/components/StatCard";
+import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -45,8 +46,6 @@ export default function VendorDashboard() {
   const [locationPreference, setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
   const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] = useState(false);
-  const [uploadingIds, setUploadingIds] = useState<{ [key: number]: boolean }>({});
-  const fileInputRefs = useRef<{ [key: number]: HTMLInputElement | null }>({});
   
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
@@ -256,34 +255,11 @@ export default function VendorDashboard() {
     setPlatformBoothAttendees(updatedAttendees);
   };
 
-  const handleUploadId = async (index: number, file: File) => {
-    setUploadingIds(prev => ({ ...prev, [index]: true }));
-    
-    try {
-      const result = await bazaarApiService.uploadIdCard(file);
-      
-      const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
-        i === index ? { ...attendee, individualID: result.url } : attendee
-      );
-      setPlatformBoothAttendees(updatedAttendees);
-      
-      toast({
-        title: "ID Uploaded Successfully",
-        description: `ID card for ${platformBoothAttendees[index].name || 'attendee'} has been uploaded.`,
-      });
-    } catch (error) {
-      toast({
-        title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload ID card. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setUploadingIds(prev => ({ ...prev, [index]: false }));
-    }
-  };
-
-  const triggerFileInput = (index: number) => {
-    fileInputRefs.current[index]?.click();
+  const handleIdUploadSuccess = (index: number, url: string) => {
+    const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
+      i === index ? { ...attendee, individualID: url } : attendee
+    );
+    setPlatformBoothAttendees(updatedAttendees);
   };
 
   const validatePlatformBoothForm = () => {
@@ -549,18 +525,6 @@ export default function VendorDashboard() {
                               )}
                             </div>
                             
-                            <input
-                              type="file"
-                              ref={(el) => (fileInputRefs.current[index] = el)}
-                              onChange={(e) => {
-                                const file = e.target.files?.[0];
-                                if (file) {
-                                  handleUploadId(index, file);
-                                }
-                              }}
-                              accept="image/jpeg,image/jpg,image/png,image/webp"
-                              className="hidden"
-                            />
                             <div className="flex flex-col md:flex-row gap-3 items-end">
                               <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-name-${index}`}>Name</Label>
@@ -587,49 +551,13 @@ export default function VendorDashboard() {
                               </div>
                               <div className="space-y-2 flex-shrink-0">
                                 <Label className="opacity-0 pointer-events-none">Upload</Label>
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    type="button"
-                                    variant={attendee.individualID ? "outline" : "default"}
-                                    size="sm"
-                                    onClick={() => {
-                                      if (!attendee.individualID) {
-                                        triggerFileInput(index);
-                                      }
-                                    }}
-                                    disabled={uploadingIds[index] || !!attendee.individualID}
-                                    className="flex items-center gap-2 h-9"
-                                  >
-                                    {uploadingIds[index] ? (
-                                      <>
-                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                        Uploading...
-                                      </>
-                                    ) : attendee.individualID ? (
-                                      <>
-                                        <Check className="h-4 w-4 text-green-600" />
-                                        ID Uploaded
-                                      </>
-                                    ) : (
-                                      <>
-                                        <Upload className="h-4 w-4" />
-                                        Upload ID
-                                      </>
-                                    )}
-                                  </Button>
-                                  {attendee.individualID && !uploadingIds[index] && (
-                                    <Button
-                                      type="button"
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() => triggerFileInput(index)}
-                                      className="flex items-center gap-2 h-9"
-                                      title="Reupload ID"
-                                    >
-                                      <RefreshCw className="h-4 w-4" />
-                                    </Button>
-                                  )}
-                                </div>
+                                <IdUploadButton
+                                  index={index}
+                                  attendeeName={attendee.name}
+                                  individualID={attendee.individualID}
+                                  onUploadSuccess={handleIdUploadSuccess}
+                                  buttonClassName="h-9"
+                                />
                               </div>
                             </div>
                           </CardContent>
