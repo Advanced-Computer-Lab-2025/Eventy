@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target, Upload, Check } from "lucide-react";
+import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target, Upload, Check, RefreshCw } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -543,31 +543,49 @@ export default function VendorDashboard() {
                                 accept="image/jpeg,image/jpg,image/png,image/webp"
                                 className="hidden"
                               />
-                              <Button
-                                type="button"
-                                variant={attendee.individualID ? "outline" : "default"}
-                                size="sm"
-                                onClick={() => triggerFileInput(index)}
-                                disabled={uploadingIds[index]}
-                                className="w-full flex items-center gap-2"
-                              >
-                                {uploadingIds[index] ? (
-                                  <>
-                                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                    Uploading...
-                                  </>
-                                ) : attendee.individualID ? (
-                                  <>
-                                    <Check className="h-4 w-4 text-green-600" />
-                                    ID Uploaded
-                                  </>
-                                ) : (
-                                  <>
-                                    <Upload className="h-4 w-4" />
-                                    Upload ID
-                                  </>
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  type="button"
+                                  variant={attendee.individualID ? "outline" : "default"}
+                                  size="sm"
+                                  onClick={() => {
+                                    if (!attendee.individualID) {
+                                      triggerFileInput(index);
+                                    }
+                                  }}
+                                  disabled={uploadingIds[index] || !!attendee.individualID}
+                                  className="flex-1 flex items-center gap-2"
+                                >
+                                  {uploadingIds[index] ? (
+                                    <>
+                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                      Uploading...
+                                    </>
+                                  ) : attendee.individualID ? (
+                                    <>
+                                      <Check className="h-4 w-4 text-green-600" />
+                                      ID Uploaded
+                                    </>
+                                  ) : (
+                                    <>
+                                      <Upload className="h-4 w-4" />
+                                      Upload ID
+                                    </>
+                                  )}
+                                </Button>
+                                {attendee.individualID && !uploadingIds[index] && (
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => triggerFileInput(index)}
+                                    className="px-3"
+                                    title="Reupload ID"
+                                  >
+                                    <RefreshCw className="h-4 w-4" />
+                                  </Button>
                                 )}
-                              </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
