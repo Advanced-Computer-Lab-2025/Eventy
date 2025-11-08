@@ -623,7 +623,7 @@ export default function VendorDashboard() {
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge className="bg-green-500 hover:bg-green-600 w-fit min-w-[4.5rem]">Approved</Badge>
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 w-fit min-w-[4.5rem]">Approved</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -695,7 +695,7 @@ export default function VendorDashboard() {
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="outline" className="w-fit min-w-[4.5rem]">Pending</Badge>
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 w-fit min-w-[4.5rem]">Pending</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -775,7 +775,7 @@ export default function VendorDashboard() {
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="destructive" className="w-fit min-w-[4.5rem]">Rejected</Badge>
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 w-fit min-w-[4.5rem]">Rejected</Badge>
                         </div>
                       </div>
                     </CardHeader>
