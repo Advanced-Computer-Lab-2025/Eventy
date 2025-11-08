@@ -595,37 +595,24 @@ export class EventsController {
   }
 async getAttendeesReport(req, res, next) {
   try {
-    // Fetch all events with attendee information
-    const events = await Event.find()
-      .select('name eventType startDate location attendees attendeesCount')
-      .lean();
-    
-    // Calculate total attendees across all events
-    let totalAttendees = 0;
-    const eventStats = events.map(event => {
-      const count = event.attendeesCount || (event.attendees ? event.attendees.length : 0);
-      totalAttendees += count;
-      
-      return {
-        eventId: event._id,
-        eventName: event.name,
-        eventType: event.eventType,
-        startDate: event.startDate,
-        location: event.location,
-        attendeesCount: count,
-      };
+    const { eventType, startDate, endDate, page, limit } = req.query;
+
+    const report = await eventService.getAttendeesReport({
+      eventType,
+      startDate,
+      endDate,
+      page: parseInt(page) || 1,
+      limit: parseInt(limit) || 10,
     });
-    
-    res.json({
-      success: true,
-      data: {
-        totalAttendees,
-        totalEvents: events.length,
-        events: eventStats,
-      },
-    });
+
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, report, "Attendees report generated successfully")
+      );
   } catch (err) {
     next(err);
   }
 }
+
 }
