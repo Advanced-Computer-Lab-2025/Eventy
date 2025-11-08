@@ -498,7 +498,7 @@ export default function VendorDashboard() {
                         size="sm"
                         onClick={addPlatformBoothAttendee}
                         disabled={platformBoothAttendees.length >= 5}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 h-9"
                       >
                         <Plus className="h-4 w-4" />
                         Add Attendee
@@ -526,8 +526,20 @@ export default function VendorDashboard() {
                               )}
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="space-y-2">
+                            <input
+                              type="file"
+                              ref={(el) => (fileInputRefs.current[index] = el)}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  handleUploadId(index, file);
+                                }
+                              }}
+                              accept="image/jpeg,image/jpg,image/png,image/webp"
+                              className="hidden"
+                            />
+                            <div className="flex flex-col md:flex-row gap-3 items-end">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-name-${index}`}>Name</Label>
                                 <Input
                                   id={`platform-name-${index}`}
@@ -535,9 +547,10 @@ export default function VendorDashboard() {
                                   value={attendee.name}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "name", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
                                 />
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-email-${index}`}>Email</Label>
                                 <Input
                                   id={`platform-email-${index}`}
@@ -546,65 +559,54 @@ export default function VendorDashboard() {
                                   value={attendee.email}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "email", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
                                 />
                               </div>
-                            </div>
-                            
-                            <div className="mt-3">
-                              <input
-                                type="file"
-                                ref={(el) => (fileInputRefs.current[index] = el)}
-                                onChange={(e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    handleUploadId(index, file);
-                                  }
-                                }}
-                                accept="image/jpeg,image/jpg,image/png,image/webp"
-                                className="hidden"
-                              />
-                              <div className="flex items-center gap-2">
-                                <Button
-                                  type="button"
-                                  variant={attendee.individualID ? "outline" : "default"}
-                                  size="sm"
-                                  onClick={() => {
-                                    if (!attendee.individualID) {
-                                      triggerFileInput(index);
-                                    }
-                                  }}
-                                  disabled={uploadingIds[index] || !!attendee.individualID}
-                                  className="flex-1 flex items-center gap-2"
-                                >
-                                  {uploadingIds[index] ? (
-                                    <>
-                                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
-                                      Uploading...
-                                    </>
-                                  ) : attendee.individualID ? (
-                                    <>
-                                      <Check className="h-4 w-4 text-green-600" />
-                                      ID Uploaded
-                                    </>
-                                  ) : (
-                                    <>
-                                      <Upload className="h-4 w-4" />
-                                      Upload ID
-                                    </>
-                                  )}
-                                </Button>
-                                {attendee.individualID && !uploadingIds[index] && (
+                              <div className="space-y-2 flex-shrink-0">
+                                <Label className="opacity-0 pointer-events-none">Upload</Label>
+                                <div className="flex items-center gap-2">
                                   <Button
                                     type="button"
-                                    variant="outline"
+                                    variant={attendee.individualID ? "outline" : "default"}
                                     size="sm"
-                                    onClick={() => triggerFileInput(index)}
-                                    className="px-3"
-                                    title="Reupload ID"
+                                    onClick={() => {
+                                      if (!attendee.individualID) {
+                                        triggerFileInput(index);
+                                      }
+                                    }}
+                                    disabled={uploadingIds[index] || !!attendee.individualID}
+                                    className="flex items-center gap-2 h-9"
                                   >
-                                    <RefreshCw className="h-4 w-4" />
+                                    {uploadingIds[index] ? (
+                                      <>
+                                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                                        Uploading...
+                                      </>
+                                    ) : attendee.individualID ? (
+                                      <>
+                                        <Check className="h-4 w-4 text-green-600" />
+                                        ID Uploaded
+                                      </>
+                                    ) : (
+                                      <>
+                                        <Upload className="h-4 w-4" />
+                                        Upload ID
+                                      </>
+                                    )}
                                   </Button>
-                                )}
+                                  {attendee.individualID && !uploadingIds[index] && (
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => triggerFileInput(index)}
+                                      className="flex items-center gap-2 h-9"
+                                      title="Reupload ID"
+                                    >
+                                      <RefreshCw className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           </CardContent>
