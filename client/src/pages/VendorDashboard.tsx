@@ -615,40 +615,41 @@ export default function VendorDashboard() {
                     </div>
                   </div>
 
-                  {/* Booth Size Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
-                    <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
-                      <SelectTrigger id="platform-boothSize">
-                        <SelectValue placeholder="Select booth size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2x2">2x2</SelectItem>
-                        <SelectItem value="4x4">4x4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Choose the size of your booth space. Larger booths may have additional fees.
-                    </p>
-                  </div>
+                  {/* Booth Size and Duration Section */}
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
+                    <div className="space-y-2 flex-1 max-w-[calc(50%-57px)]">
+                      <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose the size of your booth space. Larger booths may have additional fees.
+                      </p>
+                      <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
+                        <SelectTrigger id="platform-boothSize">
+                          <SelectValue placeholder="Select booth size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2x2">2x2</SelectItem>
+                          <SelectItem value="4x4">4x4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Duration Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
-                    <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
-                      <SelectTrigger id="platform-duration">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 week</SelectItem>
-                        <SelectItem value="2">2 weeks</SelectItem>
-                        <SelectItem value="3">3 weeks</SelectItem>
-                        <SelectItem value="4">4 weeks</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Select how long you want to set up your booth (1-4 weeks).
-                    </p>
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Select how long you want to set up your booth (1-4 weeks).
+                      </p>
+                      <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
+                        <SelectTrigger id="platform-duration">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 week</SelectItem>
+                          <SelectItem value="2">2 weeks</SelectItem>
+                          <SelectItem value="3">3 weeks</SelectItem>
+                          <SelectItem value="4">4 weeks</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
 
