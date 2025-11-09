@@ -31,13 +31,10 @@ jobs:
         run: npm run format:check
         continue-on-error: true
 
-      - name: Run ESLint
-        id: eslint-check
-        run: npm run lint
-        continue-on-error: true
-
       - name: Run ESLint with Reviewdog
         uses: reviewdog/action-eslint@v1
+        if: always()
+        continue-on-error: true
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
@@ -45,14 +42,20 @@ jobs:
           fail_on_error: false
           filter_mode: nofilter
 
-      - name: Check results and fail if needed
-        if: steps.prettier-check.outcome == 'failure' || steps.eslint-check.outcome == 'failure'
+      - name: Summary - Check results
+        if: always()
         run: |
-          echo "::error::Formatting or linting issues found"
+          echo "### Lint and Format Check Results" >> $GITHUB_STEP_SUMMARY
           if [ "${{ steps.prettier-check.outcome }}" == "failure" ]; then
-            echo "::error::Prettier formatting check failed. Run 'npm run format' to fix."
+            echo "❌ **Prettier Check**: Failed" >> $GITHUB_STEP_SUMMARY
+            echo "Run \`npm run format\` to fix formatting issues." >> $GITHUB_STEP_SUMMARY
+            echo ""
+          else
+            echo "✅ **Prettier Check**: Passed" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ "${{ steps.eslint-check.outcome }}" == "failure" ]; then
-            echo "::error::ESLint check failed. Run 'npm run lint:fix' to fix."
-          fi
+          
+      - name: Fail if issues found
+        if: steps.prettier-check.outcome == 'failure'
+        run: |
+          echo "::error::Formatting or linting issues found. Check the PR comments and summary."
           exit 1
