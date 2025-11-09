@@ -46,5 +46,5 @@ router.use("/notifications", notificationRoutes);
 // upload routes
 router.use("/upload", uploadRoutes);
 // loyalty partner routes
-router.use("/loyaltyPartner", loyaltyPartnerRoutes);
+router.use( '/loyalty-partners',loyaltyPartnerRoutes);
 export default router;
