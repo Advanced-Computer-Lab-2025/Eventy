@@ -90,7 +90,7 @@ const eventSchema = new Schema(
     price: {
       type: Number,
       required: function () {
-        return this.eventType === "trip";
+        return this.eventType === "trip" || this.eventType === "workshop";
       },
     },
     agenda: {
