@@ -103,15 +103,18 @@ export default function VendorApplicationDialog({
         });
         return false;
       }
-      
-      if (!attendee.individualID) {
-        toast({
-          title: "Validation Error",
-          description: `Please upload an ID card for ${attendee.name || 'attendee'}.`,
-          variant: "destructive",
-        });
-        return false;
-      }
+    }
+
+    // Check for attendees without ID
+    const attendeesWithoutID = validAttendees.filter(attendee => !attendee.individualID);
+    if (attendeesWithoutID.length > 0) {
+      const namesList = attendeesWithoutID.map(attendee => attendee.name || 'Unnamed attendee').join(', ');
+      toast({
+        title: "Validation Error",
+        description: `Please upload ID cards for: ${namesList}`,
+        variant: "destructive",
+      });
+      return false;
     }
 
     return true;
