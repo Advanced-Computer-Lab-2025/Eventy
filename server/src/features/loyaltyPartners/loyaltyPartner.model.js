@@ -26,5 +26,6 @@ const loyaltyPartnerSchema = new mongoose.Schema(
 
 // Ensure promo code is unique across all vendors
 loyaltyPartnerSchema.index({ promoCode: 1 }, { unique: true });
+loyaltyPartnerSchema.index({ vendorId: 1 }, { unique: true });
 
 export const LoyaltyPartner = mongoose.model('LoyaltyPartner', loyaltyPartnerSchema);

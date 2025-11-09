@@ -8,11 +8,20 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
 import StatCard from "@/components/StatCard";
+import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -20,6 +29,7 @@ import { useLocation } from "wouter";
 interface Attendee {
   name: string;
   email: string;
+  individualID?: string;
 }
 
 export default function VendorDashboard() {
@@ -48,6 +58,10 @@ export default function VendorDashboard() {
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
   const [selectedBooth, setSelectedBooth] = useState<{id: string, number: number | string} | null>(null);
+  
+  // Cancel confirmation dialog state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [applicationToCancel, setApplicationToCancel] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -199,6 +213,26 @@ export default function VendorDashboard() {
   }, []);
 
   const handleRegister = (bazaarId: string) => {
+    // Check if user has already applied to this bazaar (excluding rejected applications)
+    // Users should be able to reapply if their application was rejected
+    const activeApplications = [
+      ...pendingApplications,
+      ...approvedApplications,
+    ];
+    
+    const existingApplication = activeApplications.find(
+      (app) => app.type === "bazaar" && app.event?._id === bazaarId
+    );
+    
+    if (existingApplication) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied to this bazaar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
     if (bazaar) {
       setSelectedBazaar(bazaar);
@@ -210,6 +244,34 @@ export default function VendorDashboard() {
     // Immediately refresh data after user action
     fetchApplicationsData();
     fetchUpcomingBazaars();
+  };
+
+  const handleCancelClick = (applicationId: string) => {
+    setApplicationToCancel(applicationId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!applicationToCancel) return;
+
+    try {
+      await bazaarApiService.cancelApplication(applicationToCancel);
+      toast({
+        title: "Application Cancelled",
+        description: "Your application has been cancelled successfully.",
+      });
+      // Refresh applications data to update the UI
+      fetchApplicationsData();
+      setCancelDialogOpen(false);
+      setApplicationToCancel(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to cancel application";
+      toast({
+        title: "Cancellation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -229,6 +291,13 @@ export default function VendorDashboard() {
   const updatePlatformBoothAttendee = (index: number, field: keyof Attendee, value: string) => {
     const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
       i === index ? { ...attendee, [field]: value } : attendee
+    );
+    setPlatformBoothAttendees(updatedAttendees);
+  };
+
+  const handleIdUploadSuccess = (index: number, url: string) => {
+    const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
+      i === index ? { ...attendee, individualID: url } : attendee
     );
     setPlatformBoothAttendees(updatedAttendees);
   };
@@ -258,6 +327,38 @@ export default function VendorDashboard() {
         return false;
       }
     }
+    
+    // Check for missing IDs and collect all attendees without IDs
+    // Check all attendees that have at least a name (so we can display them)
+    const attendeesToCheck = platformBoothAttendees.filter(attendee => attendee.name && attendee.name.trim());
+    const attendeesWithoutID = attendeesToCheck.filter(attendee => !attendee.individualID);
+    
+    if (attendeesWithoutID.length > 0) {
+      const firstNames = attendeesWithoutID
+        .map(attendee => {
+          const trimmedName = attendee.name.trim();
+          return trimmedName.split(' ')[0]; // Get first name only
+        })
+        .filter(name => name.length > 0);
+      
+      if (firstNames.length > 0) {
+        let namesList: string;
+        if (firstNames.length === 1) {
+          namesList = firstNames[0];
+        } else if (firstNames.length === 2) {
+          namesList = `${firstNames[0]} and ${firstNames[1]}`;
+        } else {
+          namesList = `${firstNames.slice(0, -1).join(', ')}, and ${firstNames[firstNames.length - 1]}`;
+        }
+        
+        toast({
+          title: "Validation Error",
+          description: `Please upload an ID card for ${namesList}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
 
     return true;
   };
@@ -276,28 +377,14 @@ export default function VendorDashboard() {
         attendee.name.trim() && attendee.email.trim()
       );
 
-      // TODO: Replace with actual API call when backend is ready
-      console.log("Platform booth application data:", {
+      // This will be called from BoothApplicationDialog, so we don't submit here
+      // The actual submission happens when user clicks on a booth in the map
+      console.log("Platform booth form validated:", {
         attendees: validAttendees,
         boothSize,
         durationWeeks,
         selectedMapLocation
       });
-
-      toast({
-        title: "Application Submitted",
-        description: "Your platform booth application has been submitted successfully!",
-      });
-
-      // Reset form
-      setPlatformBoothAttendees([{ name: "", email: "" }]);
-      setBoothSize("2x2");
-      setDurationWeeks(1);
-      setSelectedMapLocation("");
-      
-      // Immediately refresh data after user action
-      fetchApplicationsData();
-      fetchUpcomingBazaars();
     } catch (error) {
       console.error("Error submitting platform booth application:", error);
       toast({
@@ -450,7 +537,7 @@ export default function VendorDashboard() {
                         size="sm"
                         onClick={addPlatformBoothAttendee}
                         disabled={platformBoothAttendees.length >= 5}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 h-9"
                       >
                         <Plus className="h-4 w-4" />
                         Add Attendee
@@ -478,8 +565,8 @@ export default function VendorDashboard() {
                               )}
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="space-y-2">
+                            <div className="flex flex-col md:flex-row gap-3 items-end">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-name-${index}`}>Name</Label>
                                 <Input
                                   id={`platform-name-${index}`}
@@ -487,9 +574,10 @@ export default function VendorDashboard() {
                                   value={attendee.name}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "name", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
                                 />
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-email-${index}`}>Email</Label>
                                 <Input
                                   id={`platform-email-${index}`}
@@ -498,6 +586,17 @@ export default function VendorDashboard() {
                                   value={attendee.email}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "email", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
+                                />
+                              </div>
+                              <div className="space-y-2 flex-shrink-0">
+                                <Label className="opacity-0 pointer-events-none">Upload</Label>
+                                <IdUploadButton
+                                  index={index}
+                                  attendeeName={attendee.name}
+                                  individualID={attendee.individualID}
+                                  onUploadSuccess={handleIdUploadSuccess}
+                                  buttonClassName="h-9"
                                 />
                               </div>
                             </div>
@@ -507,40 +606,41 @@ export default function VendorDashboard() {
                     </div>
                   </div>
 
-                  {/* Booth Size Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
-                    <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
-                      <SelectTrigger id="platform-boothSize">
-                        <SelectValue placeholder="Select booth size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2x2">2x2</SelectItem>
-                        <SelectItem value="4x4">4x4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Choose the size of your booth space. Larger booths may have additional fees.
-                    </p>
-                  </div>
+                  {/* Booth Size and Duration Section */}
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
+                    <div className="space-y-2 flex-1 max-w-[calc(50%-57px)]">
+                      <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose the size of your booth space. Larger booths may have additional fees.
+                      </p>
+                      <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
+                        <SelectTrigger id="platform-boothSize">
+                          <SelectValue placeholder="Select booth size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2x2">2x2</SelectItem>
+                          <SelectItem value="4x4">4x4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Duration Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
-                    <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
-                      <SelectTrigger id="platform-duration">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 week</SelectItem>
-                        <SelectItem value="2">2 weeks</SelectItem>
-                        <SelectItem value="3">3 weeks</SelectItem>
-                        <SelectItem value="4">4 weeks</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Select how long you want to set up your booth (1-4 weeks).
-                    </p>
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Select how long you want to set up your booth (1-4 weeks).
+                      </p>
+                      <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
+                        <SelectTrigger id="platform-duration">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 week</SelectItem>
+                          <SelectItem value="2">2 weeks</SelectItem>
+                          <SelectItem value="3">3 weeks</SelectItem>
+                          <SelectItem value="4">4 weeks</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
 
@@ -570,20 +670,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredApprovedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-participation-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-participation-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge className="bg-green-500 hover:bg-green-600 w-fit">Approved</Badge>
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 w-fit min-w-[4.5rem]">Approved</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -642,25 +742,25 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredPendingApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-request-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-request-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="outline" className="w-fit">Pending Review</Badge>
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 w-fit min-w-[4.5rem]">Pending</Badge>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm mb-4">
+                    <CardContent className="flex flex-col flex-grow">
+                      <div className="space-y-2 text-sm mb-4 flex-grow">
                         {application.type === 'bazaar' && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -700,7 +800,8 @@ export default function VendorDashboard() {
                       </div>
                       <Button 
                         variant="destructive" 
-                        className="w-full"
+                        className="w-full mt-auto"
+                        onClick={() => handleCancelClick(application._id)}
                         data-testid={`button-cancel-${application._id}`}
                       >
                         Cancel Request
@@ -721,20 +822,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredRejectedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-rejected-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="destructive" className="w-fit">Rejected</Badge>
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 w-fit min-w-[4.5rem]">Rejected</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -815,6 +916,44 @@ export default function VendorDashboard() {
           durationWeeks={durationWeeks}
         />
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex flex-col items-center text-center space-y-4 py-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="space-y-2">
+                <DialogTitle className="text-2xl font-semibold">Cancel Application?</DialogTitle>
+                <DialogDescription className="text-base pt-2">
+                  Are you sure you want to cancel this request? This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:space-x-2 pt-4 justify-center !sm:justify-center">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setCancelDialogOpen(false);
+                setApplicationToCancel(null);
+              }}
+            >
+              No, Keep It
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleCancelConfirm}
+            >
+              Yes, Cancel Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

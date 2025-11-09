@@ -21,6 +21,7 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
+import IdUploadButton from "@/components/IdUploadButton";
 
 interface VendorApplicationDialogProps {
   open: boolean;
@@ -33,6 +34,7 @@ interface VendorApplicationDialogProps {
 interface Attendee {
   name: string;
   email: string;
+  individualID?: string;
 }
 
 export default function VendorApplicationDialog({
@@ -68,6 +70,13 @@ export default function VendorApplicationDialog({
     setAttendees(updatedAttendees);
   };
 
+  const handleIdUploadSuccess = (index: number, url: string) => {
+    const updatedAttendees = attendees.map((attendee, i) =>
+      i === index ? { ...attendee, individualID: url } : attendee
+    );
+    setAttendees(updatedAttendees);
+  };
+
   const validateForm = () => {
     // Check if all attendees have both name and email
     const validAttendees = attendees.filter(attendee => 
@@ -96,6 +105,18 @@ export default function VendorApplicationDialog({
       }
     }
 
+    // Check for attendees without ID
+    const attendeesWithoutID = validAttendees.filter(attendee => !attendee.individualID);
+    if (attendeesWithoutID.length > 0) {
+      const namesList = attendeesWithoutID.map(attendee => attendee.name || 'Unnamed attendee').join(', ');
+      toast({
+        title: "Validation Error",
+        description: `Please upload ID cards for: ${namesList}`,
+        variant: "destructive",
+      });
+      return false;
+    }
+
     return true;
   };
 
@@ -114,7 +135,11 @@ export default function VendorApplicationDialog({
       );
 
       await bazaarApiService.applyToBazaar(bazaarId, {
-        attendees: validAttendees,
+        attendees: validAttendees.map(attendee => ({
+          name: attendee.name,
+          email: attendee.email,
+          individualID: attendee.individualID || "",
+        })),
         boothSize,
       });
 
@@ -162,7 +187,7 @@ export default function VendorApplicationDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Store className="h-5 w-5" />
@@ -212,8 +237,8 @@ export default function VendorApplicationDialog({
                       )}
                     </div>
                     
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <div className="space-y-2">
+                    <div className="flex flex-col md:flex-row gap-3 items-end">
+                      <div className="space-y-2 flex-1">
                         <Label htmlFor={`name-${index}`}>Name</Label>
                         <Input
                           id={`name-${index}`}
@@ -221,9 +246,10 @@ export default function VendorApplicationDialog({
                           value={attendee.name}
                           onChange={(e) => updateAttendee(index, "name", e.target.value)}
                           required={index === 0}
+                          className="w-full"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 flex-1">
                         <Label htmlFor={`email-${index}`}>Email</Label>
                         <Input
                           id={`email-${index}`}
@@ -232,6 +258,17 @@ export default function VendorApplicationDialog({
                           value={attendee.email}
                           onChange={(e) => updateAttendee(index, "email", e.target.value)}
                           required={index === 0}
+                          className="w-full"
+                        />
+                      </div>
+                      <div className="space-y-2 flex-shrink-0">
+                        <Label className="opacity-0 pointer-events-none">Upload</Label>
+                        <IdUploadButton
+                          index={index}
+                          attendeeName={attendee.name}
+                          individualID={attendee.individualID}
+                          onUploadSuccess={handleIdUploadSuccess}
+                          buttonClassName="h-9 min-w-[120px]"
                         />
                       </div>
                     </div>
@@ -244,6 +281,9 @@ export default function VendorApplicationDialog({
           {/* Booth Size Section */}
           <div className="space-y-2">
             <Label htmlFor="boothSize" className="text-base font-semibold">Booth Size</Label>
+            <p className="text-sm text-muted-foreground">
+              Choose the size of your booth space. Larger booths may have additional fees.
+            </p>
             <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
               <SelectTrigger id="boothSize">
                 <SelectValue placeholder="Select booth size" />
@@ -253,9 +293,6 @@ export default function VendorApplicationDialog({
                 <SelectItem value="4x4">4x4</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">
-              Choose the size of your booth space. Larger booths may have additional fees.
-            </p>
           </div>
 
           <DialogFooter>

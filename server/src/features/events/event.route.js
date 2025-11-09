@@ -83,6 +83,14 @@ router.patch(
   eventsController.rejectWorkshop.bind(eventsController)
 );
 
+// Archive event (only Events Office, and only after endDate has passed)
+router.patch(
+  "/:id/archive",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.archiveEvent.bind(eventsController)
+);
+
 // Edit a workshop that needs revision
 router.patch(
   "/workshops/:workshopId",
@@ -210,5 +218,11 @@ router.post(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.registerForEvent.bind(eventsController)
 );
-
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
 export default router;
