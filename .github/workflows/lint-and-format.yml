@@ -27,9 +27,12 @@ jobs:
         run: npm ci
 
       - name: Run Prettier check
+        id: prettier-check
         run: npm run format:check
+        continue-on-error: true
 
       - name: Run ESLint
+        id: eslint-check
         run: npm run lint
         continue-on-error: true
 
@@ -41,3 +44,15 @@ jobs:
           eslint_flags: "."
           fail_on_error: false
           filter_mode: nofilter
+
+      - name: Check results and fail if needed
+        if: steps.prettier-check.outcome == 'failure' || steps.eslint-check.outcome == 'failure'
+        run: |
+          echo "::error::Formatting or linting issues found"
+          if [ "${{ steps.prettier-check.outcome }}" == "failure" ]; then
+            echo "::error::Prettier formatting check failed. Run 'npm run format' to fix."
+          fi
+          if [ "${{ steps.eslint-check.outcome }}" == "failure" ]; then
+            echo "::error::ESLint check failed. Run 'npm run lint:fix' to fix."
+          fi
+          exit 1
