@@ -709,5 +709,55 @@ export const archiveEvent = async (eventId, user) => {
     }
   }
 
+ 
   return updatedEvent;
 };
+
+
+export const restrictAccess = async (eventId, rolesToRestrict, user) => {
+  // Authorization check
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Only Events Office can restrict event access");
+  }
+
+  // Validate roles array
+  const validRoles = ["student", "staff", "ta", "professor", "vendor", "events_office", "admin"];
+  const invalidRoles = rolesToRestrict.filter(role => !validRoles.includes(role));
+  if (invalidRoles.length > 0) {
+    throw new ApiError(400, `Invalid roles provided: ${invalidRoles.join(", ")}`);
+  }
+
+  // Find and validate event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot modify restrictions for a deleted event");
+  }
+
+  // Check if event is archived
+  if (event.status === "archived") {
+    throw new ApiError(400, "Cannot modify restrictions for an archived event");
+  }
+
+  // Check if the exact same restrictions are already in place
+  const currentRestrictions = event.restrictedRoles || [];
+  const isIdenticalRestriction = 
+    rolesToRestrict.length === currentRestrictions.length &&
+    rolesToRestrict.every(role => currentRestrictions.includes(role)) &&
+    currentRestrictions.every(role => rolesToRestrict.includes(role));
+
+  if (isIdenticalRestriction) {
+    throw new ApiError(400, "These role restrictions are already in place for this event");
+  }
+
+  // Update restricted roles
+  event.restrictedRoles = rolesToRestrict;
+  await event.save();
+
+  return event;
+}
+
+ 
