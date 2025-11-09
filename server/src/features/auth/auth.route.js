@@ -26,13 +26,20 @@ const signupStorage = multer.diskStorage({
   },
 });
 
-const signupUpload = multer({ storage: signupStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+const signupUpload = multer({
+  storage: signupStorage,
+  limits: { fileSize: 5 * 1024 * 1024 },
+});
 
 // Accept optional fields companyLogo and taxCard when vendor signs up
-router.post("/signup", signupUpload.fields([
-  { name: "companyLogo", maxCount: 1 },
-  { name: "taxCard", maxCount: 1 },
-]), signUp);
+router.post(
+  "/signup",
+  signupUpload.fields([
+    { name: "companyLogo", maxCount: 1 },
+    { name: "taxCard", maxCount: 1 },
+  ]),
+  signUp
+);
 
 router.post("/login", login);
 
