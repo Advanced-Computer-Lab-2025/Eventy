@@ -218,6 +218,14 @@ router.post(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.registerForEvent.bind(eventsController)
 );
+
+// PATCH /events/:id/cancel
+router.patch(
+  "/:eventId/cancel",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.cancelEventRegistration.bind(eventsController)
+);
 // Get attendees count for an event
 router.get(
   "/reports/attendees",
