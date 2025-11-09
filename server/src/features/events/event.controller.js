@@ -1,7 +1,6 @@
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
-import { Event } from "./event.model.js";
 import {
   createTripSchema,
   workshopStatusSchema,
@@ -11,6 +10,7 @@ import {
   updateBazaarSchema,
   updateConferenceSchema,
   updateWorkshopSchema,
+  getAttendeesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -593,7 +593,33 @@ export class EventsController {
       next(err);
     }
   }
+  
+async getAttendeesReport(req, res, next) {
+  try {
+    // ✅ Validate query params
+    const { error, value } = getAttendeesReportSchema.validate(req.query, { abortEarly: false });
 
+    if (error) return next(new ApiError(400, 'Validation failed', error.details));
+
+    // ✅ Use the validated values
+    const { eventType, startDate, endDate, page, limit } = value;
+
+    const report = await eventService.getAttendeesReport({
+      eventType,
+      startDate,
+      endDate,
+      page: page || 1,
+      limit: limit || 10,
+    });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, report, "Attendees report generated successfully"));
+  } catch (err) {
+    next(err);
+  }
+}
+  
   // Archive an event (only after event endDate has passed)
   async archiveEvent(req, res, next) {
     try {

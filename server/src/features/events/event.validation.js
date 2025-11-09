@@ -272,3 +272,25 @@ export const updateBazaarSchema = Joi.object({
   professors: Joi.forbidden(),
   websiteUrl: Joi.forbidden(),
 });
+
+
+export const getAttendeesReportSchema = Joi.object({
+  eventType: Joi.string()
+    .valid("conference", "workshop", "bazaar", "trip", "platform_booth")
+    .optional()
+    .messages({
+      "any.only": "Event type must be one of: conference, workshop, bazaar, trip, or platform_booth",
+    }),
+
+  startDate: Joi.date().iso().optional().messages({
+    "date.base": "startDate must be a valid ISO date",
+  }),
+
+  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional().messages({
+    "date.base": "endDate must be a valid ISO date",
+    "date.min": "endDate cannot be before startDate",
+  }),
+
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+}).options({ stripUnknown: true });

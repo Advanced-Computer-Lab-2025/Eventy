@@ -584,6 +584,82 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
+/**
+ * Aggregates attendee statistics for all events.
+ * Supports optional filtering by eventType, date range, and pagination.
+ */
+export const getAttendeesReport = async (options = {}) => {
+  const {
+    eventType,
+    startDate,
+    endDate,
+    page = 1,
+    limit = 10,
+  } = options;
+
+  const match = {};
+
+  if (eventType) match.eventType = eventType;
+  if (startDate || endDate) {
+    match.startDate = {};
+    if (startDate) match.startDate.$gte = new Date(startDate);
+    if (endDate) match.startDate.$lte = new Date(endDate);
+  }
+
+  const skip = (page - 1) * limit;
+
+  // MongoDB aggregation for performance
+  const [result] = await Event.aggregate([
+    { $match: match },
+
+    {
+      $project: {
+        name: 1,
+        eventType: 1,
+        startDate: 1,
+        location: 1,
+        attendeesCount: {
+          $ifNull: ["$attendeesCount", { $size: { $ifNull: ["$attendees", []] } }]
+        }
+      },
+    },
+
+    {
+      $facet: {
+        events: [
+          { $sort: { startDate: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        totals: [
+          {
+            $group: {
+              _id: null,
+              totalEvents: { $sum: 1 },
+              totalAttendees: { $sum: "$attendeesCount" },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const totals = result?.totals?.[0] || {
+    totalEvents: 0,
+    totalAttendees: 0,
+  };
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalAttendees: totals.totalAttendees,
+    page,
+    limit,
+    totalPages: Math.ceil((totals.totalEvents || 0) / limit),
+    events: result.events || [],
+  };
+};
+
 export const archiveEvent = async (eventId, user) => {
   // Authorization
   if (!user || user.role !== "events_office") {
