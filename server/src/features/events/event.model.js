@@ -9,17 +9,42 @@ const eventSchema = new Schema(
       required: true,
       enum: ["bazaar", "trip", "workshop", "conference", "platform_booth"],
     },
-    description: { type: String, required: true },
-    location: { type: String, required: true },
-    startDate: { type: Date, required: true },
+    description: {
+      type: String,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
+    location: {
+      type: String,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
+    startDate: {
+      type: Date,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
+    endDate: {
+      type: Date,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
+    registrationDeadline: {
+      type: Date,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
     startTime: { type: String, required: function () {
       return this.eventType !== "platform_booth";
     }},
-    endDate: { type: Date, required: true },
     endTime: { type: String, required: function () {
       return this.eventType !== "platform_booth";
     }},
-    registrationDeadline: { type: Date, required: true },
 
     status: {
       type: String,
@@ -94,21 +119,60 @@ const eventSchema = new Schema(
         return this.eventType === "workshop";
       },
     },
-    professors: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-        required: function () {
-          return this.eventType === "workshop";
+    professors: {
+      type: [
+        {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
         },
+      ],
+      required: function () {
+        return this.eventType === "workshop";
       },
-    ],
+      validate: {
+        validator: function (value) {
+          return this.eventType !== "workshop" || (value && value.length > 0);
+        },
+        message: "Workshop must have at least one professor",
+      },
+      default: undefined,
+    },
     websiteUrl: {
       type: String,
       required: function () {
         return this.eventType === "conference";
       },
     },
+    // Booth-specific fields
+    boothSize: {
+      type: String,
+      enum: ["2x2", "4x4"],
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
+    },
+    durationWeeks: {
+      type: Number,
+      min: 1,
+      max: 4,
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
+    },
+    locationPreference: {
+      type: String,
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
+    },
+    application: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Application",
+      required: function () {
+        return this.eventType === "platform_booth";
+      },
+    },
+    // timestamps option for mongoose schema
   },
   { timestamps: true }
 );
