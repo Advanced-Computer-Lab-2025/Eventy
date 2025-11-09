@@ -647,7 +647,8 @@ export class EventsController {
 
       return res
         .status(200)
-        .json(new ApiResponse(200, event, "Event archived successfully"));} catch (err) {
+        .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
       next(err);
     }
   }
@@ -660,7 +661,7 @@ export class EventsController {
       if (!userId) {
         throw new ApiError(401, "Unauthorized");
       }
-      
+
       // Allow only student/staff/ta/professor
       if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
         throw new ApiError(

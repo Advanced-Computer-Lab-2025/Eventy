@@ -53,6 +53,7 @@ export class TransactionController {
     try {
       const { paymentIntentId } = req.body;
       const allowedRoles = ["student", "staff", "ta", "professor"];
+      const userRole = req.user.role;
       if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
           error: `Access denied. Only ${allowedRoles.join(
