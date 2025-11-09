@@ -1,4 +1,12 @@
-import { Calendar, MapPin, Users, Bookmark, Share2, Store, Pencil } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Bookmark,
+  Share2,
+  Store,
+  Pencil,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,35 +52,35 @@ export default function BazaarCard({
   // Format dates for display
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      hour12: true
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
   // Get status badge color
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved':
-        return 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700';
-      case 'pending':
-        return 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700';
-      case 'rejected':
-        return 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700';
-      case 'needs_revision':
-        return 'bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700';
+      case "approved":
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700";
+      case "pending":
+        return "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700";
+      case "rejected":
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700";
+      case "needs_revision":
+        return "bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-300 border-orange-200 dark:border-orange-700";
       default:
-        return 'bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600';
+        return "bg-gray-100 dark:bg-gray-800 text-gray-800 dark:text-gray-300 border-gray-200 dark:border-gray-600";
     }
   };
 
@@ -88,7 +96,7 @@ export default function BazaarCard({
   };
 
   return (
-    <Card 
+    <Card
       className="group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 h-full flex flex-col"
       data-testid={`card-bazaar-${id}`}
     >
@@ -106,17 +114,20 @@ export default function BazaarCard({
         )}
         <div className="absolute top-3 left-3">
           <Badge className={`${getStatusColor(status)} border`}>
-            {status.replace('_', ' ').toUpperCase()}
+            {status.replace("_", " ").toUpperCase()}
           </Badge>
         </div>
         <div className="absolute top-3 right-3">
-          <Badge variant="secondary" className="bg-background/90 text-foreground">
+          <Badge
+            variant="secondary"
+            className="bg-background/90 text-foreground"
+          >
             <Store className="h-3 w-3 mr-1" />
             BAZAAR
           </Badge>
         </div>
       </div>
-      
+
       <CardContent className="p-4 flex flex-col flex-1">
         <div className="space-y-3 flex-1">
           <div className="flex items-start gap-2">
@@ -130,15 +141,18 @@ export default function BazaarCard({
               </div>
             </div>
           </div>
-          
-          <h3 className="text-xl font-bold line-clamp-2 text-foreground" data-testid={`text-bazaar-title-${id}`}>
+
+          <h3
+            className="text-xl font-bold line-clamp-2 text-foreground"
+            data-testid={`text-bazaar-title-${id}`}
+          >
             {name}
           </h3>
-          
+
           <p className="text-sm text-muted-foreground line-clamp-2">
             {description}
           </p>
-          
+
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <MapPin className="h-4 w-4" />
@@ -146,7 +160,10 @@ export default function BazaarCard({
             </div>
             <div className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              <span>{attendees}{capacity ? `/${capacity}` : ''}</span>
+              <span>
+                {attendees}
+                {capacity ? `/${capacity}` : ""}
+              </span>
             </div>
           </div>
 
@@ -159,7 +176,7 @@ export default function BazaarCard({
 
         <div className="flex gap-2 pt-4">
           {onEdit && (
-            <Button 
+            <Button
               variant="outline"
               className="flex-1"
               onClick={onEdit}
@@ -169,24 +186,24 @@ export default function BazaarCard({
               Edit
             </Button>
           )}
-          <Button 
-            onClick={handleRegister} 
+          <Button
+            onClick={handleRegister}
             className="flex-1"
             disabled={!isRegistrationOpen}
             data-testid={`button-register-${id}`}
           >
-            {isRegistrationOpen ? 'Register' : 'Registration Closed'}
+            {isRegistrationOpen ? "Register" : "Registration Closed"}
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={onSave}
             data-testid={`button-save-${id}`}
           >
             <Bookmark className="h-4 w-4" />
           </Button>
-          <Button 
-            variant="outline" 
+          <Button
+            variant="outline"
             size="icon"
             onClick={onShare}
             data-testid={`button-share-${id}`}
@@ -195,7 +212,7 @@ export default function BazaarCard({
           </Button>
         </div>
       </CardContent>
-      
+
       <VendorApplicationDialog
         open={isApplicationDialogOpen}
         onOpenChange={setIsApplicationDialogOpen}

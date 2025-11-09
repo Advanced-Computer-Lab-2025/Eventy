@@ -6,7 +6,10 @@ interface MobileNavProps {
   onTabChange?: (tab: string) => void;
 }
 
-export default function MobileNav({ activeTab = "discover", onTabChange }: MobileNavProps) {
+export default function MobileNav({
+  activeTab = "discover",
+  onTabChange,
+}: MobileNavProps) {
   const tabs = [
     { id: "discover", icon: LayoutGrid, label: "Discover" },
     { id: "calendar", icon: Calendar, label: "Calendar" },
@@ -21,7 +24,7 @@ export default function MobileNav({ activeTab = "discover", onTabChange }: Mobil
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTab === tab.id;
-          
+
           return (
             <Button
               key={tab.id}

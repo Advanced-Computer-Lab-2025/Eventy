@@ -1,4 +1,13 @@
-import { Calendar, MapPin, Users, Bookmark, Share2, Store, Trash2, Clock } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Bookmark,
+  Share2,
+  Store,
+  Trash2,
+  Clock,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -7,23 +16,29 @@ import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 async function deleteEvent(eventId: string) {
   const token = localStorage.getItem("token");
-  const response = await fetch(`${API_BASE_URL}/api/events/admin/events/${eventId}`, {
-    method: "DELETE",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/events/admin/events/${eventId}`,
+    {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+    }
+  );
 
   const contentType = response.headers.get("content-type");
   if (response.status === 409) {
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
-      throw new Error(data.message || "Cannot delete event with registered users.");
+      throw new Error(
+        data.message || "Cannot delete event with registered users."
+      );
     }
     throw new Error("Cannot delete event with registered users.");
   }
@@ -45,8 +60,8 @@ interface Vendor {
   vendorId?: string;
   vendorName?: string;
   vendorEmail?: string;
-  email?: string;  
-  _id?: string; 
+  email?: string;
+  _id?: string;
   name?: string;
   type?: string;
   boothSize?: string;
@@ -171,11 +186,13 @@ export default function EventCard({
         <>
           <CardHeader>
             <div className="flex justify-between items-start gap-2">
-              <CardTitle className="text-xl break-words whitespace-normal">{title}</CardTitle>
+              <CardTitle className="text-xl break-words whitespace-normal">
+                {title}
+              </CardTitle>
               <CategoryBadge category={category} />
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-4 flex-1 flex flex-col">
             <div className="flex-1 space-y-4">
               {description && (
@@ -191,7 +208,8 @@ export default function EventCard({
                   <div className="flex-1">
                     {startDate && endDate ? (
                       <div>
-                        {formatDate(startDate)}, {formatTime(startDate)} → {formatDate(endDate)}, {formatTime(endDate)}
+                        {formatDate(startDate)}, {formatTime(startDate)} →{" "}
+                        {formatDate(endDate)}, {formatTime(endDate)}
                       </div>
                     ) : startDate ? (
                       <div>
@@ -213,7 +231,9 @@ export default function EventCard({
                 <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span>{attendees} attendee{attendees !== 1 ? 's' : ''}</span>
+                    <span>
+                      {attendees} attendee{attendees !== 1 ? "s" : ""}
+                    </span>
                   </div>
 
                   {registrationDeadline && (
@@ -222,7 +242,9 @@ export default function EventCard({
                       <span>
                         Deadline: {formatDate(registrationDeadline)}
                         {new Date() > new Date(registrationDeadline) && (
-                          <span className="text-red-500 font-semibold ml-2">(Closed)</span>
+                          <span className="text-red-500 font-semibold ml-2">
+                            (Closed)
+                          </span>
                         )}
                       </span>
                     </div>
@@ -243,9 +265,11 @@ export default function EventCard({
                         .map((v) => v.name || v.vendorName)
                         .filter(Boolean) as string[];
                       const initialCount = 4;
-                      const shown = expandedVendors ? vendorNames : vendorNames.slice(0, initialCount);
+                      const shown = expandedVendors
+                        ? vendorNames
+                        : vendorNames.slice(0, initialCount);
                       const remaining = vendorNames.length - initialCount;
-                      
+
                       return (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
@@ -266,19 +290,21 @@ export default function EventCard({
                               className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
                               onClick={() => setExpandedVendors(true)}
                             >
-                              + {remaining} more vendor{remaining > 1 ? 's' : ''}
+                              + {remaining} more vendor
+                              {remaining > 1 ? "s" : ""}
                             </Button>
                           )}
-                          {expandedVendors && vendorNames.length > initialCount && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                              onClick={() => setExpandedVendors(false)}
-                            >
-                              Show less
-                            </Button>
-                          )}
+                          {expandedVendors &&
+                            vendorNames.length > initialCount && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                onClick={() => setExpandedVendors(false)}
+                              >
+                                Show less
+                              </Button>
+                            )}
                         </div>
                       );
                     })()}
@@ -311,15 +337,28 @@ export default function EventCard({
                   variant="destructive"
                   size="sm"
                   onClick={async (e) => {
-                    if ((e as any).stopPropagation) (e as any).stopPropagation();
-                    if (!confirm("This will permanently delete the event. Proceed?")) return;
+                    if ((e as any).stopPropagation)
+                      (e as any).stopPropagation();
+                    if (
+                      !confirm(
+                        "This will permanently delete the event. Proceed?"
+                      )
+                    )
+                      return;
                     try {
                       await deleteEvent(id);
-                      toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                      toast({
+                        title: "Event deleted",
+                        description: "The event was deleted successfully.",
+                      });
                       setIsDeleted(true);
                       onDelete?.(id);
                     } catch (err: any) {
-                      toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
+                      toast({
+                        title: "Delete failed",
+                        description: err?.message || "Failed to delete event",
+                        variant: "destructive",
+                      });
                     }
                   }}
                   data-testid={`button-delete-event-${id}`}
@@ -418,15 +457,28 @@ export default function EventCard({
                     variant="destructive"
                     size="sm"
                     onClick={async (e) => {
-                      if ((e as any).stopPropagation) (e as any).stopPropagation();
-                      if (!confirm("This will permanently delete the event. Proceed?")) return;
+                      if ((e as any).stopPropagation)
+                        (e as any).stopPropagation();
+                      if (
+                        !confirm(
+                          "This will permanently delete the event. Proceed?"
+                        )
+                      )
+                        return;
                       try {
                         await deleteEvent(id);
-                        toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                        toast({
+                          title: "Event deleted",
+                          description: "The event was deleted successfully.",
+                        });
                         setIsDeleted(true);
                         onDelete?.(id);
                       } catch (err: any) {
-                        toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
+                        toast({
+                          title: "Delete failed",
+                          description: err?.message || "Failed to delete event",
+                          variant: "destructive",
+                        });
                       }
                     }}
                     data-testid={`button-delete-event-${id}`}

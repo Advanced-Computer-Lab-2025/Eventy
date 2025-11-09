@@ -1,4 +1,13 @@
-import { Search, Bell, Home, Store, CheckCircle, Clock, XCircle, User } from "lucide-react";
+import {
+  Search,
+  Bell,
+  Home,
+  Store,
+  CheckCircle,
+  Clock,
+  XCircle,
+  User,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
@@ -13,11 +22,11 @@ interface VendorHeaderProps {
   onTabChange?: (tab: string) => void;
 }
 
-export default function VendorHeader({ 
-  onSearch, 
-  hideSearch = false, 
+export default function VendorHeader({
+  onSearch,
+  hideSearch = false,
   activeTab = "upcoming",
-  onTabChange 
+  onTabChange,
 }: VendorHeaderProps) {
   const [, setLocation] = useLocation();
 
@@ -52,7 +61,11 @@ export default function VendorHeader({
           )}
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
@@ -61,9 +74,9 @@ export default function VendorHeader({
         </div>
 
         <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${activeTab === "upcoming" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => handleTabClick("upcoming")}
             data-testid="button-nav-upcoming"
@@ -71,9 +84,9 @@ export default function VendorHeader({
             <Home className="h-4 w-4" />
             Home
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${activeTab === "platform-booths" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => handleTabClick("platform-booths")}
             data-testid="button-nav-platform-booths"
@@ -81,9 +94,9 @@ export default function VendorHeader({
             <Store className="h-4 w-4" />
             Platform Booths
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${activeTab === "participating" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => handleTabClick("participating")}
             data-testid="button-nav-participating"
@@ -91,9 +104,9 @@ export default function VendorHeader({
             <CheckCircle className="h-4 w-4" />
             My Participations
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${activeTab === "pending" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => handleTabClick("pending")}
             data-testid="button-nav-pending"
@@ -101,9 +114,9 @@ export default function VendorHeader({
             <Clock className="h-4 w-4" />
             Pending Requests
           </Button>
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${activeTab === "rejected" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => handleTabClick("rejected")}
             data-testid="button-nav-rejected"

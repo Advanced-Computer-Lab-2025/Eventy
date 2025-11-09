@@ -50,5 +50,4 @@ router.post(
   transactionController.topUpWallet.bind(transactionController)
 );
 
-
 export default router;

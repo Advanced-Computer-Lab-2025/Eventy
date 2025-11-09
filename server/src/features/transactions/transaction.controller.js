@@ -60,9 +60,8 @@ export class TransactionController {
           )} can perform this action.`,
         });
       }
-      const result = await this.transactionService.confirmStripePayment(
-        paymentIntentId
-      );
+      const result =
+        await this.transactionService.confirmStripePayment(paymentIntentId);
       res.status(200).json(result);
     } catch (error) {
       console.error("Stripe confirmation error:", error);

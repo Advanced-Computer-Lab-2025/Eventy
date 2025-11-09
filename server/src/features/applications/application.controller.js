@@ -27,9 +27,8 @@ export class ApplicationController {
         createdBy: vendorId,
       };
 
-      const newApplication = await ApplicationService.createApplication(
-        applicationDetails
-      );
+      const newApplication =
+        await ApplicationService.createApplication(applicationDetails);
 
       res.status(201).json({
         success: true,
@@ -78,9 +77,8 @@ export class ApplicationController {
         createdBy: vendorId,
       };
 
-      const newApplication = await ApplicationService.createApplication(
-        applicationDetails
-      );
+      const newApplication =
+        await ApplicationService.createApplication(applicationDetails);
 
       res.status(201).json({
         success: true,
@@ -88,7 +86,6 @@ export class ApplicationController {
         data: newApplication,
       });
     } catch (error) {
-
       // Handle booth availability errors specifically
       if (
         error.message &&

@@ -1,4 +1,4 @@
-import ApiError from '../utils/ApiError.js';
+import ApiError from "../utils/ApiError.js";
 
 const validateQuery = (schema) => {
   return (req, res, next) => {

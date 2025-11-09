@@ -57,7 +57,7 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["pending", "active", "deleted","blocked"],
+      enum: ["pending", "active", "deleted", "blocked"],
       default: "active",
     },
 
@@ -72,7 +72,7 @@ const userSchema = new mongoose.Schema(
     ],
 
     // ✅ New fields for verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page"
-    isVerified: { type: Boolean, default: true }, // changed this 
+    isVerified: { type: Boolean, default: true }, // changed this
     verificationToken: { type: String },
 
     deletedAt: { type: Date, default: null },

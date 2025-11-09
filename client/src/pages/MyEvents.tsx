@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Heart, Calendar, MapPin, Clock, Store, GraduationCap, Route, Megaphone, Search, Bell, User as UserIcon, Home, Dumbbell } from "lucide-react";
+import {
+  Heart,
+  Calendar,
+  MapPin,
+  Clock,
+  Store,
+  GraduationCap,
+  Route,
+  Megaphone,
+  Search,
+  Bell,
+  User as UserIcon,
+  Home,
+  Dumbbell,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -30,7 +44,9 @@ interface RegisteredEvent {
 
 export default function MyEvents() {
   const [, setLocation] = useLocation();
-  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>([]);
+  const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>(
+    []
+  );
   const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -163,27 +179,27 @@ export default function MyEvents() {
               </div>
             </div>
             <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="gap-2"
                 onClick={() => setLocation("/staff-ta")}
               >
                 <Home className="h-4 w-4" />
                 Home
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="gap-2"
                 onClick={() => setLocation("/my-events")}
               >
                 <Calendar className="h-4 w-4" />
                 My Events
               </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
+              <Button
+                variant="ghost"
+                size="sm"
                 className="gap-2"
                 onClick={() => setLocation("/sports")}
               >
@@ -200,9 +216,7 @@ export default function MyEvents() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">My Events</h1>
-          <p className="text-muted-foreground">
-            Manage your registered events
-          </p>
+          <p className="text-muted-foreground">Manage your registered events</p>
         </div>
 
         <div className="space-y-6">
@@ -222,7 +236,10 @@ export default function MyEvents() {
                   title={event.name}
                   category={event.eventType}
                   date={new Date(event.startDate).toLocaleDateString()}
-                  time={new Date(event.startDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  time={new Date(event.startDate).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
                   location={event.location}
                   attendees={0}
                   image={event.bannerImage}

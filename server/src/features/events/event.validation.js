@@ -273,13 +273,13 @@ export const updateBazaarSchema = Joi.object({
   websiteUrl: Joi.forbidden(),
 });
 
-
 export const getAttendeesReportSchema = Joi.object({
   eventType: Joi.string()
     .valid("conference", "workshop", "bazaar", "trip", "platform_booth")
     .optional()
     .messages({
-      "any.only": "Event type must be one of: conference, workshop, bazaar, trip, or platform_booth",
+      "any.only":
+        "Event type must be one of: conference, workshop, bazaar, trip, or platform_booth",
     }),
 
   startDate: Joi.date().iso().optional().messages({

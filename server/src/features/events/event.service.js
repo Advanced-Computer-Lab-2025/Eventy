@@ -590,13 +590,7 @@ export async function getAllEvents() {
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const {
-    eventType,
-    startDate,
-    endDate,
-    page = 1,
-    limit = 10,
-  } = options;
+  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
   const match = {};
 
@@ -620,8 +614,11 @@ export const getAttendeesReport = async (options = {}) => {
         startDate: 1,
         location: 1,
         attendeesCount: {
-          $ifNull: ["$attendeesCount", { $size: { $ifNull: ["$attendees", []] } }]
-        }
+          $ifNull: [
+            "$attendeesCount",
+            { $size: { $ifNull: ["$attendees", []] } },
+          ],
+        },
       },
     },
 
@@ -672,9 +669,9 @@ export const archiveEvent = async (eventId, user) => {
   const updatedEvent = await Event.findOneAndUpdate(
     {
       _id: eventId,
-      deletedAt: null,                // not deleted
-      status: { $ne: "archived" },    // not already archived
-      endDate: { $lte: now },         // event has ended
+      deletedAt: null, // not deleted
+      status: { $ne: "archived" }, // not already archived
+      endDate: { $lte: now }, // event has ended
     },
     {
       $set: {
@@ -698,11 +695,17 @@ export const archiveEvent = async (eventId, user) => {
     } else if (existingEvent.status === "archived") {
       throw new ApiError(400, "Event is already archived");
     } else if (!existingEvent.endDate) {
-      throw new ApiError(400, "Event does not have an endDate and cannot be archived");
+      throw new ApiError(
+        400,
+        "Event does not have an endDate and cannot be archived"
+      );
     } else if (new Date(existingEvent.endDate) > now) {
       throw new ApiError(400, "Cannot archive an event before its end date");
     } else {
-      throw new ApiError(400, "Event could not be archived due to unknown reason");
+      throw new ApiError(
+        400,
+        "Event could not be archived due to unknown reason"
+      );
     }
   }
 

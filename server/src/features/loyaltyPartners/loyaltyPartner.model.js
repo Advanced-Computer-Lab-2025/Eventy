@@ -1,14 +1,19 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
 const loyaltyPartnerSchema = new mongoose.Schema(
   {
-    vendorId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true, unique: true },
+    vendorId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
     vendorName: { type: String, required: true, trim: true }, // synced from User model if needed
-    
-    status: { 
-      type: String, 
-      enum: ['pending', 'verified', 'rejected', 'cancelled'], 
-      default: 'pending' 
+
+    status: {
+      type: String,
+      enum: ["pending", "verified", "rejected", "cancelled"],
+      default: "pending",
     },
 
     // loyalty program fields
@@ -18,8 +23,7 @@ const loyaltyPartnerSchema = new mongoose.Schema(
     expiryDate: { type: Date },
 
     // soft deletion support
-    deletedAt: { type: Date, default: null }
-    
+    deletedAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -28,4 +32,7 @@ const loyaltyPartnerSchema = new mongoose.Schema(
 loyaltyPartnerSchema.index({ promoCode: 1 }, { unique: true });
 loyaltyPartnerSchema.index({ vendorId: 1 }, { unique: true });
 
-export const LoyaltyPartner = mongoose.model('LoyaltyPartner', loyaltyPartnerSchema);
+export const LoyaltyPartner = mongoose.model(
+  "LoyaltyPartner",
+  loyaltyPartnerSchema
+);

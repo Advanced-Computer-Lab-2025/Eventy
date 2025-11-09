@@ -39,12 +39,18 @@ const eventSchema = new Schema(
         return this.eventType !== "platform_booth";
       },
     },
-    startTime: { type: String, required: function () {
-      return this.eventType !== "platform_booth";
-    }},
-    endTime: { type: String, required: function () {
-      return this.eventType !== "platform_booth";
-    }},
+    startTime: {
+      type: String,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
+    endTime: {
+      type: String,
+      required: function () {
+        return this.eventType !== "platform_booth";
+      },
+    },
 
     status: {
       type: String,
@@ -89,12 +95,12 @@ const eventSchema = new Schema(
     // Timestamp when an event was archived by Events Office (null if not archived)
     archivedAt: { type: Date, default: null },
     // Track which Events Office user archived the event
-    archivedBy: { 
-      type: Schema.Types.ObjectId, 
-      ref: 'User',
-      required: function() { 
-        return this.archivedAt !== null; 
-      }
+    archivedBy: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: function () {
+        return this.archivedAt !== null;
+      },
     },
 
     price: {

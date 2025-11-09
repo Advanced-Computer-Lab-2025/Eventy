@@ -2,12 +2,21 @@ import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 export default function EmailVerified() {
   const [, params] = useRoute("/verify-email/:token");
   const [, setLocation] = useLocation();
-  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "success" | "error">(
+    "loading"
+  );
   const [message, setMessage] = useState("");
 
   useEffect(() => {
@@ -21,14 +30,21 @@ export default function EmailVerified() {
           return;
         }
 
-        console.log("Calling verification endpoint:", `/api/auth/verify-email/${token}`);
-        const response = await fetch(`http://localhost:4000/api/auth/verify-email/${token}`);
+        console.log(
+          "Calling verification endpoint:",
+          `/api/auth/verify-email/${token}`
+        );
+        const response = await fetch(
+          `http://localhost:4000/api/auth/verify-email/${token}`
+        );
         const data = await response.json();
         console.log("Verification response:", response.status, data);
 
         if (response.ok) {
           setStatus("success");
-          setMessage(data.message || "Your email has been verified successfully!");
+          setMessage(
+            data.message || "Your email has been verified successfully!"
+          );
         } else {
           setStatus("error");
           setMessage(data.message || "Verification failed");
@@ -65,30 +81,34 @@ export default function EmailVerified() {
               <XCircle className="h-16 w-16 text-red-500" />
             </div>
           )}
-          
+
           <CardTitle className="text-2xl">
             {status === "loading" && "Verifying Email..."}
             {status === "success" && "Email Verified!"}
             {status === "error" && "Verification Failed"}
           </CardTitle>
           <CardDescription className="mt-2">
-            {status === "loading" && "Please wait while we verify your email address"}
+            {status === "loading" &&
+              "Please wait while we verify your email address"}
             {status === "success" && message}
             {status === "error" && message}
           </CardDescription>
         </CardHeader>
-        
+
         {status !== "loading" && (
           <CardContent className="text-center text-sm text-muted-foreground">
             {status === "success" && (
               <p>You can now log in to your account and access the platform.</p>
             )}
             {status === "error" && (
-              <p>The verification link may be invalid or expired. Please contact your administrator for assistance.</p>
+              <p>
+                The verification link may be invalid or expired. Please contact
+                your administrator for assistance.
+              </p>
             )}
           </CardContent>
         )}
-        
+
         {status !== "loading" && (
           <CardFooter className="flex justify-center">
             <Button onClick={handleGoToLogin} className="w-full">

@@ -51,13 +51,19 @@ const GYM_SESSION_TYPES: Record<string, string> = {
   kick_boxing: "Kick-boxing",
 };
 
-export default function GymScheduleViewer({ userRole, onCreateClick, navigateToDate }: GymScheduleViewerProps) {
+export default function GymScheduleViewer({
+  userRole,
+  onCreateClick,
+  navigateToDate,
+}: GymScheduleViewerProps) {
   const [sessions, setSessions] = useState<GymSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
-  const [selectedSession, setSelectedSession] = useState<GymSession | null>(null);
+  const [selectedSession, setSelectedSession] = useState<GymSession | null>(
+    null
+  );
   const [isCancelling, setIsCancelling] = useState(false);
   const { toast } = useToast();
 
@@ -184,7 +190,8 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
       console.error("Cancel session error:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to cancel session",
+        description:
+          error instanceof Error ? error.message : "Failed to cancel session",
         variant: "destructive",
       });
     } finally {
@@ -194,8 +201,8 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    const day = date.getDate().toString().padStart(2, '0');
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, "0");
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const year = date.getFullYear();
     return `${day}/${month}/${year}`;
   };
@@ -208,7 +215,11 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
   const canCreateSession = userRole === "events_office";
   const canEditSession = userRole === "events_office";
   const canCancelSession = userRole === "events_office";
-  const canRegister = userRole === "student" || userRole === "staff" || userRole === "ta" || userRole === "professor";
+  const canRegister =
+    userRole === "student" ||
+    userRole === "staff" ||
+    userRole === "ta" ||
+    userRole === "professor";
 
   return (
     <div className="space-y-4">
@@ -259,7 +270,9 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                   <TableHead>Instructor</TableHead>
                   <TableHead>Capacity</TableHead>
                   {canRegister && <TableHead>Registration</TableHead>}
-                  {(canEditSession || canCancelSession) && <TableHead>Actions</TableHead>}
+                  {(canEditSession || canCancelSession) && (
+                    <TableHead>Actions</TableHead>
+                  )}
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -276,23 +289,21 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
                       <TableCell>{formatDate(session.date)}</TableCell>
                       <TableCell>{session.startTime}</TableCell>
                       <TableCell>{session.durationMinutes} min</TableCell>
-                      <TableCell>
-                        {session.instructor || "TBA"}
-                      </TableCell>
+                      <TableCell>{session.instructor || "TBA"}</TableCell>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <span className="min-w-[3rem]">
                             {enrolled}/{capacity}
                           </span>
                           {isFull ? (
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
                             >
                               Full
                             </Badge>
                           ) : (
-                            <Badge 
+                            <Badge
                               variant="outline"
                               className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
                             >
@@ -354,22 +365,34 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
       />
 
       {/* Cancel Confirmation Dialog */}
-      <AlertDialog open={isCancelDialogOpen} onOpenChange={setIsCancelDialogOpen}>
+      <AlertDialog
+        open={isCancelDialogOpen}
+        onOpenChange={setIsCancelDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Gym Session</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to cancel this gym session?
-              {selectedSession && selectedSession.attendees && selectedSession.attendees.length > 0 && (
-                <span> {selectedSession.attendees.length} registered participant{selectedSession.attendees.length !== 1 ? 's' : ''} will be notified via email.</span>
-              )}
+              {selectedSession &&
+                selectedSession.attendees &&
+                selectedSession.attendees.length > 0 && (
+                  <span>
+                    {" "}
+                    {selectedSession.attendees.length} registered participant
+                    {selectedSession.attendees.length !== 1 ? "s" : ""} will be
+                    notified via email.
+                  </span>
+                )}
               {selectedSession && (
                 <div className="mt-4 p-3 bg-muted rounded-md">
                   <p className="font-medium text-foreground">
-                    {GYM_SESSION_TYPES[selectedSession.type] || selectedSession.type}
+                    {GYM_SESSION_TYPES[selectedSession.type] ||
+                      selectedSession.type}
                   </p>
                   <p className="text-sm mt-1">
-                    {formatDate(selectedSession.date)} at {selectedSession.startTime}
+                    {formatDate(selectedSession.date)} at{" "}
+                    {selectedSession.startTime}
                   </p>
                   <p className="text-sm">
                     Instructor: {selectedSession.instructor}
@@ -379,7 +402,9 @@ export default function GymScheduleViewer({ userRole, onCreateClick, navigateToD
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isCancelling}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isCancelling}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={(e) => {
                 e.preventDefault();

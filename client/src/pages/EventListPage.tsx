@@ -36,7 +36,7 @@ export default function EventListPage() {
       if (!res.ok) throw new Error("Failed to delete event");
 
       // Remove deleted event from state so UI updates immediately
-      setEvents(prev => prev.filter(e => e._id !== eventId));
+      setEvents((prev) => prev.filter((e) => e._id !== eventId));
       alert("Event deleted successfully ✅");
     } catch (err) {
       alert("Failed to delete event ❌");
@@ -50,7 +50,7 @@ export default function EventListPage() {
 
   return (
     <div className="space-y-4">
-      {events.map(event => (
+      {events.map((event) => (
         <EventListItem
           key={event._id}
           id={event._id}

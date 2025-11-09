@@ -29,19 +29,22 @@ export default function IdUploadButton({
 
   const handleUploadId = async (file: File) => {
     setIsUploading(true);
-    
+
     try {
       const result = await bazaarApiService.uploadIdCard(file);
       onUploadSuccess(index, result.url);
-      
+
       toast({
         title: "ID Uploaded Successfully",
-        description: `ID card for ${attendeeName || 'attendee'} has been uploaded.`,
+        description: `ID card for ${attendeeName || "attendee"} has been uploaded.`,
       });
     } catch (error) {
       toast({
         title: "Upload Failed",
-        description: error instanceof Error ? error.message : "Failed to upload ID card. Please try again.",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to upload ID card. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -60,7 +63,7 @@ export default function IdUploadButton({
     }
     // Reset input so the same file can be selected again
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -119,4 +122,3 @@ export default function IdUploadButton({
     </div>
   );
 }
-

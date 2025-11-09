@@ -37,8 +37,7 @@ export const signUpUser = async (data) => {
     const existingId = await User.findOne({
       studentStaffId: data.studentStaffId,
     });
-    if (existingId)
-      throw new Error("This ID is already registered.");
+    if (existingId) throw new Error("This ID is already registered.");
   } else if (normalizedRole === "vendor") {
     const existingCompany = await User.findOne({
       companyName: data.companyName,
@@ -57,16 +56,16 @@ export const signUpUser = async (data) => {
   }
 
   // ✅ Step 6: Build user data
-const isAcademic = ["staff", "ta", "professor"].includes(normalizedRole);
+  const isAcademic = ["staff", "ta", "professor"].includes(normalizedRole);
 
-const userData = {
-  ...data,
-  password: hashedPassword,
-  status,
-  isVerified: isAcademic ? false : true,
-  roleVerifiedByAdmin: false,
-  role: isAcademic ? null : normalizedRole,
-};
+  const userData = {
+    ...data,
+    password: hashedPassword,
+    status,
+    isVerified: isAcademic ? false : true,
+    roleVerifiedByAdmin: false,
+    role: isAcademic ? null : normalizedRole,
+  };
 
   // ✅ Step 7: Create and save user
   const user = new User(userData);
@@ -137,9 +136,11 @@ export const loginUser = async (data) => {
   if (
     user.role !== "vendor" &&
     !(
-//      normalizedEmail.endsWith("@gmail.com") ||
-      normalizedEmail.endsWith("@guc.edu.eg") ||
-      normalizedEmail.endsWith("@student.guc.edu.eg")
+      //      normalizedEmail.endsWith("@gmail.com") ||
+      (
+        normalizedEmail.endsWith("@guc.edu.eg") ||
+        normalizedEmail.endsWith("@student.guc.edu.eg")
+      )
     )
   ) {
     throw new Error("Please use your GUC email to log in.");

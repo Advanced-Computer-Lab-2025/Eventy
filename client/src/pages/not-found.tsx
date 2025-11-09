@@ -22,7 +22,7 @@ export default function NotFound() {
                 fill="none"
                 xmlns="http://www.w3.org/2000/svg"
                 className="animate-float"
-                style={{ overflow: 'visible' }}
+                style={{ overflow: "visible" }}
               >
                 {/* Balloon String */}
                 <path
@@ -32,7 +32,7 @@ export default function NotFound() {
                   fill="none"
                   className="animate-sway"
                 />
-                
+
                 {/* Purple Balloon */}
                 <g className="animate-balloon-float">
                   <ellipse
@@ -66,7 +66,7 @@ export default function NotFound() {
                   fill="hsl(var(--muted-foreground))"
                   opacity="0.8"
                 />
-                
+
                 {/* Boy's Body */}
                 <rect
                   x="80"
@@ -77,7 +77,7 @@ export default function NotFound() {
                   fill="hsl(var(--primary))"
                   opacity="0.7"
                 />
-                
+
                 {/* Boy's Legs */}
                 <rect
                   x="82"
@@ -97,7 +97,7 @@ export default function NotFound() {
                   fill="hsl(var(--muted-foreground))"
                   opacity="0.7"
                 />
-                
+
                 {/* Boy's Arms */}
                 {/* Left arm holding balloon */}
                 <g className="animate-hold-balloon">
@@ -138,7 +138,9 @@ export default function NotFound() {
             {/* 404 Text */}
             <div className="text-center mb-6">
               <h1 className="text-6xl font-bold text-primary mb-2">404</h1>
-              <h2 className="text-2xl font-semibold mb-3">Oops! You seem lost</h2>
+              <h2 className="text-2xl font-semibold mb-3">
+                Oops! You seem lost
+              </h2>
               <p className="text-muted-foreground">
                 The page you're looking for doesn't exist or has been moved.
                 Let's get you back on track!
@@ -155,10 +157,7 @@ export default function NotFound() {
                 <ArrowLeft className="mr-2 h-4 w-4" />
                 Go Back
               </Button>
-              <Button
-                onClick={() => setLocation("/")}
-                className="flex-1"
-              >
+              <Button onClick={() => setLocation("/")} className="flex-1">
                 <Home className="mr-2 h-4 w-4" />
                 Go Home
               </Button>

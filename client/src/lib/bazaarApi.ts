@@ -1,6 +1,6 @@
 // API service for bazaars
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
-
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 export interface Bazaar {
   _id: string;
@@ -62,12 +62,15 @@ class BazaarApiService {
       if (type) {
         params.append("type", type);
       }
-      
-      const response = await fetch(`${API_BASE_URL}/api/events?${params.toString()}`, {
-        method: "GET",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/events?${params.toString()}`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -94,10 +97,12 @@ class BazaarApiService {
       }
 
       const apiResponse: ApiResponse<Bazaar[]> = await response.json();
-      
+
       // Filter only bazaars from the response
-      const bazaars = apiResponse.data.filter(event => event.eventType === "bazaar");
-      
+      const bazaars = apiResponse.data.filter(
+        (event) => event.eventType === "bazaar"
+      );
+
       return bazaars;
     } catch (error) {
       console.error("Error fetching upcoming bazaars:", error);
@@ -111,12 +116,15 @@ class BazaarApiService {
       if (status) {
         params.append("status", status);
       }
-      
-      const response = await fetch(`${API_BASE_URL}/api/events/search?type=bazaar${status ? `&status=${status}` : ''}`, {
-        method: "GET",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/events/search?type=bazaar${status ? `&status=${status}` : ""}`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -132,11 +140,14 @@ class BazaarApiService {
 
   async searchBazaars(query: string): Promise<Bazaar[]> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/events/search?name=${encodeURIComponent(query)}&type=bazaar`, {
-        method: "GET",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/events/search?name=${encodeURIComponent(query)}&type=bazaar`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -153,8 +164,12 @@ class BazaarApiService {
   async registerForBazaar(bazaarId: string): Promise<void> {
     try {
       // This method is deprecated - use applyToBazaar instead
-      console.warn("registerForBazaar is deprecated. Use applyToBazaar with proper application data.");
-      throw new Error("Please use the vendor application form instead of direct registration.");
+      console.warn(
+        "registerForBazaar is deprecated. Use applyToBazaar with proper application data."
+      );
+      throw new Error(
+        "Please use the vendor application form instead of direct registration."
+      );
     } catch (error) {
       console.error("Error registering for bazaar:", error);
       throw error;
@@ -167,12 +182,15 @@ class BazaarApiService {
       if (status) {
         params.append("status", status);
       }
-      
-      const response = await fetch(`${API_BASE_URL}/api/applications/me?${params.toString()}`, {
-        method: "GET",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/applications/me?${params.toString()}`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
@@ -198,21 +216,29 @@ class BazaarApiService {
     return this.getApplicationsByStatus("approved");
   }
 
-  async applyToBazaar(bazaarId: string, applicationData: {
-    attendees: Array<{ name: string; email: string; individualID?: string }>;
-    boothSize: "2x2" | "4x4";
-  }): Promise<Application> {
+  async applyToBazaar(
+    bazaarId: string,
+    applicationData: {
+      attendees: Array<{ name: string; email: string; individualID?: string }>;
+      boothSize: "2x2" | "4x4";
+    }
+  ): Promise<Application> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/applications/bazaars/${bazaarId}/apply`, {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-        body: JSON.stringify(applicationData),
-      });      
+      const response = await fetch(
+        `${API_BASE_URL}/api/applications/bazaars/${bazaarId}/apply`,
+        {
+          method: "POST",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+          body: JSON.stringify(applicationData),
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
       }
 
       const apiResponse: ApiResponse<Application> = await response.json();
@@ -223,27 +249,34 @@ class BazaarApiService {
     }
   }
 
-  async applyToBooth(boothId: string, applicationData: {
-    attendees: Array<{ name: string; email: string; individualID?: string }>;
-    boothSize: "2x2" | "4x4";
-    durationWeeks: number;
-    locationPreference: string;
-  }): Promise<Application> {
+  async applyToBooth(
+    boothId: string,
+    applicationData: {
+      attendees: Array<{ name: string; email: string; individualID?: string }>;
+      boothSize: "2x2" | "4x4";
+      durationWeeks: number;
+      locationPreference: string;
+    }
+  ): Promise<Application> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/applications/booths/apply`, {
-        method: "POST",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-        body: JSON.stringify(applicationData),
-      });      
+      const response = await fetch(
+        `${API_BASE_URL}/api/applications/booths/apply`,
+        {
+          method: "POST",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+          body: JSON.stringify(applicationData),
+        }
+      );
 
       if (!response.ok) {
         // Get the error message from the response
         const errorResponse = await response.json();
-        
+
         // Use the message directly from the server
-        const errorMessage = errorResponse.message || `HTTP error! status: ${response.status}`;
-        
+        const errorMessage =
+          errorResponse.message || `HTTP error! status: ${response.status}`;
+
         throw new Error(errorMessage);
       }
 
@@ -272,28 +305,35 @@ class BazaarApiService {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`
+        );
       }
 
-      const apiResponse: ApiResponse<{ url: string; filename: string }> = await response.json();
+      const apiResponse: ApiResponse<{ url: string; filename: string }> =
+        await response.json();
       return apiResponse.data;
     } catch (error) {
       console.error("Error uploading ID card:", error);
       throw error;
     }
   }
-  
+
   async cancelApplication(applicationId: string): Promise<Application> {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/cancel`, {
-        method: "DELETE",
-        headers: this.getAuthHeaders(),
-        credentials: "include",
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/applications/${applicationId}/cancel`,
+        {
+          method: "DELETE",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
 
       if (!response.ok) {
         const errorResponse = await response.json();
-        const errorMessage = errorResponse.message || `HTTP error! status: ${response.status}`;
+        const errorMessage =
+          errorResponse.message || `HTTP error! status: ${response.status}`;
         throw new Error(errorMessage);
       }
 

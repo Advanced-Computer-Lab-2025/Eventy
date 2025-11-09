@@ -41,6 +41,9 @@ export default [
       "**/.git/**",
       "**/src/config/firebaseServiceAccount.json",
       "**/server/config/firebaseServiceAccount.json",
+      "**/test_validation.js",
+      "**/server/src/seed.js",
+      "**/emailtest.js",
     ],
   },
 
@@ -102,6 +105,15 @@ export default [
     },
   },
 
+  // Config files - allow require()
+  {
+    files: ["**/*.config.{js,ts}", "**/tailwind.config.{js,ts}"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "no-undef": "off",
+    },
+  },
+
   // TypeScript and TSX files
   {
     files: ["**/*.{ts,tsx}"],
@@ -150,12 +162,14 @@ export default [
       ],
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-module-boundary-types": "off",
+      "@typescript-eslint/no-require-imports": "warn",
       "no-console": [
         "warn",
         {
           allow: ["warn", "error"],
         },
       ],
+      "no-undef": "warn",
       ...reactHooks.configs.recommended.rules,
     },
     settings: {

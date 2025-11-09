@@ -58,5 +58,4 @@ const transactionSchema = new mongoose.Schema(
 //i need to allow updates to transactions in case of payment failures or refunds
 //i need to be able to update the status of a transaction from 'pending' to 'completed' or 'failed'
 
-
 export const Transaction = mongoose.model("Transaction", transactionSchema);

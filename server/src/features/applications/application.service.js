@@ -199,9 +199,8 @@ class ApplicationServiceClass {
     }
 
     // Find the application first
-    const application = await Application.findById(objectId).populate(
-      "createdBy"
-    );
+    const application =
+      await Application.findById(objectId).populate("createdBy");
     if (!application) throw new Error("Application not found");
     if (application.status === "cancelled") {
       throw new Error("Application has already been cancelled");
@@ -267,9 +266,16 @@ class ApplicationServiceClass {
       });
 
     // Send email notification to vendor if application status is approved or rejected
-    if (populatedApp && populatedApp.createdBy && (status === "approved" || status === "rejected")) {
+    if (
+      populatedApp &&
+      populatedApp.createdBy &&
+      (status === "approved" || status === "rejected")
+    ) {
       try {
-        await sendVendorApplicationStatusEmail(populatedApp.createdBy, populatedApp);
+        await sendVendorApplicationStatusEmail(
+          populatedApp.createdBy,
+          populatedApp
+        );
       } catch (error) {
         // Log error but don't fail the status update if email fails
         console.error("Failed to send application status email:", error);

@@ -1,5 +1,18 @@
 import { useState, useEffect } from "react";
-import { Store, Calendar, CheckCircle, Clock, XCircle, Plus, Trash2, MapPin, FolderOpen, AlertCircle, Users, Target } from "lucide-react";
+import {
+  Store,
+  Calendar,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Plus,
+  Trash2,
+  MapPin,
+  FolderOpen,
+  AlertCircle,
+  Users,
+  Target,
+} from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,7 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -37,36 +56,51 @@ export default function VendorDashboard() {
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
-  const [pendingApplications, setPendingApplications] = useState<Application[]>([]);
-  const [rejectedApplications, setRejectedApplications] = useState<Application[]>([]);
-  const [approvedApplications, setApprovedApplications] = useState<Application[]>([]);
+  const [pendingApplications, setPendingApplications] = useState<Application[]>(
+    []
+  );
+  const [rejectedApplications, setRejectedApplications] = useState<
+    Application[]
+  >([]);
+  const [approvedApplications, setApprovedApplications] = useState<
+    Application[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
-  
+
   // Platform booth form state
-  const [platformBoothAttendees, setPlatformBoothAttendees] = useState<Attendee[]>([
-    { name: "", email: "" }
-  ]);
+  const [platformBoothAttendees, setPlatformBoothAttendees] = useState<
+    Attendee[]
+  >([{ name: "", email: "" }]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [durationWeeks, setDurationWeeks] = useState<number>(1);
   const [locationPreference, setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
-  const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] = useState(false);
-  
+  const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
+    useState(false);
+
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
-  const [selectedBooth, setSelectedBooth] = useState<{id: string, number: number | string} | null>(null);
-  
+  const [selectedBooth, setSelectedBooth] = useState<{
+    id: string;
+    number: number | string;
+  } | null>(null);
+
   // Cancel confirmation dialog state
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
-  const [applicationToCancel, setApplicationToCancel] = useState<string | null>(null);
-  
+  const [applicationToCancel, setApplicationToCancel] = useState<string | null>(
+    null
+  );
+
   const { toast } = useToast();
 
   // Handle booth application
-  const handleBoothApplication = (boothId: string, boothNumber: number | string) => {
+  const handleBoothApplication = (
+    boothId: string,
+    boothNumber: number | string
+  ) => {
     setSelectedBooth({ id: boothId, number: boothNumber });
     setBoothApplicationOpen(true);
   };
@@ -74,9 +108,15 @@ export default function VendorDashboard() {
   // Get current tab from URL hash or default to 'upcoming'
   const getCurrentTab = () => {
     const hash = window.location.hash;
-    const validTabs = ['upcoming', 'platform-booths', 'participating', 'pending', 'rejected'];
-    const tabFromHash = hash.replace('#', '');
-    return validTabs.includes(tabFromHash) ? tabFromHash : 'upcoming';
+    const validTabs = [
+      "upcoming",
+      "platform-booths",
+      "participating",
+      "pending",
+      "rejected",
+    ];
+    const tabFromHash = hash.replace("#", "");
+    return validTabs.includes(tabFromHash) ? tabFromHash : "upcoming";
   };
 
   const [activeTab, setActiveTab] = useState(getCurrentTab);
@@ -95,33 +135,52 @@ export default function VendorDashboard() {
   // Filter data based on search term
   const getFilteredData = (data: any[], searchFields: string[]) => {
     if (!searchTerm) return data;
-    
-    return data.filter(item =>
-      searchFields.some(field => {
+
+    return data.filter((item) =>
+      searchFields.some((field) => {
         const value = item[field];
-        return value && value.toString().toLowerCase().includes(searchTerm.toLowerCase());
+        return (
+          value &&
+          value.toString().toLowerCase().includes(searchTerm.toLowerCase())
+        );
       })
     );
   };
 
   // Get filtered data for each tab
-  const filteredUpcomingBazaars = getFilteredData(upcomingBazaars, ['name', 'description', 'location']);
-  const filteredPendingApplications = getFilteredData(pendingApplications, ['event.name', 'type']);
-  const filteredRejectedApplications = getFilteredData(rejectedApplications, ['event.name', 'type']);
-  const filteredApprovedApplications = getFilteredData(approvedApplications, ['event.name', 'type']);
+  const filteredUpcomingBazaars = getFilteredData(upcomingBazaars, [
+    "name",
+    "description",
+    "location",
+  ]);
+  const filteredPendingApplications = getFilteredData(pendingApplications, [
+    "event.name",
+    "type",
+  ]);
+  const filteredRejectedApplications = getFilteredData(rejectedApplications, [
+    "event.name",
+    "type",
+  ]);
+  const filteredApprovedApplications = getFilteredData(approvedApplications, [
+    "event.name",
+    "type",
+  ]);
 
   // Calculate vendor statistics
   const getVendorStats = () => {
-    const totalApplications = pendingApplications.length + rejectedApplications.length + approvedApplications.length;
+    const totalApplications =
+      pendingApplications.length +
+      rejectedApplications.length +
+      approvedApplications.length;
     const pendingCount = pendingApplications.length;
     const approvedCount = approvedApplications.length;
     const rejectedCount = rejectedApplications.length;
-    
+
     return {
       totalApplications,
       pendingCount,
       approvedCount,
-      rejectedCount
+      rejectedCount,
     };
   };
 
@@ -146,7 +205,8 @@ export default function VendorDashboard() {
       const bazaars = await bazaarApiService.getEvents("bazaar");
       setUpcomingBazaars(bazaars);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch bazaars";
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to fetch bazaars";
       setError(errorMessage);
       toast({
         title: "Error",
@@ -162,29 +222,30 @@ export default function VendorDashboard() {
   const fetchApplicationsData = async () => {
     try {
       console.log("=== Starting application fetch ===");
-      
+
       console.log("Fetching applications by status...");
       const [pending, rejected, approved] = await Promise.all([
         bazaarApiService.getPendingApplications(),
         bazaarApiService.getRejectedApplications(),
         bazaarApiService.getApprovedApplications(),
       ]);
-      
+
       console.log("Pending applications:", pending);
       console.log("Rejected applications:", rejected);
       console.log("Approved applications:", approved);
-      
-      const totalApplications = pending.length + rejected.length + approved.length;
+
+      const totalApplications =
+        pending.length + rejected.length + approved.length;
       console.log("Total applications found:", totalApplications);
-      
+
       if (totalApplications === 0) {
         console.log("No applications found in database for this user");
       }
-      
+
       setPendingApplications(pending);
       setRejectedApplications(rejected);
       setApprovedApplications(approved);
-      
+
       console.log("=== Application fetch completed ===");
     } catch (err) {
       console.error("Error fetching applications:", err);
@@ -208,8 +269,8 @@ export default function VendorDashboard() {
       setActiveTab(getCurrentTab());
     };
 
-    window.addEventListener('hashchange', handleHashChange);
-    return () => window.removeEventListener('hashchange', handleHashChange);
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
   }, []);
 
   const handleRegister = (bazaarId: string) => {
@@ -219,11 +280,11 @@ export default function VendorDashboard() {
       ...pendingApplications,
       ...approvedApplications,
     ];
-    
+
     const existingApplication = activeApplications.find(
       (app) => app.type === "bazaar" && app.event?._id === bazaarId
     );
-    
+
     if (existingApplication) {
       toast({
         title: "Already Applied",
@@ -232,8 +293,8 @@ export default function VendorDashboard() {
       });
       return;
     }
-    
-    const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
+
+    const bazaar = upcomingBazaars.find((b) => b._id === bazaarId);
     if (bazaar) {
       setSelectedBazaar(bazaar);
       setShowApplyDialog(true);
@@ -265,7 +326,8 @@ export default function VendorDashboard() {
       setCancelDialogOpen(false);
       setApplicationToCancel(null);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Failed to cancel application";
+      const errorMessage =
+        error instanceof Error ? error.message : "Failed to cancel application";
       toast({
         title: "Cancellation Failed",
         description: errorMessage,
@@ -274,21 +336,29 @@ export default function VendorDashboard() {
     }
   };
 
-
   // Platform booth form helpers
   const addPlatformBoothAttendee = () => {
     if (platformBoothAttendees.length < 5) {
-      setPlatformBoothAttendees([...platformBoothAttendees, { name: "", email: "" }]);
+      setPlatformBoothAttendees([
+        ...platformBoothAttendees,
+        { name: "", email: "" },
+      ]);
     }
   };
 
   const removePlatformBoothAttendee = (index: number) => {
     if (platformBoothAttendees.length > 1) {
-      setPlatformBoothAttendees(platformBoothAttendees.filter((_, i) => i !== index));
+      setPlatformBoothAttendees(
+        platformBoothAttendees.filter((_, i) => i !== index)
+      );
     }
   };
 
-  const updatePlatformBoothAttendee = (index: number, field: keyof Attendee, value: string) => {
+  const updatePlatformBoothAttendee = (
+    index: number,
+    field: keyof Attendee,
+    value: string
+  ) => {
     const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
       i === index ? { ...attendee, [field]: value } : attendee
     );
@@ -303,10 +373,10 @@ export default function VendorDashboard() {
   };
 
   const validatePlatformBoothForm = () => {
-    const validAttendees = platformBoothAttendees.filter(attendee => 
-      attendee.name.trim() && attendee.email.trim()
+    const validAttendees = platformBoothAttendees.filter(
+      (attendee) => attendee.name.trim() && attendee.email.trim()
     );
-    
+
     if (validAttendees.length === 0) {
       toast({
         title: "Validation Error",
@@ -321,26 +391,30 @@ export default function VendorDashboard() {
       if (!emailRegex.test(attendee.email)) {
         toast({
           title: "Validation Error",
-          description: `Invalid email format for ${attendee.name || 'attendee'}.`,
+          description: `Invalid email format for ${attendee.name || "attendee"}.`,
           variant: "destructive",
         });
         return false;
       }
     }
-    
+
     // Check for missing IDs and collect all attendees without IDs
     // Check all attendees that have at least a name (so we can display them)
-    const attendeesToCheck = platformBoothAttendees.filter(attendee => attendee.name && attendee.name.trim());
-    const attendeesWithoutID = attendeesToCheck.filter(attendee => !attendee.individualID);
-    
+    const attendeesToCheck = platformBoothAttendees.filter(
+      (attendee) => attendee.name && attendee.name.trim()
+    );
+    const attendeesWithoutID = attendeesToCheck.filter(
+      (attendee) => !attendee.individualID
+    );
+
     if (attendeesWithoutID.length > 0) {
       const firstNames = attendeesWithoutID
-        .map(attendee => {
+        .map((attendee) => {
           const trimmedName = attendee.name.trim();
-          return trimmedName.split(' ')[0]; // Get first name only
+          return trimmedName.split(" ")[0]; // Get first name only
         })
-        .filter(name => name.length > 0);
-      
+        .filter((name) => name.length > 0);
+
       if (firstNames.length > 0) {
         let namesList: string;
         if (firstNames.length === 1) {
@@ -348,9 +422,9 @@ export default function VendorDashboard() {
         } else if (firstNames.length === 2) {
           namesList = `${firstNames[0]} and ${firstNames[1]}`;
         } else {
-          namesList = `${firstNames.slice(0, -1).join(', ')}, and ${firstNames[firstNames.length - 1]}`;
+          namesList = `${firstNames.slice(0, -1).join(", ")}, and ${firstNames[firstNames.length - 1]}`;
         }
-        
+
         toast({
           title: "Validation Error",
           description: `Please upload an ID card for ${namesList}.`,
@@ -365,16 +439,16 @@ export default function VendorDashboard() {
 
   const handlePlatformBoothSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validatePlatformBoothForm()) {
       return;
     }
 
     setIsSubmittingPlatformBooth(true);
-    
+
     try {
-      const validAttendees = platformBoothAttendees.filter(attendee => 
-        attendee.name.trim() && attendee.email.trim()
+      const validAttendees = platformBoothAttendees.filter(
+        (attendee) => attendee.name.trim() && attendee.email.trim()
       );
 
       // This will be called from BoothApplicationDialog, so we don't submit here
@@ -383,7 +457,7 @@ export default function VendorDashboard() {
         attendees: validAttendees,
         boothSize,
         durationWeeks,
-        selectedMapLocation
+        selectedMapLocation,
       });
     } catch (error) {
       console.error("Error submitting platform booth application:", error);
@@ -422,12 +496,12 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <VendorHeader 
+      <VendorHeader
         activeTab={activeTab}
         onTabChange={handleTabChange}
         onSearch={handleSearch}
       />
-      
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -435,12 +509,16 @@ export default function VendorDashboard() {
             <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
           </div>
           <p className="text-muted-foreground">
-            Welcome, {companyName}! Manage your bazaar applications and platform booth requests.
+            Welcome, {companyName}! Manage your bazaar applications and platform
+            booth requests.
           </p>
         </div>
 
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-
+        <Tabs
+          value={activeTab}
+          onValueChange={handleTabChange}
+          className="space-y-6"
+        >
           <TabsContent value="upcoming" className="space-y-4">
             {/* Statistics Cards */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
@@ -486,15 +564,18 @@ export default function VendorDashboard() {
               <div className="flex items-center justify-between">
                 <h2 className="text-2xl font-semibold">Upcoming Bazaars</h2>
                 <p className="text-sm text-muted-foreground">
-                  {filteredUpcomingBazaars.length} bazaar{filteredUpcomingBazaars.length !== 1 ? 's' : ''} found
+                  {filteredUpcomingBazaars.length} bazaar
+                  {filteredUpcomingBazaars.length !== 1 ? "s" : ""} found
                 </p>
               </div>
             </div>
-            
+
             {loading ? (
               <div className="text-center py-12">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-                <p className="text-muted-foreground">Loading upcoming bazaars...</p>
+                <p className="text-muted-foreground">
+                  Loading upcoming bazaars...
+                </p>
               </div>
             ) : error ? (
               <div className="text-center py-12">
@@ -522,15 +603,21 @@ export default function VendorDashboard() {
                   Apply for Platform Booth
                 </CardTitle>
                 <p className="text-muted-foreground">
-                  Fill in the details to apply for a platform booth. You can register up to 5 individuals.
+                  Fill in the details to apply for a platform booth. You can
+                  register up to 5 individuals.
                 </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handlePlatformBoothSubmit} className="space-y-6">
+                <form
+                  onSubmit={handlePlatformBoothSubmit}
+                  className="space-y-6"
+                >
                   {/* Attendees Section */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <Label className="text-base font-semibold">Attendees ({platformBoothAttendees.length}/5)</Label>
+                      <Label className="text-base font-semibold">
+                        Attendees ({platformBoothAttendees.length}/5)
+                      </Label>
                       <Button
                         type="button"
                         variant="outline"
@@ -543,7 +630,7 @@ export default function VendorDashboard() {
                         Add Attendee
                       </Button>
                     </div>
-                    
+
                     <div className="space-y-3">
                       {platformBoothAttendees.map((attendee, index) => (
                         <Card key={index}>
@@ -557,40 +644,60 @@ export default function VendorDashboard() {
                                   type="button"
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => removePlatformBoothAttendee(index)}
+                                  onClick={() =>
+                                    removePlatformBoothAttendee(index)
+                                  }
                                   className="text-red-600 hover:text-red-700"
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               )}
                             </div>
-                            
+
                             <div className="flex flex-col md:flex-row gap-3 items-end">
                               <div className="space-y-2 flex-1">
-                                <Label htmlFor={`platform-name-${index}`}>Name</Label>
+                                <Label htmlFor={`platform-name-${index}`}>
+                                  Name
+                                </Label>
                                 <Input
                                   id={`platform-name-${index}`}
                                   placeholder="Full name"
                                   value={attendee.name}
-                                  onChange={(e) => updatePlatformBoothAttendee(index, "name", e.target.value)}
+                                  onChange={(e) =>
+                                    updatePlatformBoothAttendee(
+                                      index,
+                                      "name",
+                                      e.target.value
+                                    )
+                                  }
                                   required={index === 0}
                                   className="w-full"
                                 />
                               </div>
                               <div className="space-y-2 flex-1">
-                                <Label htmlFor={`platform-email-${index}`}>Email</Label>
+                                <Label htmlFor={`platform-email-${index}`}>
+                                  Email
+                                </Label>
                                 <Input
                                   id={`platform-email-${index}`}
                                   type="email"
                                   placeholder="email@example.com"
                                   value={attendee.email}
-                                  onChange={(e) => updatePlatformBoothAttendee(index, "email", e.target.value)}
+                                  onChange={(e) =>
+                                    updatePlatformBoothAttendee(
+                                      index,
+                                      "email",
+                                      e.target.value
+                                    )
+                                  }
                                   required={index === 0}
                                   className="w-full"
                                 />
                               </div>
                               <div className="space-y-2 flex-shrink-0">
-                                <Label className="opacity-0 pointer-events-none">Upload</Label>
+                                <Label className="opacity-0 pointer-events-none">
+                                  Upload
+                                </Label>
                                 <IdUploadButton
                                   index={index}
                                   attendeeName={attendee.name}
@@ -609,11 +716,22 @@ export default function VendorDashboard() {
                   {/* Booth Size and Duration Section */}
                   <div className="flex flex-col md:flex-row gap-3 items-end">
                     <div className="space-y-2 flex-1 max-w-[calc(50%-57px)]">
-                      <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
+                      <Label
+                        htmlFor="platform-boothSize"
+                        className="text-base font-semibold"
+                      >
+                        Booth Size
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        Choose the size of your booth space. Larger booths may have additional fees.
+                        Choose the size of your booth space. Larger booths may
+                        have additional fees.
                       </p>
-                      <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
+                      <Select
+                        value={boothSize}
+                        onValueChange={(value: "2x2" | "4x4") =>
+                          setBoothSize(value)
+                        }
+                      >
                         <SelectTrigger id="platform-boothSize">
                           <SelectValue placeholder="Select booth size" />
                         </SelectTrigger>
@@ -625,11 +743,22 @@ export default function VendorDashboard() {
                     </div>
 
                     <div className="space-y-2 flex-1">
-                      <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
+                      <Label
+                        htmlFor="platform-duration"
+                        className="text-base font-semibold"
+                      >
+                        Duration
+                      </Label>
                       <p className="text-sm text-muted-foreground">
-                        Select how long you want to set up your booth (1-4 weeks).
+                        Select how long you want to set up your booth (1-4
+                        weeks).
                       </p>
-                      <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
+                      <Select
+                        value={durationWeeks.toString()}
+                        onValueChange={(value) =>
+                          setDurationWeeks(parseInt(value))
+                        }
+                      >
                         <SelectTrigger id="platform-duration">
                           <SelectValue placeholder="Select duration" />
                         </SelectTrigger>
@@ -643,11 +772,12 @@ export default function VendorDashboard() {
                     </div>
                   </div>
 
-
                   {/* Dummy Map Section */}
                   <div className="space-y-2">
-                    <Label className="text-base font-semibold">Platform Map - Select Preferred Location</Label>
-                    <PlatformMap 
+                    <Label className="text-base font-semibold">
+                      Platform Map - Select Preferred Location
+                    </Label>
+                    <PlatformMap
                       selectedLocation={selectedMapLocation}
                       onLocationSelect={setSelectedMapLocation}
                       attendees={platformBoothAttendees}
@@ -655,7 +785,6 @@ export default function VendorDashboard() {
                       onBoothApplication={handleBoothApplication}
                     />
                   </div>
-
                 </form>
               </CardContent>
             </Card>
@@ -666,64 +795,80 @@ export default function VendorDashboard() {
               {filteredApprovedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <CheckCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No approved applications yet</p>
+                  <p className="text-muted-foreground">
+                    No approved applications yet
+                  </p>
                 </div>
               ) : (
                 filteredApprovedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-participation-${application._id}`} className="flex flex-col">
+                  <Card
+                    key={application._id}
+                    data-testid={`card-participation-${application._id}`}
+                    className="flex flex-col"
+                  >
                     <CardHeader className="pb-4 min-h-[5rem]">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
-                          {application.type === 'bazaar' 
-                            ? (application.event?.name || 'Unknown Bazaar')
-                            : 'Platform Booth Application'
-                          }
+                          {application.type === "bazaar"
+                            ? application.event?.name || "Unknown Bazaar"
+                            : "Platform Booth Application"}
                         </CardTitle>
                         <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
-                            {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
+                            {application.type === "bazaar" ? "Bazaar" : "Booth"}
                           </Badge>
-                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 w-fit min-w-[4.5rem]">Approved</Badge>
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 w-fit min-w-[4.5rem]">
+                            Approved
+                          </Badge>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 text-sm">
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
-                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
+                            {new Date(
+                              application.event.startDate
+                            ).toLocaleDateString("en-GB")}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Store className="h-4 w-4 flex-shrink-0" />
+                          <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
-                        {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
-                          </div>
-                        )}
-                        {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Target className="h-4 w-4 flex-shrink-0" />
-                            Preferred Location: {application.locationPreference}
-                          </div>
-                        )}
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "booth" &&
+                          application.durationWeeks && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              Duration: {application.durationWeeks} week
+                              {application.durationWeeks > 1 ? "s" : ""}
+                            </div>
+                          )}
+                        {application.type === "booth" &&
+                          application.locationPreference && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Target className="h-4 w-4 flex-shrink-0" />
+                              Preferred Location:{" "}
+                              {application.locationPreference}
+                            </div>
+                          )}
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees?.length || '0'} attendee
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                          {application.attendees?.length || "0"} attendee
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
-                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
+                          Applied:{" "}
+                          {new Date(application.createdAt).toLocaleDateString(
+                            "en-GB"
+                          )}
                         </div>
                       </div>
                     </CardContent>
@@ -738,68 +883,84 @@ export default function VendorDashboard() {
               {filteredPendingApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No pending applications</p>
+                  <p className="text-muted-foreground">
+                    No pending applications
+                  </p>
                 </div>
               ) : (
                 filteredPendingApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-request-${application._id}`} className="flex flex-col">
+                  <Card
+                    key={application._id}
+                    data-testid={`card-request-${application._id}`}
+                    className="flex flex-col"
+                  >
                     <CardHeader className="pb-4 min-h-[5rem]">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
-                          {application.type === 'bazaar' 
-                            ? (application.event?.name || 'Unknown Bazaar')
-                            : 'Platform Booth Application'
-                          }
+                          {application.type === "bazaar"
+                            ? application.event?.name || "Unknown Bazaar"
+                            : "Platform Booth Application"}
                         </CardTitle>
                         <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
-                            {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
+                            {application.type === "bazaar" ? "Bazaar" : "Booth"}
                           </Badge>
-                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 w-fit min-w-[4.5rem]">Pending</Badge>
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 w-fit min-w-[4.5rem]">
+                            Pending
+                          </Badge>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent className="flex flex-col flex-grow">
                       <div className="space-y-2 text-sm mb-4 flex-grow">
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
-                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
+                            {new Date(
+                              application.event.startDate
+                            ).toLocaleDateString("en-GB")}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Store className="h-4 w-4 flex-shrink-0" />
+                          <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
-                        {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
-                          </div>
-                        )}
-                        {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Target className="h-4 w-4 flex-shrink-0" />
-                            Preferred Location: {application.locationPreference}
-                          </div>
-                        )}
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "booth" &&
+                          application.durationWeeks && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              Duration: {application.durationWeeks} week
+                              {application.durationWeeks > 1 ? "s" : ""}
+                            </div>
+                          )}
+                        {application.type === "booth" &&
+                          application.locationPreference && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Target className="h-4 w-4 flex-shrink-0" />
+                              Preferred Location:{" "}
+                              {application.locationPreference}
+                            </div>
+                          )}
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees?.length || '0'}
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                          {application.attendees?.length || "0"}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
-                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
+                          Applied:{" "}
+                          {new Date(application.createdAt).toLocaleDateString(
+                            "en-GB"
+                          )}
                         </div>
                       </div>
-                      <Button 
-                        variant="destructive" 
+                      <Button
+                        variant="destructive"
                         className="w-full mt-auto"
                         onClick={() => handleCancelClick(application._id)}
                         data-testid={`button-cancel-${application._id}`}
@@ -818,68 +979,84 @@ export default function VendorDashboard() {
               {filteredRejectedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
                   <XCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">No rejected applications</p>
+                  <p className="text-muted-foreground">
+                    No rejected applications
+                  </p>
                 </div>
               ) : (
                 filteredRejectedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-rejected-${application._id}`} className="flex flex-col">
+                  <Card
+                    key={application._id}
+                    data-testid={`card-rejected-${application._id}`}
+                    className="flex flex-col"
+                  >
                     <CardHeader className="pb-4 min-h-[5rem]">
                       <div className="flex items-start justify-between gap-2">
                         <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
-                          {application.type === 'bazaar' 
-                            ? (application.event?.name || 'Unknown Bazaar')
-                            : 'Platform Booth Application'
-                          }
+                          {application.type === "bazaar"
+                            ? application.event?.name || "Unknown Bazaar"
+                            : "Platform Booth Application"}
                         </CardTitle>
                         <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
-                            {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
+                            {application.type === "bazaar" ? "Bazaar" : "Booth"}
                           </Badge>
-                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 w-fit min-w-[4.5rem]">Rejected</Badge>
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 w-fit min-w-[4.5rem]">
+                            Rejected
+                          </Badge>
                         </div>
                       </div>
                     </CardHeader>
                     <CardContent>
                       <div className="space-y-2 text-sm mb-4">
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
-                            {new Date(application.event.startDate).toLocaleDateString('en-GB')}
+                            {new Date(
+                              application.event.startDate
+                            ).toLocaleDateString("en-GB")}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Store className="h-4 w-4 flex-shrink-0" />
+                          <Store className="h-4 w-4 flex-shrink-0" />
                           Booth Size: {application.boothSize}
                         </div>
-                        {application.type === 'booth' && application.durationWeeks && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Clock className="h-4 w-4 flex-shrink-0" />
-                            Duration: {application.durationWeeks} week{application.durationWeeks > 1 ? 's' : ''}
-                          </div>
-                        )}
-                        {application.type === 'booth' && application.locationPreference && (
-                          <div className="flex items-center gap-2 text-muted-foreground">
-                            <Target className="h-4 w-4 flex-shrink-0" />
-                            Preferred Location: {application.locationPreference}
-                          </div>
-                        )}
-                        {application.type === 'bazaar' && application.event && (
+                        {application.type === "booth" &&
+                          application.durationWeeks && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Clock className="h-4 w-4 flex-shrink-0" />
+                              Duration: {application.durationWeeks} week
+                              {application.durationWeeks > 1 ? "s" : ""}
+                            </div>
+                          )}
+                        {application.type === "booth" &&
+                          application.locationPreference && (
+                            <div className="flex items-center gap-2 text-muted-foreground">
+                              <Target className="h-4 w-4 flex-shrink-0" />
+                              Preferred Location:{" "}
+                              {application.locationPreference}
+                            </div>
+                          )}
+                        {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <MapPin className="h-4 w-4 flex-shrink-0" />
                             {application.event.location}
                           </div>
                         )}
                         <div className="flex items-center gap-2 text-muted-foreground">
-                            <Users className="h-4 w-4 flex-shrink-0" />
-                          {application.attendees?.length || '0'}
+                          <Users className="h-4 w-4 flex-shrink-0" />
+                          {application.attendees?.length || "0"}
                         </div>
                         <div className="flex items-center gap-2 text-muted-foreground">
                           <Calendar className="h-4 w-4 flex-shrink-0" />
-                          Applied: {new Date(application.createdAt).toLocaleDateString('en-GB')}
+                          Applied:{" "}
+                          {new Date(application.createdAt).toLocaleDateString(
+                            "en-GB"
+                          )}
                         </div>
                       </div>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full"
                         data-testid={`button-reapply-${application._id}`}
                       >
@@ -926,9 +1103,12 @@ export default function VendorDashboard() {
                 <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
               </div>
               <div className="space-y-2">
-                <DialogTitle className="text-2xl font-semibold">Cancel Application?</DialogTitle>
+                <DialogTitle className="text-2xl font-semibold">
+                  Cancel Application?
+                </DialogTitle>
                 <DialogDescription className="text-base pt-2">
-                  Are you sure you want to cancel this request? This action cannot be undone.
+                  Are you sure you want to cancel this request? This action
+                  cannot be undone.
                 </DialogDescription>
               </div>
             </div>

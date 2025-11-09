@@ -29,7 +29,10 @@ transporter.verify((err, success) => {
 });
 
 export const sendRegistrationEmail = async (user) => {
-  const displayName = (user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim() || "there";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
 
   const mailOptions = {
     from: `${process.env.EMAIL_USER}`, // must match authenticated user for Gmail
@@ -64,8 +67,12 @@ export const sendRegistrationEmail = async (user) => {
 
 export const sendVerificationEmail = async (user) => {
   // Add title prefix for professors
-  const namePrefix = user?.role?.toLowerCase() === 'professor' ? 'Professor ' : '';
-  const displayName = (user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim() || "there";
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
   const fullDisplayName = namePrefix + displayName;
 
   // Generate verification token (expires in 24 hours)
@@ -79,14 +86,21 @@ export const sendVerificationEmail = async (user) => {
 
   // Role-based greeting and description
   const roleDescriptions = {
-    professor: "As a professor, you'll have access to create workshops, manage academic events, and engage with students.",
-    staff: "As a staff member, you'll be able to view and manage campus events and activities.",
-    ta: "As a teaching assistant, you'll have access to event management and student engagement tools."
+    professor:
+      "As a professor, you'll have access to create workshops, manage academic events, and engage with students.",
+    staff:
+      "As a staff member, you'll be able to view and manage campus events and activities.",
+    ta: "As a teaching assistant, you'll have access to event management and student engagement tools.",
   };
-  const roleDescription = roleDescriptions[user?.role?.toLowerCase()] || "You'll have access to all the features available for your role.";
+  const roleDescription =
+    roleDescriptions[user?.role?.toLowerCase()] ||
+    "You'll have access to all the features available for your role.";
 
   // Path to logo image
-  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -195,11 +209,11 @@ export const sendVerificationEmail = async (user) => {
     replyTo: process.env.EMAIL_USER,
     attachments: [
       {
-        filename: 'logo-light.png',
+        filename: "logo-light.png",
         path: logoPath,
-        cid: 'logo' // Content ID for embedding in HTML
-      }
-    ]
+        cid: "logo", // Content ID for embedding in HTML
+      },
+    ],
   };
 
   try {
@@ -216,7 +230,10 @@ export const sendVerificationEmail = async (user) => {
 
     return verificationToken; // Return token for testing purposes
   } catch (error) {
-    console.error("❌ Error sending verification email:", error?.message || error);
+    console.error(
+      "❌ Error sending verification email:",
+      error?.message || error
+    );
     throw new Error("Failed to send verification email");
   }
 };
@@ -228,26 +245,33 @@ export const sendVerificationEmail = async (user) => {
  */
 export const sendGymSessionCancellationEmail = async (user, session) => {
   // Add title prefix for professors
-  const namePrefix = user?.role?.toLowerCase() === 'professor' ? 'Professor ' : '';
-  const displayName = (user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim() || "there";
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
   const fullDisplayName = namePrefix + displayName;
-  
+
   // Format date and time
-  const sessionDate = new Date(session.date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
+  const sessionDate = new Date(session.date).toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
   });
-  
+
   // Format session type
   const sessionTypeFormatted = session.type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
   // Path to logo image
-  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -406,11 +430,11 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
     replyTo: process.env.EMAIL_USER,
     attachments: [
       {
-        filename: 'logo-light.png',
+        filename: "logo-light.png",
         path: logoPath,
-        cid: 'logo' // Content ID for embedding in HTML
-      }
-    ]
+        cid: "logo", // Content ID for embedding in HTML
+      },
+    ],
   };
 
   try {
@@ -425,7 +449,10 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(`❌ Error sending cancellation email to ${user.email}:`, error?.message || error);
+    console.error(
+      `❌ Error sending cancellation email to ${user.email}:`,
+      error?.message || error
+    );
     // Don't throw - log error but don't fail the cancellation
   }
 };
@@ -436,36 +463,49 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
  * @param {Object} oldSession - Original session details before update
  * @param {Object} newSession - Updated session details
  */
-export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) => {
+export const sendGymSessionUpdateEmail = async (
+  user,
+  oldSession,
+  newSession
+) => {
   // Add title prefix for professors
-  const namePrefix = user?.role?.toLowerCase() === 'professor' ? 'Professor ' : '';
-  const displayName = (user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")).trim() || "there";
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
   const fullDisplayName = namePrefix + displayName;
-  
+
   // Format dates
-  const formatDate = (date) => new Date(date).toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  });
-  
+  const formatDate = (date) =>
+    new Date(date).toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
   const oldDate = formatDate(oldSession.date);
   const newDate = formatDate(newSession.date);
-  
+
   // Format session type
   const sessionTypeFormatted = newSession.type
-    .split('_')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split("_")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 
   // Path to logo image
-  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
 
   // Check what changed
   const dateChanged = oldDate !== newDate;
   const timeChanged = oldSession.startTime !== newSession.startTime;
-  const durationChanged = oldSession.durationMinutes !== newSession.durationMinutes;
+  const durationChanged =
+    oldSession.durationMinutes !== newSession.durationMinutes;
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -522,7 +562,9 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
                         </h3>
                       </div>
                       <table style="width: 100%; border-collapse: collapse;">
-                        ${dateChanged ? `
+                        ${
+                          dateChanged
+                            ? `
                         <tr>
                           <td colspan="2" style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             Date:
@@ -536,15 +578,19 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
                             ${newDate}
                           </td>
                         </tr>
-                        ` : `
+                        `
+                            : `
                         <tr>
                           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
                             Date:
                           </td>
                           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${newDate}</td>
                         </tr>
-                        `}
-                        ${timeChanged ? `
+                        `
+                        }
+                        ${
+                          timeChanged
+                            ? `
                         <tr>
                           <td colspan="2" style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             Time:
@@ -558,15 +604,19 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
                             ${newSession.startTime}
                           </td>
                         </tr>
-                        ` : `
+                        `
+                            : `
                         <tr>
                           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
                             Time:
                           </td>
                           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${newSession.startTime}</td>
                         </tr>
-                        `}
-                        ${durationChanged ? `
+                        `
+                        }
+                        ${
+                          durationChanged
+                            ? `
                         <tr>
                           <td colspan="2" style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600; border-bottom: 1px solid #e2e8f0;">
                             Duration:
@@ -580,14 +630,16 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
                             ${newSession.durationMinutes} minutes
                           </td>
                         </tr>
-                        ` : `
+                        `
+                            : `
                         <tr>
                           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
                             Duration:
                           </td>
                           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${newSession.durationMinutes} minutes</td>
                         </tr>
-                        `}
+                        `
+                        }
                       </table>
                     </div>
                     
@@ -667,11 +719,11 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
     replyTo: process.env.EMAIL_USER,
     attachments: [
       {
-        filename: 'logo-light.png',
+        filename: "logo-light.png",
         path: logoPath,
-        cid: 'logo' // Content ID for embedding in HTML
-      }
-    ]
+        cid: "logo", // Content ID for embedding in HTML
+      },
+    ],
   };
 
   try {
@@ -686,7 +738,10 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(`❌ Error sending update email to ${user.email}:`, error?.message || error);
+    console.error(
+      `❌ Error sending update email to ${user.email}:`,
+      error?.message || error
+    );
     // Don't throw - log error but don't fail the update
   }
 };
@@ -698,24 +753,34 @@ export const sendGymSessionUpdateEmail = async (user, oldSession, newSession) =>
  */
 export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   // Get vendor display name (company name for vendors)
-  const displayName = vendor?.companyName || vendor?.name || [vendor?.firstName, vendor?.lastName].filter(Boolean).join(" ") || "Vendor";
-  
+  const displayName =
+    vendor?.companyName ||
+    vendor?.name ||
+    [vendor?.firstName, vendor?.lastName].filter(Boolean).join(" ") ||
+    "Vendor";
+
   // Determine application type display name
   const applicationType = application.type === "bazaar" ? "Bazaar" : "Booth";
-  const applicationTypeLower = application.type === "bazaar" ? "bazaar" : "booth";
-  
+  const applicationTypeLower =
+    application.type === "bazaar" ? "bazaar" : "booth";
+
   // Get event/bazaar name
   const eventName = application.event?.name || null;
-  
+
   // Determine status display
   const isApproved = application.status === "approved";
   const statusText = isApproved ? "Approved" : "Rejected";
   const statusColor = isApproved ? "#10b981" : "#ef4444";
-  const statusBgGradient = isApproved ? "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)" : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
+  const statusBgGradient = isApproved
+    ? "linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%)"
+    : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
   const statusTextColor = isApproved ? "#065f46" : "#991b1b";
-  
+
   // Path to logo image
-  const logoPath = path.resolve(__dirname, '../../../../client/public/images/logo-light.png');
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
 
   // Build application details HTML
   let applicationDetailsHtml = `
@@ -760,7 +825,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
             Duration:
           </td>
-          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? 's' : ''}</td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}</td>
         </tr>
     `;
   }
@@ -784,7 +849,9 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
     to: vendor?.email,
-    subject: `${applicationType} Application ${statusText}` + (eventName ? ` - ${eventName}` : ''),
+    subject:
+      `${applicationType} Application ${statusText}` +
+      (eventName ? ` - ${eventName}` : ""),
     html: `
       <!DOCTYPE html>
       <html lang="en">
@@ -818,15 +885,18 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                       Hi ${displayName},
                     </h2>
                     <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
-                      ${isApproved 
-                        ? `Great news! Your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>. We're excited to have you participate!`
-                        : `We regret to inform you that your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>.`
+                      ${
+                        isApproved
+                          ? `Great news! Your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>. We're excited to have you participate!`
+                          : `We regret to inform you that your ${applicationTypeLower} application has been <strong style="color: ${statusColor};">${statusText.toLowerCase()}</strong>.`
                       }
                     </p>
                     
                     ${applicationDetailsHtml}
                     
-                    ${isApproved ? `
+                    ${
+                      isApproved
+                        ? `
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
                     <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
                       Your application has been reviewed and approved. We are excited to have you join us ! You can view all your application details through your vendor dashboard.
@@ -851,7 +921,8 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                         </td>
                       </tr>
                     </table>
-                    ` : `
+                    `
+                        : `
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
                     <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
                       We sincerely apologize for any inconvenience this may cause. We appreciate your interest in participating. If you have any questions about this decision or would like to apply for other events, please don't hesitate to contact the Events Office.
@@ -876,7 +947,8 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                         </td>
                       </tr>
                     </table>
-                    `}
+                    `
+                    }
                     
                     <!-- Divider -->
                     <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
@@ -884,12 +956,13 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     <!-- Alternative Link Fallback -->
                     <div style="background-color: #f7fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
                       <p style="margin: 0 0 12px; font-size: 13px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ${isApproved ? 'Button not working?' : 'Need help?'}
+                        ${isApproved ? "Button not working?" : "Need help?"}
                       </p>
                       <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
-                        ${isApproved 
-                          ? `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your dashboard</a>`
-                          : `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to reapply</a> or contact the <a href="mailto:events@guc.edu.eg" style="color: #667eea; text-decoration: underline; font-weight: 600;">Events Office</a>`
+                        ${
+                          isApproved
+                            ? `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your dashboard</a>`
+                            : `<a href="http://localhost:5000/vendor/dashboard" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to reapply</a> or contact the <a href="mailto:events@guc.edu.eg" style="color: #667eea; text-decoration: underline; font-weight: 600;">Events Office</a>`
                         }
                       </p>
                     </div>
@@ -923,11 +996,11 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     replyTo: process.env.EMAIL_USER,
     attachments: [
       {
-        filename: 'logo-light.png',
+        filename: "logo-light.png",
         path: logoPath,
-        cid: 'logo' // Content ID for embedding in HTML
-      }
-    ]
+        cid: "logo", // Content ID for embedding in HTML
+      },
+    ],
   };
 
   try {
@@ -944,7 +1017,10 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(`❌ Error sending vendor application status email to ${vendor.email}:`, error?.message || error);
+    console.error(
+      `❌ Error sending vendor application status email to ${vendor.email}:`,
+      error?.message || error
+    );
     // Don't throw - log error but don't fail the status update
   }
 };

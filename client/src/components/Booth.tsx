@@ -25,54 +25,54 @@ const Booth: React.FC<BoothProps> = ({
   onClick,
   fontSize = 16,
   textY,
-  verticalText = false
+  verticalText = false,
 }) => {
   const textYPosition = textY !== undefined ? textY : y + height / 2 + 5;
-  
+
   const renderText = () => {
-    if (verticalText && typeof number === 'string') {
+    if (verticalText && typeof number === "string") {
       // Render each word individually with specific x and y coordinates
-      
+
       return (
         <>
-            {/* Special */}
-            <text
-              x={657}
-              y={60}
-              textAnchor="middle"
-              fontSize={fontSize}
-              fontWeight="bold"
-              fill={isSelected ? "#FFF" : "#5C3B0B"}
-              transform={`rotate(90 625 100)`}
-            >
-              Special
-            </text>
-            
-            {/* needs */}
-            <text
-              x={653}
-              y={70}
-              textAnchor="middle"
-              fontSize={fontSize}
-              fontWeight="bold"
-              fill={isSelected ? "#FFF" : "#5C3B0B"}
-              transform={`rotate(90 620 100)`}
-            >
-              needs
-            </text>
-            
-            {/* shop */}
-            <text
-              x={648}
-              y={80}
-              textAnchor="middle"
-              fontSize={fontSize}
-              fontWeight="bold"
-              fill={isSelected ? "#FFF" : "#5C3B0B"}
-              transform={`rotate(90 615 100)`}
-            >
-              shop
-            </text>
+          {/* Special */}
+          <text
+            x={657}
+            y={60}
+            textAnchor="middle"
+            fontSize={fontSize}
+            fontWeight="bold"
+            fill={isSelected ? "#FFF" : "#5C3B0B"}
+            transform={`rotate(90 625 100)`}
+          >
+            Special
+          </text>
+
+          {/* needs */}
+          <text
+            x={653}
+            y={70}
+            textAnchor="middle"
+            fontSize={fontSize}
+            fontWeight="bold"
+            fill={isSelected ? "#FFF" : "#5C3B0B"}
+            transform={`rotate(90 620 100)`}
+          >
+            needs
+          </text>
+
+          {/* shop */}
+          <text
+            x={648}
+            y={80}
+            textAnchor="middle"
+            fontSize={fontSize}
+            fontWeight="bold"
+            fill={isSelected ? "#FFF" : "#5C3B0B"}
+            transform={`rotate(90 615 100)`}
+          >
+            shop
+          </text>
         </>
       );
     } else {
@@ -90,7 +90,7 @@ const Booth: React.FC<BoothProps> = ({
       );
     }
   };
-  
+
   return (
     <g onClick={() => onClick(id, number)} style={{ cursor: "pointer" }}>
       <rect

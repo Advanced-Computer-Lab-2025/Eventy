@@ -2,7 +2,10 @@ import mongoose from "mongoose";
 
 const maskCredentials = (uri) => {
   try {
-    return uri.replace(/(\/\/)(.*?):(.*?)@/, (m, p1, user) => `${p1}${user}:******@`);
+    return uri.replace(
+      /(\/\/)(.*?):(.*?)@/,
+      (m, p1, user) => `${p1}${user}:******@`
+    );
   } catch (e) {
     return uri;
   }
@@ -31,7 +34,9 @@ const connectDB = async () => {
   const uri = process.env.MONGO_URI;
 
   if (!uri) {
-    console.error("MONGO_URI is not set in environment variables. Please set it in your .env file.");
+    console.error(
+      "MONGO_URI is not set in environment variables. Please set it in your .env file."
+    );
     process.exit(1);
   }
 
@@ -45,7 +50,9 @@ const connectDB = async () => {
     console.error(`Error connecting to MongoDB: ${error.message}`);
 
     if (/authentication failed|bad auth|auth failed/i.test(error.message)) {
-      console.error("Authentication error detected. Will retry once with authSource=admin appended for troubleshooting.");
+      console.error(
+        "Authentication error detected. Will retry once with authSource=admin appended for troubleshooting."
+      );
       const alt = appendAuthSourceAdmin(uri);
       console.log(`Retrying with: ${maskCredentials(alt)}`);
       try {
@@ -58,7 +65,9 @@ const connectDB = async () => {
 
       const built = buildUriFromParts();
       if (built) {
-        console.error("Attempting a second retry by building the connection string from MONGO_USER/MONGO_PASS/MONGO_HOST (this will URL-encode credentials).");
+        console.error(
+          "Attempting a second retry by building the connection string from MONGO_USER/MONGO_PASS/MONGO_HOST (this will URL-encode credentials)."
+        );
         console.log(`Retrying with: ${maskCredentials(built)}`);
         try {
           await mongoose.connect(built, { serverSelectionTimeoutMS: 5000 });
@@ -70,7 +79,9 @@ const connectDB = async () => {
       }
     }
 
-    console.error("Check that the username and password are correct, that the user exists in your MongoDB Atlas project, and that your current IP address is allowed in Network Access.");
+    console.error(
+      "Check that the username and password are correct, that the user exists in your MongoDB Atlas project, and that your current IP address is allowed in Network Access."
+    );
     process.exit(1);
   }
 };

@@ -593,33 +593,42 @@ export class EventsController {
       next(err);
     }
   }
-  
-async getAttendeesReport(req, res, next) {
-  try {
-    // ✅ Validate query params
-    const { error, value } = getAttendeesReportSchema.validate(req.query, { abortEarly: false });
 
-    if (error) return next(new ApiError(400, 'Validation failed', error.details));
+  async getAttendeesReport(req, res, next) {
+    try {
+      // ✅ Validate query params
+      const { error, value } = getAttendeesReportSchema.validate(req.query, {
+        abortEarly: false,
+      });
 
-    // ✅ Use the validated values
-    const { eventType, startDate, endDate, page, limit } = value;
+      if (error)
+        return next(new ApiError(400, "Validation failed", error.details));
 
-    const report = await eventService.getAttendeesReport({
-      eventType,
-      startDate,
-      endDate,
-      page: page || 1,
-      limit: limit || 10,
-    });
+      // ✅ Use the validated values
+      const { eventType, startDate, endDate, page, limit } = value;
 
-    return res
-      .status(200)
-      .json(new ApiResponse(200, report, "Attendees report generated successfully"));
-  } catch (err) {
-    next(err);
+      const report = await eventService.getAttendeesReport({
+        eventType,
+        startDate,
+        endDate,
+        page: page || 1,
+        limit: limit || 10,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            report,
+            "Attendees report generated successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
   }
-}
-  
+
   // Archive an event (only after event endDate has passed)
   async archiveEvent(req, res, next) {
     try {
