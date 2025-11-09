@@ -8,6 +8,14 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
@@ -50,6 +58,10 @@ export default function VendorDashboard() {
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
   const [selectedBooth, setSelectedBooth] = useState<{id: string, number: number | string} | null>(null);
+  
+  // Cancel confirmation dialog state
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [applicationToCancel, setApplicationToCancel] = useState<string | null>(null);
   
   const { toast } = useToast();
 
@@ -232,6 +244,34 @@ export default function VendorDashboard() {
     // Immediately refresh data after user action
     fetchApplicationsData();
     fetchUpcomingBazaars();
+  };
+
+  const handleCancelClick = (applicationId: string) => {
+    setApplicationToCancel(applicationId);
+    setCancelDialogOpen(true);
+  };
+
+  const handleCancelConfirm = async () => {
+    if (!applicationToCancel) return;
+
+    try {
+      await bazaarApiService.cancelApplication(applicationToCancel);
+      toast({
+        title: "Application Cancelled",
+        description: "Your application has been cancelled successfully.",
+      });
+      // Refresh applications data to update the UI
+      fetchApplicationsData();
+      setCancelDialogOpen(false);
+      setApplicationToCancel(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Failed to cancel application";
+      toast({
+        title: "Cancellation Failed",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    }
   };
 
 
@@ -630,20 +670,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredApprovedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-participation-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-participation-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge className="bg-green-500 hover:bg-green-600 w-fit">Approved</Badge>
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 border-green-200 dark:border-green-700 w-fit min-w-[4.5rem]">Approved</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -702,25 +742,25 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredPendingApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-request-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-request-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="outline" className="w-fit">Pending Review</Badge>
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700 w-fit min-w-[4.5rem]">Pending</Badge>
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm mb-4">
+                    <CardContent className="flex flex-col flex-grow">
+                      <div className="space-y-2 text-sm mb-4 flex-grow">
                         {application.type === 'bazaar' && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -760,7 +800,8 @@ export default function VendorDashboard() {
                       </div>
                       <Button 
                         variant="destructive" 
-                        className="w-full"
+                        className="w-full mt-auto"
+                        onClick={() => handleCancelClick(application._id)}
                         data-testid={`button-cancel-${application._id}`}
                       >
                         Cancel Request
@@ -781,20 +822,20 @@ export default function VendorDashboard() {
                 </div>
               ) : (
                 filteredRejectedApplications.map((application) => (
-                  <Card key={application._id} data-testid={`card-rejected-${application._id}`}>
-                    <CardHeader>
-                      <div className="flex items-center justify-between">
-                        <CardTitle className="text-xl mb-2 text-card-foreground">
+                  <Card key={application._id} data-testid={`card-rejected-${application._id}`} className="flex flex-col">
+                    <CardHeader className="pb-4 min-h-[5rem]">
+                      <div className="flex items-start justify-between gap-2">
+                        <CardTitle className="text-xl mb-2 text-card-foreground flex-1">
                           {application.type === 'bazaar' 
                             ? (application.event?.name || 'Unknown Bazaar')
                             : 'Platform Booth Application'
                           }
                         </CardTitle>
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-start flex-shrink-0">
                           <Badge variant="outline" className="text-xs">
                             {application.type === 'bazaar' ? 'Bazaar' : 'Booth'}
                           </Badge>
-                          <Badge variant="destructive" className="w-fit">Rejected</Badge>
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700 w-fit min-w-[4.5rem]">Rejected</Badge>
                         </div>
                       </div>
                     </CardHeader>
@@ -875,6 +916,44 @@ export default function VendorDashboard() {
           durationWeeks={durationWeeks}
         />
       )}
+
+      {/* Cancel Confirmation Dialog */}
+      <Dialog open={cancelDialogOpen} onOpenChange={setCancelDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <div className="flex flex-col items-center text-center space-y-4 py-4">
+              <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-red-100 dark:bg-red-900/20">
+                <AlertCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
+              </div>
+              <div className="space-y-2">
+                <DialogTitle className="text-2xl font-semibold">Cancel Application?</DialogTitle>
+                <DialogDescription className="text-base pt-2">
+                  Are you sure you want to cancel this request? This action cannot be undone.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:space-x-2 pt-4 justify-center !sm:justify-center">
+            <Button
+              variant="outline"
+              className="w-full sm:w-auto"
+              onClick={() => {
+                setCancelDialogOpen(false);
+                setApplicationToCancel(null);
+              }}
+            >
+              No, Keep It
+            </Button>
+            <Button
+              variant="destructive"
+              className="w-full sm:w-auto"
+              onClick={handleCancelConfirm}
+            >
+              Yes, Cancel Request
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
