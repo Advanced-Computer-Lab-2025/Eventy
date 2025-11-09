@@ -44,15 +44,18 @@ export class ApplicationController {
           message: error.message,
         });
       }
-      
+
       // Handle other validation errors
-      if (error.message && error.message.includes("Could not create application")) {
+      if (
+        error.message &&
+        error.message.includes("Could not create application")
+      ) {
         return res.status(400).json({
           success: false,
           message: error.message,
         });
       }
-      
+
       // Fallback for any other errors
       next(error);
     }
@@ -61,10 +64,8 @@ export class ApplicationController {
   async applyToBooth(req, res, next) {
     try {
       const vendorId = req.user._id;
-      const user = req.user;
 
       // Validate input
-      // Expects: { attendees: [{ name, email, individualID (URL from /api/upload) }], boothSize, durationWeeks, locationPreference }
       const { error } = validateBoothApplication.validate(req.body);
       if (error)
         return res
@@ -72,8 +73,7 @@ export class ApplicationController {
           .json({ success: false, message: error.details[0].message });
 
       const applicationDetails = {
-        ...req.body, // Includes attendees with individualID URLs
-        event: null, // Platform booths don't need a specific event reference
+        ...req.body,
         type: "booth",
         createdBy: vendorId,
       };
@@ -88,24 +88,31 @@ export class ApplicationController {
         data: newApplication,
       });
     } catch (error) {
-      console.error("Error in applyToBooth:", error);
-      
+
       // Handle booth availability errors specifically
-      if (error.message && (error.message.includes("already reserved") || (error.message.includes("booth") && error.message.includes("reserved")))) {
+      if (
+        error.message &&
+        (error.message.includes("already reserved") ||
+          (error.message.includes("booth") &&
+            error.message.includes("reserved")))
+      ) {
         return res.status(409).json({
           success: false,
           message: error.message,
         });
       }
-      
+
       // Handle other validation errors
-      if (error.message && error.message.includes("Could not create application")) {
+      if (
+        error.message &&
+        error.message.includes("Could not create application")
+      ) {
         return res.status(400).json({
           success: false,
           message: error.message,
         });
       }
-      
+
       // Fallback for any other errors
       return res.status(500).json({
         success: false,
@@ -134,16 +141,17 @@ export class ApplicationController {
     }
   }
   async updateApplicationStatus(req, res, next) {
-    
     try {
       const { applicationId } = req.params;
       const { status } = req.body;
-        if (!["admin", "events_office"].includes(req.user.role)) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied. Only Admins or Events Office can update status.",
-      });
-    }
+
+      if (!["admin", "events_office"].includes(req.user.role)) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Access denied. Only Admins or Events Office can update status.",
+        });
+      }
 
       // Only allow 'approved' or 'rejected'
       if (!["approved", "rejected"].includes(status)) {
