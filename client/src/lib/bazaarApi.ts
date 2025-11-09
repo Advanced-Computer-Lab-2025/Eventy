@@ -34,7 +34,7 @@ export interface Application {
   boothSize: "2x2" | "4x4";
   durationWeeks?: number;
   locationPreference?: string;
-  status: "pending" | "approved" | "rejected";
+  status: "pending" | "approved" | "rejected" | "cancelled";
   vendorId: string;
   createdAt: string;
   updatedAt: string;
@@ -251,6 +251,28 @@ class BazaarApiService {
       return apiResponse.data;
     } catch (error) {
       console.error("Error applying to booth:", error);
+      throw error;
+    }
+  }
+
+  async cancelApplication(applicationId: string): Promise<Application> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/applications/${applicationId}/cancel`, {
+        method: "DELETE",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorMessage = errorResponse.message || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const apiResponse: ApiResponse<Application> = await response.json();
+      return apiResponse.data;
+    } catch (error) {
+      console.error("Error cancelling application:", error);
       throw error;
     }
   }
