@@ -21,6 +21,7 @@ import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
 import StatCard from "@/components/StatCard";
+import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
@@ -28,6 +29,7 @@ import { useLocation } from "wouter";
 interface Attendee {
   name: string;
   email: string;
+  individualID?: string;
 }
 
 export default function VendorDashboard() {
@@ -211,6 +213,26 @@ export default function VendorDashboard() {
   }, []);
 
   const handleRegister = (bazaarId: string) => {
+    // Check if user has already applied to this bazaar (excluding rejected applications)
+    // Users should be able to reapply if their application was rejected
+    const activeApplications = [
+      ...pendingApplications,
+      ...approvedApplications,
+    ];
+    
+    const existingApplication = activeApplications.find(
+      (app) => app.type === "bazaar" && app.event?._id === bazaarId
+    );
+    
+    if (existingApplication) {
+      toast({
+        title: "Already Applied",
+        description: "You have already applied to this bazaar.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     const bazaar = upcomingBazaars.find(b => b._id === bazaarId);
     if (bazaar) {
       setSelectedBazaar(bazaar);
@@ -273,6 +295,13 @@ export default function VendorDashboard() {
     setPlatformBoothAttendees(updatedAttendees);
   };
 
+  const handleIdUploadSuccess = (index: number, url: string) => {
+    const updatedAttendees = platformBoothAttendees.map((attendee, i) =>
+      i === index ? { ...attendee, individualID: url } : attendee
+    );
+    setPlatformBoothAttendees(updatedAttendees);
+  };
+
   const validatePlatformBoothForm = () => {
     const validAttendees = platformBoothAttendees.filter(attendee => 
       attendee.name.trim() && attendee.email.trim()
@@ -298,6 +327,38 @@ export default function VendorDashboard() {
         return false;
       }
     }
+    
+    // Check for missing IDs and collect all attendees without IDs
+    // Check all attendees that have at least a name (so we can display them)
+    const attendeesToCheck = platformBoothAttendees.filter(attendee => attendee.name && attendee.name.trim());
+    const attendeesWithoutID = attendeesToCheck.filter(attendee => !attendee.individualID);
+    
+    if (attendeesWithoutID.length > 0) {
+      const firstNames = attendeesWithoutID
+        .map(attendee => {
+          const trimmedName = attendee.name.trim();
+          return trimmedName.split(' ')[0]; // Get first name only
+        })
+        .filter(name => name.length > 0);
+      
+      if (firstNames.length > 0) {
+        let namesList: string;
+        if (firstNames.length === 1) {
+          namesList = firstNames[0];
+        } else if (firstNames.length === 2) {
+          namesList = `${firstNames[0]} and ${firstNames[1]}`;
+        } else {
+          namesList = `${firstNames.slice(0, -1).join(', ')}, and ${firstNames[firstNames.length - 1]}`;
+        }
+        
+        toast({
+          title: "Validation Error",
+          description: `Please upload an ID card for ${namesList}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
 
     return true;
   };
@@ -316,28 +377,14 @@ export default function VendorDashboard() {
         attendee.name.trim() && attendee.email.trim()
       );
 
-      // TODO: Replace with actual API call when backend is ready
-      console.log("Platform booth application data:", {
+      // This will be called from BoothApplicationDialog, so we don't submit here
+      // The actual submission happens when user clicks on a booth in the map
+      console.log("Platform booth form validated:", {
         attendees: validAttendees,
         boothSize,
         durationWeeks,
         selectedMapLocation
       });
-
-      toast({
-        title: "Application Submitted",
-        description: "Your platform booth application has been submitted successfully!",
-      });
-
-      // Reset form
-      setPlatformBoothAttendees([{ name: "", email: "" }]);
-      setBoothSize("2x2");
-      setDurationWeeks(1);
-      setSelectedMapLocation("");
-      
-      // Immediately refresh data after user action
-      fetchApplicationsData();
-      fetchUpcomingBazaars();
     } catch (error) {
       console.error("Error submitting platform booth application:", error);
       toast({
@@ -490,7 +537,7 @@ export default function VendorDashboard() {
                         size="sm"
                         onClick={addPlatformBoothAttendee}
                         disabled={platformBoothAttendees.length >= 5}
-                        className="flex items-center gap-2"
+                        className="flex items-center gap-2 h-9"
                       >
                         <Plus className="h-4 w-4" />
                         Add Attendee
@@ -518,8 +565,8 @@ export default function VendorDashboard() {
                               )}
                             </div>
                             
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                              <div className="space-y-2">
+                            <div className="flex flex-col md:flex-row gap-3 items-end">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-name-${index}`}>Name</Label>
                                 <Input
                                   id={`platform-name-${index}`}
@@ -527,9 +574,10 @@ export default function VendorDashboard() {
                                   value={attendee.name}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "name", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
                                 />
                               </div>
-                              <div className="space-y-2">
+                              <div className="space-y-2 flex-1">
                                 <Label htmlFor={`platform-email-${index}`}>Email</Label>
                                 <Input
                                   id={`platform-email-${index}`}
@@ -538,6 +586,17 @@ export default function VendorDashboard() {
                                   value={attendee.email}
                                   onChange={(e) => updatePlatformBoothAttendee(index, "email", e.target.value)}
                                   required={index === 0}
+                                  className="w-full"
+                                />
+                              </div>
+                              <div className="space-y-2 flex-shrink-0">
+                                <Label className="opacity-0 pointer-events-none">Upload</Label>
+                                <IdUploadButton
+                                  index={index}
+                                  attendeeName={attendee.name}
+                                  individualID={attendee.individualID}
+                                  onUploadSuccess={handleIdUploadSuccess}
+                                  buttonClassName="h-9"
                                 />
                               </div>
                             </div>
@@ -547,40 +606,41 @@ export default function VendorDashboard() {
                     </div>
                   </div>
 
-                  {/* Booth Size Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
-                    <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
-                      <SelectTrigger id="platform-boothSize">
-                        <SelectValue placeholder="Select booth size" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2x2">2x2</SelectItem>
-                        <SelectItem value="4x4">4x4</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Choose the size of your booth space. Larger booths may have additional fees.
-                    </p>
-                  </div>
+                  {/* Booth Size and Duration Section */}
+                  <div className="flex flex-col md:flex-row gap-3 items-end">
+                    <div className="space-y-2 flex-1 max-w-[calc(50%-57px)]">
+                      <Label htmlFor="platform-boothSize" className="text-base font-semibold">Booth Size</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Choose the size of your booth space. Larger booths may have additional fees.
+                      </p>
+                      <Select value={boothSize} onValueChange={(value: "2x2" | "4x4") => setBoothSize(value)}>
+                        <SelectTrigger id="platform-boothSize">
+                          <SelectValue placeholder="Select booth size" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="2x2">2x2</SelectItem>
+                          <SelectItem value="4x4">4x4</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {/* Duration Section */}
-                  <div className="space-y-2">
-                    <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
-                    <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
-                      <SelectTrigger id="platform-duration">
-                        <SelectValue placeholder="Select duration" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 week</SelectItem>
-                        <SelectItem value="2">2 weeks</SelectItem>
-                        <SelectItem value="3">3 weeks</SelectItem>
-                        <SelectItem value="4">4 weeks</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-sm text-muted-foreground">
-                      Select how long you want to set up your booth (1-4 weeks).
-                    </p>
+                    <div className="space-y-2 flex-1">
+                      <Label htmlFor="platform-duration" className="text-base font-semibold">Duration</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Select how long you want to set up your booth (1-4 weeks).
+                      </p>
+                      <Select value={durationWeeks.toString()} onValueChange={(value) => setDurationWeeks(parseInt(value))}>
+                        <SelectTrigger id="platform-duration">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 week</SelectItem>
+                          <SelectItem value="2">2 weeks</SelectItem>
+                          <SelectItem value="3">3 weeks</SelectItem>
+                          <SelectItem value="4">4 weeks</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
 
 
