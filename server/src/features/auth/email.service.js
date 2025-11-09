@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
+import { format } from "date-fns";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -815,7 +816,9 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
             Booth Size:
           </td>
-          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.boothSize || "N/A"}</td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
+            application.boothSize || "N/A"
+          }</td>
         </tr>
   `;
 
@@ -825,6 +828,9 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
           <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
             Duration:
           </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
+            application.durationWeeks
+          } week${application.durationWeeks > 1 ? "s" : ""}</td>
           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}</td>
         </tr>
     `;
@@ -1024,3 +1030,134 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     // Don't throw - log error but don't fail the status update
   }
 };
+/**
+ * Sends a payment receipt email to the user
+ * @param {Object} user - User object with email and name
+ * @param {Object} transaction - Transaction details
+ * @param {Object|null} event - Event details (null for wallet top-ups)
+ */
+export const sendPaymentReceipt = async (user, transaction, event) => {
+  const namePrefix = user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName = (
+    user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+  ).trim() || "Valued Customer";
+  const fullDisplayName = namePrefix + displayName;
+
+  const formattedDate = format(new Date(transaction.createdAt), "MMMM d, yyyy h:mm a");
+  const formattedAmount = (transaction.amount || 0).toFixed(2);
+  const paymentMethodDisplay = transaction.paymentMethod === "wallet" ? "Eventy Wallet" : "Credit/Debit Card";
+
+  const eventName = event?.name || "Wallet Top-Up";
+  const logoPath = path.resolve(__dirname, "../../../../client/public/images/logo-light.png");
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `Payment Receipt - ${eventName}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Payment Receipt</title>
+        <style>
+          body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; background:linear-gradient(135deg,#f0f9ff 0%,#e0e7ff 50%,#fce7f3 100%); color:#1a202c; }
+          .text-secondary { color:#4a5568; }
+          .card { background-color:#fff; border-radius:16px; }
+          .amount-box { background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%); border-radius:12px; padding:28px; text-align:center; border-left:4px solid #10b981; }
+          .transaction-box { background:linear-gradient(135deg,#f7fafc 0%,#edf2f7 100%); border-radius:12px; padding:28px; }
+          a.button { display:inline-block; padding:16px 48px; background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; text-decoration:none; border-radius:25px; font-weight:600; font-size:16px; }
+        </style>
+      </head>
+      <body>
+        <table role="presentation" style="width:100%;border-collapse:collapse;">
+          <tr>
+            <td align="center" style="padding:40px 20px;">
+              <table role="presentation" style="max-width:600px;width:100%;" class="card">
+                <!-- Header -->
+                <tr>
+                  <td style="background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 50%,#fce7f3 100%);padding:48px 40px;text-align:center;border-radius:16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height:140px;width:auto;margin:0 auto 16px;display:block;" />
+                    <h1 style="margin:0;font-size:16px;font-weight:700;color:#065f46;">Payment Confirmed ✓</h1>
+                  </td>
+                </tr>
+
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding:50px 40px 40px;">
+                    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;">Thank you, ${fullDisplayName}! 🎉</h2>
+                    <p class="text-secondary">Your payment has been successfully processed. Below are the details of your transaction.</p>
+
+                    <!-- Amount -->
+                    <div class="amount-box">
+                      <p style="margin:0 0 8px;font-size:14px;font-weight:600;text-transform:uppercase;">Amount Paid</p>
+                      <div style="font-size:36px;font-weight:700;color:#047857;">$${formattedAmount}</div>
+                    </div>
+
+                    <!-- Transaction Details -->
+                    <div class="transaction-box">
+                      <table style="width:100%;border-collapse:collapse;">
+                        <tr>
+                          <td style="padding:12px 0;font-weight:600;">Transaction ID:</td>
+                          <td style="padding:12px 0;text-align:right;font-family:monospace;">${transaction._id}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:12px 0;font-weight:600;">Date:</td>
+                          <td style="padding:12px 0;text-align:right;">${formattedDate}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:12px 0;font-weight:600;">Event:</td>
+                          <td style="padding:12px 0;font-weight:700;text-align:right;">${eventName}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:12px 0;font-weight:600;">Payment Method:</td>
+                          <td style="padding:12px 0;text-align:right;">${paymentMethodDisplay}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:16px 0 0;font-weight:700;">Total Paid:</td>
+                          <td style="padding:16px 0 0;font-weight:700;color:#10b981;text-align:right;">${formattedAmount}</td>
+                        </tr>
+                      </table>
+                    </div>
+
+                    <!-- Confirmation / Wallet message -->
+                    <p>
+                      ${
+                        event
+                          ? `Your registration for <strong>${eventName}</strong> is now confirmed. We look forward to seeing you at the event!`
+                          : `Your wallet has been successfully topped up. You can now use your balance for future event payments.`
+                      }
+                    </p>
+
+                    <!-- Fixed CTA -->
+                    <a href="http://localhost:5000/my-events" class="button">View My Events</a>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      { filename: "logo-light.png", path: logoPath, cid: "logo" },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Payment receipt sent to ${user.email} for transaction ${transaction._id}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+    if (info?.rejected?.length) console.error("⚠️ Some recipients were rejected:", info.rejected);
+  } catch (error) {
+    console.error(`❌ Error sending payment receipt to ${user.email}:`, error?.message || error);
+  }
+};
+
