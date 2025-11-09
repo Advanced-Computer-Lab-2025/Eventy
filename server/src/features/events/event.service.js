@@ -652,6 +652,9 @@ export const getAttendeesReport = async (options = {}) => {
   return {
     totalEvents: totals.totalEvents,
     totalAttendees: totals.totalAttendees,
+    page,
+    limit,
+    totalPages: Math.ceil((totals.totalEvents || 0) / limit),
     events: result.events || [],
   };
 };
