@@ -102,13 +102,15 @@ const eventSchema = new Schema(
         return this.archivedAt !== null;
       },
     },
-    
+
     // Array of roles that are restricted from accessing this event
-    restrictedRoles: [{
-      type: String,
-      enum: ["student", "staff", "ta", "professor", "vendor"],
-      default: [],
-    }],
+    restrictedRoles: [
+      {
+        type: String,
+        enum: ["student", "staff", "ta", "professor", "vendor"],
+        default: [],
+      },
+    ],
 
     price: {
       type: Number,

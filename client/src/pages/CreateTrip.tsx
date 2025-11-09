@@ -191,18 +191,22 @@ export default function TripManagement() {
 
       // Format dates as ISO dates (without time) and keep time fields separate
       if (formData.startDate) {
-        payload.startDate = new Date(formData.startDate).toISOString().split('T')[0];
+        payload.startDate = new Date(formData.startDate)
+          .toISOString()
+          .split("T")[0];
       }
       if (formData.endDate) {
-        payload.endDate = new Date(formData.endDate).toISOString().split('T')[0];
+        payload.endDate = new Date(formData.endDate)
+          .toISOString()
+          .split("T")[0];
       }
-      
+
       // Keep time fields as they are, ensuring they're not empty strings
       if (!formData.startTime) {
         toast({
           title: "Start time required",
           description: "Please provide a start time for the trip.",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
@@ -210,11 +214,11 @@ export default function TripManagement() {
         toast({
           title: "End time required",
           description: "Please provide an end time for the trip.",
-          variant: "destructive"
+          variant: "destructive",
         });
         return;
       }
-      
+
       payload.startTime = formData.startTime;
       payload.endTime = formData.endTime;
 

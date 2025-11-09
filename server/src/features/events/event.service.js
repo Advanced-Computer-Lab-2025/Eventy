@@ -79,7 +79,6 @@ export const createTrip = async (tripData, createdBy) => {
     throw new ApiError(400, "End date must be after start date");
   }
 
-
   const newTrip = await Event.create({
     ...tripData,
     eventType: "trip",
@@ -732,10 +731,8 @@ export const archiveEvent = async (eventId, user) => {
     }
   }
 
- 
   return updatedEvent;
 };
-
 
 export const restrictAccess = async (eventId, rolesToRestrict, user) => {
   // Authorization check
@@ -745,12 +742,23 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
 
   // Ensure unique roles and validate them
   const uniqueRoles = [...new Set(rolesToRestrict)];
-  const validRoles = ["student", "staff", "ta", "professor", "vendor", "events_office", "admin"];
-  const invalidRoles = uniqueRoles.filter(role => !validRoles.includes(role));
+  const validRoles = [
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "vendor",
+    "events_office",
+    "admin",
+  ];
+  const invalidRoles = uniqueRoles.filter((role) => !validRoles.includes(role));
   if (invalidRoles.length > 0) {
-    throw new ApiError(400, `Invalid roles provided: ${invalidRoles.join(", ")}`);
+    throw new ApiError(
+      400,
+      `Invalid roles provided: ${invalidRoles.join(", ")}`
+    );
   }
-  
+
   // Replace the input array with unique roles
   rolesToRestrict = uniqueRoles;
 
@@ -771,13 +779,16 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
 
   // Check if the exact same restrictions are already in place
   const currentRestrictions = event.restrictedRoles || [];
-  const isIdenticalRestriction = 
+  const isIdenticalRestriction =
     rolesToRestrict.length === currentRestrictions.length &&
-    rolesToRestrict.every(role => currentRestrictions.includes(role)) &&
-    currentRestrictions.every(role => rolesToRestrict.includes(role));
+    rolesToRestrict.every((role) => currentRestrictions.includes(role)) &&
+    currentRestrictions.every((role) => rolesToRestrict.includes(role));
 
   if (isIdenticalRestriction) {
-    throw new ApiError(400, "These role restrictions are already in place for this event");
+    throw new ApiError(
+      400,
+      "These role restrictions are already in place for this event"
+    );
   }
 
   // Update restricted roles
@@ -785,6 +796,4 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
   await event.save();
 
   return event;
-}
-
- 
+};
