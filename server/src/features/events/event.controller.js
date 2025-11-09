@@ -595,7 +595,19 @@ export class EventsController {
   }
 async getAttendeesReport(req, res, next) {
   try {
-    const { eventType, startDate, endDate, page, limit } = req.query;
+    // ✅ Validate query params
+    const { error, value } = getAttendeesReportSchema.validate(req.query, { abortEarly: false });
+
+    if (error) {
+      return res.status(400).json({
+        status: "error",
+        message: "Validation failed",
+        details: error.details.map((d) => d.message),
+      });
+    }
+
+    // ✅ Use the validated values
+    const { eventType, startDate, endDate, page, limit } = value;
 
     const report = await eventService.getAttendeesReport({
       eventType,
@@ -605,11 +617,9 @@ async getAttendeesReport(req, res, next) {
       limit: parseInt(limit) || 10,
     });
 
-    res
+    return res
       .status(200)
-      .json(
-        new ApiResponse(200, report, "Attendees report generated successfully")
-      );
+      .json(new ApiResponse(200, report, "Attendees report generated successfully"));
   } catch (err) {
     next(err);
   }
