@@ -39,7 +39,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           reporter: github-pr-review
           eslint_flags: "."
-          fail_on_error: false
+          fail_level: error
           filter_mode: nofilter
 
       - name: Summary - Check results
