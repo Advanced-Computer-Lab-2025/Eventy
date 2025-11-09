@@ -1037,18 +1037,29 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
  * @param {Object|null} event - Event details (null for wallet top-ups)
  */
 export const sendPaymentReceipt = async (user, transaction, event) => {
-  const namePrefix = user?.role?.toLowerCase() === "professor" ? "Professor " : "";
-  const displayName = (
-    user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
-  ).trim() || "Valued Customer";
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "Valued Customer";
   const fullDisplayName = namePrefix + displayName;
 
-  const formattedDate = format(new Date(transaction.createdAt), "MMMM d, yyyy h:mm a");
+  const formattedDate = format(
+    new Date(transaction.createdAt),
+    "MMMM d, yyyy h:mm a"
+  );
   const formattedAmount = (transaction.amount || 0).toFixed(2);
-  const paymentMethodDisplay = transaction.paymentMethod === "wallet" ? "Eventy Wallet" : "Credit/Debit Card";
+  const paymentMethodDisplay =
+    transaction.paymentMethod === "wallet"
+      ? "Eventy Wallet"
+      : "Credit/Debit Card";
 
   const eventName = event?.name || "Wallet Top-Up";
-  const logoPath = path.resolve(__dirname, "../../../../client/public/images/logo-light.png");
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1143,21 +1154,25 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       </html>
     `,
     replyTo: process.env.EMAIL_USER,
-    attachments: [
-      { filename: "logo-light.png", path: logoPath, cid: "logo" },
-    ],
+    attachments: [{ filename: "logo-light.png", path: logoPath, cid: "logo" }],
   };
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Payment receipt sent to ${user.email} for transaction ${transaction._id}:`, {
-      messageId: info?.messageId,
-      accepted: info?.accepted,
-      rejected: info?.rejected,
-    });
-    if (info?.rejected?.length) console.error("⚠️ Some recipients were rejected:", info.rejected);
+    console.log(
+      `✅ Payment receipt sent to ${user.email} for transaction ${transaction._id}:`,
+      {
+        messageId: info?.messageId,
+        accepted: info?.accepted,
+        rejected: info?.rejected,
+      }
+    );
+    if (info?.rejected?.length)
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
   } catch (error) {
-    console.error(`❌ Error sending payment receipt to ${user.email}:`, error?.message || error);
+    console.error(
+      `❌ Error sending payment receipt to ${user.email}:`,
+      error?.message || error
+    );
   }
 };
-
