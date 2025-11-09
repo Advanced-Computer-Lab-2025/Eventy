@@ -7,6 +7,7 @@ import applicationRoutes from "../features/applications/application.route.js";
 import facilityRoutes from "../features/facilities/facility.route.js";
 import notificationRoutes from "../features/notifications/notification.route.js";
 import uploadRoutes from "../features/upload/upload.route.js";
+import loyaltyPartnerRoutes from "../features/loyaltyPartners/loyaltyPartner.route.js";
 import transactionRoutes from "../features/transactions/transaction.route.js";
 
 const PORT = process.env.PORT || 4000;
@@ -45,6 +46,6 @@ router.use("/facilities", facilityRoutes);
 router.use("/notifications", notificationRoutes);
 // upload routes
 router.use("/upload", uploadRoutes);
-//transaction routes
-router.use("/transactions",transactionRoutes);
+// loyalty partner routes
+router.use( '/loyalty-partners',loyaltyPartnerRoutes);
 export default router;
