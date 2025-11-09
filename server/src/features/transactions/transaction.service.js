@@ -217,5 +217,4 @@ export class TransactionService {
   async getUserTransactions(userId) {
     return await Transaction.find({ userId }).sort({ createdAt: -1 });
   }
-
 }

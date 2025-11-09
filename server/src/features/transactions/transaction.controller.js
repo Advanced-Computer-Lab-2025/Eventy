@@ -110,9 +110,8 @@ export class TransactionController {
           )} can perform this action.`,
         });
       }
-      const transactions = await this.transactionService.getUserTransactions(
-        userId
-      );
+      const transactions =
+        await this.transactionService.getUserTransactions(userId);
 
       res.status(200).json({ transactions });
     } catch (error) {
