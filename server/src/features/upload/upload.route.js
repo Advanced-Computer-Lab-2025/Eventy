@@ -48,6 +48,8 @@ const upload = multer({
  * @body    multipart/form-data with 'file' field containing the image file
  * @returns { url: string } - The public URL of the uploaded file
  */
+// Uploads require authentication now. Vendors should signup/login first and then
+// upload files using a bearer token.
 router.post(
   "/",
   authMiddleware,

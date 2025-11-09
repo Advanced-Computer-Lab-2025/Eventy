@@ -18,6 +18,9 @@ router.get(
 // Public (auth) route to list professors for selection in forms
 router.get("/professors", authMiddleware, UserPublicController.getProfessors);
 
+// PATCH /api/users/me - update current user's profile
+router.patch("/me", authMiddleware, UserController.updateProfile);
+
 // PATCH assign role (admin only)
 router.patch(
   "/:id/assign-role",

@@ -3,11 +3,36 @@ import jwt from "jsonwebtoken";
 import { User } from "../users/user.model.js"; // adjust the path if needed
 
 import { signUp } from "./auth.controller.js";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { login, logout, verifyEmail } from "./auth.controller.js";
 
 const router = express.Router();
 
-router.post("/signup", signUp);
+// Configure multer storage for signup file uploads (logo & tax card)
+const signupUploadsDir = path.join(process.cwd(), "uploads", "id-cards");
+if (!fs.existsSync(signupUploadsDir)) {
+  fs.mkdirSync(signupUploadsDir, { recursive: true });
+}
+
+const signupStorage = multer.diskStorage({
+  destination: (req, file, cb) => cb(null, signupUploadsDir),
+  filename: (req, file, cb) => {
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 15);
+    const ext = path.extname(file.originalname);
+    cb(null, `${timestamp}-${random}${ext}`);
+  },
+});
+
+const signupUpload = multer({ storage: signupStorage, limits: { fileSize: 5 * 1024 * 1024 } });
+
+// Accept optional fields companyLogo and taxCard when vendor signs up
+router.post("/signup", signupUpload.fields([
+  { name: "companyLogo", maxCount: 1 },
+  { name: "taxCard", maxCount: 1 },
+]), signUp);
 
 router.post("/login", login);
 

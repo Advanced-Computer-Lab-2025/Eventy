@@ -128,4 +128,26 @@ export default class UserController {
       next(err);
     }
   }
+
+  // PATCH /api/users/me - update current user's profile (companyLogoUrl, taxCardUrl, companyName)
+  static async updateProfile(req, res, next) {
+    try {
+      const userId = req.user && req.user._id;
+      if (!userId) return res.status(401).json({ success: false, message: "Unauthorized" });
+
+      const allowed = {};
+      const { companyLogoUrl, taxCardUrl, companyName, firstName, lastName } = req.body;
+      if (companyLogoUrl) allowed.companyLogoUrl = companyLogoUrl;
+      if (taxCardUrl) allowed.taxCardUrl = taxCardUrl;
+      if (companyName) allowed.companyName = companyName;
+      if (firstName) allowed.firstName = firstName;
+      if (lastName) allowed.lastName = lastName;
+
+      const updated = await User.findByIdAndUpdate(userId, { $set: allowed }, { new: true }).select("-password");
+
+      return res.status(200).json({ success: true, message: "Profile updated", data: updated });
+    } catch (err) {
+      return next(err);
+    }
+  }
 }

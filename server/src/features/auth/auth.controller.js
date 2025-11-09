@@ -5,7 +5,27 @@ import { confirmEmailVerification } from "./auth.service.js";
 
 export const signUp = async (req, res) => {
   try {
-    const result = await signUpUser(req.body);
+    // If signup was multipart (files present), map files to companyLogoUrl/taxCardUrl
+    const data = { ...req.body };
+    try {
+      if (req.files) {
+        // multer stores fields in req.files as arrays
+        if (req.files.companyLogo && req.files.companyLogo[0]) {
+          const file = req.files.companyLogo[0];
+          const url = `${req.protocol}://${req.get("host")}/uploads/id-cards/${file.filename}`;
+          data.companyLogoUrl = url;
+        }
+        if (req.files.taxCard && req.files.taxCard[0]) {
+          const file = req.files.taxCard[0];
+          const url = `${req.protocol}://${req.get("host")}/uploads/id-cards/${file.filename}`;
+          data.taxCardUrl = url;
+        }
+      }
+    } catch (err) {
+      // If mapping file URLs failed, continue — validation will catch missing fields
+    }
+
+    const result = await signUpUser(data);
     res.status(201).json(result);
   } catch (error) {
     if (error.code === 11000) {
