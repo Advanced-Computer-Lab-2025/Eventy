@@ -873,7 +873,7 @@ export default function VendorDashboard() {
               </div>
             </div>
           </DialogHeader>
-          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0 pt-4">
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:space-x-2 pt-4 justify-center !sm:justify-center">
             <Button
               variant="outline"
               className="w-full sm:w-auto"
