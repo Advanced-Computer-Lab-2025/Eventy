@@ -200,10 +200,10 @@ export async function editWorkshop(workshopId, updateData, user) {
   // Check if workshop has already started
   const now = new Date();
   const workshopStartDateTime = new Date(workshop.startDate);
-  
+
   // If startTime exists, combine it with startDate
   if (workshop.startTime) {
-    const [hours, minutes] = workshop.startTime.split(':').map(Number);
+    const [hours, minutes] = workshop.startTime.split(":").map(Number);
     workshopStartDateTime.setHours(hours, minutes, 0, 0);
   }
 
@@ -584,6 +584,7 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
@@ -659,3 +660,51 @@ export const getAttendeesReport = async (options = {}) => {
   };
 };
 
+export const archiveEvent = async (eventId, user) => {
+  // Authorization
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Forbidden: Only Events Office can archive events");
+  }
+
+  const now = new Date();
+
+  // Atomic update — this ensures only eligible events are modified
+  const updatedEvent = await Event.findOneAndUpdate(
+    {
+      _id: eventId,
+      deletedAt: null,                // not deleted
+      status: { $ne: "archived" },    // not already archived
+      endDate: { $lte: now },         // event has ended
+    },
+    {
+      $set: {
+        status: "archived",
+        archivedAt: now,
+        archivedBy: user.id,
+      },
+    },
+    { new: true } // return the updated document
+  );
+
+  // Handle if no document was updated (meaning one of the conditions failed)
+  if (!updatedEvent) {
+    // Now check what the reason could be
+    const existingEvent = await Event.findById(eventId);
+
+    if (!existingEvent) {
+      throw new ApiError(404, "Event not found");
+    } else if (existingEvent.deletedAt !== null) {
+      throw new ApiError(400, "Cannot archive a deleted event");
+    } else if (existingEvent.status === "archived") {
+      throw new ApiError(400, "Event is already archived");
+    } else if (!existingEvent.endDate) {
+      throw new ApiError(400, "Event does not have an endDate and cannot be archived");
+    } else if (new Date(existingEvent.endDate) > now) {
+      throw new ApiError(400, "Cannot archive an event before its end date");
+    } else {
+      throw new ApiError(400, "Event could not be archived due to unknown reason");
+    }
+  }
+
+  return updatedEvent;
+};

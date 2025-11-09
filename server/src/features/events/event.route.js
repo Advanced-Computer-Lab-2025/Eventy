@@ -83,6 +83,14 @@ router.patch(
   eventsController.rejectWorkshop.bind(eventsController)
 );
 
+// Archive event (only Events Office, and only after endDate has passed)
+router.patch(
+  "/:id/archive",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.archiveEvent.bind(eventsController)
+);
+
 // Edit a workshop that needs revision
 router.patch(
   "/workshops/:workshopId",

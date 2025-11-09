@@ -593,6 +593,7 @@ export class EventsController {
       next(err);
     }
   }
+  
 async getAttendeesReport(req, res, next) {
   try {
     // ✅ Validate query params
@@ -618,5 +619,28 @@ async getAttendeesReport(req, res, next) {
     next(err);
   }
 }
+  
+  // Archive an event (only after event endDate has passed)
+  async archiveEvent(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
 
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can archive events"
+        );
+      }
+
+      const event = await eventService.archiveEvent(req.params.id, req.user);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
 }

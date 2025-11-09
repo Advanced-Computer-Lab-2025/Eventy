@@ -79,7 +79,7 @@ export const createWorkshopSchema = Joi.object({
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required(),
 
- startDate: Joi.date().greater("now").required().messages({
+  startDate: Joi.date().greater("now").required().messages({
     "any.required": "Workshop start date is required",
     "date.base": "Invalid start date format",
     "date.greater": "Start date must be in the future",
@@ -142,6 +142,12 @@ export const createWorkshopSchema = Joi.object({
       "array.min": "Professors list must contain at least one ID",
       "string.hex": "Professor IDs must be valid ObjectIds",
     }),
+
+  price: Joi.number().positive().required().messages({
+    "any.required": "Workshop price is required",
+    "number.base": "Price must be a number",
+    "number.positive": "Price must be a positive number",
+  }),
 });
 
 export const updateWorkshopSchema = Joi.object({
@@ -149,10 +155,12 @@ export const updateWorkshopSchema = Joi.object({
   description: Joi.string().optional(),
   location: Joi.string().valid("GUC Cairo", "GUC Berlin").optional(),
   startDate: Joi.date().greater("now").optional().messages({
-    "date.greater": "Start date must be in the future"
+    "date.greater": "Start date must be in the future",
   }),
-  startTime: Joi.string().pattern(/^([01]\d|2[0-3]):([0-5]\d)$/).optional(),
-  endDate: Joi.date().when('startDate', {
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
+  endDate: Joi.date().when("startDate", {
     is: Joi.exist(),
     then: Joi.date().greater(Joi.ref("startDate")),
     otherwise: Joi.date().optional(),
