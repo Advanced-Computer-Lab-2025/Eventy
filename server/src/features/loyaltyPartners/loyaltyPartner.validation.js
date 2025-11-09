@@ -27,6 +27,7 @@ export const applyLoyaltyProgramSchema = Joi.object({
   termsAndConditions: Joi.string()
     .max(500)
     .allow('')
+    .required()
     .messages({
       'string.max': 'Terms and conditions cannot exceed 500 characters.',
     }),
