@@ -52,10 +52,33 @@ export const createTrip = async (tripData, createdBy) => {
     throw new ApiError(400, "Price must be a valid number");
   }
 
+  // Validate required fields
+  if (!tripData.startTime) {
+    throw new ApiError(400, "Start time is required");
+  }
+
+  if (!tripData.endTime) {
+    throw new ApiError(400, "End time is required");
+  }
+
+  // Extract date and time fields
+  const startDateTime = new Date(tripData.startDate);
+  const endDateTime = new Date(tripData.endDate);
+
+  // Validate date format
+  if (isNaN(startDateTime.getTime())) {
+    throw new ApiError(400, "Invalid start date format");
+  }
+
+  if (isNaN(endDateTime.getTime())) {
+    throw new ApiError(400, "Invalid end date format");
+  }
+
   // Ensure end date is after start date
-  if (new Date(tripData.endDate) <= new Date(tripData.startDate)) {
+  if (endDateTime <= startDateTime) {
     throw new ApiError(400, "End date must be after start date");
   }
+
 
   const newTrip = await Event.create({
     ...tripData,

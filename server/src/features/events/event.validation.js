@@ -18,6 +18,13 @@ export const createTripSchema = Joi.object({
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
   capacity: Joi.number().integer().min(1).optional(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+
 });
 
 export const createConferenceSchema = Joi.object({

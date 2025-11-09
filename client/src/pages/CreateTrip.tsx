@@ -185,30 +185,38 @@ export default function TripManagement() {
       }
 
       // Build payload compatible with backend model/validation:
-      // - merge date + time into ISO datetimes for startDate/endDate
+      // - Keep date and time fields separate
       // - convert numeric fields to numbers
-      // - remove startTime/endTime (not part of schema)
       const payload: any = { ...formData };
 
-      // merge date + time -> ISO string (if time missing use 00:00)
+      // Format dates as ISO dates (without time) and keep time fields separate
       if (formData.startDate) {
-        const time =
-          formData.startTime && formData.startTime.trim()
-            ? formData.startTime.trim()
-            : "00:00";
-        payload.startDate = new Date(
-          `${formData.startDate}T${time}:00`
-        ).toISOString();
+        payload.startDate = new Date(formData.startDate).toISOString().split('T')[0];
       }
       if (formData.endDate) {
-        const time =
-          formData.endTime && formData.endTime.trim()
-            ? formData.endTime.trim()
-            : "00:00";
-        payload.endDate = new Date(
-          `${formData.endDate}T${time}:00`
-        ).toISOString();
+        payload.endDate = new Date(formData.endDate).toISOString().split('T')[0];
       }
+      
+      // Keep time fields as they are, ensuring they're not empty strings
+      if (!formData.startTime) {
+        toast({
+          title: "Start time required",
+          description: "Please provide a start time for the trip.",
+          variant: "destructive"
+        });
+        return;
+      }
+      if (!formData.endTime) {
+        toast({
+          title: "End time required",
+          description: "Please provide an end time for the trip.",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      payload.startTime = formData.startTime;
+      payload.endTime = formData.endTime;
 
       // registrationDeadline -> full ISO date (backend expects Date)
       if (formData.registrationDeadline) {
@@ -220,10 +228,6 @@ export default function TripManagement() {
       // numeric conversions
       if (payload.price !== "") payload.price = Number(payload.price);
       if (payload.capacity !== "") payload.capacity = Number(payload.capacity);
-
-      // remove client-only fields not present in backend validation/model
-      delete payload.startTime;
-      delete payload.endTime;
 
       // POST/PATCH paths are under /api/events/
       const url = editingId
