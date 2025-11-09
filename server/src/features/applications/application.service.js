@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import Application from "./application.model.js";
 import { Transaction } from "../transactions/transaction.model.js";
 import { sendVendorApplicationStatusEmail } from "../auth/email.service.js";
+import { Event } from "../events/event.model.js";
+import { User } from "../users/user.model.js";
 
 class ApplicationServiceClass {
   /**
@@ -21,7 +23,7 @@ class ApplicationServiceClass {
       if (applicationData.type === "bazaar") {
         await this.validateBazaarApplicationUniqueness(applicationData);
       }
-      
+
       // For booth applications, validate booth availability
       if (applicationData.type === "booth") {
         await this.validateBoothAvailability(applicationData);
@@ -32,11 +34,17 @@ class ApplicationServiceClass {
       return newApplication;
     } catch (error) {
       // For booth availability errors, pass the original message directly
-      if (applicationData.type === "booth" && error.message.includes("already reserved")) {
+      if (
+        applicationData.type === "booth" &&
+        error.message.includes("already reserved")
+      ) {
         throw error; // Pass the original error with the clean message
       }
       // For bazaar duplicate application errors, pass the original message directly
-      if (applicationData.type === "bazaar" && error.message.includes("already applied")) {
+      if (
+        applicationData.type === "bazaar" &&
+        error.message.includes("already applied")
+      ) {
         throw error; // Pass the original error with the clean message
       }
       // For other errors, wrap with context
@@ -51,7 +59,7 @@ class ApplicationServiceClass {
    */
   async validateBazaarApplicationUniqueness(applicationData) {
     const { event, createdBy } = applicationData;
-    
+
     if (!event || !createdBy) {
       throw new Error("Event and vendor information are required");
     }
@@ -61,7 +69,7 @@ class ApplicationServiceClass {
       event: event,
       createdBy: createdBy,
       type: "bazaar",
-      status: { $ne: "cancelled" } // Only check non-cancelled applications
+      status: { $ne: "cancelled" }, // Only check non-cancelled applications
     });
 
     if (existingApplication) {
@@ -76,7 +84,7 @@ class ApplicationServiceClass {
    */
   async validateBoothAvailability(applicationData) {
     const { locationPreference, durationWeeks } = applicationData;
-    
+
     if (!locationPreference || !durationWeeks) {
       throw new Error("Booth location and duration are required");
     }
@@ -84,53 +92,53 @@ class ApplicationServiceClass {
     // Calculate the end date for this application (assuming it starts today)
     const startDate = new Date();
     const endDate = new Date();
-    endDate.setDate(startDate.getDate() + (durationWeeks * 7));
+    endDate.setDate(startDate.getDate() + durationWeeks * 7);
 
     // Find all approved applications for this booth
     const existingApplications = await Application.find({
       type: "booth",
       locationPreference: locationPreference,
-      status: "approved"
+      status: "approved",
     });
 
     // Check for overlapping periods manually
-    const overlappingApplications = existingApplications.filter(app => {
+    const overlappingApplications = existingApplications.filter((app) => {
       const appStartDate = new Date(app.createdAt);
       const appEndDate = new Date(app.createdAt);
-      appEndDate.setDate(appEndDate.getDate() + (app.durationWeeks * 7));
-      
+      appEndDate.setDate(appEndDate.getDate() + app.durationWeeks * 7);
+
       // Check if periods overlap
-      return (appStartDate < endDate && appEndDate > startDate);
+      return appStartDate < endDate && appEndDate > startDate;
     });
 
     if (overlappingApplications.length > 0) {
-      throw new Error(
-        `unfortunately booth is already reserved`
-      );
+      throw new Error(`unfortunately booth is already reserved`);
     }
   }
-async getAllApplications() {
-  const applications = await Application.find({ status: { $ne: "cancelled" } })
-    .populate({
-      path: "createdBy",
-      select: "companyName email companyLogoUrl taxCardUrl status",
+  async getAllApplications() {
+    const applications = await Application.find({
+      status: { $ne: "cancelled" },
     })
-    .populate("event", "name description startDate endDate location")
-    .sort({ createdAt: -1 });
+      .populate({
+        path: "createdBy",
+        select: "companyName email companyLogoUrl taxCardUrl status",
+      })
+      .populate("event", "name description startDate endDate location")
+      .sort({ createdAt: -1 });
 
-  // Filter out applications for events that have already passed
-  const currentDate = new Date();
-  const activeApplications = applications.filter(app => {
-    // If event is populated and has an endDate, check if it's in the future
-    if (app.event && app.event.endDate) {
-      return new Date(app.event.endDate) > currentDate;
-    }
-    // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
-    return true;
-  });
+    // Filter out applications for events that have already passed
+    const currentDate = new Date();
+    const activeApplications = applications.filter((app) => {
+      // If event is populated and has an endDate, check if it's in the future
+      if (app.event && app.event.endDate) {
+        return new Date(app.event.endDate) > currentDate;
+      }
+      // If event is not populated or doesn't have endDate, include it (shouldn't happen in normal cases)
+      return true;
+    });
 
-  return activeApplications;
-}
+    return activeApplications;
+  }
 
   /**
    * Finds all applications for a specific vendor, with optional filtering and population.
@@ -153,7 +161,7 @@ async getAllApplications() {
 
     // Filter out applications for events that have already passed
     const currentDate = new Date();
-    const activeApplications = applications.filter(app => {
+    const activeApplications = applications.filter((app) => {
       // If event is populated and has an endDate, check if it's in the future
       if (app.event && app.event.endDate) {
         return new Date(app.event.endDate) > currentDate;
@@ -165,31 +173,85 @@ async getAllApplications() {
     return activeApplications;
   }
   /**
- * Updates the status of an application by its ID.
- * @param {string} applicationId - The ID of the application.
- * @param {string} status - The new status ("approved" or "rejected").
- * @returns {Promise<Document|null>} The updated application.
- */
-// async updateApplicationStatus(applicationId, status) {
-//   const application = await Application.findById(applicationId);
-//   if (!application) {
-//     throw new Error("Application not found");
-//   }
+   * Updates the status of an application by its ID.
+   * @param {string} applicationId - The ID of the application.
+   * @param {string} status - The new status ("approved" or "rejected").
+   * @returns {Promise<Document|null>} The updated application.
+   */
+  // async updateApplicationStatus(applicationId, status) {
+  //   const application = await Application.findById(applicationId);
+  //   if (!application) {
+  //     throw new Error("Application not found");
+  //   }
 
-//   application.status = status;
-//   await application.save();
+  //   application.status = status;
+  //   await application.save();
 
-//   return application;
-// }
+  //   return application;
+  // }
 
   async updateApplicationStatus(applicationId, status) {
-    const updatedApp = await Application.findByIdAndUpdate(
-      applicationId,
-      { $set: { status } },
-      { new: true, runValidators: false } // ✅ prevents missing required field errors
-    );
+    let objectId;
+    try {
+      objectId = new mongoose.Types.ObjectId(applicationId);
+    } catch (e) {
+      throw new Error("Invalid application ID format");
+    }
 
-    if (!updatedApp) {
+    // Find the application first
+    const application = await Application.findById(objectId).populate(
+      "createdBy"
+    );
+    if (!application) throw new Error("Application not found");
+    if (application.status === "cancelled") {
+      throw new Error("Application has already been cancelled");
+    }
+    if (application.status !== "pending") {
+      throw new Error(
+        "You can only update the status of pending applications."
+      );
+    }
+
+    let eventId = application.event;
+
+    // If approving a platform booth application, create the event and link it
+    if (
+      status === "approved" &&
+      application.type === "booth" &&
+      !application.event
+    ) {
+      const vendor = application.createdBy;
+      const eventName = `${
+        vendor.firstName || vendor.companyName || "Vendor"
+      }'s platform booth`;
+
+      const eventData = {
+        name: eventName,
+        eventType: "platform_booth",
+        boothSize: application.boothSize,
+        durationWeeks: application.durationWeeks,
+        locationPreference: application.locationPreference,
+        attendees: application.attendees,
+        createdBy: vendor._id,
+        application: application._id,
+        status: "approved",
+      };
+
+      const createdEvent = await Event.create(eventData);
+      eventId = createdEvent._id;
+    }
+
+    // Now update the application status and event field atomically
+    const updatedApplication = await Application.findByIdAndUpdate(
+      objectId,
+      {
+        status,
+        ...(eventId && { event: eventId }),
+      },
+      { new: true }
+    ).populate("createdBy");
+
+    if (!updatedApplication) {
       throw new Error("Application not found");
     }
 
@@ -214,7 +276,7 @@ async getAllApplications() {
       }
     }
 
-    return updatedApp;
+    return updatedApplication;
   }
 
   /**
@@ -227,7 +289,7 @@ async getAllApplications() {
     try {
       await this.validateBoothAvailability({
         locationPreference: boothId,
-        durationWeeks: durationWeeks
+        durationWeeks: durationWeeks,
       });
       return true;
     } catch (error) {
@@ -265,7 +327,7 @@ async getAllApplications() {
     // Use $expr with $toString to handle both ObjectId and string formats
     const vendorIdString = vendorId.toString();
     const applicationIdString = applicationId.toString();
-    
+
     const completedPayment = await Transaction.findOne({
       $expr: {
         $and: [
@@ -273,13 +335,15 @@ async getAllApplications() {
           { $eq: [{ $toString: "$relatedEntity.id" }, applicationIdString] },
           { $eq: ["$type", "payment"] },
           { $eq: ["$status", "completed"] },
-          { $eq: ["$relatedEntity.type", "application"] }
-        ]
-      }
+          { $eq: ["$relatedEntity.type", "application"] },
+        ],
+      },
     });
 
     if (completedPayment) {
-      throw new Error("Cannot cancel application. Payment has already been made.");
+      throw new Error(
+        "Cannot cancel application. Payment has already been made."
+      );
     }
 
     // Set the status to cancelled
@@ -288,7 +352,6 @@ async getAllApplications() {
 
     return application;
   }
-
 }
 
 export const ApplicationService = new ApplicationServiceClass();

@@ -28,7 +28,8 @@
     "mongoose": "^8.4.0",
     "multer": "^2.0.2",
     "nodemailer": "^7.0.9",
-    "resend": "^6.1.2"
+    "resend": "^6.1.2",
+    "stripe": "^19.2.0"
   },
   "devDependencies": {
     "@types/axios": "^0.9.36",
