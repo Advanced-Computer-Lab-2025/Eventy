@@ -2,6 +2,8 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import { TransactionService } from "../transactions/transaction.service.js";
+const transactionService = new TransactionService();
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -710,4 +712,52 @@ export const archiveEvent = async (eventId, user) => {
   }
 
   return updatedEvent;
+};
+
+/**
+ * Cancels a user's registration for an event and processes a refund if eligible.
+ * - Only allows cancellation at least 2 weeks before the event start date.
+ * - Removes the user from the event's attendees.
+ * - Initiates a refund using TransactionService.
+ * @param {string} eventId - The ID of the event to cancel registration for.
+ * @param {string} userId - The ID of the user cancelling registration.
+ * @returns {Promise<Object>} Refund details including eventId, refundedAmount, paymentMethod, and transactionId.
+ * @throws {ApiError} If event not found, cancellation not allowed, or user not registered.
+ */
+export const cancelEventRegistration = async (eventId, userId) => {
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  const now = new Date();
+  const twoWeeksBefore = new Date(event.startDate);
+  twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+  if (now > twoWeeksBefore) {
+    throw new ApiError(
+      400,
+      "Cancellations are only allowed at least 2 weeks before the event."
+    );
+  }
+
+  const isRegistered = event.attendees.some(
+    (att) => att.toString() === userId.toString()
+  );
+  if (!isRegistered)
+    throw new ApiError(400, "User not registered for this event.");
+
+  // Remove attendee
+  event.attendees = event.attendees.filter(
+    (att) => att.toString() !== userId.toString()
+  );
+  await event.save();
+
+  // Refund logic
+  const refund = await transactionService.refundUserForEvent(userId, event._id);
+
+  return {
+    eventId,
+    refundedAmount: refund.amount,
+    paymentMethod: refund.paymentMethod,
+    transactionId: refund._id,
+  };
 };
