@@ -1,7 +1,6 @@
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
-import { Event } from "./event.model.js";
 import {
   createTripSchema,
   workshopStatusSchema,
@@ -11,6 +10,7 @@ import {
   updateBazaarSchema,
   updateConferenceSchema,
   updateWorkshopSchema,
+  getAttendeesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -598,13 +598,7 @@ async getAttendeesReport(req, res, next) {
     // ✅ Validate query params
     const { error, value } = getAttendeesReportSchema.validate(req.query, { abortEarly: false });
 
-    if (error) {
-      return res.status(400).json({
-        status: "error",
-        message: "Validation failed",
-        details: error.details.map((d) => d.message),
-      });
-    }
+    if (error) return next(new ApiError(400, 'Validation failed', error.details));
 
     // ✅ Use the validated values
     const { eventType, startDate, endDate, page, limit } = value;
@@ -613,8 +607,8 @@ async getAttendeesReport(req, res, next) {
       eventType,
       startDate,
       endDate,
-      page: parseInt(page) || 1,
-      limit: parseInt(limit) || 10,
+      page: page || 1,
+      limit: limit || 10,
     });
 
     return res

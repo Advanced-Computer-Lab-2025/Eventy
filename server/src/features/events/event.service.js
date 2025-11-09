@@ -619,12 +619,8 @@ export const getAttendeesReport = async (options = {}) => {
         startDate: 1,
         location: 1,
         attendeesCount: {
-          $cond: [
-            { $ifNull: ["$attendeesCount", false] },
-            "$attendeesCount",
-            { $size: { $ifNull: ["$attendees", []] } },
-          ],
-        },
+          $ifNull: ["$attendeesCount", { $size: { $ifNull: ["$attendees", []] } }]
+        }
       },
     },
 
@@ -656,7 +652,7 @@ export const getAttendeesReport = async (options = {}) => {
   return {
     totalEvents: totals.totalEvents,
     totalAttendees: totals.totalAttendees,
-    events: result.events,
+    events: result.events || [],
   };
 };
 

@@ -274,17 +274,15 @@ export const getAttendeesReportSchema = Joi.object({
       "any.only": "Event type must be one of: conference, workshop, bazaar, trip, or platform_booth",
     }),
 
-  startDateFrom: Joi.date()
-    .optional()
-    .messages({
-      "date.base": "Start date (from) must be a valid date",
-    }),
+  startDate: Joi.date().iso().optional().messages({
+    "date.base": "startDate must be a valid ISO date",
+  }),
 
-  startDateTo: Joi.date()
-    .min(Joi.ref("startDateFrom"))
-    .optional()
-    .messages({
-      "date.base": "Start date (to) must be a valid date",
-      "date.min": "Start date (to) cannot be before start date (from)",
-    }),
-}).unknown(false);
+  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional().messages({
+    "date.base": "endDate must be a valid ISO date",
+    "date.min": "endDate cannot be before startDate",
+  }),
+
+  page: Joi.number().integer().min(1).default(1),
+  limit: Joi.number().integer().min(1).max(100).default(10),
+}).options({ stripUnknown: true });
