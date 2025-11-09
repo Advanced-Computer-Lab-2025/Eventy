@@ -157,18 +157,20 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/events" component={EventListPage} />
-<Route path="/reports/attendees">
-  <div className="min-h-screen bg-background">
-    <Header />
-    <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold">Attendees Report</h1>
-        <p className="text-muted-foreground">Overview of attendees across all events</p>
-      </div>
-      <EventsReport />
-    </main>
-  </div>
-</Route>
+      <Route path="/reports/attendees">
+        <div className="min-h-screen bg-background">
+          <Header />
+          <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold">Attendees Report</h1>
+              <p className="text-muted-foreground">
+                Overview of attendees across all events
+              </p>
+            </div>
+            <EventsReport />
+          </main>
+        </div>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>

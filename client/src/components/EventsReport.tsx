@@ -19,7 +19,8 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface EventStat {
   _id: string;
@@ -43,7 +44,7 @@ export default function EventsReport() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  
+
   // Filters
   const [eventType, setEventType] = useState("all");
   const [startDate, setStartDate] = useState("");
@@ -55,18 +56,22 @@ export default function EventsReport() {
     try {
       setLoading(true);
       setError("");
-      
+
       const token = localStorage.getItem("token");
-      
+
       // Build query params
       const params = new URLSearchParams();
-      if (eventType && eventType !== "all") params.append("eventType", eventType);
+      if (eventType && eventType !== "all")
+        params.append("eventType", eventType);
       if (startDate) params.append("startDate", startDate);
       if (endDate) params.append("endDate", endDate);
       params.append("page", page.toString());
       params.append("limit", limit.toString());
 
-      console.log("Fetching report with URL:", `${API_BASE_URL}/api/events/reports/attendees?${params.toString()}`);
+      console.log(
+        "Fetching report with URL:",
+        `${API_BASE_URL}/api/events/reports/attendees?${params.toString()}`
+      );
 
       const response = await fetch(
         `${API_BASE_URL}/api/events/reports/attendees?${params.toString()}`,
@@ -80,7 +85,9 @@ export default function EventsReport() {
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || "Failed to fetch attendees report");
+        throw new Error(
+          errorData.message || "Failed to fetch attendees report"
+        );
       }
 
       const data = await response.json();
@@ -158,7 +165,9 @@ export default function EventsReport() {
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             <div>
-              <label className="text-sm font-medium mb-2 block">Event Type</label>
+              <label className="text-sm font-medium mb-2 block">
+                Event Type
+              </label>
               <Select value={eventType} onValueChange={setEventType}>
                 <SelectTrigger>
                   <SelectValue placeholder="All Types" />
@@ -174,7 +183,9 @@ export default function EventsReport() {
             </div>
 
             <div>
-              <label className="text-sm font-medium mb-2 block">Start Date</label>
+              <label className="text-sm font-medium mb-2 block">
+                Start Date
+              </label>
               <Input
                 type="date"
                 value={startDate}
@@ -192,7 +203,11 @@ export default function EventsReport() {
             </div>
 
             <div className="flex items-end">
-              <Button onClick={handleClearFilters} variant="outline" className="w-full">
+              <Button
+                onClick={handleClearFilters}
+                variant="outline"
+                className="w-full"
+              >
                 Clear Filters
               </Button>
             </div>
@@ -222,8 +237,12 @@ export default function EventsReport() {
                   <TableBody>
                     {reportData.events.map((event) => (
                       <TableRow key={event._id}>
-                        <TableCell className="font-medium">{event.name}</TableCell>
-                        <TableCell className="capitalize">{event.eventType}</TableCell>
+                        <TableCell className="font-medium">
+                          {event.name}
+                        </TableCell>
+                        <TableCell className="capitalize">
+                          {event.eventType}
+                        </TableCell>
                         <TableCell>
                           {event.startDate
                             ? new Date(event.startDate).toLocaleDateString()
