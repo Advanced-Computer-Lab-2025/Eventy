@@ -111,17 +111,21 @@ export default function EventCard({
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  // Determine user role for delete permission
+  
+  // Determine user role for delete permission and favorite button visibility
   let roleAllowsDelete = false;
+  let roleAllowsFavorites = false;
   try {
     const token = localStorage.getItem("token");
     if (token) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const role = payload?.role;
       roleAllowsDelete = role === "admin" || role === "events_office";
+      roleAllowsFavorites = ["student", "staff", "ta", "professor"].includes(role);
     }
   } catch {}
   const canShowDelete = roleAllowsDelete;
+  const canShowFavorites = roleAllowsFavorites;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
@@ -311,7 +315,7 @@ export default function EventCard({
                     View Details
                   </Button>
                 )}
-                <FavoriteButton eventId={id} />
+                {canShowFavorites && <FavoriteButton eventId={id} />}
               </div>
               {canShowDelete && !hasRegistrations && (
                 <Button
@@ -405,9 +409,11 @@ export default function EventCard({
                   </Button>
                 )}
                 <div className="flex items-center gap-2">
-                  <div className="relative" onClick={(e) => e.stopPropagation()}>
-                    <FavoriteButton eventId={id} />
-                  </div>
+                  {canShowFavorites && (
+                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                      <FavoriteButton eventId={id} />
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="icon"
