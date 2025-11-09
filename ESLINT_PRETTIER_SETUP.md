@@ -5,6 +5,7 @@ This document describes the complete linting and formatting setup for the Eventy
 ## 🎯 Overview
 
 The project uses:
+
 - **ESLint v9** - JavaScript/TypeScript linter with flat config
 - **Prettier** - Code formatter
 - **eslint-plugin-prettier** - Runs Prettier as an ESLint rule
@@ -16,18 +17,21 @@ The project uses:
 ## 📦 Installed Packages
 
 ### Core Linting & Formatting
+
 - `eslint` - Main linter
 - `prettier` - Code formatter
 - `eslint-plugin-prettier` - Prettier integration
 - `eslint-config-prettier` - Turn off conflicting rules
 
 ### ESLint Plugins
+
 - `@typescript-eslint/eslint-plugin` - TypeScript rules
 - `@typescript-eslint/parser` - TypeScript parser
 - `eslint-plugin-react` - React-specific rules
 - `eslint-plugin-react-hooks` - React Hooks rules
 
 ### Git Hooks
+
 - `husky` - Git hooks manager
 - `lint-staged` - Run on staged files only
 
@@ -36,6 +40,7 @@ The project uses:
 ### 1. `eslint.config.js` (ESLint v9 Flat Config)
 
 The new flat config format with:
+
 - JavaScript/JSX configuration
 - TypeScript/TSX configuration
 - React and React Hooks support
@@ -43,6 +48,7 @@ The new flat config format with:
 - Automatic file ignoring
 
 **Key Rules:**
+
 - Prettier errors trigger ESLint errors
 - React JSX doesn't require React import
 - Unused variables with `_` prefix are allowed
@@ -52,6 +58,7 @@ The new flat config format with:
 ### 2. `.prettierrc.json`
 
 Prettier formatting rules:
+
 ```json
 {
   "semi": true,
@@ -85,13 +92,8 @@ Files excluded from Prettier formatting.
 ```json
 {
   "lint-staged": {
-    "**/*.{js,jsx,ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "**/*.{json,css,scss,md}": [
-      "prettier --write"
-    ]
+    "**/*.{js,jsx,ts,tsx}": ["eslint --fix", "prettier --write"],
+    "**/*.{json,css,scss,md}": ["prettier --write"]
   }
 }
 ```
@@ -101,21 +103,25 @@ Files excluded from Prettier formatting.
 ### Manual Commands
 
 #### Check for linting errors
+
 ```bash
 npm run lint
 ```
 
 #### Fix linting errors automatically
+
 ```bash
 npm run lint:fix
 ```
 
 #### Format all files
+
 ```bash
 npm run format
 ```
 
 #### Check if files are formatted
+
 ```bash
 npm run format:check
 ```
@@ -123,12 +129,14 @@ npm run format:check
 ### Pre-Commit Hook (Automatic)
 
 Every commit automatically:
+
 1. Runs ESLint with auto-fix on staged JS/TS files
 2. Runs Prettier on staged files
 3. Stages the fixed files
 4. Completes the commit
 
 **Example:**
+
 ```bash
 git add .
 git commit -m "feat: add new feature"
@@ -136,6 +144,7 @@ git commit -m "feat: add new feature"
 ```
 
 ### Bypass Hook (Emergency Only)
+
 ```bash
 git commit --no-verify -m "emergency fix"
 ```
@@ -145,15 +154,18 @@ git commit --no-verify -m "emergency fix"
 ### Workflow: `lint-and-format.yml`
 
 **Triggers:**
+
 - Pull requests to `main`
 - Pushes to `main`
 
 **Steps:**
+
 1. **Prettier Check** - Ensures all files are formatted
 2. **ESLint** - Lints all JavaScript/TypeScript files
 3. **Reviewdog** - Posts inline comments on PRs with ESLint issues
 
 **Example PR Comment:**
+
 ```
 AdminHeader.tsx:15
 warning: 'User' is defined but never used (@typescript-eslint/no-unused-vars)
@@ -169,17 +181,20 @@ warning: 'User' is defined but never used (@typescript-eslint/no-unused-vars)
 ## 📋 ESLint Rules Summary
 
 ### JavaScript/TypeScript Common Rules
+
 - ✅ Prettier errors are ESLint errors
 - ⚠️ Unused variables (use `_` prefix to ignore)
 - ⚠️ `console.log` statements (allow `console.warn/error`)
 - ✅ React imports not required in JSX files
 
 ### TypeScript-Specific Rules
+
 - ⚠️ `any` type usage (warning)
 - ⚠️ Unused variables with `_` prefix allowed
 - ❌ Explicit return types not required
 
 ### React-Specific Rules
+
 - ✅ React Hooks rules enforced
 - ❌ PropTypes not required (using TypeScript)
 - ⚠️ Hook dependencies checked
@@ -189,6 +204,7 @@ warning: 'User' is defined but never used (@typescript-eslint/no-unused-vars)
 ### Adding New ESLint Rules
 
 Edit `eslint.config.js`:
+
 ```javascript
 rules: {
   "no-console": "error", // Change console to error
@@ -199,37 +215,44 @@ rules: {
 ### Changing Prettier Rules
 
 Edit `.prettierrc.json`:
+
 ```json
 {
-  "singleQuote": true,  // Use single quotes
-  "printWidth": 100     // Longer lines
+  "singleQuote": true, // Use single quotes
+  "printWidth": 100 // Longer lines
 }
 ```
 
 ### Excluding Files from Linting
 
 Edit the `ignores` array in `eslint.config.js`:
+
 ```javascript
 ignores: [
-  "**/generated/**",  // Add new pattern
-]
+  "**/generated/**", // Add new pattern
+];
 ```
 
 ## 🧪 Testing Your Setup
 
 ### 1. Test Prettier
+
 ```bash
 npm run format:check
 ```
+
 Should show which files need formatting.
 
 ### 2. Test ESLint
+
 ```bash
 npm run lint
 ```
+
 Should show linting errors and warnings.
 
 ### 3. Test Pre-Commit Hook
+
 ```bash
 # Make a change
 echo "const test = 1" >> test.js
@@ -239,35 +262,45 @@ git commit -m "test"
 ```
 
 ### 4. Test Auto-Fix
+
 ```bash
 npm run lint:fix
 npm run format
 ```
+
 Should fix most issues automatically.
 
 ## 🔍 Common Issues & Solutions
 
 ### Issue: ESLint finds too many errors
+
 **Solution:** Run auto-fix first
+
 ```bash
 npm run lint:fix
 npm run format
 ```
 
 ### Issue: Pre-commit hook is slow
+
 **Solution:** lint-staged only runs on changed files, but if you have many staged files, it may be slow. Commit in smaller chunks.
 
 ### Issue: Prettier and ESLint conflict
+
 **Solution:** We use `eslint-config-prettier` to disable conflicting rules. If you see conflicts, this config may need updating.
 
 ### Issue: Hook doesn't run
+
 **Solution:** Reinitialize Husky
+
 ```bash
 npm run prepare
 ```
 
 ### Issue: Want to skip hooks temporarily
+
 **Solution:** Use `--no-verify` (not recommended)
+
 ```bash
 git commit --no-verify -m "skip hooks"
 ```
@@ -275,18 +308,21 @@ git commit --no-verify -m "skip hooks"
 ## 📊 Integration Benefits
 
 ### For Developers
+
 - ✅ Automatic code formatting
 - ✅ Catch errors before commit
 - ✅ Consistent code style
 - ✅ Less time in code review
 
 ### For Code Review
+
 - ✅ Focus on logic, not style
 - ✅ Automated feedback on PRs
 - ✅ Faster review process
 - ✅ Consistent standards
 
 ### For CI/CD
+
 - ✅ Fail fast on formatting issues
 - ✅ Automated quality checks
 - ✅ No unformatted code in main branch
@@ -301,15 +337,15 @@ git commit --no-verify -m "skip hooks"
 
 ## 📝 Quick Reference
 
-| Task | Command |
-|------|---------|
-| Check linting | `npm run lint` |
-| Fix linting | `npm run lint:fix` |
-| Check formatting | `npm run format:check` |
-| Format code | `npm run format` |
-| Run both | `npm run lint:fix && npm run format` |
-| Skip pre-commit | `git commit --no-verify` |
-| Reinit hooks | `npm run prepare` |
+| Task             | Command                              |
+| ---------------- | ------------------------------------ |
+| Check linting    | `npm run lint`                       |
+| Fix linting      | `npm run lint:fix`                   |
+| Check formatting | `npm run format:check`               |
+| Format code      | `npm run format`                     |
+| Run both         | `npm run lint:fix && npm run format` |
+| Skip pre-commit  | `git commit --no-verify`             |
+| Reinit hooks     | `npm run prepare`                    |
 
 ---
 
