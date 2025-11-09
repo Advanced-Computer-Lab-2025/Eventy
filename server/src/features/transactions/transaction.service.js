@@ -209,4 +209,13 @@ export class TransactionService {
 
     throw new Error("Invalid payment method for wallet top-up");
   }
+  /**
+   * Get all transactions for a given user.
+   * @param {String} userId
+   * @returns {Promise<Transaction[]>}
+   */
+  async getUserTransactions(userId) {
+    return await Transaction.find({ userId }).sort({ createdAt: -1 });
+  }
+
 }
