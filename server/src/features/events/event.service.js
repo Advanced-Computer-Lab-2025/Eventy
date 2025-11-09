@@ -743,12 +743,16 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
     throw new ApiError(403, "Only Events Office can restrict event access");
   }
 
-  // Validate roles array
+  // Ensure unique roles and validate them
+  const uniqueRoles = [...new Set(rolesToRestrict)];
   const validRoles = ["student", "staff", "ta", "professor", "vendor", "events_office", "admin"];
-  const invalidRoles = rolesToRestrict.filter(role => !validRoles.includes(role));
+  const invalidRoles = uniqueRoles.filter(role => !validRoles.includes(role));
   if (invalidRoles.length > 0) {
     throw new ApiError(400, `Invalid roles provided: ${invalidRoles.join(", ")}`);
   }
+  
+  // Replace the input array with unique roles
+  rolesToRestrict = uniqueRoles;
 
   // Find and validate event
   const event = await Event.findById(eventId);
