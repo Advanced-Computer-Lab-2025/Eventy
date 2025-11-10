@@ -7,7 +7,10 @@ import {
 class FacilitiesServiceClass {
   async reserveCourt(userId, reservationData) {
     const { courtType, date, startTime, endTime } = reservationData;
-
+    const user = await user.findById(userId);
+    if (!user) {
+      throw new Error("user with the given id not found");
+    }
     // Validate availability
     const schedules = await this.getCourtSchedules();
     const courtSchedule = schedules[courtType];
@@ -17,6 +20,11 @@ class FacilitiesServiceClass {
     }
 
     const bookingDate = new Date(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (bookingDate < today) throw new Error("Cannot book a past date");
+
     const formattedDate = this.getLocalDateString(bookingDate);
 
     const daySchedule = courtSchedule.find((d) => d.date === formattedDate);
