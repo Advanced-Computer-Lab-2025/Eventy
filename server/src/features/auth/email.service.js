@@ -1127,12 +1127,16 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                           </td>
                           <td style="padding: 12px 0; font-size: 15px; color: #1a202c; text-align: right;">${formattedDate}</td>
                         </tr>
-                        <tr>
+                        ${
+                          event
+                            ? `<tr>
                           <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
                             Event:
                           </td>
                           <td style="padding: 12px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${eventName}</td>
-                        </tr>
+                        </tr>`
+                            : ""
+                        }
                         <tr>
                           <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
                             Payment Method:
