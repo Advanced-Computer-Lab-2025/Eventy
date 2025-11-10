@@ -13,10 +13,10 @@ dotenv.config();
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
-  secure: true, // true for port 465, false for 587
+  secure: true,
   auth: {
-    user: process.env.EMAIL_USER, // Gmail address
-    pass: process.env.EMAIL_PASS, // App Password (requires 2FA)
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
 
@@ -1086,27 +1086,20 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
           <tr>
             <td align="center" style="padding:40px 20px;">
               <table role="presentation" style="max-width:600px;width:100%;" class="card">
-                <!-- Header -->
                 <tr>
                   <td style="background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 50%,#fce7f3 100%);padding:48px 40px;text-align:center;border-radius:16px 16px 0 0;">
                     <img src="cid:logo" alt="Eventy Logo" style="height:140px;width:auto;margin:0 auto 16px;display:block;" />
                     <h1 style="margin:0;font-size:16px;font-weight:700;color:#065f46;">Payment Confirmed ✓</h1>
                   </td>
                 </tr>
-
-                <!-- Main Content -->
                 <tr>
                   <td style="padding:50px 40px 40px;">
                     <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;">Thank you, ${fullDisplayName}! 🎉</h2>
                     <p class="text-secondary">Your payment has been successfully processed. Below are the details of your transaction.</p>
-
-                    <!-- Amount -->
                     <div class="amount-box">
                       <p style="margin:0 0 8px;font-size:14px;font-weight:600;text-transform:uppercase;">Amount Paid</p>
                       <div style="font-size:36px;font-weight:700;color:#047857;">$${formattedAmount}</div>
                     </div>
-
-                    <!-- Transaction Details -->
                     <div class="transaction-box">
                       <table style="width:100%;border-collapse:collapse;">
                         <tr>
@@ -1131,8 +1124,6 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                         </tr>
                       </table>
                     </div>
-
-                    <!-- Confirmation / Wallet message -->
                     <p>
                       ${
                         event
@@ -1140,10 +1131,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                           : `Your wallet has been successfully topped up. You can now use your balance for future event payments.`
                       }
                     </p>
-
-                    <!-- Fixed CTA -->
                     <a href="http://localhost:5000/my-events" class="button">View My Events</a>
-
                   </td>
                 </tr>
               </table>
@@ -1168,7 +1156,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       }
     );
     if (info?.rejected?.length)
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      console.error("⚠ Some recipients were rejected:", info.rejected);
   } catch (error) {
     console.error(
       `❌ Error sending payment receipt to ${user.email}:`,
