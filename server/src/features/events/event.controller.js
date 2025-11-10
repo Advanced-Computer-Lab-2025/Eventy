@@ -557,6 +557,28 @@ export class EventsController {
     }
   }
 
+  // GET /api/events/past - returns events whose endDate is before or equal to now
+  async getPastEvents(req, res, next) {
+    try {
+      // Require authenticated user (role middleware on route will enforce role)
+      if (!req.user) throw new ApiError(401, "Unauthorized");
+
+      const now = new Date();
+
+      // Use service.getEvents with a filter for events that have ended
+      const events = await eventService.getEvents({
+        endDate: { $lte: now },
+        deletedAt: null,
+      });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Past events fetched successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;

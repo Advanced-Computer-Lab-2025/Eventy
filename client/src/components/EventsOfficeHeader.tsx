@@ -7,6 +7,7 @@ import {
   Plane,
   ClipboardList,
   Dumbbell,
+  Archive,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -110,6 +111,16 @@ export default function EventsOfficeHeader() {
           >
             <ClipboardList className="h-4 w-4" />
             Vendor Requests
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/events-office/archived")}
+            data-testid="button-nav-archived"
+          >
+            <Archive className="h-4 w-4" />
+            Archived
           </Button>
           {/* <Button
             variant="ghost"

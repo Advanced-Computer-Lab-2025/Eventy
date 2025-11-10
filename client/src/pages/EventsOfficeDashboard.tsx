@@ -14,6 +14,7 @@ import {
   X,
   ClipboardList,
   Dumbbell,
+  Archive,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,23 @@ export default function EventsOfficeDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
+
+  // Past events states
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [pastEventsLoading, setPastEventsLoading] = useState(false);
+  const [pastEventsError, setPastEventsError] = useState("");
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [pastEventSearch, setPastEventSearch] = useState("");
+
+  const filteredPastEvents = pastEvents.filter((event: any) => {
+    const q = pastEventSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (event.name || "").toLowerCase().includes(q) ||
+      (event.eventType || "").toLowerCase().includes(q) ||
+      (event.location || "").toLowerCase().includes(q)
+    );
+  });
 
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -149,10 +167,68 @@ export default function EventsOfficeDashboard() {
     if (reminderTime) clearTimeout(reminderTime);
   };
 
+  const handleArchiveEvent = async (eventId: string) => {
+    try {
+      setArchivingId(eventId);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}/archive`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to archive event");
+      }
+
+      // Remove the archived event from the past events list
+      setPastEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+    } catch (err: any) {
+      console.error("Error archiving event:", err);
+      // You might want to show this error to the user
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
+  const fetchPastEvents = async () => {
+    setPastEventsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/past`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch past events");
+      }
+      const data = await res.json();
+      // Only keep non-archived events
+      const items = Array.isArray(data.data) ? data.data : [];
+      setPastEvents(items.filter((e: any) => e.status !== "archived"));
+    } catch (err: any) {
+      setPastEventsError(err.message || "Failed to fetch past events");
+      setPastEvents([]);
+    } finally {
+      setPastEventsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBazaars();
     fetchPendingWorkshops();
-
+    fetchPastEvents();
     const fetchConferences = async () => {
       try {
         setLoadingConfs(true);
@@ -396,7 +472,16 @@ export default function EventsOfficeDashboard() {
                 ))}
               </div>
               <EventSearch
-                onSearchResults={(results) => setUpcomingEvents(results)}
+                onSearchResults={(results) => {
+                  // Filter to show only upcoming events
+                  const now = new Date();
+                  const upcomingEvts = results.filter((event: any) => {
+                    const eventEndDate = new Date(event.endDate);
+                    eventEndDate.setUTCHours(23, 59, 59, 999);
+                    return eventEndDate.getTime() >= now.getTime();
+                  });
+                  setUpcomingEvents(upcomingEvts);
+                }}
                 onLoading={(isLoading) => setUpcomingLoading(isLoading)}
                 onError={(msg) => setUpcomingError(msg)}
                 placeholder="Search events by name, professor, or type..."
@@ -475,6 +560,101 @@ export default function EventsOfficeDashboard() {
                         showDetailedView={true}
                       />
                     ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Past Events */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Past Events</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search past events..."
+                  value={pastEventSearch}
+                  onChange={(e) => setPastEventSearch(e.target.value)}
+                  className="w-64"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fetchPastEvents()}
+                >
+                  Refresh
+                </Button>
+              </div>
+              {pastEventsLoading ? (
+                <p>Loading past events...</p>
+              ) : pastEventsError ? (
+                <p className="text-red-500">{pastEventsError}</p>
+              ) : filteredPastEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">
+                    No past events found
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredPastEvents.slice(0, 8).map((event: any) => (
+                    <div key={event._id} className="relative">
+                      <EventCard
+                        id={event._id}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={event.location || "Unknown location"}
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={
+                          event.bannerImage ||
+                          event.image ||
+                          getEventImage(event.eventType, event.name)
+                        }
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        capacity={-1}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                        canDelete={false}
+                        onArchive={() => handleArchiveEvent(event._id)}
+                        isArchiving={archivingId === event._id}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
