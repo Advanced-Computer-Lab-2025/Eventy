@@ -1030,12 +1030,6 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     // Don't throw - log error but don't fail the status update
   }
 };
-/**
- * Sends a payment receipt email to the user
- * @param {Object} user - User object with email and name
- * @param {Object} transaction - Transaction details
- * @param {Object|null} event - Event details (null for wallet top-ups)
- */
 export const sendPaymentReceipt = async (user, transaction, event) => {
   const namePrefix =
     user?.role?.toLowerCase() === "professor" ? "Professor " : "";
@@ -1072,68 +1066,160 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Payment Receipt</title>
-        <style>
-          body { margin:0; padding:0; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif; background:linear-gradient(135deg,#f0f9ff 0%,#e0e7ff 50%,#fce7f3 100%); color:#1a202c; }
-          .text-secondary { color:#4a5568; }
-          .card { background-color:#fff; border-radius:16px; }
-          .amount-box { background:linear-gradient(135deg,#d1fae5 0%,#a7f3d0 100%); border-radius:12px; padding:28px; text-align:center; border-left:4px solid #10b981; }
-          .transaction-box { background:linear-gradient(135deg,#f7fafc 0%,#edf2f7 100%); border-radius:12px; padding:28px; }
-          a.button { display:inline-block; padding:16px 48px; background:linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; text-decoration:none; border-radius:25px; font-weight:600; font-size:16px; }
-        </style>
       </head>
-      <body>
-        <table role="presentation" style="width:100%;border-collapse:collapse;">
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
           <tr>
-            <td align="center" style="padding:40px 20px;">
-              <table role="presentation" style="max-width:600px;width:100%;" class="card">
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
                 <tr>
-                  <td style="background:linear-gradient(135deg,#dbeafe 0%,#e0e7ff 50%,#fce7f3 100%);padding:48px 40px;text-align:center;border-radius:16px 16px 0 0;">
-                    <img src="cid:logo" alt="Eventy Logo" style="height:140px;width:auto;margin:0 auto 16px;display:block;" />
-                    <h1 style="margin:0;font-size:16px;font-weight:700;color:#065f46;">Payment Confirmed ✓</h1>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #065f46; line-height: 1.2;">
+                        Payment Confirmed ✓
+                      </h1>
+                    </div>
                   </td>
                 </tr>
+                
+                <!-- Main Content -->
                 <tr>
-                  <td style="padding:50px 40px 40px;">
-                    <h2 style="margin:0 0 16px;font-size:28px;font-weight:700;">Thank you, ${fullDisplayName}! 🎉</h2>
-                    <p class="text-secondary">Your payment has been successfully processed. Below are the details of your transaction.</p>
-                    <div class="amount-box">
-                      <p style="margin:0 0 8px;font-size:14px;font-weight:600;text-transform:uppercase;">Amount Paid</p>
-                      <div style="font-size:36px;font-weight:700;color:#047857;">$${formattedAmount}</div>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 28px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Thank you, ${fullDisplayName}! 🎉
+                    </h2>
+                    <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Your payment has been successfully processed. Below are the details of your transaction.
+                    </p>
+                    
+                    <!-- Amount Box -->
+                    <div style="background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 12px; padding: 28px; margin: 32px 0; text-align: center; border-left: 4px solid #10b981; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #065f46;">
+                        Amount Paid
+                      </p>
+                      <div style="font-size: 48px; font-weight: 700; color: #047857; line-height: 1.2;">
+                        $${formattedAmount}
+                      </div>
                     </div>
-                    <div class="transaction-box">
-                      <table style="width:100%;border-collapse:collapse;">
+                    
+                    <!-- Transaction Details Box -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Transaction Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
                         <tr>
-                          <td style="padding:12px 0;font-weight:600;">Transaction ID:</td>
-                          <td style="padding:12px 0;text-align:right;font-family:monospace;">${transaction._id}</td>
+                          <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Transaction ID:
+                          </td>
+                          <td style="padding: 12px 0; font-size: 14px; color: #1a202c; text-align: right; font-family: monospace; word-break: break-all;">
+                            ${transaction._id}
+                          </td>
                         </tr>
                         <tr>
-                          <td style="padding:12px 0;font-weight:600;">Date:</td>
-                          <td style="padding:12px 0;text-align:right;">${formattedDate}</td>
+                          <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 12px 0; font-size: 15px; color: #1a202c; text-align: right;">${formattedDate}</td>
                         </tr>
                         <tr>
-                          <td style="padding:12px 0;font-weight:600;">Event:</td>
-                          <td style="padding:12px 0;font-weight:700;text-align:right;">${eventName}</td>
+                          <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Event:
+                          </td>
+                          <td style="padding: 12px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${eventName}</td>
                         </tr>
                         <tr>
-                          <td style="padding:12px 0;font-weight:600;">Payment Method:</td>
-                          <td style="padding:12px 0;text-align:right;">${paymentMethodDisplay}</td>
+                          <td style="padding: 12px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Payment Method:
+                          </td>
+                          <td style="padding: 12px 0; font-size: 15px; color: #1a202c; text-align: right;">${paymentMethodDisplay}</td>
                         </tr>
-                        <tr>
-                          <td style="padding:16px 0 0;font-weight:700;">Total Paid:</td>
-                          <td style="padding:16px 0 0;font-weight:700;color:#10b981;text-align:right;">${formattedAmount}</td>
+                        <tr style="border-top: 2px solid #e2e8f0;">
+                          <td style="padding: 16px 0 0; font-size: 16px; color: #1a202c; font-weight: 700;">
+                            Total Paid:
+                          </td>
+                          <td style="padding: 16px 0 0; font-size: 18px; font-weight: 700; color: #10b981; text-align: right;">
+                            $${formattedAmount}
+                          </td>
                         </tr>
                       </table>
                     </div>
-                    <p>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
                       ${
                         event
                           ? `Your registration for <strong>${eventName}</strong> is now confirmed. We look forward to seeing you at the event!`
                           : `Your wallet has been successfully topped up. You can now use your balance for future event payments.`
                       }
                     </p>
-                    <a href="http://localhost:5000/my-events" class="button">View My Events</a>
+                    
+                    <!-- CTA Button -->
+                    <table role="presentation" style="width: 100%; margin: 32px 0;">
+                      <tr>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/my-events" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View My Events</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="http://localhost:5000/my-events" 
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
+                            View My Events
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Alternative Link Fallback -->
+                    <div style="background-color: #f7fafc; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px; font-size: 13px; color: #718096; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Button not working?
+                      </p>
+                      <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
+                        <a href="http://localhost:5000/my-events" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your events</a>
+                      </p>
+                    </div>
+                    
+                    <!-- Info Notice -->
+                    <div style="margin-top: 32px; padding: 16px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">
+                        <strong>Need Help?</strong> If you have any questions about this transaction, please contact our support team or visit your dashboard.
+                      </p>
+                    </div>
                   </td>
                 </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      This is an automated receipt for your records. Please keep this email for your reference.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © 2025 Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
               </table>
             </td>
           </tr>
@@ -1156,7 +1242,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       }
     );
     if (info?.rejected?.length)
-      console.error("⚠ Some recipients were rejected:", info.rejected);
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
   } catch (error) {
     console.error(
       `❌ Error sending payment receipt to ${user.email}:`,
