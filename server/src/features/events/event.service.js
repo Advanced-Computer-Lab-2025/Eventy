@@ -79,6 +79,8 @@ export const createConference = async (data, userId) => {
     fundingSource,
     extraResources,
     agenda,
+    startTime,
+    endTime,
   } = data;
 
   // Validate required fields
@@ -105,6 +107,8 @@ export const createConference = async (data, userId) => {
     extraResources,
     agenda,
     websiteUrl,
+    startTime,
+    endTime,
     createdBy: userId,
   });
 

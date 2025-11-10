@@ -33,6 +33,12 @@ export const createConferenceSchema = Joi.object({
   fundingSource: Joi.string().valid("external", "guc").required(),
   extraResources: Joi.string().optional(),
   agenda: Joi.string().optional(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
 });
 
 export const updateConferenceSchema = Joi.object({
@@ -45,6 +51,12 @@ export const updateConferenceSchema = Joi.object({
   fundingSource: Joi.string().valid("external", "guc").optional(),
   extraResources: Joi.string().optional(),
   agenda: Joi.string().optional(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
 }).min(1);
 
 // Validation schema for workshop status update
