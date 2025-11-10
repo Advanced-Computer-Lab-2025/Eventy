@@ -61,6 +61,11 @@ const GymSession = mongoose.model("GymSession", gymSessionSchema);
 // CourtBooking Schema
 const courtBookingSchema = new mongoose.Schema(
   {
+    courtId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Court",
+      required: true,
+    },
     courtType: {
       type: String,
       required: true,
