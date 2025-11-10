@@ -74,10 +74,18 @@ export const createWorkshopSchema = Joi.object({
   }),
   startTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .required(),
+    .required()
+    .messages({
+      "any.required": "Start time is required",
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
-    .required(),
+    .required()
+    .messages({
+      "any.required": "End time is required",
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
 
   startDate: Joi.date().greater("now").required().messages({
     "any.required": "Workshop start date is required",
@@ -198,6 +206,7 @@ export const updateTripSchema = Joi.object({
   capacity: Joi.number(),
   price: Joi.number().positive(),
 }).min(1);
+
 export const createBazaarSchema = Joi.object({
   name: Joi.string().trim().required().messages({
     "any.required": "Bazaar name is required",
@@ -212,11 +221,26 @@ export const createBazaarSchema = Joi.object({
   }),
   startDate: Joi.date().required(),
   endDate: Joi.date().greater(Joi.ref("startDate")).required(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Bazaar start time is required",
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Bazaar end time is required",
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
   registrationDeadline: Joi.date().less(Joi.ref("startDate")).required(),
   capacity: Joi.number().integer().min(1).optional(),
   bannerImage: Joi.string().uri().optional(),
   extraResources: Joi.string().optional(),
 }).unknown(false);
+
 export const updateBazaarSchema = Joi.object({
   name: Joi.string().trim().optional().messages({
     "string.base": "Bazaar name must be text",
@@ -263,6 +287,20 @@ export const updateBazaarSchema = Joi.object({
     "string.base": "Extra resources must be text",
   }),
 
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional()
+    .messages({
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional()
+    .messages({
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
+
   // Prevent fields that belong to other event types
   price: Joi.forbidden(),
   agenda: Joi.forbidden(),
@@ -271,7 +309,7 @@ export const updateBazaarSchema = Joi.object({
   faculty: Joi.forbidden(),
   professors: Joi.forbidden(),
   websiteUrl: Joi.forbidden(),
-});
+}).min(1);
 
 export const getAttendeesReportSchema = Joi.object({
   eventType: Joi.string()
