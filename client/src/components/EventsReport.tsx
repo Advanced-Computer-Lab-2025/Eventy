@@ -46,9 +46,9 @@ export default function EventsReport() {
   const [error, setError] = useState("");
 
   // Filters
+  const [eventName, setEventName] = useState("");
   const [eventType, setEventType] = useState("all");
   const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -61,17 +61,12 @@ export default function EventsReport() {
 
       // Build query params
       const params = new URLSearchParams();
+      if (eventName.trim()) params.append("eventName", eventName.trim());
       if (eventType && eventType !== "all")
         params.append("eventType", eventType);
       if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate);
       params.append("page", page.toString());
       params.append("limit", limit.toString());
-
-      console.log(
-        "Fetching report with URL:",
-        `${API_BASE_URL}/api/events/reports/attendees?${params.toString()}`
-      );
 
       const response = await fetch(
         `${API_BASE_URL}/api/events/reports/attendees?${params.toString()}`,
@@ -91,7 +86,6 @@ export default function EventsReport() {
       }
 
       const data = await response.json();
-      console.log("Report data:", data);
       setReportData(data.data);
     } catch (err: any) {
       console.error("Error fetching report:", err);
@@ -103,12 +97,12 @@ export default function EventsReport() {
 
   useEffect(() => {
     fetchReport();
-  }, [page, eventType, startDate, endDate]);
+  }, [page, eventType, eventName, startDate]);
 
   const handleClearFilters = () => {
+    setEventName("");
     setEventType("all");
     setStartDate("");
-    setEndDate("");
     setPage(1);
   };
 
@@ -166,6 +160,18 @@ export default function EventsReport() {
           <div className="grid gap-4 md:grid-cols-4">
             <div>
               <label className="text-sm font-medium mb-2 block">
+                Event Name
+              </label>
+              <Input
+                type="text"
+                placeholder="Enter event name..."
+                value={eventName}
+                onChange={(e) => setEventName(e.target.value)}
+              />
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-2 block">
                 Event Type
               </label>
               <Select value={eventType} onValueChange={setEventType}>
@@ -190,15 +196,6 @@ export default function EventsReport() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">End Date</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
               />
             </div>
 
