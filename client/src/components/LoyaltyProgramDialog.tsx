@@ -23,16 +23,14 @@ export default function LoyaltyProgramDialog({
   onOpenChange,
 }: LoyaltyProgramDialogProps) {
   const { toast } = useToast();
-  const [discountRate, setDiscountRate] = useState<number>(20);
-  const [promoCode, setPromoCode] = useState<string>("SAVE20");
-  const [terms, setTerms] = useState<string>(
-    "Valid for all purchases over 100 EGP."
-  );
-  const [expiryDate, setExpiryDate] = useState<string>("2026-01-01");
+  const [discountRate, setDiscountRate] = useState<number | "">("");
+  const [promoCode, setPromoCode] = useState<string>("");
+  const [terms, setTerms] = useState<string>("");
+  const [expiryDate, setExpiryDate] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async () => {
-    if (!discountRate || !promoCode || !terms) {
+    if (discountRate === "" || !promoCode || !terms || !expiryDate) {
       toast({
         title: "Validation Error",
         description: "All fields are required.",
@@ -59,7 +57,7 @@ export default function LoyaltyProgramDialog({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            discountRate,
+            discountRate: Number(discountRate),
             promoCode,
             termsAndConditions: terms,
             expiryDate,
@@ -123,7 +121,12 @@ export default function LoyaltyProgramDialog({
               id="discountRate"
               type="number"
               value={discountRate}
-              onChange={(e) => setDiscountRate(Number(e.target.value))}
+              placeholder="e.g., 20"
+              onChange={(e) =>
+                setDiscountRate(
+                  e.target.value === "" ? "" : Number(e.target.value)
+                )
+              }
             />
           </div>
           <div className="space-y-2">
@@ -131,6 +134,7 @@ export default function LoyaltyProgramDialog({
             <Input
               id="promoCode"
               value={promoCode}
+              placeholder="e.g., SAVE20"
               onChange={(e) => setPromoCode(e.target.value)}
             />
           </div>
@@ -139,6 +143,7 @@ export default function LoyaltyProgramDialog({
             <Textarea
               id="terms"
               value={terms}
+              placeholder="e.g., Valid for all purchases over 100 EGP"
               onChange={(e) => setTerms(e.target.value)}
             />
           </div>
@@ -148,6 +153,7 @@ export default function LoyaltyProgramDialog({
               id="expiryDate"
               type="date"
               value={expiryDate}
+              min={new Date().toISOString().split("T")[0]}
               onChange={(e) => setExpiryDate(e.target.value)}
             />
           </div>
