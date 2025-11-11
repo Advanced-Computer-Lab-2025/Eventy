@@ -87,18 +87,21 @@ export default function EventFeedbackDialog({
     try {
       setSubmitting(true);
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:4000/api/feedback", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          eventId,
-          rating,
-          comment,
-        }),
-      });
+      const response = await fetch(
+        `http://localhost:4000/api/feedback/events/${eventId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            eventId,
+            rating,
+            comment,
+          }),
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
@@ -188,7 +191,7 @@ export default function EventFeedbackDialog({
           <Button
             onClick={handleSubmit}
             className="w-full"
-            disabled={rating === 0 || !comment.trim()}
+            disabled={rating === 0}
           >
             Submit Feedback
           </Button>

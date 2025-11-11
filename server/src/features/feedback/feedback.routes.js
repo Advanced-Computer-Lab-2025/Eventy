@@ -9,10 +9,10 @@ import {
 const router = express.Router();
 
 // Submit feedback for a specific event
-router.post("/events/:eventId/feedback", authMiddleware, submitFeedback);
+router.post("/events/:eventId", authMiddleware, submitFeedback);
 
 // Get all feedback for a specific event
-router.get("/events/:eventId/feedback", getEventFeedback);
+router.get("/events/:eventId", getEventFeedback);
 
 // Get the authenticated user's feedback for a specific event
 router.get(
