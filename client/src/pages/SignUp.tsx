@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Mail, Lock, User, Building2, IdCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Logo from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,9 +39,34 @@ export default function SignUp() {
     email: "",
     password: "",
     companyName: "",
-    companyLogoUrl: "",
-    taxCardUrl: "",
   });
+
+  const [vendorFiles, setVendorFiles] = useState<{
+    companyLogo?: File | null;
+    taxCard?: File | null;
+  }>({});
+
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [taxPreview, setTaxPreview] = useState<string | null>(null);
+
+  // create object URLs for previews and clean up when files change
+  useEffect(() => {
+    if (vendorFiles.companyLogo) {
+      const url = URL.createObjectURL(vendorFiles.companyLogo);
+      setLogoPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setLogoPreview(null);
+  }, [vendorFiles.companyLogo]);
+
+  useEffect(() => {
+    if (vendorFiles.taxCard) {
+      const url = URL.createObjectURL(vendorFiles.taxCard);
+      setTaxPreview(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setTaxPreview(null);
+  }, [vendorFiles.taxCard]);
 
   const validateStudentId = (id: string): boolean => {
     const studentIdPattern = /^\d{2}-\d{4}$/;
@@ -142,26 +160,33 @@ export default function SignUp() {
 
   const handleVendorSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
+      if (!vendorFiles.companyLogo || !vendorFiles.taxCard) {
+        toast({
+          variant: "destructive",
+          title: "Missing files",
+          description: "Please attach both company logo and tax card files.",
+        });
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("companyName", vendorForm.companyName);
+      formData.append("email", vendorForm.email);
+      formData.append("password", vendorForm.password);
+      formData.append("role", "vendor");
+      formData.append("companyLogo", vendorFiles.companyLogo as File);
+      formData.append("taxCard", vendorFiles.taxCard as File);
+
       const res = await fetch("http://localhost:4000/api/auth/signup", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...vendorForm,
-          role: "vendor",
-        }),
+        body: formData,
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Signup failed");
 
-      toast({
-        title: "Success",
-        description: data.message,
-      });
-
+      toast({ title: "Success", description: data.message });
       setLocation("/login");
     } catch (err: any) {
       toast({
@@ -171,6 +196,8 @@ export default function SignUp() {
       });
     }
   };
+
+  // (Simplified) no client-side previews or upload progress — keep UI minimal: drag & drop and filename display.
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
@@ -439,7 +466,10 @@ export default function SignUp() {
             </TabsContent>
 
             <TabsContent value="vendor" className="mt-6">
-              <form onSubmit={handleVendorSignUp} className="space-y-4">
+              <form onSubmit={handleVendorSignUp} className="space-y-6">
+                <div className="flex items-center gap-3">
+                  <h3 className="text-lg font-semibold">Vendor Details</h3>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="vendor-companyName">Company Name</Label>
                   <div className="relative">
@@ -502,52 +532,107 @@ export default function SignUp() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vendor-logo">Company Logo URL</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                  <Label htmlFor="vendor-logo">Company Logo</Label>
+                  <label
+                    htmlFor="vendor-logo"
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const f = e.dataTransfer.files?.[0];
+                      if (f) setVendorFiles({ ...vendorFiles, companyLogo: f });
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="border-2 border-dashed rounded-lg p-4 hover:border-primary transition-colors bg-transparent cursor-pointer flex flex-col items-center"
+                  >
+                    <input
                       id="vendor-logo"
-                      type="url"
-                      placeholder="https://example.com/logo.png"
-                      className="pl-10"
-                      value={vendorForm.companyLogoUrl}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
                       onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          companyLogoUrl: e.target.value,
+                        setVendorFiles({
+                          ...vendorFiles,
+                          companyLogo: e.target.files
+                            ? e.target.files[0]
+                            : null,
                         })
                       }
-                      data-testid="input-vendor-logo"
-                      required
                     />
-                  </div>
+
+                    {logoPreview ? (
+                      vendorFiles.companyLogo &&
+                      vendorFiles.companyLogo.type === "application/pdf" ? (
+                        <embed
+                          src={logoPreview}
+                          type="application/pdf"
+                          className="w-full max-h-32"
+                        />
+                      ) : (
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="max-h-32 object-contain"
+                        />
+                      )
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Drag & drop your logo here, or click to select
+                      </div>
+                    )}
+                  </label>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vendor-tax">Tax Card URL</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                  <Label htmlFor="vendor-tax">Tax Card</Label>
+                  <label
+                    htmlFor="vendor-tax"
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const f = e.dataTransfer.files?.[0];
+                      if (f) setVendorFiles({ ...vendorFiles, taxCard: f });
+                    }}
+                    onDragOver={(e) => e.preventDefault()}
+                    className="border-2 border-dashed rounded-lg p-4 hover:border-primary transition-colors bg-transparent cursor-pointer flex flex-col items-center"
+                  >
+                    <input
                       id="vendor-tax"
-                      type="url"
-                      placeholder="https://example.com/tax-card.pdf"
-                      className="pl-10"
-                      value={vendorForm.taxCardUrl}
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="hidden"
                       onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          taxCardUrl: e.target.value,
+                        setVendorFiles({
+                          ...vendorFiles,
+                          taxCard: e.target.files ? e.target.files[0] : null,
                         })
                       }
-                      data-testid="input-vendor-tax"
-                      required
                     />
-                  </div>
+
+                    {taxPreview ? (
+                      // show image preview for images, embed for pdfs
+                      vendorFiles.taxCard &&
+                      vendorFiles.taxCard.type === "application/pdf" ? (
+                        <embed
+                          src={taxPreview}
+                          type="application/pdf"
+                          className="w-full max-h-40"
+                        />
+                      ) : (
+                        <img
+                          src={taxPreview as string}
+                          alt="Tax preview"
+                          className="max-h-40 object-contain"
+                        />
+                      )
+                    ) : (
+                      <div className="text-sm text-muted-foreground">
+                        Drag & drop tax card here, or click to select
+                      </div>
+                    )}
+                  </label>
                 </div>
 
                 <Button
                   type="submit"
-                  className="w-full"
+                  className="w-full mt-2"
                   data-testid="button-vendor-signup"
                 >
                   Create Vendor Account
