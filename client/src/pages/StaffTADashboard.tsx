@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { 
-  Users, 
-  Calendar, 
-  Dumbbell, 
-  BookOpen, 
+import {
+  Users,
+  Calendar,
+  Dumbbell,
+  BookOpen,
   ArrowRight,
   FolderOpen,
   Clock,
@@ -18,11 +18,17 @@ import {
   Store,
   GraduationCap,
   Route as RouteIcon,
-  Megaphone
+  Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -175,9 +181,9 @@ export default function StaffTADashboard() {
   const getEventStats = () => {
     const total = events.length;
     const now = new Date();
-    const upcoming = events.filter(e => new Date(e.startDate) > now).length;
-    const past = events.filter(e => new Date(e.startDate) <= now).length;
-    const approved = events.filter(e => e.status === "approved").length;
+    const upcoming = events.filter((e) => new Date(e.startDate) > now).length;
+    const past = events.filter((e) => new Date(e.startDate) <= now).length;
+    const approved = events.filter((e) => e.status === "approved").length;
     return { total, upcoming, past, approved };
   };
 
@@ -194,8 +200,8 @@ export default function StaffTADashboard() {
         "View upcoming events",
         "Check past events",
         "See event details",
-        "Track registration status"
-      ]
+        "Track registration status",
+      ],
     },
     {
       title: "Upcoming Events",
@@ -207,8 +213,8 @@ export default function StaffTADashboard() {
         "See all upcoming events",
         "Filter and search",
         "View detailed info",
-        "Register (when available)"
-      ]
+        "Register (when available)",
+      ],
     },
     {
       title: "Sports Facilities",
@@ -222,9 +228,9 @@ export default function StaffTADashboard() {
         "Aerobics",
         "Zumba",
         "Cross Circuit",
-        "Kick-boxing"
-      ]
-    }
+        "Kick-boxing",
+      ],
+    },
   ];
 
   if (loading) {
@@ -237,7 +243,10 @@ export default function StaffTADashboard() {
     );
   }
 
-  const roleDisplay = userRole === "ta" ? "TA" : userRole.charAt(0).toUpperCase() + userRole.slice(1);
+  const roleDisplay =
+    userRole === "ta"
+      ? "TA"
+      : userRole.charAt(0).toUpperCase() + userRole.slice(1);
 
   return (
     <div className="min-h-screen bg-background">
@@ -259,27 +268,27 @@ export default function StaffTADashboard() {
           </div>
 
           <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="gap-2"
               onClick={() => setLocation("/staff-ta")}
             >
               <Home className="h-4 w-4" />
               Home
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="gap-2"
               onClick={() => setLocation("/my-events")}
             >
               <Calendar className="h-4 w-4" />
               My Events
             </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
+            <Button
+              variant="ghost"
+              size="sm"
               className="gap-2"
               onClick={() => setLocation("/sports")}
             >
@@ -298,134 +307,152 @@ export default function StaffTADashboard() {
             <h1 className="text-4xl font-bold">{roleDisplay} Dashboard</h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            Welcome, {userName}! Manage your events and access university facilities.
+            Welcome, {userName}! Manage your events and access university
+            facilities.
           </p>
         </div>
 
         {/* Dashboard Content */}
         <div className="space-y-8">
+          {/* Event Statistics */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Total Events
+                </CardTitle>
+                <FolderOpen className="h-4 w-4 text-muted-foreground" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{stats.total}</div>
+                <p className="text-xs text-muted-foreground">
+                  All registered events
+                </p>
+              </CardContent>
+            </Card>
 
-        {/* Event Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total Events</CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-              <p className="text-xs text-muted-foreground">
-                All registered events
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Upcoming Events
+                </CardTitle>
+                <Clock className="h-4 w-4 text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-blue-600">
+                  {stats.upcoming}
+                </div>
+                <p className="text-xs text-muted-foreground">Coming soon</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Upcoming Events</CardTitle>
-              <Clock className="h-4 w-4 text-blue-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.upcoming}</div>
-              <p className="text-xs text-muted-foreground">
-                Coming soon
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  Past Events
+                </CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.past}
+                </div>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </CardContent>
+            </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Past Events</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.past}</div>
-              <p className="text-xs text-muted-foreground">
-                Completed
-              </p>
-            </CardContent>
-          </Card>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Approved</CardTitle>
+                <CheckCircle2 className="h-4 w-4 text-green-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold text-green-600">
+                  {stats.approved}
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Successfully approved
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Approved</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-green-600" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-green-600">{stats.approved}</div>
-              <p className="text-xs text-muted-foreground">
-                Successfully approved
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {quickActions.map((action) => (
-              <Card key={action.title} className="hover:shadow-lg transition-shadow flex flex-col">
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`${action.color} p-3 rounded-lg`}>
-                        <action.icon className="h-6 w-6 text-white" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-xl">{action.title}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {action.description}
-                        </CardDescription>
-                      </div>
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="flex-1 flex flex-col">
-                  <div className="flex-1">
-                    {action.features && (
-                      <ul className="space-y-2 mb-4">
-                        {action.features.map((feature, idx) => (
-                          <li key={idx} className="flex items-center text-sm text-muted-foreground">
-                            <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                    {action.activities && (
-                      <div className="mb-4">
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Access the gym schedule to view monthly fitness sessions and book your preferred time slots.
-                        </p>
-                        <p className="text-sm font-medium mb-3">Available Sessions:</p>
-                        <div className="flex flex-wrap gap-2">
-                          {action.activities.map((activity, idx) => (
-                            <Badge 
-                              key={idx} 
-                              variant="secondary"
-                              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                            >
-                              {activity}
-                            </Badge>
-                          ))}
+          {/* Quick Actions */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {quickActions.map((action) => (
+                <Card
+                  key={action.title}
+                  className="hover:shadow-lg transition-shadow flex flex-col"
+                >
+                  <CardHeader>
+                    <div className="flex items-start justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`${action.color} p-3 rounded-lg`}>
+                          <action.icon className="h-6 w-6 text-white" />
+                        </div>
+                        <div>
+                          <CardTitle className="text-xl">
+                            {action.title}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            {action.description}
+                          </CardDescription>
                         </div>
                       </div>
-                    )}
-                  </div>
-                  <Button 
-                    className="w-full mt-auto" 
-                    onClick={() => setLocation(action.path)}
-                  >
-                    Access {action.title}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+                    </div>
+                  </CardHeader>
+                  <CardContent className="flex-1 flex flex-col">
+                    <div className="flex-1">
+                      {action.features && (
+                        <ul className="space-y-2 mb-4">
+                          {action.features.map((feature, idx) => (
+                            <li
+                              key={idx}
+                              className="flex items-center text-sm text-muted-foreground"
+                            >
+                              <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {action.activities && (
+                        <div className="mb-4">
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Access the gym schedule to view monthly fitness
+                            sessions and book your preferred time slots.
+                          </p>
+                          <p className="text-sm font-medium mb-3">
+                            Available Sessions:
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {action.activities.map((activity, idx) => (
+                              <Badge
+                                key={idx}
+                                variant="secondary"
+                                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
+                              >
+                                {activity}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    <Button
+                      className="w-full mt-auto"
+                      onClick={() => setLocation(action.path)}
+                    >
+                      Access {action.title}
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-
         </div>
 
         <EventDetailsDialog

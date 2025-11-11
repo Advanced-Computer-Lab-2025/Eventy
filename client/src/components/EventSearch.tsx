@@ -24,7 +24,8 @@ export default function EventSearch({
   const hasInitiallyFetched = useRef(false);
   const scrollPositionRef = useRef(0);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
   const API_URL = `${API_BASE_URL}/api/events/upcoming`;
   const SEARCH_URL = `${API_BASE_URL}/api/events/search`;
   const token = localStorage.getItem("token");
@@ -33,7 +34,7 @@ export default function EventSearch({
   useEffect(() => {
     const fetchInitialEvents = async () => {
       if (hasInitiallyFetched.current) return;
-      
+
       try {
         setIsSearching(true);
         onLoading?.(true);
@@ -45,7 +46,7 @@ export default function EventSearch({
             "Content-Type": "application/json",
           },
         });
-        
+
         if (!response.ok) throw new Error("Failed to fetch events");
         const data = await response.json();
         onSearchResults(data.data || []);
@@ -93,12 +94,15 @@ export default function EventSearch({
           searchParams.append("name", searchQuery);
           searchParams.append("type", searchQuery);
 
-          const response = await fetch(`${SEARCH_URL}?${searchParams.toString()}`, {
-            headers: {
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
-              "Content-Type": "application/json",
-            },
-          });
+          const response = await fetch(
+            `${SEARCH_URL}?${searchParams.toString()}`,
+            {
+              headers: {
+                ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                "Content-Type": "application/json",
+              },
+            }
+          );
 
           if (!response.ok) throw new Error("Search failed");
           const data = await response.json();
@@ -113,12 +117,12 @@ export default function EventSearch({
         onError?.("Unable to load events. Please try again later.");
       } finally {
         setIsSearching(false);
-        
+
         // Always restore scroll position after initial load (prevents jumping)
         requestAnimationFrame(() => {
           window.scrollTo({
             top: scrollPositionRef.current,
-            behavior: 'instant' as ScrollBehavior,
+            behavior: "instant" as ScrollBehavior,
           });
         });
       }
@@ -163,7 +167,9 @@ export default function EventSearch({
       </div>
       {searchQuery && (
         <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <span>Searching for: <span className="font-medium">"{searchQuery}"</span></span>
+          <span>
+            Searching for: <span className="font-medium">"{searchQuery}"</span>
+          </span>
           {isSearching && <span className="text-xs">(searching...)</span>}
         </div>
       )}

@@ -1,16 +1,17 @@
 // server/src/features/users/user.validation.js
-import Joi from 'joi';
-import mongoose from 'mongoose';
+import Joi from "joi";
+import mongoose from "mongoose";
 
 const objectId = (value, helpers) => {
-  if (!mongoose.Types.ObjectId.isValid(value)) return helpers.error('any.invalid');
+  if (!mongoose.Types.ObjectId.isValid(value))
+    return helpers.error("any.invalid");
   return value;
 };
 
 export const UserValidation = {
   assignRole: Joi.object({
     // role passed in body
-    role: Joi.string().valid('staff', 'ta', 'professor').required(),
+    role: Joi.string().valid("staff", "ta", "professor").required(),
     // we will validate params.id by adding it here when validating
     userId: Joi.string().custom(objectId).required(),
   }),
@@ -31,13 +32,9 @@ export const createManagementAccountSchema = Joi.object({
 });
 
 export const deleteUserSchema = Joi.object({
-  id: Joi.string()
-    .hex()
-    .length(24)
-    .required()
-    .messages({
-      'string.hex': 'User ID must be a valid MongoDB ID.',
-      'string.length': 'User ID must be 24 characters long.',
-      'any.required': 'User ID is required.'
-    }),
+  id: Joi.string().hex().length(24).required().messages({
+    "string.hex": "User ID must be a valid MongoDB ID.",
+    "string.length": "User ID must be 24 characters long.",
+    "any.required": "User ID is required.",
+  }),
 });

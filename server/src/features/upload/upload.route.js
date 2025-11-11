@@ -63,7 +63,8 @@ router.post(
         if (err.message === "Field name missing") {
           return res.status(400).json({
             success: false,
-            message: "Field name 'file' is required. Please set the form-data key to 'file'.",
+            message:
+              "Field name 'file' is required. Please set the form-data key to 'file'.",
           });
         }
         return res.status(400).json({
@@ -78,4 +79,3 @@ router.post(
 );
 
 export default router;
-

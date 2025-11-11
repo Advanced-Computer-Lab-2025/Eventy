@@ -9,7 +9,9 @@ interface StudentHeaderProps {
   homeHref?: string;
 }
 
-export default function StudentHeader({ homeHref = "/home" }: StudentHeaderProps) {
+export default function StudentHeader({
+  homeHref = "/home",
+}: StudentHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -21,7 +23,11 @@ export default function StudentHeader({ homeHref = "/home" }: StudentHeaderProps
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />

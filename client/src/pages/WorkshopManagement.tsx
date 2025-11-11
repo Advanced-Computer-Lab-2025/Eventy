@@ -1,6 +1,14 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin, Users, DollarSign, Edit, Plus, ArrowLeft } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  DollarSign,
+  Edit,
+  Plus,
+  ArrowLeft,
+} from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,21 +68,25 @@ export default function WorkshopManagement() {
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { className: string; label: string }> = {
-      pending: { 
-        className: "ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800", 
-        label: "Pending Approval" 
+      pending: {
+        className:
+          "ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+        label: "Pending Approval",
       },
-      approved: { 
-        className: "ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800", 
-        label: "Approved" 
+      approved: {
+        className:
+          "ml-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
+        label: "Approved",
       },
-      rejected: { 
-        className: "ml-2 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800", 
-        label: "Rejected" 
+      rejected: {
+        className:
+          "ml-2 bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
+        label: "Rejected",
       },
-      needs_revision: { 
-        className: "ml-2 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800", 
-        label: "Needs Revision" 
+      needs_revision: {
+        className:
+          "ml-2 bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+        label: "Needs Revision",
       },
     };
 
@@ -148,7 +160,10 @@ export default function WorkshopManagement() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {workshops.map((workshop) => (
-              <Card key={workshop._id} className="hover:shadow-lg transition-shadow flex flex-col">
+              <Card
+                key={workshop._id}
+                className="hover:shadow-lg transition-shadow flex flex-col"
+              >
                 <CardHeader>
                   <div className="flex justify-between items-start">
                     <CardTitle className="text-xl">{workshop.name}</CardTitle>
@@ -168,7 +183,8 @@ export default function WorkshopManagement() {
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <Calendar className="mr-2 h-4 w-4" />
-                        {formatDate(workshop.startDate)} - {formatDate(workshop.endDate)}
+                        {formatDate(workshop.startDate)} -{" "}
+                        {formatDate(workshop.endDate)}
                       </div>
                       <div className="flex items-center text-muted-foreground">
                         <Users className="mr-2 h-4 w-4" />
@@ -183,7 +199,9 @@ export default function WorkshopManagement() {
                     <div className="pt-2 border-t">
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-2">
                         <span>Faculty: {workshop.faculty.toUpperCase()}</span>
-                        <span>Source: {workshop.fundingSource.toUpperCase()}</span>
+                        <span>
+                          Source: {workshop.fundingSource.toUpperCase()}
+                        </span>
                       </div>
                       <div className="text-xs text-muted-foreground">
                         Deadline: {formatDate(workshop.registrationDeadline)}
@@ -205,12 +223,18 @@ export default function WorkshopManagement() {
                   <Button
                     className="w-full mt-auto"
                     variant="outline"
-                    onClick={() => setLocation(`/professor/edit-workshop/${workshop._id}`)}
-                    disabled={workshop.status !== "pending" && workshop.status !== "needs_revision"}
+                    onClick={() =>
+                      setLocation(`/professor/edit-workshop/${workshop._id}`)
+                    }
+                    disabled={
+                      workshop.status !== "pending" &&
+                      workshop.status !== "needs_revision"
+                    }
                   >
                     <Edit className="mr-2 h-4 w-4" />
-                    {workshop.status === "approved" || workshop.status === "rejected" 
-                      ? "Cannot Edit" 
+                    {workshop.status === "approved" ||
+                    workshop.status === "rejected"
+                      ? "Cannot Edit"
                       : "Edit Workshop"}
                   </Button>
                 </CardContent>

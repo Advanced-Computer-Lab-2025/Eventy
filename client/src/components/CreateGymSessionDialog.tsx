@@ -63,30 +63,33 @@ export default function CreateGymSessionDialog({
 
       // Convert 24-hour time to 12-hour AM/PM format
       const convertTo12Hour = (time24: string) => {
-        const [hours, minutes] = time24.split(':');
+        const [hours, minutes] = time24.split(":");
         const hour = parseInt(hours);
-        const period = hour >= 12 ? 'PM' : 'AM';
+        const period = hour >= 12 ? "PM" : "AM";
         const hour12 = hour % 12 || 12;
         return `${hour12}:${minutes} ${period}`;
       };
 
-      const response = await fetch("http://localhost:4000/api/facilities/admin/gym/sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          date: formData.date,
-          time: convertTo12Hour(formData.time),
-          duration: parseInt(formData.duration),
-          type: formData.type.toLowerCase(),
-          instructor: formData.instructor,
-          maxParticipants: formData.maxParticipants
-            ? parseInt(formData.maxParticipants)
-            : undefined,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:4000/api/facilities/admin/gym/sessions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            date: formData.date,
+            time: convertTo12Hour(formData.time),
+            duration: parseInt(formData.duration),
+            type: formData.type.toLowerCase(),
+            instructor: formData.instructor,
+            maxParticipants: formData.maxParticipants
+              ? parseInt(formData.maxParticipants)
+              : undefined,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -120,7 +123,10 @@ export default function CreateGymSessionDialog({
       console.error("Failed to create gym session:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create gym session",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create gym session",
         variant: "destructive",
       });
     } finally {
@@ -159,7 +165,9 @@ export default function CreateGymSessionDialog({
               </Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, type: value })
+                }
                 required
               >
                 <SelectTrigger id="type">
@@ -180,7 +188,14 @@ export default function CreateGymSessionDialog({
               <Label htmlFor="date">
                 Date <span className="text-red-500">*</span>
               </Label>
-              <div className="relative cursor-pointer" onClick={() => (document.getElementById('date') as HTMLInputElement)?.showPicker?.()}>
+              <div
+                className="relative cursor-pointer"
+                onClick={() =>
+                  (
+                    document.getElementById("date") as HTMLInputElement
+                  )?.showPicker?.()
+                }
+              >
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="date"
@@ -191,7 +206,7 @@ export default function CreateGymSessionDialog({
                     // Ensure year is only 4 digits
                     const dateValue = e.target.value;
                     if (dateValue) {
-                      const [year, month, day] = dateValue.split('-');
+                      const [year, month, day] = dateValue.split("-");
                       if (year && year.length === 4) {
                         setFormData({ ...formData, date: dateValue });
                       }
@@ -210,14 +225,23 @@ export default function CreateGymSessionDialog({
               <Label htmlFor="time">
                 Time <span className="text-red-500">*</span>
               </Label>
-              <div className="relative cursor-pointer" onClick={() => (document.getElementById('time') as HTMLInputElement)?.showPicker?.()}>
+              <div
+                className="relative cursor-pointer"
+                onClick={() =>
+                  (
+                    document.getElementById("time") as HTMLInputElement
+                  )?.showPicker?.()
+                }
+              >
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="time"
                   type="time"
                   className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, time: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -238,7 +262,9 @@ export default function CreateGymSessionDialog({
                   placeholder="60"
                   className="pl-10"
                   value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, duration: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -257,7 +283,9 @@ export default function CreateGymSessionDialog({
                 type="text"
                 placeholder="Enter instructor's name"
                 value={formData.instructor}
-                onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, instructor: e.target.value })
+                }
                 required
               />
               <p className="text-xs text-muted-foreground">
@@ -267,7 +295,9 @@ export default function CreateGymSessionDialog({
 
             {/* Max Participants */}
             <div className="space-y-2">
-              <Label htmlFor="maxParticipants">Max Participants (Optional)</Label>
+              <Label htmlFor="maxParticipants">
+                Max Participants (Optional)
+              </Label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -279,7 +309,10 @@ export default function CreateGymSessionDialog({
                   className="pl-10"
                   value={formData.maxParticipants}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxParticipants: e.target.value })
+                    setFormData({
+                      ...formData,
+                      maxParticipants: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -290,7 +323,12 @@ export default function CreateGymSessionDialog({
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

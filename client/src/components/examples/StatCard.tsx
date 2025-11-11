@@ -16,11 +16,7 @@ export default function StatCardExample() {
         icon={Users}
         trend={{ value: 8, isPositive: true }}
       />
-      <StatCard
-        title="Active Now"
-        value="24"
-        icon={TrendingUp}
-      />
+      <StatCard title="Active Now" value="24" icon={TrendingUp} />
     </div>
   );
 }

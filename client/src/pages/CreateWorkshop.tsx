@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Calendar,
-  Clock,
-  Users,
-  DollarSign
-} from "lucide-react";
+import { Calendar, Clock, Users, DollarSign } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -186,7 +181,9 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Workshop Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="name">
+                  Workshop Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="name"
                   placeholder="e.g., Advanced Machine Learning"
@@ -200,7 +197,9 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Location <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.location}
                     onValueChange={(value) =>
@@ -218,7 +217,9 @@ export default function CreateWorkshop() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faculty Responsible <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Faculty Responsible <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.faculty}
                     onValueChange={(value) =>
@@ -241,13 +242,15 @@ export default function CreateWorkshop() {
               {/* Start & End */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startDate">
+                    Start Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="startDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
@@ -261,7 +264,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startTime">
+                    Start Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -283,13 +288,15 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endDate">
+                    End Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="endDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
@@ -303,7 +310,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endTime">
+                    End Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -332,7 +341,9 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   placeholder="Brief overview of the workshop..."
@@ -346,7 +357,9 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="agenda">Full Agenda <span className="text-red-500">*</span></Label>
+                <Label htmlFor="agenda">
+                  Full Agenda <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="agenda"
                   placeholder="Detailed workshop agenda..."
@@ -361,7 +374,10 @@ export default function CreateWorkshop() {
 
               {/* Professors multi-select */}
               <div className="space-y-2">
-                <Label>Professor(s) Participating <span className="text-red-500">*</span></Label>
+                <Label>
+                  Professor(s) Participating{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
                   {professorsOptions.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -383,7 +399,10 @@ export default function CreateWorkshop() {
                             }
                           }}
                         />
-                        <Label htmlFor={p.id} className="text-sm cursor-pointer">
+                        <Label
+                          htmlFor={p.id}
+                          className="text-sm cursor-pointer"
+                        >
                           {p.name}{" "}
                           <span className="text-muted-foreground text-xs">
                             ({p.email})
@@ -405,7 +424,9 @@ export default function CreateWorkshop() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Required Budget <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="budget">
+                    Required Budget <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -422,7 +443,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Funding Source <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Funding Source <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.fundingSource}
                     onValueChange={(value) =>
@@ -441,7 +464,9 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="resources">Extra Resources <span className="text-red-500">*</span></Label>
+                <Label htmlFor="resources">
+                  Extra Resources <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="resources"
                   placeholder="e.g., Projector, laptops..."
@@ -456,7 +481,9 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacity <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="capacity">
+                    Capacity <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -473,13 +500,16 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">Registration Deadline <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="deadline">
+                    Registration Deadline{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="deadline"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.deadline}
                       onChange={(e) =>
                         setFormData({ ...formData, deadline: e.target.value })

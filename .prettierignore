@@ -1,0 +1,71 @@
+# Dependencies
+node_modules
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Build outputs
+dist
+build
+.next
+out
+.nuxt
+.vitepress/dist
+.vitepress/cache
+
+# Coverage
+coverage
+*.lcov
+.nyc_output
+
+# Cache
+.cache
+.parcel-cache
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
+
+# Logs
+logs
+*.log
+
+# Environment files
+.env
+.env.*
+
+# Generated files
+*.min.js
+*.min.css
+
+# Public/Static assets
+public/
+server/public/
+uploads/
+
+# Config files that should stay as-is
+vite.config.ts.timestamp-*
+vite.config.js.timestamp-*
+
+# Database
+*.db
+*.sqlite
+
+# Firebase
+src/config/firebaseServiceAccount.json
+server/config/firebaseServiceAccount.json
+
+# IDE
+.vscode/
+.idea/
+.local/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Git
+.git/
+.gitignore
+
+# Husky
+.husky/

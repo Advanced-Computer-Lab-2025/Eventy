@@ -30,7 +30,7 @@ interface CategoryBadgeProps {
 
 export default function CategoryBadge({ category }: CategoryBadgeProps) {
   return (
-    <Badge 
+    <Badge
       className={`${categoryColors[category]} capitalize text-xs font-semibold`}
       data-testid={`badge-category-${category}`}
     >

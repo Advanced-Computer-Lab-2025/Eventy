@@ -21,7 +21,14 @@ export interface User {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: "student" | "staff" | "ta" | "professor" | "admin" | "event_office" | "vendor";
+  role:
+    | "student"
+    | "staff"
+    | "ta"
+    | "professor"
+    | "admin"
+    | "event_office"
+    | "vendor";
   status: "active" | "blocked" | "pending";
   verified: boolean;
 }
@@ -46,7 +53,8 @@ const defaultEvents: Event[] = [
     time: "2:00 PM - 5:00 PM",
     location: "Engineering Building, Room 301",
     attendees: 45,
-    image: "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=800&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=800&auto=format&fit=crop",
     type: "workshop",
     price: 50,
     capacity: 60,
@@ -59,7 +67,8 @@ const defaultEvents: Event[] = [
     time: "6:00 PM - 10:00 PM",
     location: "Main Quadrangle",
     attendees: 320,
-    image: "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=800&auto=format&fit=crop",
     type: "bazaar",
   },
   {
@@ -70,7 +79,8 @@ const defaultEvents: Event[] = [
     time: "7:00 PM - 9:00 PM",
     location: "Sports Center Arena",
     attendees: 500,
-    image: "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop",
   },
   {
     id: "4",
@@ -80,7 +90,8 @@ const defaultEvents: Event[] = [
     time: "10:00 AM - 4:00 PM",
     location: "Convention Center",
     attendees: 180,
-    image: "https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&auto=format&fit=crop",
+    image:
+      "https://images.unsplash.com/photo-1560439514-4e9645039924?w=800&auto=format&fit=crop",
     type: "conference",
   },
 ];
@@ -96,19 +107,19 @@ export const eventStore = {
   },
   update: (id: string, updates: Partial<Event>) => {
     const events = eventStore.getAll();
-    const index = events.findIndex(e => e.id === id);
+    const index = events.findIndex((e) => e.id === id);
     if (index !== -1) {
       events[index] = { ...events[index], ...updates };
       eventStore.save(events);
     }
   },
   delete: (id: string) => {
-    const events = eventStore.getAll().filter(e => e.id !== id);
+    const events = eventStore.getAll().filter((e) => e.id !== id);
     eventStore.save(events);
   },
 };
 
-// User store  
+// User store
 export const userStore = {
   getAll: (): User[] => initializeData("users", []),
   save: (users: User[]) => saveData("users", users),
@@ -119,18 +130,18 @@ export const userStore = {
   },
   update: (id: string, updates: Partial<User>) => {
     const users = userStore.getAll();
-    const index = users.findIndex(u => u.id === id);
+    const index = users.findIndex((u) => u.id === id);
     if (index !== -1) {
       users[index] = { ...users[index], ...updates };
       userStore.save(users);
     }
   },
   delete: (id: string) => {
-    const users = userStore.getAll().filter(u => u.id !== id);
+    const users = userStore.getAll().filter((u) => u.id !== id);
     userStore.save(users);
   },
   findByEmail: (email: string) => {
-    return userStore.getAll().find(u => u.email === email);
+    return userStore.getAll().find((u) => u.email === email);
   },
 };
 
@@ -164,7 +175,9 @@ export const registrationStore = {
     }
   },
   remove: (eventId: string) => {
-    const registrations = registrationStore.getAll().filter(id => id !== eventId);
+    const registrations = registrationStore
+      .getAll()
+      .filter((id) => id !== eventId);
     registrationStore.save(registrations);
   },
   isRegistered: (eventId: string) => {
@@ -184,7 +197,7 @@ export const favoritesStore = {
     }
   },
   remove: (eventId: string) => {
-    const favorites = favoritesStore.getAll().filter(id => id !== eventId);
+    const favorites = favoritesStore.getAll().filter((id) => id !== eventId);
     favoritesStore.save(favorites);
   },
   isFavorite: (eventId: string) => {

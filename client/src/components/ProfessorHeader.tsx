@@ -9,7 +9,9 @@ interface ProfessorHeaderProps {
   homeHref?: string;
 }
 
-export default function ProfessorHeader({ homeHref = "/professor" }: ProfessorHeaderProps) {
+export default function ProfessorHeader({
+  homeHref = "/professor",
+}: ProfessorHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -21,7 +23,11 @@ export default function ProfessorHeader({ homeHref = "/professor" }: ProfessorHe
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
