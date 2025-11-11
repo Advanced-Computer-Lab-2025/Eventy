@@ -27,6 +27,7 @@ interface EventStat {
   name: string;
   eventType: string;
   startDate: string;
+  endDate: string; // ✅ Added endDate
   location: string;
   attendeesCount: number;
 }
@@ -49,6 +50,7 @@ export default function EventsReport() {
   const [eventName, setEventName] = useState("");
   const [eventType, setEventType] = useState("all");
   const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState(""); // ✅ Added endDate filter
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -65,6 +67,7 @@ export default function EventsReport() {
       if (eventType && eventType !== "all")
         params.append("eventType", eventType);
       if (startDate) params.append("startDate", startDate);
+      if (endDate) params.append("endDate", endDate); // ✅ Added endDate to params
       params.append("page", page.toString());
       params.append("limit", limit.toString());
 
@@ -97,12 +100,13 @@ export default function EventsReport() {
 
   useEffect(() => {
     fetchReport();
-  }, [page, eventType, eventName, startDate]);
+  }, [page, eventType, eventName, startDate, endDate]); // ✅ Added endDate to dependencies
 
   const handleClearFilters = () => {
     setEventName("");
     setEventType("all");
     setStartDate("");
+    setEndDate(""); // ✅ Added endDate to clear
     setPage(1);
   };
 
@@ -157,7 +161,9 @@ export default function EventsReport() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 md:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-5">
+            {" "}
+            {/* ✅ Changed to 5 columns */}
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Event Name
@@ -169,7 +175,6 @@ export default function EventsReport() {
                 onChange={(e) => setEventName(e.target.value)}
               />
             </div>
-
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Event Type
@@ -187,7 +192,6 @@ export default function EventsReport() {
                 </SelectContent>
               </Select>
             </div>
-
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Start Date
@@ -198,7 +202,15 @@ export default function EventsReport() {
                 onChange={(e) => setStartDate(e.target.value)}
               />
             </div>
-
+            {/* ✅ Added End Date Filter */}
+            <div>
+              <label className="text-sm font-medium mb-2 block">End Date</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
             <div className="flex items-end">
               <Button
                 onClick={handleClearFilters}
@@ -226,9 +238,14 @@ export default function EventsReport() {
                     <TableRow>
                       <TableHead>Event Name</TableHead>
                       <TableHead>Type</TableHead>
-                      <TableHead>Date</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>End Date</TableHead>{" "}
+                      {/* ✅ Added End Date column */}
                       <TableHead>Location</TableHead>
-                      <TableHead className="text-right">Attendees</TableHead>
+                      <TableHead className="text-left">
+                        Attendees
+                      </TableHead>{" "}
+                      {/* ✅ Changed to text-left */}
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -245,8 +262,16 @@ export default function EventsReport() {
                             ? new Date(event.startDate).toLocaleDateString()
                             : "TBA"}
                         </TableCell>
+                        {/* ✅ Added End Date cell */}
+                        <TableCell>
+                          {event.endDate
+                            ? new Date(event.endDate).toLocaleDateString()
+                            : "TBA"}
+                        </TableCell>
                         <TableCell>{event.location || "N/A"}</TableCell>
-                        <TableCell className="text-right font-semibold">
+                        <TableCell className="text-left font-semibold">
+                          {" "}
+                          {/* ✅ Changed to text-left */}
                           {event.attendeesCount}
                         </TableCell>
                       </TableRow>

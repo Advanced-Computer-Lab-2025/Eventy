@@ -310,13 +310,6 @@ export default function EventsOfficeDashboard() {
                     <ClipboardList className="h-4 w-4" />
                     Vendor Requests
                   </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-green-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/reports/attendees")}
-                  >
-                    <FileText className="h-4 w-4" />
-                    View Attendees Report
-                  </button>
                 </CardContent>
               </Card>
               {/* Sidebar kept for Quick Actions only */}

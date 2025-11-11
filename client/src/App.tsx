@@ -30,8 +30,7 @@ import EmailVerified from "@/pages/EmailVerified";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
-import EventsReport from "@/components/EventsReport";
-import Header from "./components/Header";
+import EventsOfficeReportPage from "@/pages/EventsOfficeReportPage";
 function Router() {
   return (
     <Switch>
@@ -158,20 +157,10 @@ function Router() {
       </Route>
       <Route path="/events" component={EventListPage} />
       <Route path="/reports/attendees">
-        <div className="min-h-screen bg-background">
-          <Header />
-          <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold">Attendees Report</h1>
-              <p className="text-muted-foreground">
-                Overview of attendees across all events
-              </p>
-            </div>
-            <EventsReport />
-          </main>
-        </div>
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <EventsOfficeReportPage />
+        </ProtectedRoute>
       </Route>
-
       <Route component={NotFound} />
     </Switch>
   );
