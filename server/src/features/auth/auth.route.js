@@ -38,6 +38,33 @@ router.post(
     { name: "companyLogo", maxCount: 1 },
     { name: "taxCard", maxCount: 1 },
   ]),
+  // Ensure vendor signups include both files. For non-vendor roles this check is skipped.
+  (req, res, next) => {
+    try {
+      const role = (req.body && req.body.role) || "";
+      if (role && role.toString().toLowerCase() === "vendor") {
+        const hasLogo =
+          req.files &&
+          req.files.companyLogo &&
+          req.files.companyLogo.length > 0;
+        const hasTax =
+          req.files && req.files.taxCard && req.files.taxCard.length > 0;
+        if (!hasLogo) {
+          return res
+            .status(400)
+            .json({ message: "Vendor signup requires companyLogo file." });
+        }
+        if (!hasTax) {
+          return res
+            .status(400)
+            .json({ message: "Vendor signup requires taxCard file." });
+        }
+      }
+      next();
+    } catch (err) {
+      return res.status(400).json({ message: "Invalid signup form data." });
+    }
+  },
   signUp
 );
 

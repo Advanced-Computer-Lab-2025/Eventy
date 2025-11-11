@@ -5,8 +5,14 @@ import { confirmEmailVerification } from "./auth.service.js";
 
 export const signUp = async (req, res) => {
   try {
-    // If signup was multipart (files present), map files to companyLogoUrl/taxCardUrl
-    const data = { ...req.body };
+    // Build signup data from request body but explicitly ignore any
+    // client-provided companyLogoUrl or taxCardUrl values (we only accept uploaded files)
+    const {
+      companyLogoUrl: _ignoreLogo,
+      taxCardUrl: _ignoreTax,
+      ...rest
+    } = req.body || {};
+    const data = { ...rest };
     try {
       if (req.files) {
         // multer stores fields in req.files as arrays

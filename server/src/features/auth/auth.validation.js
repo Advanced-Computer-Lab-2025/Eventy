@@ -48,7 +48,7 @@ export const validateAcademicSignUp = (data) => {
 
 // 🔹 Validation for Vendors
 export const validateVendorSignUp = (data) => {
-  let { email, password, companyName, companyLogoUrl, taxCardUrl, role } = data;
+  let { email, password, companyName, role } = data;
 
   // Normalize email
   email = email.toLowerCase().trim();
@@ -78,12 +78,14 @@ export const validateVendorSignUp = (data) => {
     throw new Error("Company name is required.");
   }
 
-  if (!companyLogoUrl) {
-    throw new Error("Company logo URL is required.");
+  // The signup controller maps uploaded files to data.companyLogoUrl and
+  // data.taxCardUrl. We don't accept client-provided URL fields in the body.
+  if (!data.companyLogoUrl) {
+    throw new Error("Company logo file is required.");
   }
 
-  if (!taxCardUrl) {
-    throw new Error("Tax card URL is required.");
+  if (!data.taxCardUrl) {
+    throw new Error("Tax card file is required.");
   }
 
   // Save normalized email back to data

@@ -8,16 +8,27 @@ import authMiddleware from "../../middlewares/auth.middleware.js";
 const router = express.Router();
 const uploadController = new UploadController();
 
-// Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), "uploads", "id-cards");
-if (!fs.existsSync(uploadsDir)) {
-  fs.mkdirSync(uploadsDir, { recursive: true });
-}
+// Ensure uploads directories exist and configure multer storage that
+// puts files into subfolders based on the fieldname (for vendor files
+// we use 'tax-cards' and 'vendor-logos').
+const baseUploads = path.join(process.cwd(), "uploads");
+const idCardsDir = path.join(baseUploads, "id-cards");
+const taxCardsDir = path.join(baseUploads, "tax-cards");
+const vendorLogosDir = path.join(baseUploads, "vendor-logos");
 
-// Configure multer to save files to disk
+[idCardsDir, taxCardsDir, vendorLogosDir].forEach((d) => {
+  if (!fs.existsSync(d)) fs.mkdirSync(d, { recursive: true });
+});
+
+// Configure multer to save files to disk. Destination is chosen by fieldname.
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, uploadsDir);
+    const fname = (file.fieldname || "").toLowerCase();
+    if (fname.includes("tax") || fname.includes("card"))
+      return cb(null, taxCardsDir);
+    if (fname.includes("logo")) return cb(null, vendorLogosDir);
+    // default to id-cards for legacy single-file uploads
+    return cb(null, idCardsDir);
   },
   filename: function (req, file, cb) {
     // Generate unique filename: timestamp-randomSuffix.extension
@@ -32,11 +43,10 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024, // 5MB limit
+    fileSize: 10 * 1024 * 1024, // 10MB limit for tax card (pdf) and logo
   },
   fileFilter: function (req, file, cb) {
-    // Additional validation can be done here if needed
-    // The main validation is done in the controller
+    // Allow all and validate more specifically in controller
     cb(null, true);
   },
 });
@@ -73,6 +83,41 @@ router.post(
           success: false,
           message: err.message || "File upload error",
         });
+      }
+      next();
+    });
+  },
+  uploadController.upload.bind(uploadController)
+);
+
+/**
+ * POST /api/upload/vendor-docs
+ * Accepts multipart/form-data with fields:
+ * - taxCard: single file (image or PDF)
+ * - logo: single file (image)
+ * Returns a JSON map of uploaded field -> url/metadata
+ * Requires authentication (bearer token). the token i used eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY5MTI3OWViZmM2OTZhY2JmMDU5ZDhjMSIsInJvbGUiOiJ2ZW5kb3IiLCJlbWFpbCI6InZlbmRvcjFAZXhhbXBsZS5jb20iLCJpYXQiOjE3NjI4MTg1OTMsImV4cCI6MTc2NTQxMDU5M30.hdHy73IzGEaUzz0EIDwZOZjsC5qChTvKsadSZL4fe90
+ */
+router.post(
+  "/vendor-docs",
+  authMiddleware,
+  (req, res, next) => {
+    upload.fields([
+      { name: "taxCard", maxCount: 1 },
+      { name: "logo", maxCount: 1 },
+    ])(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res
+            .status(400)
+            .json({ success: false, message: "File too large. Max is 10MB." });
+        }
+        return res
+          .status(400)
+          .json({
+            success: false,
+            message: err.message || "File upload error",
+          });
       }
       next();
     });

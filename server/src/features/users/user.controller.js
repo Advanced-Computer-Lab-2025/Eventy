@@ -142,10 +142,27 @@ export default class UserController {
           .json({ success: false, message: "Unauthorized" });
 
       const allowed = {};
-      const { companyLogoUrl, taxCardUrl, companyName, firstName, lastName } =
-        req.body;
-      if (companyLogoUrl) allowed.companyLogoUrl = companyLogoUrl;
-      if (taxCardUrl) allowed.taxCardUrl = taxCardUrl;
+
+      // Map uploaded files (if any) to companyLogoUrl / taxCardUrl
+      try {
+        if (req.files) {
+          if (req.files.companyLogo && req.files.companyLogo[0]) {
+            const file = req.files.companyLogo[0];
+            const url = `${req.protocol}://${req.get("host")}/uploads/id-cards/${file.filename}`;
+            allowed.companyLogoUrl = url;
+          }
+          if (req.files.taxCard && req.files.taxCard[0]) {
+            const file = req.files.taxCard[0];
+            const url = `${req.protocol}://${req.get("host")}/uploads/id-cards/${file.filename}`;
+            allowed.taxCardUrl = url;
+          }
+        }
+      } catch (err) {
+        // ignore mapping errors; validation will catch missing/invalid values
+      }
+
+      // Accept other profile fields from the body (but NOT companyLogoUrl/taxCardUrl)
+      const { companyName, firstName, lastName } = req.body;
       if (companyName) allowed.companyName = companyName;
       if (firstName) allowed.firstName = firstName;
       if (lastName) allowed.lastName = lastName;
