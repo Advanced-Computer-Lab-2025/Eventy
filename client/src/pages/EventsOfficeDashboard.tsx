@@ -26,6 +26,7 @@ import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -42,6 +43,7 @@ interface Bazaar {
 }
 
 export default function EventsOfficeDashboard() {
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [bazaars, setBazaars] = useState<Bazaar[]>([]);
   const [loadingBazaars, setLoadingBazaars] = useState(true);
@@ -70,6 +72,11 @@ export default function EventsOfficeDashboard() {
   const [pastEventsError, setPastEventsError] = useState("");
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [pastEventSearch, setPastEventSearch] = useState("");
+
+  // Extra totals
+  const [totalTrips, setTotalTrips] = useState<number | null>(null);
+  const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
+  const [totalBooths, setTotalBooths] = useState<number | null>(null);
 
   const filteredPastEvents = pastEvents.filter((event: any) => {
     const q = pastEventSearch.trim().toLowerCase();
@@ -141,12 +148,37 @@ export default function EventsOfficeDashboard() {
           (w: any) => w.status === "pending"
         ).length;
         setPendingWorkshops(pendingCount);
+        setTotalWorkshops(Array.isArray(workshops) ? workshops.length : 0);
         if (pendingCount > 0) {
           setShowWorkshopNotif(true);
         }
       }
     } catch (e: any) {
       console.error("Failed to fetch pending workshops");
+    }
+  };
+
+  const fetchCountByType = async (type: "trip" | "platform_booth") => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/search?type=${type}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to fetch events");
+      const items = Array.isArray(data.data) ? data.data : [];
+      if (type === "trip") setTotalTrips(items.length);
+      if (type === "platform_booth") setTotalBooths(items.length);
+    } catch (e) {
+      if (type === "trip") setTotalTrips(0);
+      if (type === "platform_booth") setTotalBooths(0);
     }
   };
 
@@ -189,9 +221,19 @@ export default function EventsOfficeDashboard() {
       setPastEvents((prevEvents) =>
         prevEvents.filter((e) => e._id !== eventId)
       );
+
+      toast({
+        title: "Event archived",
+        description: "The event has been successfully archived.",
+      });
     } catch (err: any) {
       console.error("Error archiving event:", err);
-      // You might want to show this error to the user
+      toast({
+        title: "Failed to archive event",
+        description:
+          err.message || "An error occurred while archiving the event.",
+        variant: "destructive",
+      });
     } finally {
       setArchivingId(null);
     }
@@ -229,6 +271,8 @@ export default function EventsOfficeDashboard() {
     fetchBazaars();
     fetchPendingWorkshops();
     fetchPastEvents();
+    fetchCountByType("trip");
+    fetchCountByType("platform_booth");
     const fetchConferences = async () => {
       try {
         setLoadingConfs(true);
@@ -296,98 +340,129 @@ export default function EventsOfficeDashboard() {
       <EventsOfficeHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Main Title and Info Section */}
-          <div className="lg:col-span-2">
-            <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
-            <p className="text-muted-foreground">
-              Create and manage bazaars, conferences, trips, and workshop
-              approvals all in one place.
-            </p>
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-              <StatCard
-                title="Total Bazaars"
-                value={loadingBazaars ? "-" : bazaars.length}
-                icon={CalendarDays}
-                themed
-              />
-              <StatCard
-                title="Total Events"
-                value={
-                  loadingBazaars || loadingConfs
-                    ? "-"
-                    : bazaars.length + conferences.length
-                }
-                icon={Clock}
-                themed
-              />
-              <StatCard
-                title="Total Conferences"
-                value={loadingConfs ? "-" : conferences.length}
-                icon={CheckCircle2}
-                themed
-              />
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
+          <p className="text-muted-foreground">
+            Create and manage bazaars, conferences, trips, and workshop
+            approvals all in one place.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+            {/* Left: Stats in two rows */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard
+                  title="Total Bazaars"
+                  value={loadingBazaars ? "-" : bazaars.length}
+                  icon={CalendarDays}
+                  themed
+                />
+                <StatCard
+                  title="Total Events"
+                  value={
+                    loadingBazaars || loadingConfs
+                      ? "-"
+                      : bazaars.length + conferences.length
+                  }
+                  icon={Clock}
+                  themed
+                />
+                <StatCard
+                  title="Total Conferences"
+                  value={loadingConfs ? "-" : conferences.length}
+                  icon={CheckCircle2}
+                  themed
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <StatCard
+                  title="Total Trips"
+                  value={totalTrips == null ? "-" : totalTrips}
+                  icon={Calendar}
+                  themed
+                />
+                <StatCard
+                  title="Total Workshops"
+                  value={totalWorkshops == null ? "-" : totalWorkshops}
+                  icon={ClipboardList}
+                  themed
+                />
+                <StatCard
+                  title="Total Booths"
+                  value={totalBooths == null ? "-" : totalBooths}
+                  icon={Archive}
+                  themed
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Action Buttons Card */}
-          <div className="lg:col-span-1">
-            <div className="space-y-6">
+            {/* Right: Quick Actions Card */}
+            <div className="lg:col-span-1">
               <Card className="h-full">
                 <CardHeader>
                   <CardTitle>Quick Actions</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/create/bazaar")}
-                    data-testid="button-header-create-bazaar"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Bazaar
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() =>
-                      setLocation("/events-office/create/conference")
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Conference
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/create/trip")}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Trip
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setIsCreateGymDialogOpen(true)}
-                  >
-                    <Dumbbell className="h-4 w-4" />
-                    Create Gym Session
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/approvals/workshops")}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Workshop Approvals
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/vendor-requests")}
-                    data-testid="button-quick-vendor-requests"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    Vendor Requests
-                  </button>
+                <CardContent>
+                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() => setLocation("/create/bazaar")}
+                      data-testid="button-header-create-bazaar"
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Create Bazaar
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() =>
+                        setLocation("/events-office/create/conference")
+                      }
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Create Conference
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() => setLocation("/create/trip")}
+                    >
+                      <Plus className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Create Trip
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() => setIsCreateGymDialogOpen(true)}
+                    >
+                      <Dumbbell className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Create Gym Session
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() => setLocation("/approvals/workshops")}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Workshop Approvals
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      onClick={() => setLocation("/vendor-requests")}
+                      data-testid="button-quick-vendor-requests"
+                    >
+                      <ClipboardList className="h-4 w-4 mr-2" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Vendor Requests
+                      </span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-              {/* Sidebar kept for Quick Actions only */}
             </div>
           </div>
         </div>
