@@ -47,4 +47,27 @@ export const LoyaltyPartnerController = {
       return res.status(500).json({ error: "Internal server error." });
     }
   },
+
+  async cancel(req, res, next) {
+    try {
+      const vendorId = req.user.id; // Get vendor ID from authenticated user
+      const result = await LoyaltyPartnerService.cancelLoyaltyProgram(vendorId);
+
+      res.status(200).json({
+        status: "success",
+        message: result.message,
+        cancelledAt: result.cancelledAt,
+      });
+    } catch (err) {
+      console.error("Error cancelling loyalty program:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to cancel loyalty program";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
+    }
+  },
 };

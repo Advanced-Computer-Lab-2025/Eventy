@@ -34,4 +34,29 @@ export const LoyaltyPartnerService = {
 
     return newApplication;
   },
+
+  async cancelLoyaltyProgram(vendorId) {
+    // Find the active loyalty program for the vendor
+    const existing = await LoyaltyPartner.findOne({
+      vendorId,
+      status: { $in: ["pending", "verified"] },
+    });
+
+    if (!existing) {
+      const err = new Error("No active loyalty program found to cancel.");
+      err.statusCode = 404;
+      throw err;
+    }
+
+    // Update status to cancelled
+    existing.status = "cancelled";
+    existing.deletedAt = new Date();
+
+    await existing.save();
+
+    return {
+      message: "Successfully cancelled loyalty program participation",
+      cancelledAt: existing.deletedAt,
+    };
+  },
 };
