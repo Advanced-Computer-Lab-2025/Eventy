@@ -202,7 +202,13 @@ router.get(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.getMyEvents.bind(eventsController)
 );
-
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
 // Get event by ID (vendor only)
 router.get(
   "/:eventId",
@@ -226,11 +232,5 @@ router.post(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.registerForEvent.bind(eventsController)
 );
-// Get attendees count for an event
-router.get(
-  "/reports/attendees",
-  authMiddleware,
-  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
-  eventsController.getAttendeesReport.bind(eventsController)
-);
+
 export default router;

@@ -19,6 +19,8 @@ export async function createBazaar(data, user) {
     registrationDeadline: data.registrationDeadline,
     eventType: "bazaar",
     createdBy: user.id,
+    startTime: data.startTime,
+    endTime: data.endTime,
   };
 
   // Save to database
@@ -77,6 +79,8 @@ export const createConference = async (data, userId) => {
     fundingSource,
     extraResources,
     agenda,
+    startTime,
+    endTime,
   } = data;
 
   // Validate required fields
@@ -103,6 +107,8 @@ export const createConference = async (data, userId) => {
     extraResources,
     agenda,
     websiteUrl,
+    startTime,
+    endTime,
     createdBy: userId,
   });
 
@@ -612,6 +618,7 @@ export const getAttendeesReport = async (options = {}) => {
         name: 1,
         eventType: 1,
         startDate: 1,
+        endDate: 1,
         location: 1,
         attendeesCount: {
           $ifNull: [

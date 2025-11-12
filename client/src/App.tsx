@@ -32,6 +32,7 @@ import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 import ArchivedEvents from "@/pages/ArchivedEvents";
 
+import EventsOfficeReportPage from "@/pages/EventsOfficeReportPage";
 function Router() {
   return (
     <Switch>
@@ -163,7 +164,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/events" component={EventListPage} />
-
+      <Route path="/reports/attendees">
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <EventsOfficeReportPage />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

@@ -8,6 +8,7 @@ import {
   ClipboardList,
   Dumbbell,
   Archive,
+  FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -126,9 +127,12 @@ export default function EventsOfficeHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
-          /> */}
+            onClick={() => setLocation("/reports/attendees")}
+            data-testid="button-nav-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Attendees Report
+          </Button>
         </div>
       </div>
     </header>

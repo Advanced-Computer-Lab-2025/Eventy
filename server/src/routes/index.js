@@ -48,4 +48,6 @@ router.use("/notifications", notificationRoutes);
 router.use("/upload", uploadRoutes);
 // loyalty partner routes
 router.use("/loyalty-partners", loyaltyPartnerRoutes);
+// transaction routes
+router.use("/transactions", transactionRoutes);
 export default router;
