@@ -6,8 +6,6 @@ import {
   payForEventBodySchema,
   payForEventParamsSchema,
   walletTopUpSchema,
-  payForApplicationBodySchema,
-  payForApplicationParamsSchema,
 } from "./transaction.validation.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
@@ -51,20 +49,6 @@ router.post(
   validate(walletTopUpSchema, "body"),
   roleMiddleware(["student", "staff", "ta", "professor"]),
   transactionController.topUpWallet.bind(transactionController)
-);
-
-/**
- * @route   POST /api/transactions/applications/:applicationId/pay
- * @desc    Pay for a vendor application (bazaar or booth)
- * @access  Vendor
- */
-router.post(
-  "/applications/:applicationId/pay",
-  authMiddleware,
-  validate(payForApplicationParamsSchema, "params"),
-  validate(payForApplicationBodySchema, "body"),
-  roleMiddleware(["vendor"]),
-  transactionController.payForApplication.bind(transactionController)
 );
 
 export default router;
