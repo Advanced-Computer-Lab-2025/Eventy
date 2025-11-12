@@ -7,6 +7,7 @@ import {
   Plane,
   ClipboardList,
   Dumbbell,
+  Archive,
   FileText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -50,7 +51,7 @@ export default function EventsOfficeHeader() {
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"
@@ -113,6 +114,16 @@ export default function EventsOfficeHeader() {
             Vendor Requests
           </Button>
           <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/events-office/archived")}
+            data-testid="button-nav-archived"
+          >
+            <Archive className="h-4 w-4" />
+            Archived
+          </Button>
+          {/* <Button
             variant="ghost"
             size="sm"
             className="gap-2"

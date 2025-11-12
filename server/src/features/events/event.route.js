@@ -165,6 +165,14 @@ router.get(
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
+// Get past events (events whose endDate has passed) - Events Office / Admin
+router.get(
+  "/past",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getPastEvents.bind(eventsController)
+);
+
 // Search events ( new feature)
 router.get(
   "/search",
