@@ -877,25 +877,24 @@ export default function VendorDashboard() {
                             "en-GB"
                           )}
                         </div>
-                        {application.paymentStatus && (
-                          <div className="flex items-center gap-2">
-                            {application.paymentStatus === "paid" ? (
-                              <Badge className="bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-700">
-                                Paid
-                              </Badge>
-                            ) : application.paymentStatus === "overdue" ? (
-                              <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300 border-red-200 dark:border-red-700">
-                                Payment Overdue
-                              </Badge>
-                            ) : (
-                              <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-300 border-yellow-200 dark:border-yellow-700">
-                                Payment Pending
-                              </Badge>
-                            )}
-                          </div>
-                        )}
                       </div>
-                      {application.paymentStatus !== "paid" && (
+                      {application.paymentStatus === "paid" ? (
+                        <Button
+                          className="w-full mt-auto bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-not-allowed"
+                          variant="outline"
+                          disabled
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Already Paid
+                        </Button>
+                      ) : application.paymentStatus === "overdue" ? (
+                        <Button
+                          className="w-full mt-auto"
+                          disabled
+                        >
+                          Payment Overdue
+                        </Button>
+                      ) : (
                         <Button
                           onClick={() => {
                             setSelectedApplicationForPayment(application);

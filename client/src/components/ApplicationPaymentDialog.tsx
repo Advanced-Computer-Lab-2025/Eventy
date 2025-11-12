@@ -130,7 +130,9 @@ export default function ApplicationPaymentDialog({
 
           <div className="space-y-2">
             <Label>Estimated Fee</Label>
-            <div className="text-lg font-semibold">${estimatedFee.toFixed(2)}</div>
+            <div className="text-lg font-semibold">
+              ${estimatedFee.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground">
               Final amount will be calculated based on your application details.
             </p>
@@ -191,4 +193,3 @@ export default function ApplicationPaymentDialog({
     </Dialog>
   );
 }
-
