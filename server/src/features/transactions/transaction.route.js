@@ -36,11 +36,7 @@ router.post(
 router.post(
   "/confirm",
   authMiddleware,
-<<<<<<< HEAD
   roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
-=======
-  roleMiddleware(["student", "staff", "ta", "professor"]),
->>>>>>> main
   transactionController.confirmStripePayment.bind(transactionController)
 );
 
