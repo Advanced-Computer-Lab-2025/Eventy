@@ -50,7 +50,7 @@ export default function EventsOfficeHeader() {
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"

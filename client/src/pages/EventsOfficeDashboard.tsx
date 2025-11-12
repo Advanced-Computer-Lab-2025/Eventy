@@ -14,11 +14,21 @@ import {
   X,
   ClipboardList,
   Dumbbell,
+  Store,
+  Plane,
   Archive,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
@@ -65,6 +75,7 @@ export default function EventsOfficeDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
+  const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
 
   // Past events states
   const [pastEvents, setPastEvents] = useState<any[]>([]);
@@ -397,65 +408,104 @@ export default function EventsOfficeDashboard() {
             {/* Right: Quick Actions Card */}
             <div className="lg:col-span-1">
               <Card className="h-full">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
+                <CardHeader className="flex justify-center">
+                  <CardTitle className="text-center">Quick Actions</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-2 sm:grid-cols-2 gap-3">
+                  <div className="flex flex-col items-center gap-3">
+                    <>
+                      <Button
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                        onClick={() => setIsCreateEventDialogOpen(true)}
+                        data-testid="button-header-create-event"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm leading-tight text-center">
+                          Create Event
+                        </span>
+                      </Button>
+                      <Dialog
+                        open={isCreateEventDialogOpen}
+                        onOpenChange={setIsCreateEventDialogOpen}
+                      >
+                        <DialogContent className="max-w-sm">
+                          <DialogHeader>
+                            <DialogTitle>Create an event</DialogTitle>
+                            <DialogDescription>
+                              Choose which type of event to create
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="grid gap-2 mt-4">
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/bazaar");
+                              }}
+                            >
+                              <Store className="h-4 w-4" />
+                              <span>Create Bazaar</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setIsCreateGymDialogOpen(true);
+                              }}
+                            >
+                              <Dumbbell className="h-4 w-4" />
+                              <span>Create Gym Session</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/events-office/create/conference");
+                              }}
+                            >
+                              <CalendarDays className="h-4 w-4" />
+                              <span>Create Conference</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/trip");
+                              }}
+                            >
+                              <Plane className="h-4 w-4" />
+                              <span>Create Trip</span>
+                            </Button>
+                          </div>
+
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsCreateEventDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                    {/* Create Gym Session moved into Create Event dialog */}
                     <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
-                      onClick={() => setLocation("/create/bazaar")}
-                      data-testid="button-header-create-bazaar"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm leading-tight">
-                        Create Bazaar
-                      </span>
-                    </Button>
-                    <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
-                      onClick={() =>
-                        setLocation("/events-office/create/conference")
-                      }
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm leading-tight">
-                        Create Conference
-                      </span>
-                    </Button>
-                    <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
-                      onClick={() => setLocation("/create/trip")}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm leading-tight">
-                        Create Trip
-                      </span>
-                    </Button>
-                    <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
-                      onClick={() => setIsCreateGymDialogOpen(true)}
-                    >
-                      <Dumbbell className="h-4 w-4 mr-2" />
-                      <span className="text-xs sm:text-sm leading-tight">
-                        Create Gym Session
-                      </span>
-                    </Button>
-                    <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
                       onClick={() => setLocation("/approvals/workshops")}
                     >
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                      <CheckCircle2 className="h-4 w-4" />
                       <span className="text-xs sm:text-sm leading-tight">
                         Workshop Approvals
                       </span>
                     </Button>
                     <Button
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white w-full whitespace-normal text-center px-3 py-2"
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
                       onClick={() => setLocation("/vendor-requests")}
                       data-testid="button-quick-vendor-requests"
                     >
-                      <ClipboardList className="h-4 w-4 mr-2" />
+                      <ClipboardList className="h-4 w-4" />
                       <span className="text-xs sm:text-sm leading-tight">
                         Vendor Requests
                       </span>
