@@ -399,6 +399,32 @@ class BazaarApiService {
       throw error;
     }
   }
+
+  async getStripePublishableKey(): Promise<string> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/transactions/stripe-key`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorMessage =
+          errorResponse.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.publishableKey;
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      throw error;
+    }
+  }
 }
 
 export const bazaarApiService = new BazaarApiService();

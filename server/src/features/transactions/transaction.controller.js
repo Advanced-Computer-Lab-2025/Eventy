@@ -126,4 +126,25 @@ export class TransactionController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  /**
+   * Returns the Stripe publishable key for the frontend.
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
+  async getStripePublishableKey(req, res) {
+    try {
+      const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+      if (!publishableKey) {
+        return res.status(500).json({
+          error: "Stripe publishable key not configured",
+        });
+      }
+      res.status(200).json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      res.status(500).json({ error: "Failed to get Stripe publishable key" });
+    }
+  }
 }

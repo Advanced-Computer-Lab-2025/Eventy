@@ -67,4 +67,15 @@ router.post(
   transactionController.payForApplication.bind(transactionController)
 );
 
+/**
+ * @route   GET /api/transactions/stripe-key
+ * @desc    Get Stripe publishable key
+ * @access  Authenticated users
+ */
+router.get(
+  "/stripe-key",
+  authMiddleware,
+  transactionController.getStripePublishableKey.bind(transactionController)
+);
+
 export default router;

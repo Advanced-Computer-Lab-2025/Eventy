@@ -1,25 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
+import type React from "react";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { CreditCard, Loader2 } from "lucide-react";
+import { CreditCard, Loader2, Calendar, Store } from "lucide-react";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/lib/bazaarApi";
+import { Card, CardContent } from "@/components/ui/card";
+import Logo from "@/components/Logo";
+import { loadStripe } from "@stripe/stripe-js";
+import {
+  Elements,
+  PaymentElement,
+  useStripe,
+  useElements,
+} from "@stripe/react-stripe-js";
 
 interface ApplicationPaymentDialogProps {
   open: boolean;
@@ -28,57 +29,60 @@ interface ApplicationPaymentDialogProps {
   onPaymentSuccess?: () => void;
 }
 
-export default function ApplicationPaymentDialog({
-  open,
-  onOpenChange,
-  application,
+// Payment form component that uses Stripe Elements
+function PaymentForm({
   onPaymentSuccess,
-}: ApplicationPaymentDialogProps) {
-  const [paymentMethod, setPaymentMethod] = useState<
-    "credit_card" | "debit_card" | ""
-  >("");
+  onClose,
+  estimatedFee,
+  clientSecret,
+}: {
+  onPaymentSuccess?: () => void;
+  onClose: () => void;
+  estimatedFee: number;
+  clientSecret: string;
+}) {
+  const stripe = useStripe();
+  const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
-  const handlePayment = async () => {
-    if (!paymentMethod) {
-      toast({
-        title: "Payment Method Required",
-        description: "Please select a payment method.",
-        variant: "destructive",
-      });
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
       return;
     }
 
     setIsProcessing(true);
 
     try {
-      // Initiate payment
-      const result = await bazaarApiService.payForApplication(
-        application._id,
-        paymentMethod as "credit_card" | "debit_card"
-      );
+      const { error, paymentIntent } = await stripe.confirmPayment({
+        elements,
+        clientSecret,
+        confirmParams: {
+          return_url: window.location.href,
+        },
+        redirect: "if_required",
+      });
 
-      // Confirm payment (simulating Stripe confirmation)
-      // In a real implementation, you would use Stripe Elements here
-      // For now, we'll confirm the payment immediately
-      if (result.clientSecret) {
-        // Extract payment intent ID from client secret or transaction
-        const transaction = result.transaction;
-        if (transaction?.stripePaymentIntentId) {
-          await bazaarApiService.confirmPayment(
-            transaction.stripePaymentIntentId
-          );
+      if (error) {
+        toast({
+          title: "Payment Failed",
+          description: error.message || "Payment could not be processed",
+          variant: "destructive",
+        });
+      } else if (paymentIntent && paymentIntent.status === "succeeded") {
+        // Verify payment on backend
+        await bazaarApiService.confirmPayment(paymentIntent.id);
 
-          toast({
-            title: "Payment Successful",
-            description: "Your payment has been processed successfully.",
-          });
+        toast({
+          title: "Payment Successful",
+          description: "Your payment has been processed successfully.",
+        });
 
-          onOpenChange(false);
-          if (onPaymentSuccess) {
-            onPaymentSuccess();
-          }
+        onClose();
+        if (onPaymentSuccess) {
+          onPaymentSuccess();
         }
       }
     } catch (error) {
@@ -94,101 +98,221 @@ export default function ApplicationPaymentDialog({
     }
   };
 
-  const handleClose = () => {
-    if (!isProcessing) {
-      setPaymentMethod("");
-      onOpenChange(false);
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="space-y-4">
+        <PaymentElement
+          options={{
+            layout: "tabs",
+          }}
+        />
+      </div>
+
+      <div className="pt-4">
+        <Button
+          type="submit"
+          disabled={isProcessing || !stripe || !elements}
+          className="w-full"
+          size="lg"
+        >
+          {isProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            `Pay $${estimatedFee.toFixed(2)}`
+          )}
+        </Button>
+      </div>
+
+      <p className="text-xs text-muted-foreground text-center">
+        Payment must be completed within 3 days of approval. Your application
+        will be confirmed once payment is processed.
+      </p>
+    </form>
+  );
+}
+
+export default function ApplicationPaymentDialog({
+  open,
+  onOpenChange,
+  application,
+  onPaymentSuccess,
+}: ApplicationPaymentDialogProps) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Load Stripe publishable key and initialize Stripe
+  useEffect(() => {
+    const loadStripeKey = async () => {
+      try {
+        const publishableKey = await bazaarApiService.getStripePublishableKey();
+        if (publishableKey) {
+          setStripePromise(loadStripe(publishableKey));
+        }
+      } catch (error) {
+        console.error("Failed to load Stripe key:", error);
+        toast({
+          title: "Payment System Error",
+          description:
+            "Failed to initialize payment system. Please try again later.",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (open) {
+      loadStripeKey();
     }
+  }, [open, toast]);
+
+  // Initialize payment intent when dialog opens
+  useEffect(() => {
+    const initializePayment = async () => {
+      if (!open || !stripePromise) return;
+
+      try {
+        const result = await bazaarApiService.payForApplication(
+          application._id,
+          "credit_card"
+        );
+        if (result.clientSecret) {
+          setClientSecret(result.clientSecret);
+        }
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error
+            ? error.message
+            : "Failed to initialize payment";
+        toast({
+          title: "Payment Initialization Failed",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (open && stripePromise) {
+      initializePayment();
+    }
+  }, [open, stripePromise, application._id, toast]);
+
+  const handleClose = () => {
+    setClientSecret(null);
+    onOpenChange(false);
   };
 
   // Calculate fee (this should match the backend calculation)
-  // For now, we'll show a placeholder - in production, you'd fetch this from the backend
   const estimatedFee = application.type === "booth" ? 50 : 60;
+
+  const options = useMemo(
+    () =>
+      clientSecret
+        ? {
+            clientSecret,
+            appearance: {
+              theme: "stripe" as const,
+            },
+          }
+        : null,
+    [clientSecret]
+  );
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Payment for Application
-          </DialogTitle>
+          <DialogTitle className="text-2xl">Payment details</DialogTitle>
           <DialogDescription>
-            Complete payment for your approved application to secure your spot.
+            Complete payment for your approved application
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label>Application Type</Label>
-            <div className="text-sm text-muted-foreground">
-              {application.type === "bazaar"
-                ? application.event?.name || "Bazaar Application"
-                : "Platform Booth Application"}
+        <div className="grid md:grid-cols-2 gap-6 py-4">
+          {/* Payment Summary */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-4">Payment Summary</h3>
+              <Card>
+                <CardContent className="px-4 pt-2 pb-4 space-y-4">
+                  <div className="mb-1">
+                    <Logo size="md" />
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Store className="h-4 w-4" />
+                      <span>
+                        {application.type === "bazaar"
+                          ? application.event?.name || "Bazaar Application"
+                          : "Platform Booth Application"}
+                      </span>
+                    </div>
+                    {application.type === "bazaar" && application.event && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        <span>
+                          {new Date(
+                            application.event.startDate
+                          ).toLocaleDateString("en-GB")}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="border-t pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span>${estimatedFee.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Tax</span>
+                      <span>$0.00</span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between font-semibold text-lg">
+                      <span>Total</span>
+                      <span>${estimatedFee.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Estimated Fee</Label>
-            <div className="text-lg font-semibold">
-              ${estimatedFee.toFixed(2)}
+          {/* Payment Form */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-4">Payment Method</h3>
+              <div className="flex gap-2 mb-4">
+                <Button
+                  type="button"
+                  variant="default"
+                  className="flex-1"
+                  disabled
+                >
+                  <CreditCard className="h-4 w-4 mr-2" />
+                  Credit or Debit Card
+                </Button>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              Final amount will be calculated based on your application details.
-            </p>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="payment-method">Payment Method *</Label>
-            <Select
-              value={paymentMethod}
-              onValueChange={(value: "credit_card" | "debit_card") =>
-                setPaymentMethod(value)
-              }
-              disabled={isProcessing}
-            >
-              <SelectTrigger id="payment-method">
-                <SelectValue placeholder="Select payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="credit_card">Credit Card</SelectItem>
-                <SelectItem value="debit_card">Debit Card</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-            <p>
-              <strong>Note:</strong> Payment must be completed within 3 days of
-              approval. Your application will be confirmed once payment is
-              processed.
-            </p>
+            {stripePromise && options && clientSecret ? (
+              <Elements stripe={stripePromise} options={options}>
+                <PaymentForm
+                  onPaymentSuccess={onPaymentSuccess}
+                  onClose={handleClose}
+                  estimatedFee={estimatedFee}
+                  clientSecret={clientSecret}
+                />
+              </Elements>
+            ) : (
+              <div className="flex items-center justify-center py-8">
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              </div>
+            )}
           </div>
         </div>
-
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isProcessing}
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handlePayment}
-            disabled={isProcessing || !paymentMethod}
-            className="min-w-[120px]"
-          >
-            {isProcessing ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Processing...
-              </>
-            ) : (
-              "Pay Now"
-            )}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

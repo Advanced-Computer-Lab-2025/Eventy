@@ -123,37 +123,9 @@ export class TransactionService {
    * @throws {Error} If payment not completed or transaction not found
    */
   async confirmStripePayment(paymentIntentId) {
+    // For Stripe Elements, payment is confirmed on the frontend using Stripe.js
+    // This endpoint verifies the payment status and updates the transaction
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status === "succeeded") {
-      // Payment was already confirmed earlier
-      const transaction = await Transaction.findOne({
-        stripePaymentIntentId: paymentIntentId,
-      });
-
-      // If this is an application payment, ensure paymentStatus is set to "paid"
-      if (transaction && transaction.relatedEntity?.type === "Application") {
-        const applicationId = transaction.relatedEntity.id;
-        await Application.findByIdAndUpdate(applicationId, {
-          paymentStatus: "paid",
-        });
-      }
-
-      return { message: "Payment already confirmed", transaction };
-    }
-
-    const confirmedIntent = await stripe.paymentIntents.confirm(
-      paymentIntentId,
-      {
-        payment_method: "pm_card_visa",
-      }
-    );
-
-    if (confirmedIntent.status !== "succeeded") {
-      throw new Error(
-        `Payment not completed yet. Status: ${confirmedIntent.status}`
-      );
-    }
 
     const transaction = await Transaction.findOne({
       stripePaymentIntentId: paymentIntentId,
@@ -163,13 +135,30 @@ export class TransactionService {
       throw new Error("Transaction not found for this payment intent");
     }
 
-    // Prevent updating if already completed
-    if (transaction.status === "completed") {
-      return { message: "Transaction already completed", transaction };
-    }
+    // If payment already succeeded, update transaction and return
+    if (paymentIntent.status === "succeeded") {
+      // Prevent updating if already completed
+      if (transaction.status === "completed") {
+        // Ensure application paymentStatus is set to "paid" if needed
+        if (transaction.relatedEntity?.type === "Application") {
+          const applicationId = transaction.relatedEntity.id;
+          await Application.findByIdAndUpdate(applicationId, {
+            paymentStatus: "paid",
+          });
+        }
+        return { message: "Payment already confirmed", transaction };
+      }
 
-    transaction.status = "completed";
-    await transaction.save();
+      transaction.status = "completed";
+      await transaction.save();
+    } else {
+      // Payment not yet succeeded - return current status
+      return {
+        message: `Payment status: ${paymentIntent.status}`,
+        status: paymentIntent.status,
+        transaction,
+      };
+    }
 
     if (transaction.type === "wallet_top_up") {
       const user = await User.findByIdAndUpdate(
@@ -348,8 +337,7 @@ export class TransactionService {
 
     // Verify the application belongs to the vendor
     // Handle both populated and non-populated createdBy
-    const createdById =
-      application.createdBy._id || application.createdBy;
+    const createdById = application.createdBy._id || application.createdBy;
     if (createdById.toString() !== userId.toString()) {
       throw new Error("You can only pay for your own applications");
     }
