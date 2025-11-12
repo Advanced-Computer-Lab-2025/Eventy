@@ -1,7 +1,8 @@
 import Stripe from "stripe";
 import { Transaction } from "./transaction.model.js";
-import { User } from "../users/user.model.js";
-import { Event } from "../events/event.model.js";
+import { User } from "../users/user.model.js"; // Import User model
+import { Event } from "../events/event.model.js"; // Import your Event model
+import Application from "../applications/application.model.js"; // Import Application model
 import { sendPaymentReceipt } from "../auth/email.service.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
@@ -129,6 +130,15 @@ export class TransactionService {
       const transaction = await Transaction.findOne({
         stripePaymentIntentId: paymentIntentId,
       });
+
+      // If this is an application payment, ensure paymentStatus is set to "paid"
+      if (transaction && transaction.relatedEntity?.type === "Application") {
+        const applicationId = transaction.relatedEntity.id;
+        await Application.findByIdAndUpdate(applicationId, {
+          paymentStatus: "paid",
+        });
+      }
+
       return { message: "Payment already confirmed", transaction };
     }
 
@@ -179,6 +189,18 @@ export class TransactionService {
     }
 
     if (transaction.type === "payment") {
+      // Check if this is an application payment or event payment
+      if (transaction.relatedEntity?.type === "Application") {
+        // Update application paymentStatus to "paid"
+        const applicationId = transaction.relatedEntity.id;
+        await Application.findByIdAndUpdate(applicationId, {
+          paymentStatus: "paid",
+        });
+
+        return {
+          message: "Application payment confirmed successfully",
+          transaction,
+        };
       // Send payment receipt for successful payment
       const userDetails = await User.findById(transaction.userId).select(
         "email firstName lastName name role"
@@ -237,5 +259,183 @@ export class TransactionService {
     }
 
     throw new Error("Invalid payment method for wallet top-up");
+  }
+
+  /**
+   * Calculates the participation fee for a vendor application.
+   * For booth: based on duration and location
+   * For bazaar: based on location and booth size
+   * @param {Object} application - The application document
+   * @returns {number} The calculated fee amount
+   */
+  calculateApplicationFee(application) {
+    const baseFee = 50; // Base fee in USD
+    let fee = baseFee;
+
+    if (application.type === "booth") {
+      // For booth: fee based on duration and location
+      // Base fee per week
+      const weeklyFee = 25;
+      fee = weeklyFee * (application.durationWeeks || 1);
+
+      // Location premium (premium locations cost more)
+      // You can customize this logic based on your location preferences
+      if (application.locationPreference) {
+        const location = application.locationPreference.toLowerCase();
+        // Premium locations (e.g., near entrance, high traffic areas)
+        if (location.includes("entrance") || location.includes("main")) {
+          fee *= 1.5; // 50% premium
+        } else if (location.includes("corner") || location.includes("center")) {
+          fee *= 1.3; // 30% premium
+        }
+      }
+    } else if (application.type === "bazaar") {
+      // For bazaar: fee based on location and booth size
+      // Base fee varies by booth size
+      if (application.boothSize === "4x4") {
+        fee = 100; // Larger booth costs more
+      } else {
+        fee = 60; // Standard 2x2 booth
+      }
+
+      // Location premium for bazaar
+      if (application.event) {
+        // If event is populated, check event location
+        const eventLocation = application.event.location?.toLowerCase() || "";
+        if (eventLocation.includes("main") || eventLocation.includes("hall")) {
+          fee *= 1.4; // 40% premium for main locations
+        }
+      }
+    }
+
+    return Math.round(fee * 100) / 100; // Round to 2 decimal places
+  }
+
+  /**
+   * Handles payment for a vendor application (bazaar or booth).
+   * Prevents duplicate payments and supports Stripe payments only (vendors don't have wallets).
+   * Payment must be made within 3 days of application approval.
+   * @param {Object} params
+   * @param {string} params.userId - Vendor's ID
+   * @param {string} params.applicationId - Application's ID
+   * @param {string} params.paymentMethod - Payment method ("credit_card", "debit_card")
+   * @returns {Promise<Object>} Payment result and transaction details
+   * @throws {Error} If already paid, application not found, not approved, payment deadline passed, or invalid payment method
+   */
+  async payForApplication({ userId, applicationId, paymentMethod }) {
+    // Check if vendor already paid for this application
+    // Check both transaction status and application paymentStatus
+    const existingTransaction = await Transaction.findOne({
+      userId,
+      "relatedEntity.type": "Application",
+      "relatedEntity.id": applicationId,
+      status: "completed",
+      type: "payment",
+    });
+    if (existingTransaction) {
+      throw new Error("You have already paid for this application.");
+    }
+
+    // Fetch the application
+    const application = await Application.findById(applicationId)
+      .populate("event", "name location")
+      .populate("createdBy", "companyName");
+
+    if (!application) {
+      throw new Error("Application not found");
+    }
+
+    // Verify the application belongs to the vendor
+    if (application.createdBy.toString() !== userId.toString()) {
+      throw new Error("You can only pay for your own applications");
+    }
+
+    // Ensure application is approved
+    if (application.status !== "approved") {
+      throw new Error(
+        "You can only pay for approved applications. Current status: " +
+          application.status
+      );
+    }
+
+    // Check if payment has already been made
+    if (application.paymentStatus === "paid") {
+      throw new Error(
+        "Payment has already been completed for this application."
+      );
+    }
+
+    // Check if payment is within 3 days of approval
+    // Use updatedAt as the approval date (when status changed to approved)
+    const approvalDate = new Date(application.updatedAt);
+    const currentDate = new Date();
+    const daysSinceApproval = Math.floor(
+      (currentDate - approvalDate) / (1000 * 60 * 60 * 24)
+    );
+
+    if (daysSinceApproval > 3) {
+      // Update paymentStatus to "overdue" if deadline has passed
+      if (application.paymentStatus !== "overdue") {
+        await Application.findByIdAndUpdate(applicationId, {
+          paymentStatus: "overdue",
+        });
+      }
+
+      throw new Error(
+        `Payment deadline has passed. The payment deadline was 3 days after approval. ` +
+          `Your application was approved ${daysSinceApproval} day${daysSinceApproval > 1 ? "s" : ""} ago. ` +
+          `Please contact the events office to proceed.`
+      );
+    }
+
+    // Calculate the fee
+    const amount = this.calculateApplicationFee(application);
+    if (isNaN(amount) || amount <= 0) {
+      throw new Error("Application fee calculation failed");
+    }
+
+    // Vendors can only pay via Stripe (credit/debit card) - no wallet option
+    if (paymentMethod !== "credit_card" && paymentMethod !== "debit_card") {
+      throw new Error(
+        "Invalid payment method. Vendors can only pay using credit card or debit card."
+      );
+    }
+
+    // --- STRIPE PAYMENT ---
+    const description =
+      application.type === "bazaar"
+        ? `Payment for bazaar participation: ${application.event?.name || "Bazaar"}`
+        : `Payment for platform booth: ${application.locationPreference || "Booth"}`;
+
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: amount * 100, // cents
+      currency: "usd",
+      automatic_payment_methods: {
+        enabled: true,
+        allow_redirects: "never",
+      },
+      metadata: {
+        userId: String(userId),
+        applicationId: String(applicationId),
+        purpose: "application_payment",
+      },
+    });
+
+    const transaction = await Transaction.create({
+      userId,
+      type: "payment",
+      amount,
+      status: "pending",
+      paymentMethod,
+      stripePaymentIntentId: paymentIntent.id,
+      description,
+      relatedEntity: { type: "Application", id: applicationId },
+    });
+
+    return {
+      message: "Stripe payment initiated",
+      clientSecret: paymentIntent.client_secret,
+      transaction,
+    };
   }
 }
