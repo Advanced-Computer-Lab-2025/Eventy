@@ -888,10 +888,7 @@ export default function VendorDashboard() {
                           Already Paid
                         </Button>
                       ) : application.paymentStatus === "overdue" ? (
-                        <Button
-                          className="w-full mt-auto"
-                          disabled
-                        >
+                        <Button className="w-full mt-auto" disabled>
                           Payment Overdue
                         </Button>
                       ) : (

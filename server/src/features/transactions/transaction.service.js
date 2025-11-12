@@ -347,7 +347,10 @@ export class TransactionService {
     }
 
     // Verify the application belongs to the vendor
-    if (application.createdBy.toString() !== userId.toString()) {
+    // Handle both populated and non-populated createdBy
+    const createdById =
+      application.createdBy._id || application.createdBy;
+    if (createdById.toString() !== userId.toString()) {
       throw new Error("You can only pay for your own applications");
     }
 
