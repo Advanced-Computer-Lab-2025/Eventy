@@ -3,6 +3,7 @@ import { Transaction } from "./transaction.model.js";
 import { User } from "../users/user.model.js"; // Import User model
 import { Event } from "../events/event.model.js"; // Import your Event model
 import Application from "../applications/application.model.js"; // Import Application model
+import { sendPaymentReceipt } from "../auth/email.service.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -66,6 +67,14 @@ export class TransactionService {
         description: `Payment for event ${event.name}`,
         relatedEntity: { type: "Event", id: eventId },
       });
+
+      // Send payment receipt email (don't await to avoid blocking the response)
+      const userDetails = await User.findById(userId).select(
+        "email firstName lastName name role"
+      );
+      sendPaymentReceipt(userDetails.toObject(), transaction, event).catch(
+        console.error
+      );
 
       return { message: "Payment successful via wallet", transaction };
     }
@@ -163,9 +172,19 @@ export class TransactionService {
     await transaction.save();
 
     if (transaction.type === "wallet_top_up") {
-      await User.findByIdAndUpdate(transaction.userId, {
-        $inc: { walletBalance: transaction.amount },
-      });
+      const user = await User.findByIdAndUpdate(
+        transaction.userId,
+        { $inc: { walletBalance: transaction.amount } },
+        { new: true }
+      );
+
+      if (user) {
+        sendPaymentReceipt(user.toObject(), transaction, null).catch(
+          console.error
+        );
+        // Passing `null` for event since it's a wallet top-up
+      }
+
       return { message: "Wallet top-up confirmed successfully", transaction };
     }
 
@@ -182,6 +201,15 @@ export class TransactionService {
           message: "Application payment confirmed successfully",
           transaction,
         };
+      // Send payment receipt for successful payment
+      const userDetails = await User.findById(transaction.userId).select(
+        "email firstName lastName name role"
+      );
+      const event = await Event.findById(transaction.relatedEntity.id);
+      if (userDetails && event) {
+        sendPaymentReceipt(userDetails.toObject(), transaction, event).catch(
+          console.error
+        );
       }
       return { message: "Event payment confirmed successfully", transaction };
     }
