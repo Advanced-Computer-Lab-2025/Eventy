@@ -201,6 +201,7 @@ export class TransactionService {
           message: "Application payment confirmed successfully",
           transaction,
         };
+      }
       // Send payment receipt for successful payment
       const userDetails = await User.findById(transaction.userId).select(
         "email firstName lastName name role"
