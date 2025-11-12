@@ -18,7 +18,7 @@ export class TransactionController {
     try {
       const { paymentMethod } = req.body;
       const eventId = req.params.eventId;
-      const userId = req.user._id;
+      const userId = req.user._id || req.user.id;
       const userRole = req.user.role;
 
       const allowedRoles = ["student", "staff", "ta", "professor"];
@@ -52,6 +52,7 @@ export class TransactionController {
   async confirmStripePayment(req, res) {
     try {
       const { paymentIntentId } = req.body;
+      const userRole = req.user.role;
       const allowedRoles = ["student", "staff", "ta", "professor"];
       if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
@@ -78,7 +79,7 @@ export class TransactionController {
   async topUpWallet(req, res) {
     try {
       const { amount, paymentMethod } = req.body;
-      const userId = req.user._id;
+      const userId = req.user._id || req.user.id;
 
       const result = await this.transactionService.topUpWallet({
         userId,
