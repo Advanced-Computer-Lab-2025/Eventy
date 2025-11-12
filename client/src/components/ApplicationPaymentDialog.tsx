@@ -8,12 +8,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { CreditCard, Loader2, Calendar, Store } from "lucide-react";
+import { CreditCard, Loader2 } from "lucide-react";
+import { MdAttachMoney } from "react-icons/md";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/lib/bazaarApi";
-import { Card, CardContent } from "@/components/ui/card";
-import Logo from "@/components/Logo";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
@@ -225,7 +224,10 @@ export default function ApplicationPaymentDialog({
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-2xl">Payment details</DialogTitle>
+          <DialogTitle className="text-2xl flex items-center gap-2">
+            <MdAttachMoney className="h-6 w-6" />
+            Payment details
+          </DialogTitle>
           <DialogDescription>
             Complete payment for your approved application
           </DialogDescription>
@@ -235,48 +237,11 @@ export default function ApplicationPaymentDialog({
           {/* Payment Summary */}
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold text-lg mb-4">Payment Summary</h3>
-              <Card>
-                <CardContent className="px-4 pt-2 pb-4 space-y-4">
-                  <div className="mb-1">
-                    <Logo size="md" />
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Store className="h-4 w-4" />
-                      <span>
-                        {application.type === "bazaar"
-                          ? application.event?.name || "Bazaar Application"
-                          : "Platform Booth Application"}
-                      </span>
-                    </div>
-                    {application.type === "bazaar" && application.event && (
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Calendar className="h-4 w-4" />
-                        <span>
-                          {new Date(
-                            application.event.startDate
-                          ).toLocaleDateString("en-GB")}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="border-t pt-4 space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Subtotal</span>
-                      <span>${estimatedFee.toFixed(2)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Tax</span>
-                      <span>$0.00</span>
-                    </div>
-                    <div className="border-t pt-2 flex justify-between font-semibold text-lg">
-                      <span>Total</span>
-                      <span>${estimatedFee.toFixed(2)}</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <img
+                src="/images/payment.png"
+                alt="Payment illustration"
+                className="w-full h-auto rounded-lg"
+              />
             </div>
           </div>
 
