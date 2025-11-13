@@ -598,7 +598,10 @@ export async function getAllEvents() {
 export const getAttendeesReport = async (options = {}) => {
   const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
-  const match = {};
+  const match = {
+    deletedAt: null,
+    status: "approved",
+  };
 
   if (eventType) match.eventType = eventType;
   if (startDate || endDate) {
