@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Home, Users } from "lucide-react";
+import { Bell, LayoutGrid, User, Home, Users, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -51,7 +51,16 @@ export default function AdminHeader() {
           <Button variant="ghost" size="sm" data-testid="button-nav-cultural">
             Cultural
           </Button>
-
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/reports/attendees")}
+            data-testid="button-nav-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Attendees Report
+          </Button>
           {/* ✅ New Users Button */}
           <Button
             variant="ghost"

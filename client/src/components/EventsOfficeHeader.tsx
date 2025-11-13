@@ -123,7 +123,7 @@ export default function EventsOfficeHeader() {
             <Archive className="h-4 w-4" />
             Archived
           </Button>
-          {/* <Button
+          <Button
             variant="ghost"
             size="sm"
             className="gap-2"

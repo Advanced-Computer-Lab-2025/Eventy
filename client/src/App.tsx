@@ -32,7 +32,7 @@ import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 import ArchivedEvents from "@/pages/ArchivedEvents";
 
-import EventsOfficeReportPage from "@/pages/EventsOfficeReportPage";
+import EventsOfficeReportPage from "@/pages/EventsReportPage";
 function Router() {
   return (
     <Switch>
