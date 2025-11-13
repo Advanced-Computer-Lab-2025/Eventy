@@ -294,7 +294,8 @@ export const registerUserToEvent = async (user, eventId) => {
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({
     attendees: userId,
-    status: "approved", // Only fetch approved events
+    status: "approved",
+    deletedAt: null, // Only fetch events that are not deleted
   }).populate("attendees", "name email role");
   return events;
 };
@@ -600,7 +601,10 @@ export async function getAllEvents() {
 export const getAttendeesReport = async (options = {}) => {
   const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
-  const match = {};
+  const match = {
+    deletedAt: null,
+    status: "approved",
+  };
 
   if (eventType) match.eventType = eventType;
   if (startDate || endDate) {

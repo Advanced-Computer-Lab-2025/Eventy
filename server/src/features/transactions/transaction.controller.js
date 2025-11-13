@@ -54,7 +54,6 @@ export class TransactionController {
       const { paymentIntentId } = req.body;
       const userRole = req.user.role;
       const allowedRoles = ["student", "staff", "ta", "professor"];
-      const userRole = req.user.role;
       if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
           error: `Access denied. Only ${allowedRoles.join(
@@ -91,6 +90,39 @@ export class TransactionController {
       res.status(200).json(result);
     } catch (error) {
       console.error("Wallet top-up error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Handles payment for a vendor application (bazaar or booth).
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
+  async payForApplication(req, res) {
+    try {
+      const { paymentMethod } = req.body;
+      const applicationId = req.params.applicationId;
+      const userId = req.user._id;
+      const userRole = req.user.role;
+
+      // Only vendors can pay for applications
+      if (userRole !== "vendor") {
+        return res.status(403).json({
+          error: "Access denied. Only vendors can pay for applications.",
+        });
+      }
+
+      const result = await this.transactionService.payForApplication({
+        userId,
+        applicationId,
+        paymentMethod,
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Application payment error:", error);
       res.status(400).json({ error: error.message });
     }
   }
