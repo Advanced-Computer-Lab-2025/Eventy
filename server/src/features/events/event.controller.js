@@ -306,6 +306,7 @@ export class EventsController {
       const events = await eventService.getEvents({
         eventType: "workshop",
         createdBy: userId,
+        deletedAt: null,
       });
 
       return res
