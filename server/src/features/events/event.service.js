@@ -597,20 +597,47 @@ export async function getAllEvents() {
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const match = {
     deletedAt: null,
     status: "approved",
   };
 
-  if (eventType) match.eventType = eventType;
-  if (startDate || endDate) {
-    match.startDate = {};
-    if (startDate) match.startDate.$gte = new Date(startDate);
-    if (endDate) match.startDate.$lte = new Date(endDate);
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
   }
 
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+  if (startDate) {
+    const filterStartDate = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterStartDateEnd = new Date(
+      new Date(startDate).setHours(23, 59, 59, 999)
+    );
+    match.startDate = {
+      $gte: filterStartDate,
+      $lte: filterStartDateEnd,
+    };
+  }
+
+  if (endDate) {
+    const filterEndDate = new Date(new Date(endDate).setHours(0, 0, 0, 0));
+    const filterEndDateEnd = new Date(
+      new Date(endDate).setHours(23, 59, 59, 999)
+    );
+    match.endDate = {
+      $gte: filterEndDate,
+      $lte: filterEndDateEnd,
+    };
+  }
   const skip = (page - 1) * limit;
 
   // MongoDB aggregation for performance

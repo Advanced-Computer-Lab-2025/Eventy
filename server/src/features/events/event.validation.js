@@ -324,6 +324,10 @@ export const updateBazaarSchema = Joi.object({
 }).min(1);
 
 export const getAttendeesReportSchema = Joi.object({
+  name: Joi.string().trim().optional().messages({
+    "string.base": "Name filter must be text",
+  }),
+
   eventType: Joi.string()
     .valid("conference", "workshop", "bazaar", "trip", "platform_booth")
     .optional()
