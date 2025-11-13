@@ -9,6 +9,7 @@ import notificationRoutes from "../features/notifications/notification.route.js"
 import uploadRoutes from "../features/upload/upload.route.js";
 import loyaltyPartnerRoutes from "../features/loyaltyPartners/loyaltyPartner.route.js";
 import transactionRoutes from "../features/transactions/transaction.route.js";
+import pollRoutes from "../features/polls/poll.route.js";
 
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
@@ -50,4 +51,6 @@ router.use("/upload", uploadRoutes);
 router.use("/loyalty-partners", loyaltyPartnerRoutes);
 // transaction routes
 router.use("/transactions", transactionRoutes);
+// poll routes
+router.use("/polls", pollRoutes);
 export default router;
