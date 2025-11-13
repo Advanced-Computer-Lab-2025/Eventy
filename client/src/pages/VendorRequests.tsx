@@ -30,6 +30,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useLocation } from "wouter";
 
 const token = localStorage.getItem("token");
 
@@ -106,6 +107,7 @@ export default function VendorRequests() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "rejected"
   >("all");
+  const [, setLocation] = useLocation();
 
   let userRole: string | null = null;
   try {
@@ -246,6 +248,10 @@ export default function VendorRequests() {
     }
   };
 
+  const handleGoToPolls = () => {
+    setLocation("/events-office/polls");
+  };
+
   const handleViewDocuments = (requestId: string) => {
     const req = requests.find((r) => r._id === requestId);
     setSelected(req || null);
@@ -263,11 +269,21 @@ export default function VendorRequests() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
-          <p className="text-muted-foreground">
-            Review vendor participation requests for bazaars and booths
-          </p>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
+            <p className="text-muted-foreground">
+              Review vendor participation requests for bazaars and booths
+            </p>
+          </div>
+          {(userRole === "events_office" || userRole === "admin") && (
+            <Button
+              onClick={handleGoToPolls}
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-6 py-3 text-sm sm:text-base font-semibold rounded-lg shadow-md whitespace-nowrap"
+            >
+              Create Poll
+            </Button>
+          )}
         </div>
 
         <Card>
@@ -538,6 +554,7 @@ export default function VendorRequests() {
             )}
           </DialogContent>
         </Dialog>
+
       </main>
     </div>
   );

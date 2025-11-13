@@ -33,6 +33,7 @@ import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 import ArchivedEvents from "@/pages/ArchivedEvents";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import EventsOfficePolls from "@/pages/EventsOfficePolls";
 function Router() {
   return (
     <Switch>
@@ -114,6 +115,12 @@ function Router() {
       <Route path="/events-office/dashboard">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <EventsOfficeDashboard />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/events-office/polls">
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <EventsOfficePolls />
         </ProtectedRoute>
       </Route>
 
