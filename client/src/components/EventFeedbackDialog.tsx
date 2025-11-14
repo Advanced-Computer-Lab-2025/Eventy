@@ -224,7 +224,7 @@ export default function EventFeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Event Feedback</DialogTitle>
           <DialogDescription>
@@ -232,7 +232,7 @@ export default function EventFeedbackDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-y-auto pr-2">
           {checkingSubmission ? (
             <div className="bg-muted rounded-lg p-6 text-center space-y-4 animate-pulse">
               <div className="h-6 bg-muted-foreground/20 rounded w-3/4 mx-auto"></div>
