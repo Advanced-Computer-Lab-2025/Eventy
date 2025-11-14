@@ -3,7 +3,10 @@ import { Transaction } from "./transaction.model.js";
 import { User } from "../users/user.model.js"; // Import User model
 import { Event } from "../events/event.model.js"; // Import your Event model
 import Application from "../applications/application.model.js"; // Import Application model
-import { sendPaymentReceipt } from "../auth/email.service.js";
+import {
+  sendPaymentReceipt,
+  sendVendorPaymentReceipt,
+} from "../auth/email.service.js";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -185,6 +188,42 @@ export class TransactionService {
         await Application.findByIdAndUpdate(applicationId, {
           paymentStatus: "paid",
         });
+
+        // Get Stripe receipt URL from the payment intent
+        let stripeReceiptUrl = null;
+        try {
+          // Get the latest charge from the payment intent
+          if (paymentIntent.latest_charge) {
+            const charge = await stripe.charges.retrieve(
+              paymentIntent.latest_charge
+            );
+            stripeReceiptUrl = charge.receipt_url || null;
+          }
+        } catch (error) {
+          console.error(
+            "Error retrieving Stripe receipt URL:",
+            error?.message || error
+          );
+          // Continue without receipt URL - email will still be sent
+        }
+
+        // Get vendor and application details for email
+        const vendor = await User.findById(transaction.userId).select(
+          "email firstName lastName name companyName role"
+        );
+        const application = await Application.findById(applicationId)
+          .populate("event", "name location")
+          .populate("createdBy", "companyName");
+
+        // Send vendor payment receipt email (don't await to avoid blocking the response)
+        if (vendor && application) {
+          sendVendorPaymentReceipt(
+            vendor.toObject(),
+            transaction,
+            application.toObject(),
+            stripeReceiptUrl
+          ).catch(console.error);
+        }
 
         return {
           message: "Application payment confirmed successfully",
