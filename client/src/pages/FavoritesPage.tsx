@@ -60,20 +60,25 @@ export default function FavoritesPage() {
   };
 
   const getCategoryFromEvent = (event: any): EventCategory => {
-    // Map event type/category to EventCategory
+    // Get the event type from multiple possible fields
+    const rawCategory = event.eventType || event.type || event.category || 'academic';
+    const categoryLower = rawCategory.toLowerCase();
+    
+    // Map to valid EventCategory values
     const categoryMap: Record<string, EventCategory> = {
       'bazaar': 'bazaar',
       'workshop': 'workshop',
       'trip': 'trip',
-      'conference': 'academic',
+      'conference': 'conference',
       'academic': 'academic',
       'cultural': 'cultural',
       'social': 'social',
-      'sports': 'sports'
+      'sports': 'sports',
+      'career': 'career'
     };
     
-    const eventType = event.type?.toLowerCase() || event.category?.toLowerCase() || 'academic';
-    return (categoryMap[eventType] || 'academic') as EventCategory;
+    // Return mapped category or default to 'academic'
+    return (categoryMap[categoryLower] || 'academic') as EventCategory;
   };
 
   // Initial loading state

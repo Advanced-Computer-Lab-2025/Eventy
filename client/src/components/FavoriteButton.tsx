@@ -14,8 +14,9 @@ export const FavoriteButton = ({
   size = 'md'
 }: FavoriteButtonProps) => {
   const { toast } = useToast();
-  const { isFavorite, toggleFavorite, loading } = useFavorites();
+  const { isFavorite, toggleFavorite, isEventLoading } = useFavorites();
   const isFavorited = isFavorite(eventId);
+  const isLoading = isEventLoading(eventId);
   
   const sizeClasses = {
     sm: 'h-5 w-5',
@@ -27,7 +28,7 @@ export const FavoriteButton = ({
     e.preventDefault();
     e.stopPropagation();
     
-    if (loading) return;
+    if (isLoading) return;
     
     try {
       const result = await toggleFavorite(eventId, isFavorited);
@@ -68,9 +69,9 @@ export const FavoriteButton = ({
         ${className}
       `}
       aria-label={isFavorited ? 'Remove from favorites' : 'Add to favorites'}
-      disabled={loading}
+      disabled={isLoading}
     >
-      {loading ? (
+      {isLoading ? (
         <Loader2 className={`animate-spin ${sizeClasses[size]}`} />
       ) : (
         <Heart 

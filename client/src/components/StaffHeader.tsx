@@ -61,15 +61,15 @@ export default function StaffHeader({ homeHref = "/staff-ta" }: StaffHeaderProps
             Sports Facilities
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/favorites")}
-            data-testid="button-nav-favorites"
-          >
-            <Heart className="h-4 w-4" />
-            Favorites
-          </Button>
+  variant="ghost"
+  size="sm"
+  className="gap-2"
+  onClick={() => setLocation("/favorites")}
+  data-testid="button-nav-favorites"
+>
+  <Heart className="h-4 w-4" />
+  Favorites
+</Button>
         </div>
       </div>
     </header>

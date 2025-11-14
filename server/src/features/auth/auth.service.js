@@ -32,6 +32,8 @@ export const signUpUser = async (data) => {
   const existingUser = await User.findOne({ email: data.email });
   if (existingUser) throw new Error("This email is already registered.");
 
+  
+
   // ✅ Step 4: Additional duplicate checks
   if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
     const existingId = await User.findOne({
@@ -132,7 +134,18 @@ export const loginUser = async (data) => {
   if (!user) {
     throw new Error("No account found with this email.");
   }
-
+ switch (user.status) {
+    case "blocked":
+      throw new Error("You are currently a blocked user");
+    case "deleted":
+      throw new Error("This account has been deleted.");
+    case "pending":
+      throw new Error("Your account is pending verification. Please check your email.");
+    case "active":
+      break; // Continue with login process
+    default:
+      throw new Error("Invalid account status.");
+  }
   // ✅ Step 3: GUC email check (for non-vendor users)
   if (
     user.role !== "vendor" &&
@@ -145,15 +158,7 @@ export const loginUser = async (data) => {
     throw new Error("Please use your GUC email to log in.");
   }
 
-  // ✅ Step 3.5: Ensure verified before login (NEW REQUIREMENT)
-  if (
-    ["staff", "ta", "professor"].includes(user.role.toLowerCase()) &&
-    user.status !== "active"
-  ) {
-    throw new Error(
-      "Your account has not been verified yet. Please check your email for the verification link."
-    );
-  }
+  
 
   // ✅ Step 4: Compare passwords
   const isMatch = await bcrypt.compare(password, user.password);

@@ -302,8 +302,7 @@ export default function EventCard({
                   Register
                 </Button>
               )}
-              <div className="flex gap-2">
-                {onViewDetails && (
+                <div className="flex gap-2 ml-auto">                {onViewDetails && (
                   <Button
                     className={canRegister ? "flex-1" : "flex-1"}
                     variant="outline"
@@ -408,8 +407,7 @@ export default function EventCard({
                     Register
                   </Button>
                 )}
-                <div className="flex items-center gap-2">
-                  {canShowFavorites && (
+                  <div className="flex items-center gap-2 ml-auto">                  {canShowFavorites && (
                     <div className="relative" onClick={(e) => e.stopPropagation()}>
                       <FavoriteButton eventId={id} />
                     </div>
