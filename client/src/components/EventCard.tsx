@@ -6,6 +6,7 @@ import {
   Share2,
   Store,
   Trash2,
+  Archive,
   Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,6 +91,8 @@ export interface EventCardProps {
   onShare?: () => void;
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
+  onArchive?: () => void;
+  isArchiving?: boolean;
   canDelete?: boolean;
   className?: string;
 }
@@ -116,6 +119,8 @@ export default function EventCard({
   onShare,
   onDelete,
   onViewDetails,
+  onArchive,
+  isArchiving = false,
   canDelete = false,
   className,
 }: EventCardProps) {
@@ -135,7 +140,8 @@ export default function EventCard({
       roleAllowsDelete = role === "admin" || role === "events_office";
     }
   } catch {}
-  const canShowDelete = roleAllowsDelete;
+  // Respect parent component's `canDelete` prop in addition to role
+  const canShowDelete = roleAllowsDelete && canDelete;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
@@ -314,13 +320,38 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {canRegister && (
+              {canRegister && onRegister && (
                 <Button
                   className="flex-1"
                   onClick={onRegister}
                   data-testid={`button-register-${id}`}
                 >
                   Register
+                </Button>
+              )}
+              {onArchive && (
+                <Button
+                  className={canRegister ? "flex-1" : "w-full"}
+                  onClick={async (e) => {
+                    if ((e as any).stopPropagation)
+                      (e as any).stopPropagation();
+                    try {
+                      await onArchive();
+                    } catch (err) {
+                      // parent handles errors
+                    }
+                  }}
+                  disabled={isArchiving}
+                  data-testid={`button-archive-${id}`}
+                >
+                  {isArchiving ? (
+                    "Archiving..."
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
+                    </>
+                  )}
                 </Button>
               )}
               {onViewDetails && (
@@ -427,13 +458,34 @@ export default function EventCard({
 
             {showActions && (
               <div className="flex gap-2 pt-2">
-                {isRegisterable && (
+                {isRegisterable && onRegister && (
                   <Button
                     onClick={onRegister}
                     className="flex-1"
                     data-testid={`button-register-${id}`}
                   >
                     Register
+                  </Button>
+                )}
+                {onArchive && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={async (e) => {
+                      if ((e as any).stopPropagation)
+                        (e as any).stopPropagation();
+                      try {
+                        await onArchive();
+                      } catch (err) {
+                        // parent handles errors
+                      }
+                    }}
+                    disabled={isArchiving}
+                    data-testid={`button-archive-compact-${id}`}
+                    className="bg-primary text-primary-foreground"
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    Archive
                   </Button>
                 )}
                 <Button

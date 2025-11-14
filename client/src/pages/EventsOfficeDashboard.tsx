@@ -14,10 +14,22 @@ import {
   X,
   ClipboardList,
   Dumbbell,
+  Store,
+  Plane,
+  Archive,
+  FileText,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
@@ -25,6 +37,7 @@ import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -41,6 +54,7 @@ interface Bazaar {
 }
 
 export default function EventsOfficeDashboard() {
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [bazaars, setBazaars] = useState<Bazaar[]>([]);
   const [loadingBazaars, setLoadingBazaars] = useState(true);
@@ -62,6 +76,29 @@ export default function EventsOfficeDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
+  const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
+
+  // Past events states
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [pastEventsLoading, setPastEventsLoading] = useState(false);
+  const [pastEventsError, setPastEventsError] = useState("");
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [pastEventSearch, setPastEventSearch] = useState("");
+
+  // Extra totals
+  const [totalTrips, setTotalTrips] = useState<number | null>(null);
+  const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
+  const [totalBooths, setTotalBooths] = useState<number | null>(null);
+
+  const filteredPastEvents = pastEvents.filter((event: any) => {
+    const q = pastEventSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (event.name || "").toLowerCase().includes(q) ||
+      (event.eventType || "").toLowerCase().includes(q) ||
+      (event.location || "").toLowerCase().includes(q)
+    );
+  });
 
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -123,12 +160,37 @@ export default function EventsOfficeDashboard() {
           (w: any) => w.status === "pending"
         ).length;
         setPendingWorkshops(pendingCount);
+        setTotalWorkshops(Array.isArray(workshops) ? workshops.length : 0);
         if (pendingCount > 0) {
           setShowWorkshopNotif(true);
         }
       }
     } catch (e: any) {
       console.error("Failed to fetch pending workshops");
+    }
+  };
+
+  const fetchCountByType = async (type: "trip" | "platform_booth") => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/search?type=${type}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to fetch events");
+      const items = Array.isArray(data.data) ? data.data : [];
+      if (type === "trip") setTotalTrips(items.length);
+      if (type === "platform_booth") setTotalBooths(items.length);
+    } catch (e) {
+      if (type === "trip") setTotalTrips(0);
+      if (type === "platform_booth") setTotalBooths(0);
     }
   };
 
@@ -149,10 +211,80 @@ export default function EventsOfficeDashboard() {
     if (reminderTime) clearTimeout(reminderTime);
   };
 
+  const handleArchiveEvent = async (eventId: string) => {
+    try {
+      setArchivingId(eventId);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}/archive`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to archive event");
+      }
+
+      // Remove the archived event from the past events list
+      setPastEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+
+      toast({
+        title: "Event archived",
+        description: "The event has been successfully archived.",
+      });
+    } catch (err: any) {
+      console.error("Error archiving event:", err);
+      toast({
+        title: "Failed to archive event",
+        description:
+          err.message || "An error occurred while archiving the event.",
+        variant: "destructive",
+      });
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
+  const fetchPastEvents = async () => {
+    setPastEventsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/past`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch past events");
+      }
+      const data = await res.json();
+      // Only keep non-archived events
+      const items = Array.isArray(data.data) ? data.data : [];
+      setPastEvents(items.filter((e: any) => e.status !== "archived"));
+    } catch (err: any) {
+      setPastEventsError(err.message || "Failed to fetch past events");
+      setPastEvents([]);
+    } finally {
+      setPastEventsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBazaars();
     fetchPendingWorkshops();
-
+    fetchPastEvents();
+    fetchCountByType("trip");
+    fetchCountByType("platform_booth");
     const fetchConferences = async () => {
       try {
         setLoadingConfs(true);
@@ -220,98 +352,168 @@ export default function EventsOfficeDashboard() {
       <EventsOfficeHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Main Title and Info Section */}
-          <div className="lg:col-span-2">
-            <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
-            <p className="text-muted-foreground">
-              Create and manage bazaars, conferences, trips, and workshop
-              approvals all in one place.
-            </p>
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-              <StatCard
-                title="Total Bazaars"
-                value={loadingBazaars ? "-" : bazaars.length}
-                icon={CalendarDays}
-                themed
-              />
-              <StatCard
-                title="Total Events"
-                value={
-                  loadingBazaars || loadingConfs
-                    ? "-"
-                    : bazaars.length + conferences.length
-                }
-                icon={Clock}
-                themed
-              />
-              <StatCard
-                title="Total Conferences"
-                value={loadingConfs ? "-" : conferences.length}
-                icon={CheckCircle2}
-                themed
-              />
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
+          <p className="text-muted-foreground">
+            Create and manage bazaars, conferences, trips, and workshop
+            approvals all in one place.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+            {/* Left: Stats in two rows */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard
+                  title="Total Bazaars"
+                  value={loadingBazaars ? "-" : bazaars.length}
+                  icon={CalendarDays}
+                  themed
+                />
+                <StatCard
+                  title="Total Events"
+                  value={
+                    loadingBazaars || loadingConfs
+                      ? "-"
+                      : bazaars.length + conferences.length
+                  }
+                  icon={Clock}
+                  themed
+                />
+                <StatCard
+                  title="Total Conferences"
+                  value={loadingConfs ? "-" : conferences.length}
+                  icon={CheckCircle2}
+                  themed
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <StatCard
+                  title="Total Trips"
+                  value={totalTrips == null ? "-" : totalTrips}
+                  icon={Calendar}
+                  themed
+                />
+                <StatCard
+                  title="Total Workshops"
+                  value={totalWorkshops == null ? "-" : totalWorkshops}
+                  icon={ClipboardList}
+                  themed
+                />
+                <StatCard
+                  title="Total Booths"
+                  value={totalBooths == null ? "-" : totalBooths}
+                  icon={Archive}
+                  themed
+                />
+              </div>
             </div>
-          </div>
-
-          {/* Action Buttons Card */}
-          <div className="lg:col-span-1">
-            <div className="space-y-6">
+            {/* Right: Quick Actions Card */}
+            <div className="lg:col-span-1">
               <Card className="h-full">
-                <CardHeader>
-                  <CardTitle>Quick Actions</CardTitle>
+                <CardHeader className="flex justify-center">
+                  <CardTitle className="text-center">Quick Actions</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/create/bazaar")}
-                    data-testid="button-header-create-bazaar"
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Bazaar
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() =>
-                      setLocation("/events-office/create/conference")
-                    }
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Conference
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/create/trip")}
-                  >
-                    <Plus className="h-4 w-4" />
-                    Create Trip
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setIsCreateGymDialogOpen(true)}
-                  >
-                    <Dumbbell className="h-4 w-4" />
-                    Create Gym Session
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/approvals/workshops")}
-                  >
-                    <CheckCircle2 className="h-4 w-4" />
-                    Workshop Approvals
-                  </button>
-                  <button
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                    onClick={() => setLocation("/vendor-requests")}
-                    data-testid="button-quick-vendor-requests"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    Vendor Requests
-                  </button>
+                <CardContent>
+                  <div className="flex flex-col items-center gap-3">
+                    <>
+                      <Button
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                        onClick={() => setIsCreateEventDialogOpen(true)}
+                        data-testid="button-header-create-event"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm leading-tight text-center">
+                          Create Event
+                        </span>
+                      </Button>
+                      <Dialog
+                        open={isCreateEventDialogOpen}
+                        onOpenChange={setIsCreateEventDialogOpen}
+                      >
+                        <DialogContent className="max-w-sm">
+                          <DialogHeader>
+                            <DialogTitle>Create an event</DialogTitle>
+                            <DialogDescription>
+                              Choose which type of event to create
+                            </DialogDescription>
+                          </DialogHeader>
+
+                          <div className="grid gap-2 mt-4">
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/bazaar");
+                              }}
+                            >
+                              <Store className="h-4 w-4" />
+                              <span>Create Bazaar</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setIsCreateGymDialogOpen(true);
+                              }}
+                            >
+                              <Dumbbell className="h-4 w-4" />
+                              <span>Create Gym Session</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/events-office/create/conference");
+                              }}
+                            >
+                              <CalendarDays className="h-4 w-4" />
+                              <span>Create Conference</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/trip");
+                              }}
+                            >
+                              <Plane className="h-4 w-4" />
+                              <span>Create Trip</span>
+                            </Button>
+                          </div>
+
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsCreateEventDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                    {/* Create Gym Session moved into Create Event dialog */}
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/approvals/workshops")}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Workshop Approvals
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/vendor-requests")}
+                      data-testid="button-quick-vendor-requests"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Vendor Requests
+                      </span>
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
-              {/* Sidebar kept for Quick Actions only */}
             </div>
           </div>
         </div>
@@ -396,7 +598,16 @@ export default function EventsOfficeDashboard() {
                 ))}
               </div>
               <EventSearch
-                onSearchResults={(results) => setUpcomingEvents(results)}
+                onSearchResults={(results) => {
+                  // Filter to show only upcoming events
+                  const now = new Date();
+                  const upcomingEvts = results.filter((event: any) => {
+                    const eventEndDate = new Date(event.endDate);
+                    eventEndDate.setUTCHours(23, 59, 59, 999);
+                    return eventEndDate.getTime() >= now.getTime();
+                  });
+                  setUpcomingEvents(upcomingEvts);
+                }}
                 onLoading={(isLoading) => setUpcomingLoading(isLoading)}
                 onError={(msg) => setUpcomingError(msg)}
                 placeholder="Search events by name, professor, or type..."
@@ -475,6 +686,101 @@ export default function EventsOfficeDashboard() {
                         showDetailedView={true}
                       />
                     ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Past Events */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Past Events</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search past events..."
+                  value={pastEventSearch}
+                  onChange={(e) => setPastEventSearch(e.target.value)}
+                  className="w-64"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fetchPastEvents()}
+                >
+                  Refresh
+                </Button>
+              </div>
+              {pastEventsLoading ? (
+                <p>Loading past events...</p>
+              ) : pastEventsError ? (
+                <p className="text-red-500">{pastEventsError}</p>
+              ) : filteredPastEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">
+                    No past events found
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredPastEvents.slice(0, 8).map((event: any) => (
+                    <div key={event._id} className="relative">
+                      <EventCard
+                        id={event._id}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={event.location || "Unknown location"}
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={
+                          event.bannerImage ||
+                          event.image ||
+                          getEventImage(event.eventType, event.name)
+                        }
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        capacity={-1}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                        canDelete={false}
+                        onArchive={() => handleArchiveEvent(event._id)}
+                        isArchiving={archivingId === event._id}
+                      />
+                    </div>
+                  ))}
                 </div>
               )}
             </CardContent>
