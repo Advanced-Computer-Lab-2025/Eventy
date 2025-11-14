@@ -33,7 +33,13 @@ const feedbackSchema = new mongoose.Schema(
   }
 );
 
-// Ensure one feedback per user per event
-feedbackSchema.index({ eventId: 1, userId: 1 }, { unique: true });
+// Ensure one feedback per user per event (only for non-deleted feedback)
+feedbackSchema.index(
+  { eventId: 1, userId: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { deletedAt: null },
+  }
+);
 
 export default mongoose.model("Feedback", feedbackSchema);
