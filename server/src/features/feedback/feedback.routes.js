@@ -27,7 +27,7 @@ router.get(
 
 // Get the authenticated user's feedback for a specific event
 router.get(
-  "/events/:eventId/feedback/user",
+  "/events/:eventId/me",
   authMiddleware,
   roleMiddleware(["student", "staff", "ta", "professor"]),
   getUserEventFeedback
