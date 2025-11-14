@@ -52,12 +52,43 @@ export default function EventFeedbackDialog({
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [userFeedback, setUserFeedback] = useState<Comment | null>(null);
+
+  const fetchUserFeedback = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `http://localhost:4000/api/feedback/events/${eventId}/me`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) {
+          setHasSubmitted(true);
+          setUserFeedback(data.data);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching user feedback:", error);
+    }
+  };
 
   const fetchFeedback = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/feedback/events/${eventId}`
+        `http://localhost:4000/api/feedback/events/${eventId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
       if (!response.ok) throw new Error("Failed to fetch feedback");
       const data = await response.json();
@@ -79,7 +110,15 @@ export default function EventFeedbackDialog({
 
   useEffect(() => {
     if (open && eventId) {
+      fetchUserFeedback();
       fetchFeedback();
+    } else if (!open) {
+      // Reset state when dialog closes
+      setRating(0);
+      setComment("");
+      setHasSubmitted(false);
+      setUserFeedback(null);
+      setComments([]);
     }
   }, [open, eventId]);
 
@@ -111,6 +150,8 @@ export default function EventFeedbackDialog({
       // Clear form and refresh feedback
       setRating(0);
       setComment("");
+      setHasSubmitted(true);
+      fetchUserFeedback();
       fetchFeedback();
 
       toast({
@@ -149,52 +190,86 @@ export default function EventFeedbackDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Rating Section */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Your Rating</label>
-            <div className="flex gap-1">
-              {[1, 2, 3, 4, 5].map((index) => (
-                <button
-                  key={index}
-                  type="button"
-                  onClick={() => setRating(index)}
-                  onMouseEnter={() => setHoverRating(index)}
-                  onMouseLeave={() => setHoverRating(0)}
-                  className="focus:outline-none"
-                >
-                  <Star
-                    className={`w-6 h-6 ${
-                      index <= (hoverRating || rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-muted-foreground"
-                    }`}
-                  />
-                </button>
-              ))}
+          {hasSubmitted ? (
+            <div className="bg-muted rounded-lg p-6 text-center space-y-4">
+              <div className="text-lg font-medium">
+                You've already submitted feedback
+              </div>
+              {userFeedback && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-center gap-1 text-yellow-400">
+                    {[...Array(5)].map((_, index) => (
+                      <Star
+                        key={index}
+                        className={`w-5 h-5 ${
+                          index < userFeedback.rating
+                            ? "fill-current"
+                            : "text-muted"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  {userFeedback.comment && (
+                    <p className="text-sm text-muted-foreground italic">
+                      "{userFeedback.comment}"
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    Submitted on {formatDate(userFeedback.createdAt)}
+                  </p>
+                </div>
+              )}
             </div>
-          </div>
+          ) : (
+            <>
+              {/* Rating Section */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Your Rating</label>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => setRating(index)}
+                      onMouseEnter={() => setHoverRating(index)}
+                      onMouseLeave={() => setHoverRating(0)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          index <= (hoverRating || rating)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-          {/* Comment Section */}
-          <div className="space-y-2">
-            <label htmlFor="comment" className="text-sm font-medium">
-              Your Comment
-            </label>
-            <Textarea
-              id="comment"
-              value={comment}
-              onChange={(e) => setComment(e.target.value)}
-              placeholder="Share your experience..."
-              className="min-h-[100px]"
-            />
-          </div>
+              {/* Comment Section */}
+              <div className="space-y-2">
+                <label htmlFor="comment" className="text-sm font-medium">
+                  Your Comment
+                </label>
+                <Textarea
+                  id="comment"
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                  placeholder="Share your experience..."
+                  className="min-h-[100px]"
+                />
+              </div>
 
-          <Button
-            onClick={handleSubmit}
-            className="w-full"
-            disabled={rating === 0}
-          >
-            Submit Feedback
-          </Button>
+              <Button
+                onClick={handleSubmit}
+                className="w-full"
+                disabled={rating === 0 || submitting}
+              >
+                {submitting ? "Submitting..." : "Submit Feedback"}
+              </Button>
+            </>
+          )}
 
           {/* Previous Comments */}
           <div className="space-y-2">
@@ -218,7 +293,6 @@ export default function EventFeedbackDialog({
                         `${user.firstName || ""} ${
                           user.lastName || ""
                         }`.trim()) ||
-                      (user.companyName && String(user.companyName).trim()) ||
                       user.email ||
                       "Anonymous";
 
