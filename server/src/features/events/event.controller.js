@@ -709,4 +709,41 @@ export class EventsController {
       next(err);
     }
   }
+
+  // Export registered users for an event in various formats
+  async exportEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can export registered users
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can export registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const { format = "xlsx" } = req.query; // Default to xlsx if not specified
+
+      const { buffer, filename, mimeType } =
+        await eventService.exportEventRegisteredUsers(eventId, format);
+
+      // Set headers for file download
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", buffer.length);
+
+      // Send the file buffer
+      return res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  }
 }
