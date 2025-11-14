@@ -29,13 +29,17 @@ export const signUpUser = async (data) => {
   }
 
   // ✅ Step 3: Check for duplicate email
-  const existingUser = await User.findOne({ email: data.email });
+  const existingUser = await User.findOne({
+    email: data.email,
+    status: { $ne: "deleted" },
+  });
   if (existingUser) throw new Error("This email is already registered.");
 
   // ✅ Step 4: Additional duplicate checks
   if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
     const existingId = await User.findOne({
       studentStaffId: data.studentStaffId,
+      status: { $ne: "deleted" },
     });
     if (existingId) throw new Error("This ID is already registered.");
   } else if (normalizedRole === "vendor") {
