@@ -722,3 +722,84 @@ export const archiveEvent = async (eventId, user) => {
 
   return updatedEvent;
 };
+
+export const getSalesReport = async (options = {}) => {
+  const { page = 1, limit = 10 } = options;
+
+  const match = {
+    deletedAt: null,
+    status: "approved",
+  };
+
+  const skip = (page - 1) * limit;
+
+  // MongoDB aggregation for performance
+  const [result] = await Event.aggregate([
+    { $match: match },
+
+    {
+      $project: {
+        name: 1,
+        eventType: 1,
+        startDate: 1,
+        endDate: 1,
+        location: 1,
+        price: 1,
+        attendeesCount: {
+          $ifNull: [
+            "$attendeesCount",
+            { $size: { $ifNull: ["$attendees", []] } },
+          ],
+        },
+        // Calculate revenue: price * number of attendees
+        revenue: {
+          $multiply: [
+            { $ifNull: ["$price", 0] },
+            {
+              $ifNull: [
+                "$attendeesCount",
+                { $size: { $ifNull: ["$attendees", []] } },
+              ],
+            },
+          ],
+        },
+      },
+    },
+
+    {
+      $facet: {
+        events: [
+          { $sort: { startDate: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        totals: [
+          {
+            $group: {
+              _id: null,
+              totalEvents: { $sum: 1 },
+              totalAttendees: { $sum: "$attendeesCount" },
+              totalRevenue: { $sum: "$revenue" },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const totals = result?.totals?.[0] || {
+    totalEvents: 0,
+    totalAttendees: 0,
+    totalRevenue: 0,
+  };
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalAttendees: totals.totalAttendees,
+    totalRevenue: totals.totalRevenue,
+    page,
+    limit,
+    totalPages: Math.ceil((totals.totalEvents || 0) / limit),
+    events: result.events || [],
+  };
+};

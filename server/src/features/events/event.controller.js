@@ -11,6 +11,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  getSalesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -671,6 +672,34 @@ export class EventsController {
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getSalesReport(req, res, next) {
+    try {
+      // ✅ Validate query params
+      const { error, value } = getSalesReportSchema.validate(req.query, {
+        abortEarly: false,
+      });
+
+      if (error)
+        return next(new ApiError(400, "Validation failed", error.details));
+
+      // ✅ Use the validated values
+      const { page, limit } = value;
+
+      const report = await eventService.getSalesReport({
+        page: page || 1,
+        limit: limit || 10,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, report, "Sales report generated successfully")
+        );
     } catch (err) {
       next(err);
     }
