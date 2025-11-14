@@ -54,9 +54,11 @@ export default function EventFeedbackDialog({
   const [submitting, setSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [userFeedback, setUserFeedback] = useState<Comment | null>(null);
+  const [checkingSubmission, setCheckingSubmission] = useState(false);
 
   const fetchUserFeedback = async () => {
     try {
+      setCheckingSubmission(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
         `http://localhost:4000/api/feedback/events/${eventId}/me`,
@@ -72,9 +74,19 @@ export default function EventFeedbackDialog({
           setHasSubmitted(true);
           setUserFeedback(data.data);
         }
+      } else if (response.status === 403 || response.status === 401) {
+        // User not authorized - this shouldn't happen if they're on My Events page
+        toast({
+          title: "Error",
+          description: "You are not authorized to view this feedback",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error("Error fetching user feedback:", error);
+      // Silent fail - allow user to submit if check fails
+    } finally {
+      setCheckingSubmission(false);
     }
   };
 
@@ -119,6 +131,7 @@ export default function EventFeedbackDialog({
       setHasSubmitted(false);
       setUserFeedback(null);
       setComments([]);
+      setCheckingSubmission(false);
     }
   }, [open, eventId]);
 
@@ -190,7 +203,15 @@ export default function EventFeedbackDialog({
         </DialogHeader>
 
         <div className="space-y-6">
-          {hasSubmitted ? (
+          {checkingSubmission ? (
+            <div className="bg-muted rounded-lg p-6 text-center space-y-4 animate-pulse">
+              <div className="h-6 bg-muted-foreground/20 rounded w-3/4 mx-auto"></div>
+              <div className="space-y-2">
+                <div className="h-4 bg-muted-foreground/20 rounded w-1/2 mx-auto"></div>
+                <div className="h-4 bg-muted-foreground/20 rounded w-2/3 mx-auto"></div>
+              </div>
+            </div>
+          ) : hasSubmitted ? (
             <div className="bg-muted rounded-lg p-6 text-center space-y-4">
               <div className="text-lg font-medium">
                 You've already submitted feedback
