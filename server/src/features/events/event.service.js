@@ -722,3 +722,32 @@ export const archiveEvent = async (eventId, user) => {
 
   return updatedEvent;
 };
+
+export const getEventRegisteredUsers = async (eventId) => {
+  // Find event and populate attendees with only name and role
+  const event = await Event.findById(eventId)
+    .select("attendees deletedAt")
+    .populate("attendees", "name role");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view attendees of a deleted event");
+  }
+
+  // Check if attendees array is empty or doesn't exist
+  if (!event.attendees || event.attendees.length === 0) {
+    throw new ApiError(404, "No registered users for this event");
+  }
+
+  // Map to minimal shape with only required fields
+  const registeredUsers = event.attendees.map((user) => ({
+    _id: user._id,
+    name: user.name,
+    role: user.role,
+  }));
+
+  return registeredUsers;
+};

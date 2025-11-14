@@ -233,4 +233,12 @@ router.post(
   eventsController.registerForEvent.bind(eventsController)
 );
 
+// Get registered users for a specific event (events_office only)
+router.get(
+  "/registered-users/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.getEventRegisteredUsers.bind(eventsController)
+);
+
 export default router;
