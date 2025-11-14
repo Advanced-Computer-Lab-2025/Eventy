@@ -55,6 +55,8 @@ export default function EventFeedbackDialog({
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [userFeedback, setUserFeedback] = useState<Comment | null>(null);
   const [checkingSubmission, setCheckingSubmission] = useState(false);
+  const [ratingError, setRatingError] = useState("");
+  const [commentError, setCommentError] = useState("");
 
   const fetchUserFeedback = async () => {
     try {
@@ -132,10 +134,38 @@ export default function EventFeedbackDialog({
       setUserFeedback(null);
       setComments([]);
       setCheckingSubmission(false);
+      setRatingError("");
+      setCommentError("");
     }
   }, [open, eventId]);
 
+  const validateForm = () => {
+    let isValid = true;
+
+    // Validate rating
+    if (rating < 1 || rating > 5) {
+      setRatingError("Please select a rating between 1 and 5");
+      isValid = false;
+    } else {
+      setRatingError("");
+    }
+
+    // Validate comment length
+    if (comment.length > 1000) {
+      setCommentError("Comment must not exceed 1000 characters");
+      isValid = false;
+    } else {
+      setCommentError("");
+    }
+
+    return isValid;
+  };
+
   const handleSubmit = async () => {
+    if (!validateForm()) {
+      return;
+    }
+
     try {
       setSubmitting(true);
       const token = localStorage.getItem("token");
@@ -245,13 +275,16 @@ export default function EventFeedbackDialog({
             <>
               {/* Rating Section */}
               <div className="space-y-2">
-                <label className="text-sm font-medium">Your Rating</label>
+                <label className="text-sm font-medium">Your Rating *</label>
                 <div className="flex gap-1">
                   {[1, 2, 3, 4, 5].map((index) => (
                     <button
                       key={index}
                       type="button"
-                      onClick={() => setRating(index)}
+                      onClick={() => {
+                        setRating(index);
+                        setRatingError("");
+                      }}
                       onMouseEnter={() => setHoverRating(index)}
                       onMouseLeave={() => setHoverRating(0)}
                       className="focus:outline-none"
@@ -266,26 +299,50 @@ export default function EventFeedbackDialog({
                     </button>
                   ))}
                 </div>
+                {ratingError && (
+                  <p className="text-sm text-destructive">{ratingError}</p>
+                )}
               </div>
 
               {/* Comment Section */}
               <div className="space-y-2">
-                <label htmlFor="comment" className="text-sm font-medium">
-                  Your Comment
-                </label>
+                <div className="flex items-center justify-between">
+                  <label htmlFor="comment" className="text-sm font-medium">
+                    Your Comment
+                  </label>
+                  <span
+                    className={`text-xs ${
+                      comment.length > 1000
+                        ? "text-destructive"
+                        : "text-muted-foreground"
+                    }`}
+                  >
+                    {comment.length}/1000
+                  </span>
+                </div>
                 <Textarea
                   id="comment"
                   value={comment}
-                  onChange={(e) => setComment(e.target.value)}
+                  onChange={(e) => {
+                    setComment(e.target.value);
+                    if (e.target.value.length <= 1000) {
+                      setCommentError("");
+                    }
+                  }}
                   placeholder="Share your experience..."
-                  className="min-h-[100px]"
+                  className={`min-h-[100px] ${
+                    commentError ? "border-destructive" : ""
+                  }`}
                 />
+                {commentError && (
+                  <p className="text-sm text-destructive">{commentError}</p>
+                )}
               </div>
 
               <Button
                 onClick={handleSubmit}
                 className="w-full"
-                disabled={rating === 0 || submitting}
+                disabled={rating === 0 || submitting || comment.length > 1000}
               >
                 {submitting ? "Submitting..." : "Submit Feedback"}
               </Button>

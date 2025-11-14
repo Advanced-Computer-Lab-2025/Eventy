@@ -4,12 +4,22 @@ import {
   getUserEventFeedbackService,
 } from "./feedback.service.js";
 import ApiError from "../../utils/ApiError.js";
+import { submitFeedbackSchema } from "./feedback.validation.js";
 
 // Submit feedback for an event (delegates to service)
 export const submitFeedback = async (req, res) => {
   try {
     const { eventId } = req.params;
     const { rating, comment } = req.body;
+
+    // Validate input
+    const { error } = submitFeedbackSchema.validate({ rating, comment });
+    if (error) {
+      return res.status(400).json({
+        success: false,
+        message: error.details[0].message,
+      });
+    }
 
     const feedback = await submitFeedbackService(req.user, eventId, {
       rating,
