@@ -133,6 +133,16 @@ export default function EventsOfficeHeader() {
             <FileText className="h-4 w-4" />
             Attendees Report
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/reports/sales")}
+            data-testid="button-nav-sales-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Sales Report
+          </Button>
         </div>
       </div>
     </header>
