@@ -22,6 +22,7 @@ import {
 import Logo from "@/components/Logo";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
+import { FileUploadWithCrop } from "@/components/ui/file-upload-with-crop";
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
@@ -53,6 +54,8 @@ export default function SignUp() {
 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingTax, setIsUploadingTax] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [taxFile, setTaxFile] = useState<File | null>(null);
 
   const validateStudentId = (id: string): boolean => {
     const studentIdPattern = /^\d{2}-\d{4}$/;
@@ -505,84 +508,93 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="vendor-logo">Company Logo (upload file)</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      id="vendor-logo"
-                      type="file"
-                      accept="image/*,application/pdf"
-                      className="pl-10"
-                      onChange={async (e) => {
-                        const file = e.target.files && e.target.files[0];
-                        if (!file) return;
-                        try {
-                          setIsUploadingLogo(true);
-                          const res = await bazaarApiService.uploadVendorDocument(file);
-                          // store the returned URL so backend validation passes and frontend can display
-                          setVendorForm({
-                            ...vendorForm,
-                            companyLogoUrl: res.url,
-                          });
-                          toast({ title: "Logo uploaded" });
-                        } catch (err: any) {
-                          toast({
-                            variant: "destructive",
-                            title: "Upload failed",
-                            description: err?.message || "Could not upload logo",
-                          });
-                        } finally {
-                          setIsUploadingLogo(false);
-                        }
-                      }}
-                      data-testid="input-vendor-logo"
-                      required
-                    />
-                    {isUploadingLogo && (
-                      <div className="text-sm text-muted-foreground">Uploading...</div>
-                    )}
-                  </div>
-                </div>
+                <FileUploadWithCrop
+                  label="Company Logo"
+                  description="Upload your company logo."
+                  accept="application/pdf,image/*"
+                  maxSize={5}
+                  enableCrop={true}
+                  cropAspectRatio={1}
+                  previewType="image"
+                  value={vendorForm.companyLogoUrl}
+                  isUploading={isUploadingLogo}
+                  onFileSelect={async (file) => {
+                    try {
+                      setIsUploadingLogo(true);
+                      const res = await bazaarApiService.uploadVendorDocument(
+                        file as File
+                      );
+                      setVendorForm({
+                        ...vendorForm,
+                        companyLogoUrl: res.url,
+                      });
+                      setLogoFile(file as File);
+                      toast({
+                        title: "Success",
+                        description: "Logo uploaded successfully!",
+                      });
+                    } catch (err: any) {
+                      toast({
+                        variant: "destructive",
+                        title: "Upload failed",
+                        description: err?.message || "Could not upload logo",
+                      });
+                    } finally {
+                      setIsUploadingLogo(false);
+                    }
+                  }}
+                  onRemove={() => {
+                    setVendorForm({
+                      ...vendorForm,
+                      companyLogoUrl: "",
+                    });
+                    setLogoFile(null);
+                  }}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="vendor-tax">Tax Card (upload file)</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <input
-                      id="vendor-tax"
-                      type="file"
-                      accept="application/pdf,image/*"
-                      className="pl-10"
-                      onChange={async (e) => {
-                        const file = e.target.files && e.target.files[0];
-                        if (!file) return;
-                        try {
-                          setIsUploadingTax(true);
-                          const res = await bazaarApiService.uploadVendorDocument(file);
-                          setVendorForm({
-                            ...vendorForm,
-                            taxCardUrl: res.url,
-                          });
-                          toast({ title: "Tax card uploaded" });
-                        } catch (err: any) {
-                          toast({
-                            variant: "destructive",
-                            title: "Upload failed",
-                            description: err?.message || "Could not upload tax card",
-                          });
-                        } finally {
-                          setIsUploadingTax(false);
-                        }
-                      }}
-                      data-testid="input-vendor-tax"
-                      required
-                    />
-                    {isUploadingTax && (
-                      <div className="text-sm text-muted-foreground">Uploading...</div>
-                    )}
-                  </div>
-                </div>
+                <FileUploadWithCrop
+                  label="Tax Card"
+                  description="Upload your tax registration card."
+                  accept="application/pdf,image/*"
+                  maxSize={5}
+                  enableCrop={false}
+                  previewType="document"
+                  value={vendorForm.taxCardUrl}
+                  isUploading={isUploadingTax}
+                  onFileSelect={async (file) => {
+                    try {
+                      setIsUploadingTax(true);
+                      const res = await bazaarApiService.uploadVendorDocument(
+                        file as File
+                      );
+                      setVendorForm({
+                        ...vendorForm,
+                        taxCardUrl: res.url,
+                      });
+                      setTaxFile(file as File);
+                      toast({
+                        title: "Success",
+                        description: "Tax card uploaded successfully!",
+                      });
+                    } catch (err: any) {
+                      toast({
+                        variant: "destructive",
+                        title: "Upload failed",
+                        description:
+                          err?.message || "Could not upload tax card",
+                      });
+                    } finally {
+                      setIsUploadingTax(false);
+                    }
+                  }}
+                  onRemove={() => {
+                    setVendorForm({
+                      ...vendorForm,
+                      taxCardUrl: "",
+                    });
+                    setTaxFile(null);
+                  }}
+                />
 
                 <Button
                   type="submit"
