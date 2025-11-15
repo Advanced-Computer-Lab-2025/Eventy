@@ -15,6 +15,20 @@ export const createTripSchema = Joi.object({
   description: Joi.string().trim().required(),
   startDate: Joi.date().required(),
   endDate: Joi.date().required(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Start time is required",
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "End time is required",
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
   capacity: Joi.number().integer().min(1).optional(),
@@ -214,6 +228,16 @@ export const updateTripSchema = Joi.object({
   location: Joi.string(),
   startDate: Joi.date().greater("now"),
   endDate: Joi.date(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .messages({
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .messages({
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
   registrationDeadline: Joi.date(),
   capacity: Joi.number(),
   price: Joi.number().positive(),

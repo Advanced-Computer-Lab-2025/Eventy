@@ -74,18 +74,22 @@ export default function TripManagement() {
   const handleOpenModal = (trip: any = null) => {
     if (trip) {
       setEditingId(trip._id);
+      // Extract time from separate startTime/endTime fields if available, otherwise from ISO date strings
+      const getTimeFromDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
+        const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
+        return timeMatch ? timeMatch[1] : "";
+      };
+
       setFormData({
         name: trip.name ?? "",
         location: trip.location ?? "",
         price: trip.price ?? "",
         startDate: trip.startDate?.split?.("T")[0] ?? "",
-        startTime: trip.startDate
-          ? new Date(trip.startDate).toTimeString().slice(0, 5)
-          : "",
+        startTime: trip.startTime ?? getTimeFromDate(trip.startDate ?? ""),
         endDate: trip.endDate?.split?.("T")[0] ?? "",
-        endTime: trip.endDate
-          ? new Date(trip.endDate).toTimeString().slice(0, 5)
-          : "",
+        endTime: trip.endTime ?? getTimeFromDate(trip.endDate ?? ""),
         description: trip.description ?? "",
         capacity: trip.capacity ?? "",
         registrationDeadline: trip.registrationDeadline?.split?.("T")[0] ?? "",
@@ -186,29 +190,35 @@ export default function TripManagement() {
 
       // Build payload compatible with backend model/validation:
       // - merge date + time into ISO datetimes for startDate/endDate
+      // - keep startTime/endTime as separate string fields (required by backend model)
       // - convert numeric fields to numbers
-      // - remove startTime/endTime (not part of schema)
       const payload: any = { ...formData };
 
       // merge date + time -> ISO string (if time missing use 00:00)
+      const startTimeValue =
+        formData.startTime && formData.startTime.trim()
+          ? formData.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        formData.endTime && formData.endTime.trim()
+          ? formData.endTime.trim()
+          : "00:00";
+
       if (formData.startDate) {
-        const time =
-          formData.startTime && formData.startTime.trim()
-            ? formData.startTime.trim()
-            : "00:00";
         payload.startDate = new Date(
-          `${formData.startDate}T${time}:00`
+          `${formData.startDate}T${startTimeValue}:00`
         ).toISOString();
       }
       if (formData.endDate) {
-        const time =
-          formData.endTime && formData.endTime.trim()
-            ? formData.endTime.trim()
-            : "00:00";
         payload.endDate = new Date(
-          `${formData.endDate}T${time}:00`
+          `${formData.endDate}T${endTimeValue}:00`
         ).toISOString();
       }
+
+      // Keep startTime and endTime as separate string fields (required by backend model)
+      // Time input type="time" returns values in "HH:mm" format (24-hour)
+      payload.startTime = startTimeValue;
+      payload.endTime = endTimeValue;
 
       // registrationDeadline -> full ISO date (backend expects Date)
       if (formData.registrationDeadline) {
@@ -220,10 +230,6 @@ export default function TripManagement() {
       // numeric conversions
       if (payload.price !== "") payload.price = Number(payload.price);
       if (payload.capacity !== "") payload.capacity = Number(payload.capacity);
-
-      // remove client-only fields not present in backend validation/model
-      delete payload.startTime;
-      delete payload.endTime;
 
       // POST/PATCH paths are under /api/events/
       const url = editingId
