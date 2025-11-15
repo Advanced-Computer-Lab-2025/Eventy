@@ -88,12 +88,24 @@ export default function CreateBazaar() {
         setSubmitting(false);
         return;
       }
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        formData.startTime && formData.startTime.trim()
+          ? formData.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        formData.endTime && formData.endTime.trim()
+          ? formData.endTime.trim()
+          : "00:00";
+
       const payload = {
         name: formData.name,
         description: formData.description,
         location: formData.location,
-        startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
-        endDate: `${formData.endDate}T${formData.endTime}:00.000Z`,
+        startDate: `${formData.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${formData.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         registrationDeadline: formData.deadline
           ? `${formData.deadline}T23:59:59.000Z`
           : undefined,
