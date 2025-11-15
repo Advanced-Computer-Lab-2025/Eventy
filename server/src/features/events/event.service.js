@@ -282,7 +282,6 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
-  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -591,7 +590,6 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
@@ -617,27 +615,27 @@ export const getAttendeesReport = async (options = {}) => {
   if (eventType && eventType !== "all" && eventType !== "All Types") {
     match.eventType = eventType.toLowerCase();
   }
-  if (startDate) {
-    const filterStartDate = new Date(new Date(startDate).setHours(0, 0, 0, 0));
-    const filterStartDateEnd = new Date(
-      new Date(startDate).setHours(23, 59, 59, 999)
-    );
-    match.startDate = {
-      $gte: filterStartDate,
-      $lte: filterStartDateEnd,
-    };
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
   }
 
-  if (endDate) {
-    const filterEndDate = new Date(new Date(endDate).setHours(0, 0, 0, 0));
-    const filterEndDateEnd = new Date(
-      new Date(endDate).setHours(23, 59, 59, 999)
-    );
-    match.endDate = {
-      $gte: filterEndDate,
-      $lte: filterEndDateEnd,
-    };
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
   }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
+  }
+
   const skip = (page - 1) * limit;
 
   // MongoDB aggregation for performance
