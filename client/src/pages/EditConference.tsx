@@ -6,6 +6,7 @@ import CreateEventForm, {
 } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -26,6 +27,7 @@ interface Conference {
 export default function EditConference() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/events-office/events/conference/edit/:id");
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conference, setConference] = useState<Conference | null>(null);
@@ -133,9 +135,21 @@ export default function EditConference() {
       if (!res.ok)
         throw new Error(data.message || "Failed to update conference");
 
-      setLocation("/events-office/dashboard");
+      toast({
+        title: "Conference updated",
+        description: "The conference was updated successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      toast({
+        title: "Failed to update conference",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }

@@ -133,9 +133,28 @@ export default function CreateBazaar() {
             (editingId ? "Failed to update bazaar" : "Failed to create bazaar")
         );
 
-      setLocation("/events-office/dashboard");
+      const isEdit = Boolean(editingId);
+      toast({
+        title: isEdit ? "Bazaar updated" : "Bazaar created",
+        description: isEdit
+          ? "The bazaar was updated successfully."
+          : "The bazaar was created successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      const errorMessage = err.message || "Something went wrong";
+      setError(errorMessage);
+      toast({
+        title: editingId
+          ? "Failed to update bazaar"
+          : "Failed to create bazaar",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }

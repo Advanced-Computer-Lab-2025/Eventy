@@ -5,12 +5,14 @@ import CreateEventForm, {
 } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 export default function CreateConference() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
   const handleSubmit = async (values: CreateEventFormValues) => {
@@ -57,9 +59,21 @@ export default function CreateConference() {
       if (!res.ok)
         throw new Error(data.message || "Failed to create conference");
 
-      setLocation("/events-office/dashboard");
+      toast({
+        title: "Conference created",
+        description: "The conference was created successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      toast({
+        title: "Failed to create conference",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
