@@ -83,10 +83,22 @@ export default function EditConference() {
     try {
       const token = localStorage.getItem("token");
 
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        values.startTime && values.startTime.trim()
+          ? values.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        values.endTime && values.endTime.trim()
+          ? values.endTime.trim()
+          : "00:00";
+
       const payload = {
         name: values.name,
-        startDate: `${values.startDate}T${values.startTime}:00.000Z`,
-        endDate: `${values.endDate}T${values.endTime}:00.000Z`,
+        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
         requiredBudget: values.requiredBudget
@@ -134,7 +146,10 @@ export default function EditConference() {
   };
 
   const formatTimeForInput = (dateString: string) => {
-    return new Date(dateString).toTimeString().slice(0, 5);
+    if (!dateString) return "";
+    // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
+    const timeMatch = dateString.match(/T(\d{2}:\d{2})/);
+    return timeMatch ? timeMatch[1] : "";
   };
 
   if (loading) {
@@ -176,9 +191,13 @@ export default function EditConference() {
   const initialValues: Partial<CreateEventFormValues> = {
     name: conference.name,
     startDate: formatDateForInput(conference.startDate),
-    startTime: formatTimeForInput(conference.startDate),
+    // Use separate startTime field if available, otherwise extract from date
+    startTime:
+      (conference as any).startTime ?? formatTimeForInput(conference.startDate),
     endDate: formatDateForInput(conference.endDate),
-    endTime: formatTimeForInput(conference.endDate),
+    // Use separate endTime field if available, otherwise extract from date
+    endTime:
+      (conference as any).endTime ?? formatTimeForInput(conference.endDate),
     description: conference.description,
     websiteUrl: conference.websiteUrl || "",
     requiredBudget: conference.requiredBudget?.toString() || "",

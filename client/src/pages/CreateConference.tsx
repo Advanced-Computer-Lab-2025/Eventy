@@ -18,10 +18,22 @@ export default function CreateConference() {
     try {
       const token = localStorage.getItem("token");
 
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        values.startTime && values.startTime.trim()
+          ? values.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        values.endTime && values.endTime.trim()
+          ? values.endTime.trim()
+          : "00:00";
+
       const payload = {
         name: values.name,
-        startDate: `${values.startDate}T${values.startTime}:00.000Z`,
-        endDate: `${values.endDate}T${values.endTime}:00.000Z`,
+        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
         requiredBudget: values.requiredBudget
