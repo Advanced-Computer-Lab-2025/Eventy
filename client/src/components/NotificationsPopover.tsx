@@ -21,6 +21,7 @@ import { formatDistanceToNow, format } from "date-fns";
 
 interface Notification {
   _id: string;
+  title: string;
   message: string;
   link?: string;
   isRead: boolean;
@@ -259,13 +260,13 @@ export default function NotificationsPopover() {
                         }}
                       >
                         <p
-                          className={`text-sm line-clamp-2 ${
+                          className={`text-sm ${
                             !notification.isRead
                               ? "font-semibold"
                               : "font-normal"
                           }`}
                         >
-                          {notification.message}
+                          {notification.title}
                         </p>
                         <p className="text-xs text-muted-foreground">
                           {formatDistanceToNow(
@@ -332,7 +333,7 @@ export default function NotificationsPopover() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-bold text-purple-600 dark:text-purple-400">
-              Notification
+              {selectedNotification?.title || "Notification"}
             </DialogTitle>
           </DialogHeader>
 
@@ -380,22 +381,6 @@ export default function NotificationsPopover() {
                   {selectedNotification.message}
                 </p>
               </div>
-
-              {/* Link if available */}
-              {selectedNotification.link && (
-                <div className="space-y-2 pt-2">
-                  <Button
-                    variant="outline"
-                    className="w-full border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950/20"
-                    onClick={() => {
-                      window.location.href = selectedNotification.link!;
-                      setDetailDialogOpen(false);
-                    }}
-                  >
-                    Go to Related Page
-                  </Button>
-                </div>
-              )}
 
               {/* Actions */}
               <div className="flex justify-end gap-3 pt-4 border-t">
