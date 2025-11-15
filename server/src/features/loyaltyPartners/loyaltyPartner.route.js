@@ -24,4 +24,12 @@ router.delete(
   LoyaltyPartnerController.cancel
 );
 
+// GET /api/loyalty-partners/status
+router.get(
+  "/status",
+  authMiddleware,
+  role(["vendor"]),
+  LoyaltyPartnerController.getStatus
+);
+
 export default router;

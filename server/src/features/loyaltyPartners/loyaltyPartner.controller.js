@@ -70,4 +70,26 @@ export const LoyaltyPartnerController = {
       });
     }
   },
+
+  async getStatus(req, res) {
+    try {
+      const vendorId = req.user.id; // Get vendor ID from authenticated user
+      const status = await LoyaltyPartnerService.getVendorStatus(vendorId);
+
+      res.status(200).json({
+        status: "success",
+        data: status,
+      });
+    } catch (err) {
+      console.error("Error getting vendor loyalty status:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to get loyalty status";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
+    }
+  },
 };
