@@ -143,8 +143,8 @@ export default function NotificationsPopover() {
           prev.filter((notif) => notif._id !== notificationToDelete)
         );
         toast({
-          title: "Success",
-          description: "Notification deleted",
+          title: "Notification Deleted",
+          description: "The notification has been deleted",
         });
         setDeleteConfirmOpen(false);
         setNotificationToDelete(null);
@@ -368,14 +368,6 @@ export default function NotificationsPopover() {
                         : "System"}
                     </p>
                   </div>
-                  {selectedNotification.sender &&
-                    !["events_office", "admin"].includes(
-                      selectedNotification.sender.role
-                    ) && (
-                      <p className="text-xs text-muted-foreground capitalize">
-                        {selectedNotification.sender.role}
-                      </p>
-                    )}
                 </div>
               </div>
 
