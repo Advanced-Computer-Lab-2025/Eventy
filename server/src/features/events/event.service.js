@@ -603,7 +603,7 @@ export const getAttendeesReport = async (options = {}) => {
 
   const match = {
     deletedAt: null,
-    status: "approved",
+    status: { $in: ["approved", "archived"] },
   };
 
   // Name filter (partial, case-insensitive) applied to event 'name'
