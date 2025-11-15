@@ -133,9 +133,14 @@ export function FileUpload({
 
   return (
     <div className={cn("space-y-2", className)}>
-      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-        {label}
-      </label>
+      <div className="flex items-center justify-between">
+        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          {label}
+        </label>
+        <span className="text-xs text-muted-foreground">
+          (Maximum file size: {maxSize}MB)
+        </span>
+      </div>
 
       <div
         onClick={!hasFile && !isUploading ? handleClick : undefined}
@@ -196,8 +201,8 @@ export function FileUpload({
                     Remove
                   </Button>
                 </div>
-                <div className="absolute top-2 right-2 bg-green-500 text-white rounded-full p-1">
-                  <CheckCircle2 className="h-5 w-5" />
+                <div className="absolute top-2 right-2">
+                  <CheckCircle2 className="h-5 w-5 text-green-500" />
                 </div>
               </div>
             ) : (
@@ -227,9 +232,9 @@ export function FileUpload({
                   variant="ghost"
                   size="icon"
                   onClick={handleRemove}
-                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="transition-opacity"
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 text-red-500" />
                 </Button>
               </div>
             )}
@@ -255,9 +260,6 @@ export function FileUpload({
                 </p>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Maximum file size: {maxSize}MB
-            </p>
           </div>
         )}
       </div>
