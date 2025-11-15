@@ -1,5 +1,6 @@
 import {
   Bell,
+  User,
   Home,
   CalendarDays,
   Store,
@@ -9,6 +10,7 @@ import {
   Dumbbell,
   Archive,
   FileText,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -132,6 +134,16 @@ export default function EventsOfficeHeader() {
           >
             <FileText className="h-4 w-4" />
             Attendees Report
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
+          >
+            <Users className="h-4 w-4" />
+            Loyalty Partners
           </Button>
         </div>
       </div>

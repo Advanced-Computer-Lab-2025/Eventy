@@ -295,6 +295,15 @@ export default function StaffTADashboard() {
               <Dumbbell className="h-4 w-4" />
               Sports Facilities
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => setLocation("/loyalty-partners")}
+            >
+              <Users className="h-4 w-4" />
+              Loyalty Partners
+            </Button>
           </div>
         </div>
       </header>
