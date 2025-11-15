@@ -1,9 +1,9 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { setupVite, serveStatic, log } from "./vite";
-// @ts-ignore - JS module without types
+// @ts-expect-error - JS module without types
 import allRoutes from "./src/routes/index.js";
-// @ts-ignore - cors module without types
+// @ts-expect-error - cors module without types
 import cors from "cors";
 import path from "path";
 
@@ -57,13 +57,19 @@ app.use((req, res, next) => {
   // This MUST be done BEFORE Vite's catch-all route to prevent API routes
   // from being intercepted by the frontend router
   console.log("🔵 Registering API routes at /api");
-  console.log("🔵 Routes being imported:", allRoutes ? "✅ Success" : "❌ Failed");
+  console.log(
+    "🔵 Routes being imported:",
+    allRoutes ? "✅ Success" : "❌ Failed"
+  );
   app.use("/api", allRoutes);
   console.log("✅ API routes registered successfully");
-  
+
   // Test route to verify API routes are working
   app.get("/api/test", (req, res) => {
-    res.json({ message: "API routes are working!", timestamp: new Date().toISOString() });
+    res.json({
+      message: "API routes are working!",
+      timestamp: new Date().toISOString(),
+    });
   });
 
   const server = createServer(app);
