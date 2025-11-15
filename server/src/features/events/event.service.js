@@ -2,6 +2,7 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import NotificationService from "../notifications/notification.service.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -497,10 +498,23 @@ export const acceptWorkshop = async (workshopId) => {
     workshopId,
     { status: "approved" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Accepted",
+      message: `Your workshop "${event.name}" has been approved by the Events Office and is now published!`,
+    });
+  }
+
   return event;
 };
 
@@ -524,10 +538,23 @@ export const rejectWorkshop = async (workshopId) => {
     workshopId,
     { status: "rejected" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Rejected",
+      message: `Your workshop "${event.name}" has been rejected by the Events Office.`,
+    });
+  }
+
   return event;
 };
 
