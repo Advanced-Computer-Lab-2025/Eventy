@@ -79,11 +79,11 @@ export const validateVendorSignUp = (data) => {
   }
 
   if (!companyLogoUrl) {
-    throw new Error("Company logo URL is required.");
+    throw new Error("Company logo is required.");
   }
 
   if (!taxCardUrl) {
-    throw new Error("Tax card URL is required.");
+    throw new Error("Tax card is required.");
   }
 
   // Save normalized email back to data
