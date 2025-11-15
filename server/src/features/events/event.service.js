@@ -1,7 +1,3 @@
-// Get workshop by ID
-export const getWorkshopById = async (workshopId) => {
-  return Event.findById(workshopId);
-};
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
@@ -671,7 +667,10 @@ export const getAttendeesReport = async (options = {}) => {
     events: result.events || [],
   };
 };
-
+// Get workshop by ID
+export const getWorkshopById = async (workshopId) => {
+  return Event.findById(workshopId);
+};
 export const archiveEvent = async (eventId, user) => {
   // Authorization
   if (!user || user.role !== "events_office") {
