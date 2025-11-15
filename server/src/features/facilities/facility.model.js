@@ -102,7 +102,6 @@ courtBookingSchema.index(
   { unique: true }
 );
 
-
 const CourtBooking = mongoose.model("CourtBooking", courtBookingSchema);
 
 export { GymSession, CourtBooking };
