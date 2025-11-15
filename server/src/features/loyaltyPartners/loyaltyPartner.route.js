@@ -32,4 +32,12 @@ router.delete(
   LoyaltyPartnerController.cancel
 );
 
+// GET /api/loyalty-partners/partners
+router.get(
+  "/partners",
+  authMiddleware,
+  role(["student", "staff", "ta", "professor", "events_office", "admin"]),
+  LoyaltyPartnerController.getPartners
+);
+
 export default router;

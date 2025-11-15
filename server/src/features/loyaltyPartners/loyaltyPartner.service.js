@@ -79,4 +79,36 @@ export const LoyaltyPartnerService = {
       cancelledAt: existing.deletedAt,
     };
   },
+
+  async getApprovedLoyaltyPartners() {
+    try {
+      // Find all loyalty partners with verified status
+      const verifiedPartners = await LoyaltyPartner.find({ status: "verified" })
+        .populate({
+          path: "vendorId",
+          select: "name email",
+        })
+        .select(
+          "vendorId discountRate promoCode termsAndConditions expiryDate createdAt"
+        )
+        .lean();
+
+      // Transform the data to include vendor name
+      const partners = verifiedPartners.map((partner) => ({
+        vendorId: partner.vendorId._id,
+        vendorName: partner.vendorId.name,
+        vendorEmail: partner.vendorId.email,
+        discountRate: partner.discountRate,
+        promoCode: partner.promoCode,
+        termsAndConditions: partner.termsAndConditions,
+        expiryDate: partner.expiryDate,
+        createdAt: partner.createdAt,
+      }));
+
+      return partners;
+    } catch (error) {
+      console.error("Error fetching approved loyalty partners:", error);
+      throw new Error("Failed to fetch loyalty partners");
+    }
+  },
 };

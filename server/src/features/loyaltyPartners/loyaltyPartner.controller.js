@@ -93,4 +93,26 @@ export const LoyaltyPartnerController = {
       });
     }
   },
+
+  async getPartners(req, res, next) {
+    try {
+      const partners = await LoyaltyPartnerService.getApprovedLoyaltyPartners();
+
+      res.status(200).json({
+        status: "success",
+        data: partners,
+        count: partners.length,
+      });
+    } catch (err) {
+      console.error("Error fetching loyalty partners:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to fetch loyalty partners";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
+    }
+  },
 };
