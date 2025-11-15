@@ -30,7 +30,9 @@ import EmailVerified from "@/pages/EmailVerified";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
-import EventsOfficeReportPage from "@/pages/EventsOfficeReportPage";
+import ArchivedEvents from "@/pages/ArchivedEvents";
+
+import EventsOfficeReportPage from "@/pages/EventsReportPage";
 function Router() {
   return (
     <Switch>
@@ -112,6 +114,12 @@ function Router() {
       <Route path="/events-office/dashboard">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <EventsOfficeDashboard />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/events-office/archived">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <ArchivedEvents />
         </ProtectedRoute>
       </Route>
 

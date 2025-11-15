@@ -2,6 +2,7 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import NotificationService from "../notifications/notification.service.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -282,7 +283,6 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
-  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -292,7 +292,8 @@ export const registerUserToEvent = async (user, eventId) => {
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({
     attendees: userId,
-    status: "approved", // Only fetch approved events
+    status: "approved",
+    deletedAt: null, // Only fetch events that are not deleted
   }).populate("attendees", "name email role");
   return events;
 };
@@ -496,10 +497,23 @@ export const acceptWorkshop = async (workshopId) => {
     workshopId,
     { status: "approved" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Accepted",
+      message: `Your workshop "${event.name}" has been approved by the Events Office and is now published!`,
+    });
+  }
+
   return event;
 };
 
@@ -523,10 +537,23 @@ export const rejectWorkshop = async (workshopId) => {
     workshopId,
     { status: "rejected" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Rejected",
+      message: `Your workshop "${event.name}" has been rejected by the Events Office.`,
+    });
+  }
+
   return event;
 };
 
@@ -590,21 +617,50 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
-  const match = {};
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  if (eventType) match.eventType = eventType;
-  if (startDate || endDate) {
-    match.startDate = {};
-    if (startDate) match.startDate.$gte = new Date(startDate);
-    if (endDate) match.startDate.$lte = new Date(endDate);
+  const match = {
+    deletedAt: null,
+    status: { $in: ["approved", "archived"] },
+  };
+
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
+  }
+
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
+  }
+
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
+  }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
   }
 
   const skip = (page - 1) * limit;
