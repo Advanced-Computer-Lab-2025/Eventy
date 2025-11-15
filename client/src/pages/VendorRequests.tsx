@@ -113,7 +113,9 @@ export default function VendorRequests() {
       const payload = JSON.parse(atob(token.split(".")[1]));
       userRole = payload?.role || null;
     }
-  } catch {}
+  } catch {
+    // Ignore token parsing errors
+  }
 
   useEffect(() => {
     const fetchApplications = async () => {

@@ -143,7 +143,9 @@ export default function EventCard({
       const role = payload?.role;
       roleAllowsDelete = role === "admin" || role === "events_office";
     }
-  } catch {}
+  } catch {
+    // Ignore token parsing errors
+  }
   // Respect parent component's `canDelete` prop in addition to role
   const canShowDelete = roleAllowsDelete && canDelete;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
