@@ -724,7 +724,12 @@ export const archiveEvent = async (eventId, user) => {
 };
 
 export const getSalesReport = async (options = {}) => {
-  const { page = 1, limit = 10 } = options;
+  const {
+    page = 1,
+    limit = 10,
+    sortBy = "startDate", // default sort field
+    order = "desc", // default sort order
+  } = options;
 
   const match = {
     deletedAt: null,
@@ -732,11 +737,24 @@ export const getSalesReport = async (options = {}) => {
   };
 
   const skip = (page - 1) * limit;
+  const sortOrder = order === "asc" ? 1 : -1;
 
-  // MongoDB aggregation for performance
   const [result] = await Event.aggregate([
     { $match: match },
 
+    // Ensure attendeesCount exists
+    {
+      $addFields: {
+        attendeesCount: {
+          $ifNull: [
+            "$attendeesCount",
+            { $size: { $ifNull: ["$attendees", []] } },
+          ],
+        },
+      },
+    },
+
+    // Calculate revenue
     {
       $project: {
         name: 1,
@@ -745,31 +763,15 @@ export const getSalesReport = async (options = {}) => {
         endDate: 1,
         location: 1,
         price: 1,
-        attendeesCount: {
-          $ifNull: [
-            "$attendeesCount",
-            { $size: { $ifNull: ["$attendees", []] } },
-          ],
-        },
-        // Calculate revenue: price * number of attendees
-        revenue: {
-          $multiply: [
-            { $ifNull: ["$price", 0] },
-            {
-              $ifNull: [
-                "$attendeesCount",
-                { $size: { $ifNull: ["$attendees", []] } },
-              ],
-            },
-          ],
-        },
+        attendeesCount: 1,
+        revenue: { $multiply: ["$price", "$attendeesCount"] },
       },
     },
 
     {
       $facet: {
         events: [
-          { $sort: { startDate: -1 } },
+          { $sort: { [sortBy]: sortOrder } },
           { $skip: skip },
           { $limit: limit },
         ],
