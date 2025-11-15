@@ -31,7 +31,7 @@ export class FacilitiesController {
       if (!req.user) {
         throw new ApiError(401, "Unauthorized");
       }
-      if (user.role != student) {
+      if (req.user.role !== "student") {
         throw new ApiError(403, "Only students can reserve courts.");
       }
       const { error } = reserveCourtSchema.validate(req.body);
@@ -48,7 +48,7 @@ export class FacilitiesController {
         data: reservation,
       });
     } catch (error) {
-      if (err.code === 11000) {
+      if (error.code === 11000) {
         return res.status(409).json({
           message: "This time slot is already booked",
         });

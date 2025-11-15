@@ -3,13 +3,20 @@ import {
   sendGymSessionCancellationEmail,
   sendGymSessionUpdateEmail,
 } from "../auth/email.service.js";
+import { User } from "../users/user.model.js";
 
 class FacilitiesServiceClass {
   async reserveCourt(userId, reservationData) {
     const { courtType, date, startTime, endTime } = reservationData;
-    const user = await user.findById(userId);
-    if (!user) {
-      throw new Error("user with the given id not found");
+    const foundUser = await User.findOne({
+      _id: userId,
+      status: { $ne: "deleted" },
+    });
+    if (!foundUser) {
+      throw new Error("User with the given id not found or is deleted");
+    }
+    if (foundUser.status === "blocked") {
+      throw new Error("User account is blocked");
     }
     // Validate availability
     const schedules = await this.getCourtSchedules();
@@ -67,51 +74,58 @@ class FacilitiesServiceClass {
   async getCourtSchedules() {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
     const weekAhead = new Date(today);
     weekAhead.setDate(today.getDate() + 6);
 
+    // Fetch active bookings in the next 7 days
     const activeBookings = await CourtBooking.find({
       status: "active",
       date: { $gte: today, $lte: weekAhead },
     }).sort({ date: 1, startTime: 1 });
 
     const courtTypes = ["basketball", "tennis", "football"];
-    const startHour = 10;
-    const endHour = 17;
+    const startHour = 10; // 10 AM
+    const endHour = 17; // 5 PM
 
-    const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => ({
-      startTime: `${(startHour + i).toString().padStart(2, "0")}:00`,
-      endTime: `${(startHour + i + 1).toString().padStart(2, "0")}:00`,
-    }));
+    // Generate time slots with AM/PM
+    const timeSlots = Array.from({ length: endHour - startHour }, (_, i) => {
+      const hour24 = startHour + i;
+      const endHour24 = hour24 + 1;
 
-    // ✅ use local date strings instead of UTC
-    const getLocalDateString = (d) => {
-      const year = d.getFullYear();
-      const month = String(d.getMonth() + 1).padStart(2, "0");
-      const day = String(d.getDate()).padStart(2, "0");
-      return `${year}-${month}-${day}`;
-    };
+      const startAMPM = hour24 >= 12 ? "PM" : "AM";
+      const endAMPM = endHour24 >= 12 ? "PM" : "AM";
 
+      const startHour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+      const endHour12 = endHour24 % 12 === 0 ? 12 : endHour24 % 12;
+
+      return {
+        startTime: `${startHour12}:00 ${startAMPM}`,
+        endTime: `${endHour12}:00 ${endAMPM}`,
+        status: "available",
+      };
+    });
+
+    // Generate 7-day date array
     const dates = Array.from({ length: 7 }, (_, i) => {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      return getLocalDateString(d);
+      return this.getLocalDateString(d);
     });
 
+    // Initialize schedules
     const schedules = {};
     courtTypes.forEach((type) => {
       schedules[type] = dates.map((date) => ({
         date,
-        slots: timeSlots.map((slot) => ({
-          ...slot,
-          status: "available",
-        })),
+        slots: timeSlots.map((slot) => ({ ...slot })), // fresh copy for each date
       }));
     });
 
+    // Mark booked slots
     for (const booking of activeBookings) {
       const { courtType, startTime, date } = booking;
-      const bookingDate = getLocalDateString(new Date(date));
+      const bookingDate = this.getLocalDateString(new Date(date));
       const courtSchedule = schedules[courtType];
       if (!courtSchedule) continue;
 
