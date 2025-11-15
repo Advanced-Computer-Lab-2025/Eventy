@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Users, Mail } from "lucide-react";
+import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface Participant {
@@ -66,7 +66,14 @@ const WorkshopParticipants: React.FC<Props> = ({ workshopId }) => {
           <Users className="h-4 w-4" />
           Participants
         </h3>
-        <Badge variant={remainingSpots > 0 ? "secondary" : "destructive"}>
+        <Badge
+          variant={remainingSpots > 0 ? "outline" : "destructive"}
+          className={
+            remainingSpots > 0
+              ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800"
+              : ""
+          }
+        >
           {remainingSpots} remaining
         </Badge>
       </div>
@@ -76,19 +83,10 @@ const WorkshopParticipants: React.FC<Props> = ({ workshopId }) => {
           No participants yet
         </p>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
           {participants.map((p) => (
-            <div
-              key={p._id}
-              className="flex items-center gap-3 p-2 rounded-md border text-sm"
-            >
-              <div className="flex-1 min-w-0">
-                <p className="font-medium truncate">{p.name}</p>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Mail className="h-3 w-3" />
-                  <span className="truncate">{p.email}</span>
-                </div>
-              </div>
+            <div key={p._id} className="p-2 rounded-md border text-sm">
+              <p className="font-medium truncate">{p.name}</p>
             </div>
           ))}
         </div>

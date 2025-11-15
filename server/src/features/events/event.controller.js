@@ -51,8 +51,12 @@ export class EventsController {
           "Forbidden: Only the creator professor can view participants"
         );
       // Populate attendees
-      await workshop.populate("attendees", "name email");
-      const participants = workshop.attendees || [];
+      await workshop.populate("attendees", "firstName lastName email");
+      const participants = (workshop.attendees || []).map((attendee) => ({
+        _id: attendee._id,
+        name: `${attendee.firstName} ${attendee.lastName}`,
+        email: attendee.email,
+      }));
       const remainingSpots = (workshop.capacity || 0) - participants.length;
       return res
         .status(200)

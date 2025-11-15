@@ -73,7 +73,7 @@ export default function WorkshopManagement() {
     const variants: Record<string, { className: string; label: string }> = {
       pending: {
         className:
-          "ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+          "ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
         label: "Pending Approval",
       },
       approved: {
