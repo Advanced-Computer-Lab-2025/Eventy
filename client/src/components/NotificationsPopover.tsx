@@ -1,5 +1,12 @@
 import { useState, useEffect } from "react";
-import { Bell, Trash2, ArrowUpDown, User, AlertTriangle } from "lucide-react";
+import {
+  Bell,
+  Trash2,
+  ArrowUpDown,
+  User,
+  AlertTriangle,
+  Mail,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -206,9 +213,12 @@ export default function NotificationsPopover() {
         <PopoverContent className="w-96 p-0" align="end">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
+              <Mail className="h-5 w-5 text-purple-600 dark:text-purple-400" />
               <h3 className="font-semibold text-lg">Notifications</h3>
               {unreadCount > 0 && (
-                <Badge variant="secondary">{unreadCount} new</Badge>
+                <Badge className="bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 border-purple-200 dark:border-purple-800">
+                  {unreadCount} new
+                </Badge>
               )}
             </div>
             <Button
