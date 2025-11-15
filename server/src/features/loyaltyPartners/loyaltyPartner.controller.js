@@ -48,7 +48,7 @@ export const LoyaltyPartnerController = {
     }
   },
 
-  async cancel(req, res, next) {
+  async cancel(req, res) {
     try {
       const vendorId = req.user.id; // Get vendor ID from authenticated user
       const result = await LoyaltyPartnerService.cancelLoyaltyProgram(vendorId);

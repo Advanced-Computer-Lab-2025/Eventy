@@ -6,16 +6,14 @@ const loyaltyPartnerSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
-      unique: true,
     },
     vendorName: { type: String, required: true, trim: true }, // synced from User model if needed
 
     status: {
       type: String,
-      enum: ["pending", "verified", "rejected", "cancelled"],
-      default: "pending",
+      enum: ["active", "cancelled"],
+      default: "active",
     },
-
     // loyalty program fields
     discountRate: { type: Number, min: 0, max: 100, required: true },
     promoCode: { type: String, trim: true, required: true, unique: true },
