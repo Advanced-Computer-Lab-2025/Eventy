@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
+import { toast } from "@/hooks/use-toast";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;
@@ -53,7 +54,11 @@ export function FileUpload({
     (file: File) => {
       // Validate file size
       if (file.size > maxSize * 1024 * 1024) {
-        alert(`File size must be less than ${maxSize}MB`);
+        toast({
+          variant: "destructive",
+          title: "File too large",
+          description: `File size must be less than ${maxSize}MB`,
+        });
         return;
       }
 
