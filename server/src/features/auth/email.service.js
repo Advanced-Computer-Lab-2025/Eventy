@@ -3,8 +3,8 @@ import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import path from "path";
 import { fileURLToPath } from "url";
-import { format } from "date-fns";
 import QRCode from "qrcode";
+import { format } from "date-fns";
 import {
   generateQRCodeDataURL,
   generateQRCodeBuffer,
@@ -1001,11 +1001,13 @@ export const sendVisitorQRCodesEmail = async (
       return;
     }
 
+    // Determine application type and details
     const applicationType =
       application.type === "bazaar" ? "Bazaar" : "Platform Booth";
     const eventName = event?.name || "Platform Booth";
     const location = event?.location || application.locationPreference || "N/A";
 
+    // Calculate duration
     let durationText = "";
     if (application.type === "booth" && application.durationWeeks) {
       durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
@@ -1019,11 +1021,14 @@ export const sendVisitorQRCodesEmail = async (
       durationText = "N/A";
     }
 
+    // Generate QR codes for each attendee
     const qrCodeAttachments = [];
     const qrCodeDataUrls = [];
 
-    for (let i = 0; i < (application.attendees?.length || 0); i++) {
+    for (let i = 0; i < application.attendees.length; i++) {
       const attendee = application.attendees[i];
+
+      // Create QR code data object
       const qrData = {
         attendeeName: attendee.name,
         attendeeEmail: attendee.email,
