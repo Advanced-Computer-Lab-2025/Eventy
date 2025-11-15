@@ -241,12 +241,20 @@ class ApplicationServiceClass {
     }
 
     // Now update the application status and event field atomically
+    // When approving, set paymentStatus to "pending" (payment required)
+    const updateData = {
+      status,
+      ...(eventId && { event: eventId }),
+    };
+
+    // Set paymentStatus to "pending" when application is approved
+    if (status === "approved") {
+      updateData.paymentStatus = "pending";
+    }
+
     const updatedApplication = await Application.findByIdAndUpdate(
       objectId,
-      {
-        status,
-        ...(eventId && { event: eventId }),
-      },
+      updateData,
       { new: true }
     ).populate("createdBy");
 
@@ -330,6 +338,14 @@ class ApplicationServiceClass {
     }
 
     // Check if payment has been made for this application
+    // Check both paymentStatus and transaction status
+    if (application.paymentStatus === "paid") {
+      throw new Error(
+        "Cannot cancel application. Payment has already been made."
+      );
+    }
+
+    // Also check for completed transactions
     // Use $expr with $toString to handle both ObjectId and string formats
     const vendorIdString = vendorId.toString();
     const applicationIdString = applicationId.toString();
@@ -341,7 +357,7 @@ class ApplicationServiceClass {
           { $eq: [{ $toString: "$relatedEntity.id" }, applicationIdString] },
           { $eq: ["$type", "payment"] },
           { $eq: ["$status", "completed"] },
-          { $eq: ["$relatedEntity.type", "application"] },
+          { $eq: ["$relatedEntity.type", "Application"] },
         ],
       },
     });
@@ -352,8 +368,9 @@ class ApplicationServiceClass {
       );
     }
 
-    // Set the status to cancelled
+    // Set the status to cancelled and reset paymentStatus
     application.status = "cancelled";
+    application.paymentStatus = "pending"; // Reset payment status when cancelled
     await application.save();
 
     return application;

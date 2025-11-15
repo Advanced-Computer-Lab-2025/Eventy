@@ -29,11 +29,12 @@ router.post(
 /**
  * @route   POST /api/transactions/confirm
  * @desc    Confirm Stripe payment
- * @access  Public (Stripe webhook or frontend)
+ * @access  Student, Staff, TA, Professor, Vendor
  */
 router.post(
   "/confirm",
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
   transactionController.confirmStripePayment.bind(transactionController)
 );
 

@@ -68,4 +68,69 @@ export class UploadController {
       next(error);
     }
   }
+
+  async uploadVendorDocument(req, res, next) {
+    try {
+      // Check if file is provided
+      if (!req.file) {
+        return res.status(400).json({
+          success: false,
+          message: "No file uploaded. Please provide a file in the request.",
+        });
+      }
+
+      const file = req.file;
+
+      // Validate file type (images and PDFs for vendor documents)
+      const allowedMimeTypes = [
+        "image/jpeg",
+        "image/jpg",
+        "image/png",
+        "image/webp",
+        "application/pdf",
+      ];
+      if (!allowedMimeTypes.includes(file.mimetype)) {
+        // Delete the uploaded file if it's an invalid type
+        if (file.path) {
+          fs.unlinkSync(file.path);
+        }
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid file type. Only JPEG, PNG, WebP images, and PDF files are allowed.",
+        });
+      }
+
+      // Generate the public URL for the uploaded file
+      // The file is already saved to disk by multer
+      const relativePath = `/uploads/vendor-documents/${path.basename(file.path)}`;
+
+      // Construct full URL
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const fullUrl = `${protocol}://${host}${relativePath}`;
+
+      res.status(200).json({
+        success: true,
+        message: "Vendor document uploaded successfully",
+        data: {
+          url: fullUrl,
+          filename: file.filename,
+        },
+      });
+    } catch (error) {
+      console.error("Error uploading vendor document:", error);
+
+      // Clean up file if it was uploaded but error occurred
+      if (req.file && req.file.path) {
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          console.error("Error deleting file:", unlinkError);
+        }
+      }
+
+      next(error);
+    }
+  }
 }
