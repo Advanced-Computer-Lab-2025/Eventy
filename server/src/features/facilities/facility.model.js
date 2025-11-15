@@ -61,11 +61,6 @@ const GymSession = mongoose.model("GymSession", gymSessionSchema);
 // CourtBooking Schema
 const courtBookingSchema = new mongoose.Schema(
   {
-    courtId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Court",
-      required: true,
-    },
     courtType: {
       type: String,
       required: true,
@@ -101,6 +96,12 @@ const courtBookingSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+courtBookingSchema.index(
+  { courtType: 1, date: 1, startTime: 1, endTime: 1 },
+  { unique: true }
+);
+
 
 const CourtBooking = mongoose.model("CourtBooking", courtBookingSchema);
 

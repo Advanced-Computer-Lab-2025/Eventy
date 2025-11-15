@@ -100,51 +100,31 @@ export const editGymSessionSchema = Joi.object({
   });
 
 export const reserveCourtSchema = Joi.object({
-  courtId: Joi.string()
-    .regex(/^[0-9a-fA-F]{24}$/)
-    .required()
-    .messages({
-      "any.required": "Court ID is required",
-      "string.pattern.base": "Court ID must be a valid MongoDB ObjectId",
-    }),
   date: Joi.date().required().messages({
     "any.required": "data is required",
     "date.base": "Date must be a valid date",
   }),
-  courType: Joi.string()
+  courtType: Joi.string()
     .valid("basketball", "tennis", "football")
     .required()
     .messages({
       "any.only": "Court type must be one of basketball, tennis, or football",
       "any.required": "Court type is required",
     }),
-  startTime: Joi.date().required().messages({
-    "any.required": "Start time is required",
-    "date.base": "Start time must be a valid date",
-  }),
-  endTime: Joi.date().required().messages({
-    "any.required": "End time is required",
-    "date.base": "End time must be a valid date",
-  }),
-  bookedBy: Joi.string()
-    .regex(/^[0-9a-fA-F]{24}$/)
+  startTime: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i)
     .required()
     .messages({
-      "any.required": "Booked By is required",
-      "string.pattern.base": "Booked By must be a valid MongoDB ObjectId",
+      "any.required": "Start time is required",
+      "string.pattern.base":
+        "Start time must be in format hh:mm AM/PM (e.g., 02:00 PM)",
     }),
-  bookedBy: Joi.string()
-    .regex(/^[0-9a-fA-F]{24}$/)
+  endTime: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i)
     .required()
     .messages({
-      "any.required": "Booked By is required",
-      "string.pattern.base": "Booked By must be a valid MongoDB ObjectId",
-    }),
-  status: Joi.string()
-    .valid("confirmed", "cancelled", "completed")
-    .required()
-    .messages({
-      "any.only": "Status must be one of confirmed, cancelled, or completed",
-      "any.required": "Status is required",
+      "any.required": "End time is required",
+      "string.pattern.base":
+        "End time must be in format hh:mm AM/PM (e.g., 03:00 PM)",
     }),
 });
