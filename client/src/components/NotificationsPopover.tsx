@@ -50,6 +50,12 @@ export default function NotificationsPopover() {
   >(null);
   const { toast } = useToast();
 
+  // Fetch notifications on mount to show badge count immediately
+  useEffect(() => {
+    fetchNotifications();
+  }, []);
+
+  // Refetch when popover opens to ensure data is fresh
   useEffect(() => {
     if (open) {
       fetchNotifications();
@@ -170,130 +176,162 @@ export default function NotificationsPopover() {
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative"
-          data-testid="button-notifications"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <span className="absolute top-0 right-0 h-4 w-4 bg-purple-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
-        <div className="flex items-center justify-between p-4 border-b">
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-lg">Notifications</h3>
-            {unreadCount > 0 && (
-              <Badge variant="secondary">{unreadCount} new</Badge>
-            )}
-          </div>
+    <>
+      <Popover
+        open={open}
+        onOpenChange={(newOpen) => {
+          // Don't close the popover if a dialog is open
+          if (!newOpen && (detailDialogOpen || deleteConfirmOpen)) {
+            return;
+          }
+          setOpen(newOpen);
+        }}
+      >
+        <PopoverTrigger asChild>
           <Button
             variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={toggleSortOrder}
+            size="icon"
+            className="relative"
+            data-testid="button-notifications"
           >
-            <ArrowUpDown className="h-4 w-4" />
-            {sortOrder === "newest" ? "Newest" : "Oldest"}
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <span className="absolute top-0 right-0 h-4 w-4 bg-purple-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </Button>
-        </div>
-
-        <ScrollArea className="h-[400px]">
-          {loading ? (
-            <div className="p-8 text-center text-muted-foreground">
-              Loading notifications...
+        </PopoverTrigger>
+        <PopoverContent className="w-96 p-0" align="end">
+          <div className="flex items-center justify-between p-4 border-b">
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-lg">Notifications</h3>
+              {unreadCount > 0 && (
+                <Badge variant="secondary">{unreadCount} new</Badge>
+              )}
             </div>
-          ) : sortedNotifications.length === 0 ? (
-            <div className="p-8 text-center text-muted-foreground">
-              <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
-              <p>No notifications yet</p>
-            </div>
-          ) : (
-            <div className="divide-y">
-              {sortedNotifications.map((notification) => (
-                <div
-                  key={notification._id}
-                  className={`p-4 hover:bg-accent/50 transition-colors ${
-                    !notification.isRead ? "bg-accent/30" : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div
-                      className="flex-1 space-y-1 cursor-pointer"
-                      onClick={() => {
-                        if (!notification.isRead) {
-                          markAsRead(notification._id);
-                        }
-                        setSelectedNotification(notification);
-                        setDetailDialogOpen(true);
-                      }}
-                    >
-                      <p
-                        className={`text-sm line-clamp-2 ${
-                          !notification.isRead ? "font-semibold" : "font-normal"
-                        }`}
-                      >
-                        {notification.message}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(notification.createdAt), {
-                          addSuffix: true,
-                        })}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      {!notification.isRead && (
-                        <div className="h-2 w-2 rounded-full bg-purple-600" />
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          confirmDelete(notification._id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-
-        {sortedNotifications.length > 0 && (
-          <div className="p-3 border-t bg-muted/30">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full"
-              onClick={() => {
-                sortedNotifications
-                  .filter((n) => !n.isRead)
-                  .forEach((n) => markAsRead(n._id));
-              }}
+              className="gap-2"
+              onClick={toggleSortOrder}
             >
-              Mark all as read
+              <ArrowUpDown className="h-4 w-4" />
+              {sortOrder === "newest" ? "Newest" : "Oldest"}
             </Button>
           </div>
-        )}
-      </PopoverContent>
+
+          <ScrollArea className="h-[400px]">
+            {loading ? (
+              <div className="p-8 text-center text-muted-foreground">
+                Loading notifications...
+              </div>
+            ) : sortedNotifications.length === 0 ? (
+              <div className="p-8 text-center text-muted-foreground">
+                <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                <p>No notifications yet</p>
+              </div>
+            ) : (
+              <div className="divide-y">
+                {sortedNotifications.map((notification) => (
+                  <div
+                    key={notification._id}
+                    className={`p-4 hover:bg-accent/50 transition-colors ${
+                      !notification.isRead ? "bg-accent/30" : ""
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div
+                        className="flex-1 space-y-1 cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          // Auto-mark as read when opening
+                          if (!notification.isRead) {
+                            markAsRead(notification._id);
+                          }
+                          setSelectedNotification({
+                            ...notification,
+                            isRead: true, // Update local state immediately
+                          });
+                          setDetailDialogOpen(true);
+                          // Explicitly keep popover open
+                          setOpen(true);
+                        }}
+                      >
+                        <p
+                          className={`text-sm line-clamp-2 ${
+                            !notification.isRead
+                              ? "font-semibold"
+                              : "font-normal"
+                          }`}
+                        >
+                          {notification.message}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDistanceToNow(
+                            new Date(notification.createdAt),
+                            {
+                              addSuffix: true,
+                            }
+                          )}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {!notification.isRead && (
+                          <div className="h-2 w-2 rounded-full bg-purple-600" />
+                        )}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            confirmDelete(notification._id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </ScrollArea>
+
+          {sortedNotifications.length > 0 && (
+            <div className="p-3 border-t bg-muted/30">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full"
+                onClick={() => {
+                  sortedNotifications
+                    .filter((n) => !n.isRead)
+                    .forEach((n) => markAsRead(n._id));
+                }}
+              >
+                Mark all as read
+              </Button>
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>
 
       {/* Notification Detail Dialog */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
+      <Dialog
+        open={detailDialogOpen}
+        onOpenChange={(isOpen) => {
+          setDetailDialogOpen(isOpen);
+          // Keep popover open when dialog closes
+          if (!isOpen && open) {
+            setOpen(true);
+          }
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold">
+            <DialogTitle className="text-xl font-bold text-purple-600 dark:text-purple-400">
               Notification
             </DialogTitle>
           </DialogHeader>
@@ -368,25 +406,9 @@ export default function NotificationsPopover() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-3 pt-4 border-t">
-                {!selectedNotification.isRead && (
-                  <Button
-                    variant="outline"
-                    className="border-purple-200 hover:bg-purple-50 dark:border-purple-800 dark:hover:bg-purple-950/20"
-                    onClick={() => {
-                      markAsRead(selectedNotification._id);
-                      setSelectedNotification({
-                        ...selectedNotification,
-                        isRead: true,
-                      });
-                    }}
-                  >
-                    Mark as Read
-                  </Button>
-                )}
+              <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button
                   variant="destructive"
-                  className="ml-auto"
                   onClick={() => {
                     confirmDelete(selectedNotification._id);
                   }}
@@ -401,7 +423,17 @@ export default function NotificationsPopover() {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+      <Dialog
+        open={deleteConfirmOpen}
+        onOpenChange={(isOpen) => {
+          setDeleteConfirmOpen(isOpen);
+          setNotificationToDelete(isOpen ? notificationToDelete : null);
+          // Keep popover open when dialog closes
+          if (!isOpen && open) {
+            setOpen(true);
+          }
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-destructive">
@@ -430,6 +462,6 @@ export default function NotificationsPopover() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Popover>
+    </>
   );
 }
