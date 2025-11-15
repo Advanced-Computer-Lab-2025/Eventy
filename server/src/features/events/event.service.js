@@ -719,7 +719,10 @@ export const getAttendeesReport = async (options = {}) => {
     events: result.events || [],
   };
 };
-
+// Get workshop by ID
+export const getWorkshopById = async (workshopId) => {
+  return Event.findById(workshopId);
+};
 export const archiveEvent = async (eventId, user) => {
   // Authorization
   if (!user || user.role !== "events_office") {
