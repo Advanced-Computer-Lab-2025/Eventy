@@ -283,7 +283,6 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
-  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -618,24 +617,50 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const match = {
     deletedAt: null,
-    status: "approved",
+    status: { $in: ["approved", "archived"] },
   };
 
-  if (eventType) match.eventType = eventType;
-  if (startDate || endDate) {
-    match.startDate = {};
-    if (startDate) match.startDate.$gte = new Date(startDate);
-    if (endDate) match.startDate.$lte = new Date(endDate);
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
+  }
+
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
+  }
+
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
+  }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
   }
 
   const skip = (page - 1) * limit;
