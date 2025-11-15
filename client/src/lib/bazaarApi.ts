@@ -352,16 +352,21 @@ class BazaarApiService {
   }
 
   // Upload vendor documents (tax card, logo) - no auth required for signup
-  async uploadVendorDocument(file: File): Promise<{ url: string; filename: string }> {
+  async uploadVendorDocument(
+    file: File
+  ): Promise<{ url: string; filename: string }> {
     try {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch(`${API_BASE_URL}/api/upload/vendor-document`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/upload/vendor-document`,
+        {
+          method: "POST",
+          credentials: "include",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         const errorData = await response.json();
