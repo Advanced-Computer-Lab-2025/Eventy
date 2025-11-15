@@ -7,6 +7,14 @@ import { applyLoyaltyProgramSchema } from "./loyaltyPartner.validation.js";
 
 const router = express.Router();
 
+// GET /api/loyalty-partners/status
+router.get(
+  "/status",
+  authMiddleware,
+  role(["vendor"]),
+  LoyaltyPartnerController.getStatus
+);
+
 // POST /api/loyalty-partners/apply
 router.post(
   "/apply",

@@ -2,6 +2,29 @@ import { LoyaltyPartnerService } from "./loyaltyPartner.service.js";
 import { applyLoyaltyProgramSchema } from "./loyaltyPartner.validation.js";
 
 export const LoyaltyPartnerController = {
+  async getStatus(req, res, next) {
+    try {
+      const vendorId = req.user.id;
+      const status =
+        await LoyaltyPartnerService.getLoyaltyProgramStatus(vendorId);
+
+      res.status(200).json({
+        status: "success",
+        data: status,
+      });
+    } catch (err) {
+      console.error("Error getting loyalty program status:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to get loyalty program status";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
+    }
+  },
+
   async apply(req, res, next) {
     try {
       // Step 1: Validate request body

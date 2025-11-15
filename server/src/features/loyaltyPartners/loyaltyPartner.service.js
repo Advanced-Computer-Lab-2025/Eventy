@@ -2,6 +2,26 @@ import { LoyaltyPartner } from "./loyaltyPartner.model.js";
 import { User } from "../users/user.model.js";
 
 export const LoyaltyPartnerService = {
+  async getLoyaltyProgramStatus(vendorId) {
+    const existing = await LoyaltyPartner.findOne({ vendorId });
+
+    if (!existing) {
+      return { status: "not_participated" };
+    }
+
+    return {
+      status: existing.status,
+      application: {
+        discountRate: existing.discountRate,
+        promoCode: existing.promoCode,
+        termsAndConditions: existing.termsAndConditions,
+        expiryDate: existing.expiryDate,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      },
+    };
+  },
+
   async applyLoyaltyProgram(vendorId, data) {
     // Check if vendor already applied
     const existing = await LoyaltyPartner.findOne({ vendorId });
