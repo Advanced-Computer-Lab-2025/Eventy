@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import WorkshopParticipants from "@/components/WorkshopParticipants";
 import {
   Calendar,
   MapPin,
@@ -48,7 +49,9 @@ export default function WorkshopManagement() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/api/events/me/workshops", {
+      const baseUrl =
+        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+      const res = await fetch(`${baseUrl}/api/events/me/workshops`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -237,6 +240,7 @@ export default function WorkshopManagement() {
                       ? "Cannot Edit"
                       : "Edit Workshop"}
                   </Button>
+                  <WorkshopParticipants workshopId={workshop._id} />
                 </CardContent>
               </Card>
             ))}

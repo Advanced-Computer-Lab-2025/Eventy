@@ -36,6 +36,38 @@ export class EventsController {
     }
   }
 
+  async getWorkshopParticipants(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const userId = req.user._id || req.user.id;
+      // Find the workshop and ensure professor is creator
+      const workshop = await eventService.getWorkshopById(workshopId);
+      if (!workshop) throw new ApiError(404, "Workshop not found");
+      if (workshop.eventType !== "workshop")
+        throw new ApiError(400, "Not a workshop");
+      if (String(workshop.createdBy) !== String(userId))
+        throw new ApiError(
+          403,
+          "Forbidden: Only the creator professor can view participants"
+        );
+      // Populate attendees
+      await workshop.populate("attendees", "name email");
+      const participants = workshop.attendees || [];
+      const remainingSpots = (workshop.capacity || 0) - participants.length;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { participants, remainingSpots },
+            "Participants and remaining spots fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async updateTripController(req, res, next) {
     try {
       const { tripId } = req.params;
