@@ -10,6 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Button } from "./button";
 import { toast } from "@/hooks/use-toast";
+import "./file-upload.css";
 
 interface FileUploadProps {
   onFileSelect: (file: File) => void;

@@ -491,49 +491,4 @@
   .animate-hold-balloon {
     animation: hold-balloon 2.5s ease-in-out infinite;
   }
-
-  /* File upload enhancements */
-  .file-upload-zone {
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  }
-
-  .file-upload-zone:hover {
-    transform: scale(1.01);
-  }
-
-  /* Image crop dialog enhancements */
-  .ReactCrop {
-    max-width: 100%;
-  }
-
-  .ReactCrop__crop-selection {
-    border: 2px solid hsl(var(--primary));
-    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
-  }
-
-  .ReactCrop__drag-handle {
-    background-color: hsl(var(--primary));
-    border: 2px solid white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  }
-
-  .ReactCrop__drag-handle:hover {
-    background-color: hsl(var(--primary));
-    transform: scale(1.2);
-  }
-
-  /* Smooth loading animations */
-  @keyframes progress-pulse {
-    0%,
-    100% {
-      opacity: 1;
-    }
-    50% {
-      opacity: 0.5;
-    }
-  }
-
-  .progress-pulse {
-    animation: progress-pulse 1.5s ease-in-out infinite;
-  }
 }
