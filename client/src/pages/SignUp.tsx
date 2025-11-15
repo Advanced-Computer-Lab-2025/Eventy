@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Logo from "@/components/Logo";
+import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 
 export default function SignUp() {
@@ -49,6 +50,9 @@ export default function SignUp() {
     companyLogoUrl: "",
     taxCardUrl: "",
   });
+
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingTax, setIsUploadingTax] = useState(false);
 
   const validateStudentId = (id: string): boolean => {
     const studentIdPattern = /^\d{2}-\d{4}$/;
@@ -502,46 +506,81 @@ export default function SignUp() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vendor-logo">Company Logo URL</Label>
+                  <Label htmlFor="vendor-logo">Company Logo (upload file)</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <input
                       id="vendor-logo"
-                      type="url"
-                      placeholder="https://example.com/logo.png"
+                      type="file"
+                      accept="image/*,application/pdf"
                       className="pl-10"
-                      value={vendorForm.companyLogoUrl}
-                      onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          companyLogoUrl: e.target.value,
-                        })
-                      }
+                      onChange={async (e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        try {
+                          setIsUploadingLogo(true);
+                          const res = await bazaarApiService.uploadVendorDocument(file);
+                          // store the returned URL so backend validation passes and frontend can display
+                          setVendorForm({
+                            ...vendorForm,
+                            companyLogoUrl: res.url,
+                          });
+                          toast({ title: "Logo uploaded" });
+                        } catch (err: any) {
+                          toast({
+                            variant: "destructive",
+                            title: "Upload failed",
+                            description: err?.message || "Could not upload logo",
+                          });
+                        } finally {
+                          setIsUploadingLogo(false);
+                        }
+                      }}
                       data-testid="input-vendor-logo"
                       required
                     />
+                    {isUploadingLogo && (
+                      <div className="text-sm text-muted-foreground">Uploading...</div>
+                    )}
                   </div>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="vendor-tax">Tax Card URL</Label>
+                  <Label htmlFor="vendor-tax">Tax Card (upload file)</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                    <input
                       id="vendor-tax"
-                      type="url"
-                      placeholder="https://example.com/tax-card.pdf"
+                      type="file"
+                      accept="application/pdf,image/*"
                       className="pl-10"
-                      value={vendorForm.taxCardUrl}
-                      onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          taxCardUrl: e.target.value,
-                        })
-                      }
+                      onChange={async (e) => {
+                        const file = e.target.files && e.target.files[0];
+                        if (!file) return;
+                        try {
+                          setIsUploadingTax(true);
+                          const res = await bazaarApiService.uploadVendorDocument(file);
+                          setVendorForm({
+                            ...vendorForm,
+                            taxCardUrl: res.url,
+                          });
+                          toast({ title: "Tax card uploaded" });
+                        } catch (err: any) {
+                          toast({
+                            variant: "destructive",
+                            title: "Upload failed",
+                            description: err?.message || "Could not upload tax card",
+                          });
+                        } finally {
+                          setIsUploadingTax(false);
+                        }
+                      }}
                       data-testid="input-vendor-tax"
                       required
                     />
+                    {isUploadingTax && (
+                      <div className="text-sm text-muted-foreground">Uploading...</div>
+                    )}
                   </div>
                 </div>
 
