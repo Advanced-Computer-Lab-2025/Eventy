@@ -99,7 +99,7 @@ export default function VendorHeader({
             data-testid="button-nav-upcoming"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"

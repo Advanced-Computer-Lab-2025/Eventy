@@ -81,7 +81,7 @@ export default function AdminHeader() {
             onClick={() => setLocation("/admin")}
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
         </div>
       </div>
