@@ -22,6 +22,7 @@ import WorkshopApprovals from "@/pages/WorkshopApprovals";
 import VendorRequests from "@/pages/VendorRequests";
 import ProfessorDashboard from "@/pages/ProfessorDashboard";
 import WorkshopManagement from "@/pages/WorkshopManagement";
+import ProfessorSubmissions from "@/pages/ProfessorSubmissions";
 import EditWorkshop from "@/pages/EditWorkshop";
 import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import StaffTADashboard from "@/pages/StaffTADashboard";
@@ -77,6 +78,11 @@ function Router() {
       <Route path="/professor/workshops">
         <ProtectedRoute allowedRoles={["professor"]}>
           <WorkshopManagement />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/professor/submissions">
+        <ProtectedRoute allowedRoles={["professor"]}>
+          <ProfessorSubmissions />
         </ProtectedRoute>
       </Route>
       <Route path="/professor/create-workshop">

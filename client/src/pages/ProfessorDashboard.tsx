@@ -170,6 +170,18 @@ export default function ProfessorDashboard() {
       ],
     },
     {
+      title: "My Submissions",
+      description: "View statuses and requested edits",
+      icon: FolderOpen,
+      color: "bg-purple-500",
+      path: "/professor/submissions",
+      features: [
+        "See pending submissions",
+        "See requested edits",
+        "See submission date",
+      ],
+    },
+    {
       title: "Sports Facilities",
       description: "View gym schedule and fitness sessions",
       icon: Dumbbell,

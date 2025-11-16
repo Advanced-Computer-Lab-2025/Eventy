@@ -211,16 +211,7 @@ export default function WorkshopManagement() {
                       </div>
                     </div>
 
-                    {workshop.revisionComments && (
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-                        <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                          Revision Required:
-                        </p>
-                        <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                          {workshop.revisionComments}
-                        </p>
-                      </div>
-                    )}
+                    {/* Revision Required/Requested Edits removed as requested */}
                   </div>
 
                   <Button
