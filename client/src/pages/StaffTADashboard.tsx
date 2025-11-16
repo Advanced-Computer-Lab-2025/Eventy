@@ -295,6 +295,15 @@ export default function StaffTADashboard() {
               <Dumbbell className="h-4 w-4" />
               Sports Facilities
             </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-2"
+              onClick={() => setLocation("/booth-vote")}
+            >
+              <Store className="h-4 w-4" />
+              Booth Vote
+            </Button>
           </div>
         </div>
       </header>

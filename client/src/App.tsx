@@ -33,6 +33,7 @@ import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 import ArchivedEvents from "@/pages/ArchivedEvents";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import BoothVotePage from "@/pages/BoothVotePage";
 function Router() {
   return (
     <Switch>
@@ -45,6 +46,14 @@ function Router() {
       <Route path="/home">
         <ProtectedRoute allowedRoles={["student"]}>
           <Home />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/booth-vote">
+        <ProtectedRoute
+          allowedRoles={["student", "staff", "ta", "professor"]}
+        >
+          <BoothVotePage />
         </ProtectedRoute>
       </Route>
 

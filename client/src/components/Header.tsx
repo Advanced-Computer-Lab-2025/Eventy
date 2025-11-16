@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Bell, LayoutGrid, User, Home, LogOut } from "lucide-react";
+import { Search, Bell, LayoutGrid, User, Home, LogOut, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
@@ -166,6 +166,16 @@ export default function Header({
                   data-testid="button-nav-career"
                 >
                   Career
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setLocation("/booth-vote")}
+                  data-testid="button-nav-booth-vote"
+                >
+                  <Store className="h-4 w-4" />
+                  Booth Vote
                 </Button>
               </>
             )}
