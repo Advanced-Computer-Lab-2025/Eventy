@@ -53,11 +53,9 @@ router.get(
         req.user.role === "professor" &&
         String(req.user._id || req.user.id) !== String(professorId)
       ) {
-        return res
-          .status(403)
-          .json({
-            message: "Forbidden: cannot view other professors' submissions",
-          });
+        return res.status(403).json({
+          message: "Forbidden: cannot view other professors' submissions",
+        });
       }
 
       const filter = {
