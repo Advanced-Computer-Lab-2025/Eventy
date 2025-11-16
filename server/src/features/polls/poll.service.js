@@ -75,6 +75,24 @@ class PollServiceClass {
       );
     }
 
+    // Prevent duplicate active polls for the exact same set of applications
+    const existingPoll = await Poll.findOne({
+      isActive: true,
+      "context.type": "booth_conflict",
+      relatedApplications: { $all: applications.map((app) => app._id) },
+    }).lean();
+
+    if (
+      existingPoll &&
+      Array.isArray(existingPoll.relatedApplications) &&
+      existingPoll.relatedApplications.length === applications.length
+    ) {
+      throw new ApiError(
+        400,
+        "An active poll already exists for these vendor requests. Please end the existing poll before creating a new one."
+      );
+    }
+
     const options = applications.map((app) => {
       const vendor = app.createdBy || {};
       const vendorName =

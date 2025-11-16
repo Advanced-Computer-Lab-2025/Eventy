@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableHeader,
@@ -354,7 +355,16 @@ export default function EventsOfficePolls() {
                         {poll.context?.locationPreference || "-"}
                       </TableCell>
                       <TableCell>
-                        {poll.isActive ? "Active" : "Ended"}
+                        <Badge
+                          variant="outline"
+                          className={
+                            poll.isActive
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : "bg-red-100 text-red-700 border-red-200"
+                          }
+                        >
+                          {poll.isActive ? "Active" : "Ended"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         <ul className="text-sm space-y-1">
