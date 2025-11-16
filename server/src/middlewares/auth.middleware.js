@@ -29,6 +29,11 @@ const authMiddleware = async (req, res, next) => {
       return res.status(401).json({ message: "User not found" });
     }
     
+    // Add unified status check
+    if (user.status === "blocked") {
+      return res.status(403).json({ message: "You are currently a blocked user. Please contact the administrator." });
+    }
+
     req.user = user; // Now req.user has _id, role, etc.
     next();
   } catch (err) {
@@ -37,3 +42,24 @@ const authMiddleware = async (req, res, next) => {
 };
 
 export default authMiddleware;
+
+const verifyToken = async (req, res, next) => {
+  try {
+    // ...existing token verification...
+
+    const user = await User.findById(decoded.id);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Add unified status check
+    if (user.status === "blocked") {
+      return res.status(403).json({ message: "You are currently a blocked user. Please contact the administrator." });
+    }
+
+    req.user = user;
+    next();
+  } catch (error) {
+    res.status(401).json({ message: "Invalid token" });
+  }
+};

@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { User } from "./user.model.js";
 import {
   UserValidation,
@@ -6,7 +7,6 @@ import {
   favoriteEventSchema,
 } from "./user.validation.js";
 import { sendRegistrationEmail, sendVerificationEmail } from "../auth/email.service.js";
-
 import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes
@@ -181,50 +181,15 @@ export default class UserController {
       const { eventId } = req.body;
       const userId = req.user._id;
 
-      // Validate request
-      const { error } = favoriteEventSchema.validate({ eventId });
-      if (error) {
-        return res.status(400).json({
-          success: false,
-          message: error.details[0].message,
-        });
-      }
-
-      // Check if user is allowed to add to favorites
-      const allowedRoles = ['student', 'staff', 'ta', 'professor'];
-      if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Only students, staff, TAs, and professors can add events to favorites',
-        });
-      }
-
-      // Check if event exists
-      const event = await mongoose.model('Event').findById(eventId);
-      if (!event) {
-        return res.status(404).json({
-          success: false,
-          message: 'Event not found',
-        });
-      }
-
-      // Add to favorites if not already added
-      const user = await User.findById(userId);
-      if (!user.favoriteEvents.includes(eventId)) {
-        user.favoriteEvents.push(eventId);
-        await user.save();
-      }
+      const result = await UserService.addToFavorites(userId, eventId, req.user.role);
 
       return res.status(200).json({
         success: true,
-        message: 'Event added to favorites',
-        data: {
-          eventId,
-          favoritesCount: user.favoriteEvents.length,
-        },
+        message: result.message,
+        data: result.data,
       });
     } catch (err) {
-      next(err);
+      return next(err);
     }
   }
 
@@ -237,48 +202,15 @@ export default class UserController {
       const { eventId } = req.params;
       const userId = req.user._id;
 
-      // Validate request
-      const { error } = favoriteEventSchema.validate({ eventId });
-      if (error) {
-        return res.status(400).json({
-          success: false,
-          message: error.details[0].message,
-        });
-      }
-
-      // Check if user is allowed to remove from favorites
-      const allowedRoles = ['student', 'staff', 'ta', 'professor'];
-      if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Only students, staff, TAs, and professors can manage favorites',
-        });
-      }
-
-      // Remove from favorites
-      const user = await User.findByIdAndUpdate(
-        userId,
-        { $pull: { favoriteEvents: eventId } },
-        { new: true }
-      );
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found',
-        });
-      }
+      const result = await UserService.removeFromFavorites(userId, eventId, req.user.role);
 
       return res.status(200).json({
         success: true,
-        message: 'Event removed from favorites',
-        data: {
-          eventId,
-          favoritesCount: user.favoriteEvents.length,
-        },
+        message: result.message,
+        data: result.data,
       });
     } catch (err) {
-      next(err);
+      return next(err);
     }
   }
 
@@ -290,35 +222,14 @@ export default class UserController {
     try {
       const userId = req.user._id;
 
-      // Check if user is allowed to view favorites
-      const allowedRoles = ['student', 'staff', 'ta', 'professor'];
-      if (!allowedRoles.includes(req.user.role)) {
-        return res.status(403).json({
-          success: false,
-          message: 'Only students, staff, TAs, and professors can view favorite events',
-        });
-      }
-
-      // Get user with populated favorite events
-      const user = await User.findById(userId).populate({
-        path: 'favoriteEvents',
-        select: 'name description location startDate endDate bannerImage status',
-        match: { deletedAt: null } // Only include non-deleted events
-      });
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found',
-        });
-      }
+      const result = await UserService.getFavoriteEvents(userId, req.user.role);
 
       return res.status(200).json({
         success: true,
-        data: user.favoriteEvents,
+        data: result.data,
       });
     } catch (err) {
-      next(err);
+      return next(err);
     }
   }
 }
