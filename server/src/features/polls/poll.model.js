@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+import mongoose from "mongoose";
 
 const optionSchema = new mongoose.Schema({
   optionText: { type: String, required: true },
@@ -20,4 +20,6 @@ const pollSchema = new mongoose.Schema(
   { timestamps: true } // this auto-adds createdAt & updatedAt
 );
 
-module.exports = mongoose.model("Poll", pollSchema);
+const Poll = mongoose.model("Poll", pollSchema);
+
+export default Poll;
