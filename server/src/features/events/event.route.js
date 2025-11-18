@@ -225,4 +225,12 @@ router.get(
   roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
   eventsController.getAttendeesReport.bind(eventsController)
 );
+
+router.patch(
+  "/:id/restrict-access",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.restrictAccess.bind(eventsController)
+);
+
 export default router;

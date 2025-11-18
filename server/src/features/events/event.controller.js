@@ -652,4 +652,37 @@ export class EventsController {
       next(err);
     }
   }
+  async restrictAccess(req, res, next) {
+    try {
+      // Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Validate request body
+      const { roles } = req.body;
+      if (!Array.isArray(roles)) {
+        throw new ApiError(400, "Roles must be provided as an array");
+      }
+
+      // Call service to restrict access
+      const event = await eventService.restrictAccess(
+        req.params.id,
+        roles,
+        req.user
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            event,
+            "Event access restrictions updated successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
 }
