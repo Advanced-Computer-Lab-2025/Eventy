@@ -25,14 +25,22 @@ export class TransactionService {
     const event = await Event.findById(eventId);
     if (!event) throw new Error("Event not found");
 
-    if (
-      !event.attendees?.some(
-        (attendeeId) => attendeeId.toString() === userId.toString()
-      )
-    ) {
+    // Must be in registered list, not in attendees yet
+    const isRegistered = event.registered?.some(
+      (id) => id.toString() === userId.toString()
+    );
+    if (!isRegistered) {
       throw new Error(
-        "You must be registered for this event before making a payment."
+        "You must register for this event before making a payment."
       );
+    }
+
+    // Prevent duplicate payments
+    const isAttendee = event.attendees?.some(
+      (id) => id.toString() === userId.toString()
+    );
+    if (isAttendee) {
+      throw new Error("You have already paid for this event.");
     }
 
     const amount = Number(event.price);
@@ -56,6 +64,12 @@ export class TransactionService {
             paymentMethod: "wallet",
             description: `Payment for event ${event.name}`,
             relatedEntity: { type: "Event", id: eventId },
+          });
+
+          // Move user from registered → attendees
+          await Event.findByIdAndUpdate(eventId, {
+            $pull: { registered: userId },
+            $addToSet: { attendees: userId },
           });
 
           return { message: "Payment successful via wallet", transaction };
@@ -204,6 +218,12 @@ export class TransactionService {
           message: "Application payment confirmed successfully",
           transaction,
         };
+      }
+      if (transaction.relatedEntity?.type === "Event") {
+        await Event.findByIdAndUpdate(transaction.relatedEntity.id, {
+          $pull: { registered: transaction.userId },
+          $addToSet: { attendees: transaction.userId },
+        });
       }
       // Send payment receipt for successful payment
       const userDetails = await User.findById(transaction.userId).select(
