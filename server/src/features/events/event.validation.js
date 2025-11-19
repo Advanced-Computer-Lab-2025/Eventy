@@ -324,6 +324,10 @@ export const updateBazaarSchema = Joi.object({
 }).min(1);
 
 export const getAttendeesReportSchema = Joi.object({
+  name: Joi.string().trim().optional().messages({
+    "string.base": "Name filter must be text",
+  }),
+
   eventType: Joi.string()
     .valid("conference", "workshop", "bazaar", "trip", "platform_booth")
     .optional()
@@ -336,10 +340,18 @@ export const getAttendeesReportSchema = Joi.object({
     "date.base": "startDate must be a valid ISO date",
   }),
 
-  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional().messages({
-    "date.base": "endDate must be a valid ISO date",
-    "date.min": "endDate cannot be before startDate",
-  }),
+  endDate: Joi.date()
+    .iso()
+    .when("startDate", {
+      is: Joi.exist(),
+      then: Joi.date().min(Joi.ref("startDate")),
+      otherwise: Joi.date().iso().optional(),
+    })
+    .optional()
+    .messages({
+      "date.base": "endDate must be a valid ISO date",
+      "date.min": "endDate cannot be before startDate",
+    }),
 
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),

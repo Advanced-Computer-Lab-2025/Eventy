@@ -14,6 +14,9 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
+import { useState, useEffect } from "react";
+import { Gift } from "lucide-react";
+import LoyaltyProgramDialog from "./LoyaltyProgramDialog";
 
 interface VendorHeaderProps {
   onSearch?: (query: string) => void;
@@ -30,12 +33,26 @@ export default function VendorHeader({
 }: VendorHeaderProps) {
   const [, setLocation] = useLocation();
 
+  const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(false);
+
+  // Check URL hash on component mount and when it changes
+  useEffect(() => {
+    const hash = window.location.hash.substring(1);
+    if (hash === "loyalty-program") {
+      setIsLoyaltyDialogOpen(true);
+    }
+  }, []);
+
   const handleTabClick = (tab: string) => {
     if (onTabChange) {
       onTabChange(tab);
     }
-    // Update URL hash
     window.location.hash = tab;
+  };
+
+  const handleLoyaltyProgramClick = () => {
+    window.location.hash = "loyalty-program";
+    setIsLoyaltyDialogOpen(true);
   };
 
   return (
@@ -82,7 +99,7 @@ export default function VendorHeader({
             data-testid="button-nav-upcoming"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"
@@ -124,8 +141,35 @@ export default function VendorHeader({
             <XCircle className="h-4 w-4" />
             Rejected Requests
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${window.location.hash === "#loyalty-program" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={handleLoyaltyProgramClick}
+            data-testid="button-nav-loyalty"
+          >
+            <Gift className="h-4 w-4" />
+            Loyalty Program
+          </Button>
         </div>
       </div>
+
+      <LoyaltyProgramDialog
+        open={isLoyaltyDialogOpen}
+        onOpenChange={(open) => {
+          setIsLoyaltyDialogOpen(open);
+          if (!open) {
+            // Remove the hash when closing the dialog
+            window.history.pushState(
+              "",
+              document.title,
+              window.location.pathname + window.location.search
+            );
+          } else {
+            window.location.hash = "loyalty-program";
+          }
+        }}
+      />
     </header>
   );
 }

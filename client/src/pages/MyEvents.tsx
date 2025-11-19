@@ -27,6 +27,7 @@ import Logo from "@/components/Logo";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import EventCard from "@/components/EventCard";
+import EventFeedbackDialog from "@/components/EventFeedbackDialog";
 
 // Helper to get token (adjust as needed)
 const getToken = () => localStorage.getItem("token");
@@ -53,6 +54,9 @@ export default function MyEvents() {
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [userRole, setUserRole] = useState<string>("");
+  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
+  const [selectedEventForFeedback, setSelectedEventForFeedback] =
+    useState<RegisteredEvent | null>(null);
 
   useEffect(() => {
     // Get user role from localStorage
@@ -246,9 +250,14 @@ export default function MyEvents() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   showActions={true}
+                  isRegistered={true}
                   onViewDetails={() => handleCardClick(event._id)}
                   onSave={() => {}}
                   onShare={() => {}}
+                  onFeedback={() => {
+                    setSelectedEventForFeedback(event);
+                    setFeedbackDialogOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -264,6 +273,18 @@ export default function MyEvents() {
           event={selectedEvent}
           loading={detailsLoading}
         />
+
+        {selectedEventForFeedback && (
+          <EventFeedbackDialog
+            open={feedbackDialogOpen}
+            onOpenChange={(open) => {
+              setFeedbackDialogOpen(open);
+              if (!open) setSelectedEventForFeedback(null);
+            }}
+            eventId={selectedEventForFeedback._id}
+            eventName={selectedEventForFeedback.name}
+          />
+        )}
       </main>
     </div>
   );

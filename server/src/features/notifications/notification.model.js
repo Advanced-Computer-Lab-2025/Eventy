@@ -11,6 +11,11 @@ const notificationSchema = new Schema(
         required: true,
       },
     ],
+    title: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     message: {
       type: String,
       required: true,

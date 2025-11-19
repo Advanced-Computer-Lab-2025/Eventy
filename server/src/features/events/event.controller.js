@@ -36,6 +36,42 @@ export class EventsController {
     }
   }
 
+  async getWorkshopParticipants(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const userId = req.user._id || req.user.id;
+      // Find the workshop and ensure professor is creator
+      const workshop = await eventService.getWorkshopById(workshopId);
+      if (!workshop) throw new ApiError(404, "Workshop not found");
+      if (workshop.eventType !== "workshop")
+        throw new ApiError(400, "Not a workshop");
+      if (String(workshop.createdBy) !== String(userId))
+        throw new ApiError(
+          403,
+          "Forbidden: Only the creator professor can view participants"
+        );
+      // Populate attendees
+      await workshop.populate("attendees", "firstName lastName email");
+      const participants = (workshop.attendees || []).map((attendee) => ({
+        _id: attendee._id,
+        name: `${attendee.firstName} ${attendee.lastName}`,
+        email: attendee.email,
+      }));
+      const remainingSpots = (workshop.capacity || 0) - participants.length;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { participants, remainingSpots },
+            "Participants and remaining spots fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async updateTripController(req, res, next) {
     try {
       const { tripId } = req.params;
@@ -306,6 +342,7 @@ export class EventsController {
       const events = await eventService.getEvents({
         eventType: "workshop",
         createdBy: userId,
+        deletedAt: null,
       });
 
       return res
@@ -557,6 +594,28 @@ export class EventsController {
     }
   }
 
+  // GET /api/events/past - returns events whose endDate is before or equal to now
+  async getPastEvents(req, res, next) {
+    try {
+      // Require authenticated user (role middleware on route will enforce role)
+      if (!req.user) throw new ApiError(401, "Unauthorized");
+
+      const now = new Date();
+
+      // Use service.getEvents with a filter for events that have ended
+      const events = await eventService.getEvents({
+        endDate: { $lte: now },
+        deletedAt: null,
+      });
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, events, "Past events fetched successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
@@ -605,9 +664,10 @@ export class EventsController {
         return next(new ApiError(400, "Validation failed", error.details));
 
       // ✅ Use the validated values
-      const { eventType, startDate, endDate, page, limit } = value;
+      const { name, eventType, startDate, endDate, page, limit } = value;
 
       const report = await eventService.getAttendeesReport({
+        name,
         eventType,
         startDate,
         endDate,
