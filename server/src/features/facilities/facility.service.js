@@ -136,6 +136,14 @@ class FacilitiesServiceClass {
       if (slot) slot.status = "booked";
     }
 
+    // Filter out booked slots before returning
+    Object.keys(schedules).forEach((type) => {
+      schedules[type] = schedules[type].map((day) => ({
+        date: day.date,
+        slots: day.slots.filter((slot) => slot.status === "available"),
+      }));
+    });
+
     return schedules;
   }
 
