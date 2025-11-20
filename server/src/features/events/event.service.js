@@ -257,7 +257,10 @@ export const updateTripService = async (tripId, updateData, user) => {
 };
 /**
  * Register an authenticated user (Student, Staff, TA, or Professor)
- * to a workshop or trip event.
+ * to an event.
+ *
+ * - Workshops & Trips → added to `registered`
+ * - Other event types → added directly to `attendees`
  */
 export const registerUserToEvent = async (user, eventId) => {
   // 1️⃣ Validate allowed roles
@@ -266,27 +269,42 @@ export const registerUserToEvent = async (user, eventId) => {
     throw new ApiError(403, "You are not allowed to register for this event");
   }
 
-  // 2️⃣ Find the event by ID
+  // 2️⃣ Find the event
   const event = await Event.findById(eventId);
-  if (!event) {
-    throw new ApiError(404, "Event not found");
-  }
+  if (!event) throw new ApiError(404, "Event not found");
 
-  // 3️⃣ Prevent duplicate registrations
-  if (event.attendees && event.attendees.includes(user._id)) {
+  const isWorkshopOrTrip = ["workshop", "trip"].includes(event.eventType);
+
+  // 3️⃣ Prevent duplicate registration
+  if (event.registered?.includes(user._id)) {
     throw new ApiError(409, "You are already registered for this event");
   }
 
-  // 4️⃣ Check if event has reached its capacity (if it has a limit)
+  if (event.attendees?.includes(user._id)) {
+    throw new ApiError(409, "You are already attending this event");
+  }
+
+  // 4️⃣ Capacity check only affects attendees
   if (event.capacity && event.attendees.length >= event.capacity) {
     throw new ApiError(409, "Event is full");
   }
 
-  // 5️⃣ Register the user
-  event.attendees.push(user._id);
+  // 5️⃣ Apply correct logic based on event type
+  if (isWorkshopOrTrip) {
+    // Register but not paid yet
+    event.registered.push(user._id);
+  } else {
+    // Direct attendance for normal events
+    event.attendees.push(user._id);
+  }
+
   await event.save();
 
-  return { message: "Successfully registered for the event." };
+  return {
+    message: isWorkshopOrTrip
+      ? "Successfully registered. Please complete payment."
+      : "Successfully added to attendees.",
+  };
 };
 
 export const getEventsByUser = async (userId) => {
