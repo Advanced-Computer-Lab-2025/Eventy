@@ -284,7 +284,14 @@ export class TransactionService {
 
     throw new Error("Invalid payment method for wallet top-up");
   }
-
+  /**
+   * Get all transactions for a given user.
+   * @param {String} userId
+   * @returns {Promise<Transaction[]>}
+   */
+  async getUserTransactions(userId) {
+    return await Transaction.find({ userId }).sort({ createdAt: -1 });
+  }
   /**
    * Calculates the participation fee for a vendor application.
    * For booth: based on duration and location
