@@ -80,18 +80,6 @@ const eventSchema = new Schema(
     attendees: [
       { type: Schema.Types.ObjectId, ref: "User" }, // Students/Staff who registered
     ],
-    registered: {
-      type: [
-        {
-          type: Schema.Types.ObjectId,
-          ref: "User",
-        },
-      ],
-      default: [],
-      required: function () {
-        return this.eventType === "trip" || this.eventType === "workshop";
-      },
-    },
 
     capacity: { type: Number },
 
