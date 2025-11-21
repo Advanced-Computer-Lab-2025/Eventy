@@ -57,8 +57,30 @@ export const createTrip = async (tripData, createdBy) => {
     throw new ApiError(400, "Price must be a valid number");
   }
 
+  // Validate required fields
+  if (!tripData.startTime) {
+    throw new ApiError(400, "Start time is required");
+  }
+
+  if (!tripData.endTime) {
+    throw new ApiError(400, "End time is required");
+  }
+
+  // Extract date and time fields
+  const startDateTime = new Date(tripData.startDate);
+  const endDateTime = new Date(tripData.endDate);
+
+  // Validate date format
+  if (isNaN(startDateTime.getTime())) {
+    throw new ApiError(400, "Invalid start date format");
+  }
+
+  if (isNaN(endDateTime.getTime())) {
+    throw new ApiError(400, "Invalid end date format");
+  }
+
   // Ensure end date is after start date
-  if (new Date(tripData.endDate) <= new Date(tripData.startDate)) {
+  if (endDateTime <= startDateTime) {
     throw new ApiError(400, "End date must be after start date");
   }
 
@@ -826,4 +848,68 @@ export const cancelEventRegistration = async (eventId, userId) => {
     paymentMethod: refund.paymentMethod,
     transactionId: refund._id,
   };
+};
+
+export const restrictAccess = async (eventId, rolesToRestrict, user) => {
+  // Authorization check
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Only Events Office can restrict event access");
+  }
+
+  // Ensure unique roles and validate them
+  const uniqueRoles = [...new Set(rolesToRestrict)];
+  const validRoles = [
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "vendor",
+    "events_office",
+    "admin",
+  ];
+  const invalidRoles = uniqueRoles.filter((role) => !validRoles.includes(role));
+  if (invalidRoles.length > 0) {
+    throw new ApiError(
+      400,
+      `Invalid roles provided: ${invalidRoles.join(", ")}`
+    );
+  }
+
+  // Replace the input array with unique roles
+  rolesToRestrict = uniqueRoles;
+
+  // Find and validate event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot modify restrictions for a deleted event");
+  }
+
+  // Check if event is archived
+  if (event.status === "archived") {
+    throw new ApiError(400, "Cannot modify restrictions for an archived event");
+  }
+
+  // Check if the exact same restrictions are already in place
+  const currentRestrictions = event.restrictedRoles || [];
+  const isIdenticalRestriction =
+    rolesToRestrict.length === currentRestrictions.length &&
+    rolesToRestrict.every((role) => currentRestrictions.includes(role)) &&
+    currentRestrictions.every((role) => rolesToRestrict.includes(role));
+
+  if (isIdenticalRestriction) {
+    throw new ApiError(
+      400,
+      "These role restrictions are already in place for this event"
+    );
+  }
+
+  // Update restricted roles
+  event.restrictedRoles = rolesToRestrict;
+  await event.save();
+
+  return event;
 };

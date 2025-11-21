@@ -11,6 +11,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  restrictAccessSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -742,6 +743,37 @@ export class EventsController {
             200,
             result,
             "Registration cancelled and amount refunded."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+  async restrictAccess(req, res, next) {
+    try {
+      // Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Validate request body
+      const { error } = restrictAccessSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      // Call service to restrict access
+      const event = await eventService.restrictAccess(
+        req.params.id,
+        req.body.roles,
+        req.user
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            event,
+            "Event access restrictions updated successfully"
           )
         );
     } catch (err) {
