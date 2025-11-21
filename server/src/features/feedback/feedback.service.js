@@ -1,6 +1,9 @@
 import Feedback from "./feedback.model.js";
 import ApiError from "../../utils/ApiError.js";
 import { Event } from "../events/event.model.js";
+import mongoose from "mongoose";
+import * as UserModule from "../users/user.model.js";
+const User = UserModule.default ?? UserModule.User ?? UserModule;
 
 export async function submitFeedbackService(
   user,
@@ -56,20 +59,33 @@ export async function submitFeedbackService(
     );
   }
 
-  // Create the feedback document. Unique index on (eventId,userId) may cause 11000
-  const feedback = await Feedback.create({
+  // Create the feedback document. store comment (if provided) as a subdocument
+  const feedbackData = {
     eventId,
     userId,
     rating,
-    comment,
-  });
+    comments: [],
+  };
 
-  return feedback;
+  if (comment && comment.trim()) {
+    feedbackData.comments.push({
+      userId,
+      body: comment.trim(),
+    });
+  }
+
+  const feedback = await Feedback.create(feedbackData);
+
+  // return populated feedback for consistency with other endpoints
+  return await Feedback.findById(feedback._id)
+    .populate("userId", "firstName lastName email")
+    .populate("comments.userId", "firstName lastName email");
 }
 
 export async function getEventFeedbackService(eventId) {
   const feedback = await Feedback.find({ eventId, deletedAt: null })
     .populate("userId", "firstName lastName email")
+    .populate("comments.userId", "firstName lastName email")
     .sort("-createdAt");
 
   const ratings = feedback.map((f) => f.rating);
@@ -88,7 +104,70 @@ export async function getUserEventFeedbackService(userId, eventId) {
     eventId,
     userId,
     deletedAt: null,
-  }).populate("userId", "firstName lastName email");
+  })
+    .populate("userId", "firstName lastName email")
+    .populate("comments.userId", "firstName lastName email");
 
   return feedback;
+}
+
+export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
+  // Validate IDs
+  if (
+    !mongoose.Types.ObjectId.isValid(adminId) ||
+    !mongoose.Types.ObjectId.isValid(feedbackId) ||
+    !mongoose.Types.ObjectId.isValid(commentId)
+  ) {
+    throw new ApiError(400, "Invalid adminId, feedbackId, or commentId.");
+  }
+
+  // Ensure caller is an admin
+  const admin = await User.findById(adminId).select("role");
+  if (!admin) {
+    throw new ApiError(401, "Admin user not found.");
+  }
+  if (admin.role !== "admin") {
+    throw new ApiError(403, "Access denied. Admins only.");
+  }
+
+  // Load feedback document
+  const feedback = await Feedback.findById(feedbackId);
+  if (!feedback) {
+    throw new ApiError(404, "Feedback not found.");
+  }
+
+  // Ensure comments array exists
+  const comments = Array.isArray(feedback.comments) ? feedback.comments : [];
+  if (comments.length === 0) {
+    throw new ApiError(404, "No comments found for this feedback.");
+  }
+
+  // Find comment using mongoose subdocument helper if available
+  let comment =
+    typeof feedback.comments.id === "function"
+      ? feedback.comments.id(commentId)
+      : comments.find((c) => c._id && c._id.toString() === commentId);
+
+  if (!comment) {
+    throw new ApiError(404, "Comment not found on this feedback.");
+  }
+
+  // Prevent double-deletion
+  if (comment.deletedAt) {
+    throw new ApiError(400, "Comment already deleted.");
+  }
+
+  // Soft-delete only the comment (do not remove whole feedback)
+  comment.deletedAt = new Date();
+  if ("status" in comment) comment.status = "deleted";
+
+  // Persist changes
+  await feedback.save();
+
+  // Return minimal sanitized info about deleted comment
+  return {
+    _id: comment._id,
+    deletedAt: comment.deletedAt,
+    status: comment.status ?? "deleted",
+  };
 }

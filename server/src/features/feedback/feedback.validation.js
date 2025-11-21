@@ -12,3 +12,16 @@ export const submitFeedbackSchema = Joi.object({
     "string.max": "Comment must not exceed 1000 characters",
   }),
 });
+
+export const deleteFeedbackCommentSchema = Joi.object({
+  feedbackId: Joi.string().hex().length(24).required().messages({
+    "string.hex": "Feedback ID must be a valid MongoDB ID.",
+    "string.length": "Feedback ID must be 24 characters long.",
+    "any.required": "Feedback ID is required.",
+  }),
+  commentId: Joi.string().hex().length(24).required().messages({
+    "string.hex": "Comment ID must be a valid MongoDB ID.",
+    "string.length": "Comment ID must be 24 characters long.",
+    "any.required": "Comment ID is required.",
+  }),
+});

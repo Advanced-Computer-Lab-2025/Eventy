@@ -1,5 +1,27 @@
 import mongoose from "mongoose";
 
+const feedbackCommentSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    body: {
+      type: String,
+      required: true,
+      maxlength: 1000,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
 const feedbackSchema = new mongoose.Schema(
   {
     eventId: {
@@ -18,11 +40,14 @@ const feedbackSchema = new mongoose.Schema(
       min: 1,
       max: 5,
     },
-    comment: {
-      type: String,
-      required: false,
-      maxlength: 1000,
+
+    // store comments as subdocuments so individual comments can be removed/soft-deleted
+    comments: {
+      type: [feedbackCommentSchema],
+      default: [],
     },
+
+    // Keep feedback-level deletedAt (soft delete of the whole feedback)
     deletedAt: {
       type: Date,
       default: null, // null means not deleted
