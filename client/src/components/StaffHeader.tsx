@@ -9,7 +9,9 @@ interface StaffHeaderProps {
   homeHref?: string;
 }
 
-export default function StaffHeader({ homeHref = "/staff-ta" }: StaffHeaderProps) {
+export default function StaffHeader({
+  homeHref = "/staff-ta",
+}: StaffHeaderProps) {
   const [, setLocation] = useLocation();
 
   return (
@@ -21,7 +23,11 @@ export default function StaffHeader({ homeHref = "/staff-ta" }: StaffHeaderProps
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
@@ -38,7 +44,7 @@ export default function StaffHeader({ homeHref = "/staff-ta" }: StaffHeaderProps
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"
@@ -61,15 +67,15 @@ export default function StaffHeader({ homeHref = "/staff-ta" }: StaffHeaderProps
             Sports Facilities
           </Button>
           <Button
-  variant="ghost"
-  size="sm"
-  className="gap-2"
-  onClick={() => setLocation("/favorites")}
-  data-testid="button-nav-favorites"
->
-  <Heart className="h-4 w-4" />
-  Favorites
-</Button>
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/favorites")}
+            data-testid="button-nav-favorites"
+          >
+            <Heart className="h-4 w-4" />
+            Favorites
+          </Button>
         </div>
       </div>
     </header>

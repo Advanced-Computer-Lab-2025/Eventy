@@ -1,6 +1,17 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Search,
+  Bell,
+  User as UserIcon,
+  Home,
+  ArrowLeft,
+} from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
@@ -14,7 +25,6 @@ import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
-
 
 type Slot = {
   startTime: string;
@@ -45,7 +55,9 @@ const formatTimeToAMPM = (time: string) => {
 
 export default function SportsFacilities() {
   const [, setLocation] = useLocation();
-  const [courtSchedules, setCourtSchedules] = useState<Record<CourtType, CourtSchedule[]>>({
+  const [courtSchedules, setCourtSchedules] = useState<
+    Record<CourtType, CourtSchedule[]>
+  >({
     basketball: [],
     tennis: [],
     football: [],
@@ -55,7 +67,9 @@ export default function SportsFacilities() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(undefined);
+  const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     // Fetch user role from token
@@ -91,8 +105,14 @@ export default function SportsFacilities() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleReserveCourt = (courtType: CourtType, date: string, slot: Slot) => {
-    alert(`${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`);
+  const handleReserveCourt = (
+    courtType: CourtType,
+    date: string,
+    slot: Slot
+  ) => {
+    alert(
+      `${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`
+    );
   };
 
   const handleCreateSuccess = (createdDate: Date) => {
@@ -165,42 +185,35 @@ export default function SportsFacilities() {
           {Object.entries(COURT_NAMES).map(([type, label]) => (
             <Card key={type} className="flex flex-col justify-between">
               <CardHeader>
-                <CardTitle className="text-xl text-center">
-                  {label}
-                </CardTitle>
+                <CardTitle className="text-xl text-center">{label}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-2">
                   {currentSchedules[type as CourtType]?.length > 0 ? (
-                    currentSchedules[type as CourtType].map(
-                      (slot, sidx) => (
-                        <Button
-                          key={sidx}
-                          variant="outline"
-                          className="w-full justify-start gap-2"
-                          disabled={slot.status !== "available"}
-                          onClick={() =>
-                            handleReserveCourt(
-                              type as CourtType,
-                              formattedDate,
-                              slot
-                            )
-                          }
-                        >
-                          <Clock className="h-4 w-4" />
-                          {formatTimeToAMPM(slot.startTime)} –{" "}
-                          {formatTimeToAMPM(slot.endTime)}
-                          {slot.status !== "available" && (
-                            <Badge
-                              variant="destructive"
-                              className="ml-2"
-                            >
-                              Booked
-                            </Badge>
-                          )}
-                        </Button>
-                      )
-                    )
+                    currentSchedules[type as CourtType].map((slot, sidx) => (
+                      <Button
+                        key={sidx}
+                        variant="outline"
+                        className="w-full justify-start gap-2"
+                        disabled={slot.status !== "available"}
+                        onClick={() =>
+                          handleReserveCourt(
+                            type as CourtType,
+                            formattedDate,
+                            slot
+                          )
+                        }
+                      >
+                        <Clock className="h-4 w-4" />
+                        {formatTimeToAMPM(slot.startTime)} –{" "}
+                        {formatTimeToAMPM(slot.endTime)}
+                        {slot.status !== "available" && (
+                          <Badge variant="destructive" className="ml-2">
+                            Booked
+                          </Badge>
+                        )}
+                      </Button>
+                    ))
                   ) : (
                     <p className="text-muted-foreground text-sm text-center">
                       No slots available for this day.
@@ -221,7 +234,7 @@ export default function SportsFacilities() {
         <ProfessorHeader />
       ) : userRole === "events_office" ? (
         <EventsOfficeHeader />
-      ) : (userRole === "staff" || userRole === "ta") ? (
+      ) : userRole === "staff" || userRole === "ta" ? (
         <StaffHeader />
       ) : (
         <StudentHeader />
@@ -249,9 +262,7 @@ export default function SportsFacilities() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="courts">
-              {renderCourtContent()}
-            </TabsContent>
+            <TabsContent value="courts">{renderCourtContent()}</TabsContent>
 
             <TabsContent value="gym" className="space-y-4">
               <GymScheduleViewer

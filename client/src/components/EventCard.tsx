@@ -1,4 +1,13 @@
-import { Calendar, MapPin, Users, Share2, Store, Trash2, Clock } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Share2,
+  Store,
+  Trash2,
+  Archive,
+  Clock,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
 import { Button } from "@/components/ui/button";
@@ -8,23 +17,29 @@ import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 async function deleteEvent(eventId: string) {
   const token = localStorage.getItem("token");
-  const response = await fetch(`${API_BASE_URL}/api/events/admin/events/${eventId}`, {
-    method: "DELETE",
-    headers: {
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
-    credentials: "include",
-  });
+  const response = await fetch(
+    `${API_BASE_URL}/api/events/admin/events/${eventId}`,
+    {
+      method: "DELETE",
+      headers: {
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      credentials: "include",
+    }
+  );
 
   const contentType = response.headers.get("content-type");
   if (response.status === 409) {
     if (contentType && contentType.includes("application/json")) {
       const data = await response.json();
-      throw new Error(data.message || "Cannot delete event with registered users.");
+      throw new Error(
+        data.message || "Cannot delete event with registered users."
+      );
     }
     throw new Error("Cannot delete event with registered users.");
   }
@@ -46,8 +61,8 @@ interface Vendor {
   vendorId?: string;
   vendorName?: string;
   vendorEmail?: string;
-  email?: string;  
-  _id?: string; 
+  email?: string;
+  _id?: string;
   name?: string;
   type?: string;
   boothSize?: string;
@@ -71,11 +86,15 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  isRegistered?: boolean;
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
+  onFeedback?: () => void;
+  onArchive?: () => void;
+  isArchiving?: boolean;
   canDelete?: boolean;
   className?: string;
 }
@@ -102,6 +121,10 @@ export default function EventCard({
   onShare,
   onDelete,
   onViewDetails,
+  onFeedback,
+  isRegistered = false,
+  onArchive,
+  isArchiving = false,
   canDelete = false,
   className,
 }: EventCardProps) {
@@ -111,7 +134,7 @@ export default function EventCard({
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  
+
   // Determine user role for delete permission and favorite button visibility
   let roleAllowsDelete = false;
   let roleAllowsFavorites = false;
@@ -121,10 +144,13 @@ export default function EventCard({
       const payload = JSON.parse(atob(token.split(".")[1]));
       const role = payload?.role;
       roleAllowsDelete = role === "admin" || role === "events_office";
-      roleAllowsFavorites = ["student", "staff", "ta", "professor"].includes(role);
+      roleAllowsFavorites = ["student", "staff", "ta", "professor"].includes(
+        role
+      );
     }
   } catch {}
-  const canShowDelete = roleAllowsDelete;
+  // Respect parent component's `canDelete` prop in addition to role
+  const canShowDelete = roleAllowsDelete && canDelete;
   const canShowFavorites = roleAllowsFavorites;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
@@ -156,7 +182,9 @@ export default function EventCard({
 
   return (
     <Card
-      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${className || ""}`}
+      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${
+        className || ""
+      }`}
       data-testid={`card-event-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -176,11 +204,13 @@ export default function EventCard({
         <>
           <CardHeader>
             <div className="flex justify-between items-start gap-2">
-              <CardTitle className="text-xl break-words whitespace-normal">{title}</CardTitle>
+              <CardTitle className="text-xl break-words whitespace-normal">
+                {title}
+              </CardTitle>
               <CategoryBadge category={category} />
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-4 flex-1 flex flex-col">
             <div className="flex-1 space-y-4">
               {description && (
@@ -196,7 +226,8 @@ export default function EventCard({
                   <div className="flex-1">
                     {startDate && endDate ? (
                       <div>
-                        {formatDate(startDate)}, {formatTime(startDate)} → {formatDate(endDate)}, {formatTime(endDate)}
+                        {formatDate(startDate)}, {formatTime(startDate)} →{" "}
+                        {formatDate(endDate)}, {formatTime(endDate)}
                       </div>
                     ) : startDate ? (
                       <div>
@@ -218,7 +249,9 @@ export default function EventCard({
                 <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
                   <div className="flex items-center">
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span>{attendees} attendee{attendees !== 1 ? 's' : ''}</span>
+                    <span>
+                      {attendees} attendee{attendees !== 1 ? "s" : ""}
+                    </span>
                   </div>
 
                   {registrationDeadline && (
@@ -227,7 +260,9 @@ export default function EventCard({
                       <span>
                         Deadline: {formatDate(registrationDeadline)}
                         {new Date() > new Date(registrationDeadline) && (
-                          <span className="text-red-500 font-semibold ml-2">(Closed)</span>
+                          <span className="text-red-500 font-semibold ml-2">
+                            (Closed)
+                          </span>
                         )}
                       </span>
                     </div>
@@ -248,9 +283,11 @@ export default function EventCard({
                         .map((v) => v.name || v.vendorName)
                         .filter(Boolean) as string[];
                       const initialCount = 4;
-                      const shown = expandedVendors ? vendorNames : vendorNames.slice(0, initialCount);
+                      const shown = expandedVendors
+                        ? vendorNames
+                        : vendorNames.slice(0, initialCount);
                       const remaining = vendorNames.length - initialCount;
-                      
+
                       return (
                         <div className="space-y-2">
                           <div className="flex flex-wrap gap-2">
@@ -271,19 +308,21 @@ export default function EventCard({
                               className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
                               onClick={() => setExpandedVendors(true)}
                             >
-                              + {remaining} more vendor{remaining > 1 ? 's' : ''}
+                              + {remaining} more vendor
+                              {remaining > 1 ? "s" : ""}
                             </Button>
                           )}
-                          {expandedVendors && vendorNames.length > initialCount && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
-                              onClick={() => setExpandedVendors(false)}
-                            >
-                              Show less
-                            </Button>
-                          )}
+                          {expandedVendors &&
+                            vendorNames.length > initialCount && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto py-1 px-2 text-xs text-muted-foreground hover:text-foreground"
+                                onClick={() => setExpandedVendors(false)}
+                              >
+                                Show less
+                              </Button>
+                            )}
                         </div>
                       );
                     })()}
@@ -293,16 +332,53 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {canRegister && (
+              {isRegistered && startDate && new Date() > new Date(startDate) ? (
                 <Button
                   className="flex-1"
-                  onClick={onRegister}
-                  data-testid={`button-register-${id}`}
+                  onClick={onFeedback}
+                  data-testid={`button-feedback-${id}`}
                 >
-                  Register
+                  Give Feedback
+                </Button>
+              ) : (
+                canRegister && (
+                  <Button
+                    className="flex-1"
+                    onClick={onRegister}
+                    data-testid={`button-register-${id}`}
+                  >
+                    Register
+                  </Button>
+                )
+              )}
+              {onArchive && (
+                <Button
+                  className={canRegister ? "flex-1" : "w-full"}
+                  onClick={async (e) => {
+                    if ((e as any).stopPropagation)
+                      (e as any).stopPropagation();
+                    try {
+                      await onArchive();
+                    } catch (err) {
+                      // parent handles errors
+                    }
+                  }}
+                  disabled={isArchiving}
+                  data-testid={`button-archive-${id}`}
+                >
+                  {isArchiving ? (
+                    "Archiving..."
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
+                    </>
+                  )}
                 </Button>
               )}
-                <div className="flex gap-2 ml-auto">                {onViewDetails && (
+              <div className="flex gap-2 ml-auto">
+                {" "}
+                {onViewDetails && (
                   <Button
                     className={canRegister ? "flex-1" : "flex-1"}
                     variant="outline"
@@ -321,15 +397,28 @@ export default function EventCard({
                   variant="destructive"
                   size="sm"
                   onClick={async (e) => {
-                    if ((e as any).stopPropagation) (e as any).stopPropagation();
-                    if (!confirm("This will permanently delete the event. Proceed?")) return;
+                    if ((e as any).stopPropagation)
+                      (e as any).stopPropagation();
+                    if (
+                      !confirm(
+                        "This will permanently delete the event. Proceed?"
+                      )
+                    )
+                      return;
                     try {
                       await deleteEvent(id);
-                      toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                      toast({
+                        title: "Event deleted",
+                        description: "The event was deleted successfully.",
+                      });
                       setIsDeleted(true);
                       onDelete?.(id);
                     } catch (err: any) {
-                      toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
+                      toast({
+                        title: "Delete failed",
+                        description: err?.message || "Failed to delete event",
+                        variant: "destructive",
+                      });
                     }
                   }}
                   data-testid={`button-delete-event-${id}`}
@@ -398,17 +487,55 @@ export default function EventCard({
 
             {showActions && (
               <div className="flex flex-col gap-2 pt-2">
-                {isRegisterable && (
+                {isRegistered &&
+                startDate &&
+                new Date() > new Date(startDate) ? (
                   <Button
-                    onClick={onRegister}
-                    className="w-full"
-                    data-testid={`button-register-${id}`}
+                    onClick={onFeedback}
+                    className="flex-1"
+                    data-testid={`button-feedback-${id}`}
                   >
-                    Register
+                    Give Feedback
+                  </Button>
+                ) : (
+                  isRegisterable && (
+                    <Button
+                      onClick={onRegister}
+                      className="w-full"
+                      data-testid={`button-register-${id}`}
+                    >
+                      Register
+                    </Button>
+                  )
+                )}
+                {onArchive && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={async (e) => {
+                      if ((e as any).stopPropagation)
+                        (e as any).stopPropagation();
+                      try {
+                        await onArchive();
+                      } catch (err) {
+                        // parent handles errors
+                      }
+                    }}
+                    disabled={isArchiving}
+                    data-testid={`button-archive-compact-${id}`}
+                    className="bg-primary text-primary-foreground"
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    Archive
                   </Button>
                 )}
-                  <div className="flex items-center gap-2 ml-auto">                  {canShowFavorites && (
-                    <div className="relative" onClick={(e) => e.stopPropagation()}>
+                <div className="flex items-center gap-2 ml-auto">
+                  {" "}
+                  {canShowFavorites && (
+                    <div
+                      className="relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <FavoriteButton eventId={id} />
                     </div>
                   )}
@@ -429,15 +556,28 @@ export default function EventCard({
                     variant="destructive"
                     size="sm"
                     onClick={async (e) => {
-                      if ((e as any).stopPropagation) (e as any).stopPropagation();
-                      if (!confirm("This will permanently delete the event. Proceed?")) return;
+                      if ((e as any).stopPropagation)
+                        (e as any).stopPropagation();
+                      if (
+                        !confirm(
+                          "This will permanently delete the event. Proceed?"
+                        )
+                      )
+                        return;
                       try {
                         await deleteEvent(id);
-                        toast({ title: "Event deleted", description: "The event was deleted successfully." });
+                        toast({
+                          title: "Event deleted",
+                          description: "The event was deleted successfully.",
+                        });
                         setIsDeleted(true);
                         onDelete?.(id);
                       } catch (err: any) {
-                        toast({ title: "Delete failed", description: err?.message || "Failed to delete event", variant: "destructive" });
+                        toast({
+                          title: "Delete failed",
+                          description: err?.message || "Failed to delete event",
+                          variant: "destructive",
+                        });
                       }
                     }}
                     data-testid={`button-delete-event-${id}`}

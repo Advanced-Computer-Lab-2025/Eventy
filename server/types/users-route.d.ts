@@ -3,5 +3,3 @@ declare module "./src/features/users/user.route.js" {
   const router: Router;
   export default router;
 }
-
-

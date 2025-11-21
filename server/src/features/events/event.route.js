@@ -59,6 +59,14 @@ router.get(
   eventsController.getMyWorkshops.bind(eventsController)
 );
 
+// Get participants and remaining spots for a workshop (professor only)
+router.get(
+  "/workshops/:workshopId/participants",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.getWorkshopParticipants.bind(eventsController)
+);
+
 // Accept workshop
 router.patch(
   "/:id/accept",
@@ -81,6 +89,14 @@ router.patch(
   authMiddleware,
   roleMiddleware(["events_office"]),
   eventsController.rejectWorkshop.bind(eventsController)
+);
+
+// Archive event (only Events Office, and only after endDate has passed)
+router.patch(
+  "/:id/archive",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.archiveEvent.bind(eventsController)
 );
 
 // Edit a workshop that needs revision
@@ -157,6 +173,14 @@ router.get(
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
+// Get past events (events whose endDate has passed) - Events Office / Admin
+router.get(
+  "/past",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getPastEvents.bind(eventsController)
+);
+
 // Search events ( new feature)
 router.get(
   "/search",
@@ -186,7 +210,13 @@ router.get(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.getMyEvents.bind(eventsController)
 );
-
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
 // Get event by ID (vendor only)
 router.get(
   "/:eventId",
@@ -211,4 +241,18 @@ router.post(
   eventsController.registerForEvent.bind(eventsController)
 );
 
+// PATCH /events/:id/cancel
+router.patch(
+  "/:eventId/cancel",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.cancelEventRegistration.bind(eventsController)
+);
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
 export default router;

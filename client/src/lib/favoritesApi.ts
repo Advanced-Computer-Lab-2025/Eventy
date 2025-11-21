@@ -1,4 +1,4 @@
-import api from './api';
+import api from "./api";
 
 export interface FavoriteEvent {
   _id: string;
@@ -15,49 +15,64 @@ export const favoritesApi = {
   // Get user's favorite events
   getFavorites: async (): Promise<FavoriteEvent[]> => {
     try {
-      const response = await api.get('/users/favorites');
-      
+      const response = await api.get("/users/favorites");
+
       if (response.data.success) {
         return response.data.data || [];
       }
-      
-      console.error('Failed to fetch favorites:', response.data);
+
+      console.error("Failed to fetch favorites:", response.data);
       return [];
     } catch (error: any) {
-      console.error('Error fetching favorites:', error?.response?.data || error);
+      console.error(
+        "Error fetching favorites:",
+        error?.response?.data || error
+      );
       // Don't throw - return empty array to prevent UI blocking
       return [];
     }
   },
 
   // Add event to favorites
-  addToFavorites: async (eventId: string): Promise<{ eventId: string; favoritesCount: number }> => {
+  addToFavorites: async (
+    eventId: string
+  ): Promise<{ eventId: string; favoritesCount: number }> => {
     try {
-      const response = await api.post('/users/favorites', { eventId });
-      
+      const response = await api.post("/users/favorites", { eventId });
+
       if (response.data.success) {
         return response.data.data || { eventId, favoritesCount: 0 };
       }
-      
-      throw new Error(response.data.message || 'Failed to add to favorites');
+
+      throw new Error(response.data.message || "Failed to add to favorites");
     } catch (error: any) {
-      console.error('Error adding to favorites:', error?.response?.data || error);
+      console.error(
+        "Error adding to favorites:",
+        error?.response?.data || error
+      );
       throw error;
     }
   },
 
   // Remove event from favorites
-  removeFromFavorites: async (eventId: string): Promise<{ eventId: string; favoritesCount: number }> => {
+  removeFromFavorites: async (
+    eventId: string
+  ): Promise<{ eventId: string; favoritesCount: number }> => {
     try {
       const response = await api.delete(`/users/favorites/${eventId}`);
-      
+
       if (response.data.success) {
         return response.data.data || { eventId, favoritesCount: 0 };
       }
-      
-      throw new Error(response.data.message || 'Failed to remove from favorites');
+
+      throw new Error(
+        response.data.message || "Failed to remove from favorites"
+      );
     } catch (error: any) {
-      console.error('Error removing from favorites:', error?.response?.data || error);
+      console.error(
+        "Error removing from favorites:",
+        error?.response?.data || error
+      );
       throw error;
     }
   },
@@ -66,9 +81,9 @@ export const favoritesApi = {
   isFavorite: async (eventId: string): Promise<boolean> => {
     try {
       const favorites = await favoritesApi.getFavorites();
-      return favorites.some(event => event._id === eventId);
+      return favorites.some((event) => event._id === eventId);
     } catch (error) {
-      console.error('Error checking favorite status:', error);
+      console.error("Error checking favorite status:", error);
       return false;
     }
   },

@@ -5,7 +5,7 @@ import {
   validateVendorSignUp,
 } from "./auth.validation.js";
 import jwt from "jsonwebtoken";
-
+import { sendStudentEmailVerification } from "./email.service.js";
 export const signUpUser = async (data) => {
   const { role } = data;
 
@@ -29,18 +29,19 @@ export const signUpUser = async (data) => {
   }
 
   // ✅ Step 3: Check for duplicate email
-  const existingUser = await User.findOne({ email: data.email });
+  const existingUser = await User.findOne({
+    email: data.email,
+    status: { $ne: "deleted" },
+  });
   if (existingUser) throw new Error("This email is already registered.");
-
-  
 
   // ✅ Step 4: Additional duplicate checks
   if (["student", "staff", "ta", "professor"].includes(normalizedRole)) {
     const existingId = await User.findOne({
       studentStaffId: data.studentStaffId,
+      status: { $ne: "deleted" },
     });
-    if (existingId)
-      throw new Error("This ID is already registered.");
+    if (existingId) throw new Error("This ID is already registered.");
   } else if (normalizedRole === "vendor") {
     const existingCompany = await User.findOne({
       companyName: data.companyName,
@@ -54,30 +55,38 @@ export const signUpUser = async (data) => {
 
   // ✅ Step 5.5: Determine initial verification status
   let status = "active"; // default for student/vendor
-  if (["staff", "ta", "professor"].includes(normalizedRole)) {
+  if (["staff", "ta", "professor", "student"].includes(normalizedRole)) {
     status = "pending"; // requires admin approval + email verification
   }
 
   // ✅ Step 6: Build user data
-const isAcademic = ["staff", "ta", "professor"].includes(normalizedRole);
+  const isAcademic = ["staff", "ta", "professor"].includes(normalizedRole);
 
-const userData = {
-  ...data,
-  password: hashedPassword,
-  status,
-  isVerified: isAcademic ? false : true,
-  roleVerifiedByAdmin: false,
-  role: isAcademic ? null : normalizedRole,
-};
+  const userData = {
+    ...data,
+    password: hashedPassword,
+    status,
+    isVerified:
+      normalizedRole === "student" ? false : isAcademic ? false : true,
+    roleVerifiedByAdmin: false,
+    role: normalizedRole,
+  };
 
   // ✅ Step 7: Create and save user
   const user = new User(userData);
   await user.save();
 
-  // ✅ Step 8: Prepare clean response
-  if (["student"].includes(normalizedRole)) {
+  // ---------------------------------------------------
+  // 📌 SEND VERIFICATION EMAIL — ONLY FOR STUDENTS
+  // ---------------------------------------------------
+  if (normalizedRole === "student") {
+    await sendStudentEmailVerification(user);
+  }
+  // ---------------------------------------------------
+
+  if (normalizedRole === "student") {
     return {
-      message: `Welcome ${user.firstName}! 🎉 Your ${user.role} account has been created successfully.`,
+      message: `Welcome ${user.firstName}! 🎉 A verification email has been sent to your inbox.`,
       user: {
         _id: user._id,
         firstName: user.firstName,
@@ -134,13 +143,15 @@ export const loginUser = async (data) => {
   if (!user) {
     throw new Error("No account found with this email.");
   }
- switch (user.status) {
+  switch (user.status) {
     case "blocked":
       throw new Error("You are currently a blocked user");
     case "deleted":
       throw new Error("This account has been deleted.");
     case "pending":
-      throw new Error("Your account is pending verification. Please check your email.");
+      throw new Error(
+        "Your account is pending verification. Please check your email."
+      );
     case "active":
       break; // Continue with login process
     default:
@@ -150,15 +161,32 @@ export const loginUser = async (data) => {
   if (
     user.role !== "vendor" &&
     !(
-//      normalizedEmail.endsWith("@gmail.com") ||
-      normalizedEmail.endsWith("@guc.edu.eg") ||
-      normalizedEmail.endsWith("@student.guc.edu.eg")
+      //      normalizedEmail.endsWith("@gmail.com") ||
+      (
+        normalizedEmail.endsWith("@guc.edu.eg") ||
+        normalizedEmail.endsWith("@student.guc.edu.eg")
+      )
     )
   ) {
     throw new Error("Please use your GUC email to log in.");
   }
 
-  
+  // 📌 BLOCK: Student not verified yet
+  if (user.role === "student" && !user.isVerified) {
+    throw new Error(
+      "Your email is not verified. Please check your inbox for the verification link."
+    );
+  }
+
+  // 📌 BLOCK: Academic roles requiring admin approval
+  if (
+    ["staff", "ta", "professor", "student"].includes(user.role.toLowerCase()) &&
+    user.status !== "active"
+  ) {
+    throw new Error(
+      "Your account has not been verified yet. Please check your email for the verification link."
+    );
+  }
 
   // ✅ Step 4: Compare passwords
   const isMatch = await bcrypt.compare(password, user.password);

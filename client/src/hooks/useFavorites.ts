@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { favoritesApi, FavoriteEvent } from '../lib/favoritesApi';
+import { useState, useEffect, useCallback } from "react";
+import { favoritesApi, FavoriteEvent } from "../lib/favoritesApi";
 
 type ApiError = Error & {
   response?: {
@@ -16,7 +16,7 @@ const listeners: Set<(favorites: FavoriteEvent[]) => void> = new Set();
 
 // Notify all listeners of state change
 const notifyListeners = () => {
-  listeners.forEach(listener => listener([...sharedFavorites]));
+  listeners.forEach((listener) => listener([...sharedFavorites]));
 };
 
 // Update shared favorites
@@ -36,9 +36,9 @@ export const useFavorites = () => {
     const listener = (updatedFavorites: FavoriteEvent[]) => {
       setFavorites(updatedFavorites);
     };
-    
+
     listeners.add(listener);
-    
+
     return () => {
       listeners.delete(listener);
     };
@@ -47,22 +47,23 @@ export const useFavorites = () => {
   // Fetch user's favorite events
   const fetchFavorites = useCallback(async () => {
     if (isFetching) {
-      console.log('Already fetching favorites, skipping...');
+      console.log("Already fetching favorites, skipping...");
       return;
     }
-    
+
     try {
       isFetching = true;
       setInitialLoading(true);
       const data = await favoritesApi.getFavorites();
-      
+
       const favoritesData = Array.isArray(data) ? data : [];
       updateSharedFavorites(favoritesData);
       setError(null);
     } catch (err: unknown) {
       const error = err as ApiError;
-      const errorMessage = error?.response?.data?.message || 'Failed to fetch favorites';
-      console.error('Error fetching favorites:', errorMessage);
+      const errorMessage =
+        error?.response?.data?.message || "Failed to fetch favorites";
+      console.error("Error fetching favorites:", errorMessage);
       setError(errorMessage);
       updateSharedFavorites([]);
     } finally {
@@ -76,31 +77,34 @@ export const useFavorites = () => {
     setOperationLoading(eventId);
     try {
       const result = await favoritesApi.addToFavorites(eventId);
-      
+
       // Optimistically update shared state
-      const newFavorites = sharedFavorites.some(fav => fav._id === eventId)
+      const newFavorites = sharedFavorites.some((fav) => fav._id === eventId)
         ? sharedFavorites
-        : [...sharedFavorites, { 
-            _id: eventId,
-            name: '',
-            description: '',
-            location: '',
-            startDate: '',
-            endDate: '',
-            status: ''
-          } as FavoriteEvent];
-      
+        : [
+            ...sharedFavorites,
+            {
+              _id: eventId,
+              name: "",
+              description: "",
+              location: "",
+              startDate: "",
+              endDate: "",
+              status: "",
+            } as FavoriteEvent,
+          ];
+
       updateSharedFavorites(newFavorites);
-      
+
       // Refresh to get complete data
       await fetchFavorites();
-      
+
       return { success: true, data: result };
     } catch (err: any) {
-      console.error('Error adding to favorites:', err);
-      return { 
-        success: false, 
-        error: err?.response?.data?.message || 'Failed to add to favorites' 
+      console.error("Error adding to favorites:", err);
+      return {
+        success: false,
+        error: err?.response?.data?.message || "Failed to add to favorites",
       };
     } finally {
       setOperationLoading(null);
@@ -112,19 +116,22 @@ export const useFavorites = () => {
     setOperationLoading(eventId);
     try {
       await favoritesApi.removeFromFavorites(eventId);
-      
+
       // Immediately update shared state - this will notify all listeners
-      const newFavorites = sharedFavorites.filter(event => event._id !== eventId);
+      const newFavorites = sharedFavorites.filter(
+        (event) => event._id !== eventId
+      );
       updateSharedFavorites(newFavorites);
-      
+
       return { success: true };
     } catch (err: any) {
-      console.error('Error removing from favorites:', err);
+      console.error("Error removing from favorites:", err);
       // Revert on error
       await fetchFavorites();
-      return { 
-        success: false, 
-        error: err?.response?.data?.message || 'Failed to remove from favorites' 
+      return {
+        success: false,
+        error:
+          err?.response?.data?.message || "Failed to remove from favorites",
       };
     } finally {
       setOperationLoading(null);
@@ -132,17 +139,26 @@ export const useFavorites = () => {
   };
 
   // Check if an event is in favorites
-  const isFavorite = useCallback((eventId: string): boolean => {
-    return favorites.some(fav => fav._id === eventId);
-  }, [favorites]);
+  const isFavorite = useCallback(
+    (eventId: string): boolean => {
+      return favorites.some((fav) => fav._id === eventId);
+    },
+    [favorites]
+  );
 
   // Check if a specific event operation is loading
-  const isEventLoading = useCallback((eventId: string): boolean => {
-    return operationLoading === eventId;
-  }, [operationLoading]);
+  const isEventLoading = useCallback(
+    (eventId: string): boolean => {
+      return operationLoading === eventId;
+    },
+    [operationLoading]
+  );
 
   // Toggle favorite status
-  const toggleFavorite = async (eventId: string, isCurrentlyFavorite: boolean) => {
+  const toggleFavorite = async (
+    eventId: string,
+    isCurrentlyFavorite: boolean
+  ) => {
     if (isCurrentlyFavorite) {
       return await removeFromFavorites(eventId);
     } else {

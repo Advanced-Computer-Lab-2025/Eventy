@@ -67,11 +67,12 @@ export default function Login() {
       }, 1000); // small delay so toast shows briefly
     } catch (err: any) {
       // Handle specific verification error message
-      const errorMessage = err.message || "Something went wrong. Please try again.";
-      
+      const errorMessage =
+        err.message || "Something went wrong. Please try again.";
+
       // Check if it's a verification error, null pointer error, or other specific cases
       if (
-        errorMessage.includes("verified yet") || 
+        errorMessage.includes("verified yet") ||
         errorMessage.includes("verification") ||
         errorMessage.includes("Cannot read properties of null") ||
         errorMessage.includes("toLowerCase")

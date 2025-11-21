@@ -27,7 +27,8 @@ export default function CreateBazaar() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
 
-  const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_BASE_URL =
+    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,32 +39,52 @@ export default function CreateBazaar() {
       // Validate date logic: no past start, and end after start
       const now = new Date();
       const start = formData.startDate
-        ? new Date(`${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`)
+        ? new Date(
+            `${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`
+          )
         : null;
       const end = formData.endDate
-        ? new Date(`${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`)
+        ? new Date(
+            `${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`
+          )
         : null;
       if (!start || isNaN(start.getTime())) {
         setError("Please provide a valid start date/time.");
-        toast({ title: "Invalid start date", description: "Please provide a valid start date/time.", variant: "destructive" });
+        toast({
+          title: "Invalid start date",
+          description: "Please provide a valid start date/time.",
+          variant: "destructive",
+        });
         setSubmitting(false);
         return;
       }
       if (start < now) {
         setError("Bazaar start date/time cannot be in the past.");
-        toast({ title: "Start date in the past", description: "Bazaar start date/time cannot be in the past.", variant: "destructive" });
+        toast({
+          title: "Start date in the past",
+          description: "Bazaar start date/time cannot be in the past.",
+          variant: "destructive",
+        });
         setSubmitting(false);
         return;
       }
       if (!end || isNaN(end.getTime())) {
         setError("Please provide a valid end date/time.");
-        toast({ title: "Invalid end date", description: "Please provide a valid end date/time.", variant: "destructive" });
+        toast({
+          title: "Invalid end date",
+          description: "Please provide a valid end date/time.",
+          variant: "destructive",
+        });
         setSubmitting(false);
         return;
       }
       if (end <= start) {
         setError("End date/time must be after start date/time.");
-        toast({ title: "Invalid date range", description: "End date/time must be after start date/time.", variant: "destructive" });
+        toast({
+          title: "Invalid date range",
+          description: "End date/time must be after start date/time.",
+          variant: "destructive",
+        });
         setSubmitting(false);
         return;
       }
@@ -94,7 +115,11 @@ export default function CreateBazaar() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || (editingId ? "Failed to update bazaar" : "Failed to create bazaar"));
+      if (!res.ok)
+        throw new Error(
+          data.message ||
+            (editingId ? "Failed to update bazaar" : "Failed to create bazaar")
+        );
 
       setLocation("/events-office/dashboard");
     } catch (err: any) {
@@ -116,20 +141,25 @@ export default function CreateBazaar() {
         setError("");
         const token = localStorage.getItem("token");
         // events_office may not have access to GET /api/events/:id, so use search and filter by id
-        const res = await fetch(`${API_BASE_URL}/api/events/search?type=bazaar`, {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/search?type=bazaar`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }
+        );
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || "Failed to load bazaar");
         const list = data.data || [];
         const b = list.find((ev: any) => ev._id === id);
         if (!b) throw new Error("Bazaar not found");
-        const toDate = (iso?: string) => (iso ? new Date(iso).toISOString().slice(0, 10) : "");
-        const toTime = (iso?: string) => (iso ? new Date(iso).toISOString().slice(11, 16) : "");
+        const toDate = (iso?: string) =>
+          iso ? new Date(iso).toISOString().slice(0, 10) : "";
+        const toTime = (iso?: string) =>
+          iso ? new Date(iso).toISOString().slice(11, 16) : "";
         setFormData({
           name: b.name || "",
           location: b.location || "",
@@ -152,22 +182,34 @@ export default function CreateBazaar() {
   return (
     <div className="min-h-screen bg-background">
       <EventsOfficeHeader />
-      
+
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">{editingId ? "Edit Bazaar" : "Create Bazaar"}</h1>
-          <p className="text-muted-foreground">{editingId ? "Update the bazaar details" : "Set up a new bazaar event for vendors"}</p>
-          {loadingExisting && <p className="text-sm text-muted-foreground">Loading bazaar...</p>}
+          <h1 className="text-4xl font-bold mb-2">
+            {editingId ? "Edit Bazaar" : "Create Bazaar"}
+          </h1>
+          <p className="text-muted-foreground">
+            {editingId
+              ? "Update the bazaar details"
+              : "Set up a new bazaar event for vendors"}
+          </p>
+          {loadingExisting && (
+            <p className="text-sm text-muted-foreground">Loading bazaar...</p>
+          )}
         </div>
 
         <form onSubmit={handleSubmit}>
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle>{editingId ? "Bazaar Details (Edit)" : "Bazaar Details"}</CardTitle>
+              <CardTitle>
+                {editingId ? "Bazaar Details (Edit)" : "Bazaar Details"}
+              </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {error && (
-                <div className="text-red-500" role="alert">{error}</div>
+                <div className="text-red-500" role="alert">
+                  {error}
+                </div>
               )}
               <div className="space-y-2">
                 <Label htmlFor="name">Bazaar Name</Label>
@@ -175,7 +217,9 @@ export default function CreateBazaar() {
                   id="name"
                   placeholder="e.g., Spring Festival Bazaar"
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
                   data-testid="input-bazaar-name"
                   required
                 />
@@ -190,7 +234,9 @@ export default function CreateBazaar() {
                     placeholder="e.g., University Courtyard"
                     className="pl-10"
                     value={formData.location}
-                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
                     data-testid="input-location"
                     required
                   />
@@ -207,7 +253,9 @@ export default function CreateBazaar() {
                       type="date"
                       className="pl-10"
                       value={formData.startDate}
-                      onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startDate: e.target.value })
+                      }
                       data-testid="input-start-date"
                       required
                     />
@@ -220,7 +268,9 @@ export default function CreateBazaar() {
                     id="startTime"
                     type="time"
                     value={formData.startTime}
-                    onChange={(e) => setFormData({ ...formData, startTime: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startTime: e.target.value })
+                    }
                     data-testid="input-start-time"
                     required
                   />
@@ -237,7 +287,9 @@ export default function CreateBazaar() {
                       type="date"
                       className="pl-10"
                       value={formData.endDate}
-                      onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endDate: e.target.value })
+                      }
                       data-testid="input-end-date"
                       required
                     />
@@ -250,7 +302,9 @@ export default function CreateBazaar() {
                     id="endTime"
                     type="time"
                     value={formData.endTime}
-                    onChange={(e) => setFormData({ ...formData, endTime: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endTime: e.target.value })
+                    }
                     data-testid="input-end-time"
                     required
                   />
@@ -264,7 +318,9 @@ export default function CreateBazaar() {
                   placeholder="Brief description of the bazaar..."
                   rows={4}
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   data-testid="input-description"
                   required
                 />
@@ -276,7 +332,9 @@ export default function CreateBazaar() {
                   id="deadline"
                   type="date"
                   value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, deadline: e.target.value })
+                  }
                   data-testid="input-deadline"
                   required
                 />
@@ -293,8 +351,19 @@ export default function CreateBazaar() {
             >
               Cancel
             </Button>
-            <Button type="submit" className="flex-1" data-testid="button-submit-bazaar" disabled={submitting}>
-              {submitting ? (editingId ? "Updating..." : "Creating...") : (editingId ? "Update Bazaar" : "Create Bazaar")}
+            <Button
+              type="submit"
+              className="flex-1"
+              data-testid="button-submit-bazaar"
+              disabled={submitting}
+            >
+              {submitting
+                ? editingId
+                  ? "Updating..."
+                  : "Creating..."
+                : editingId
+                  ? "Update Bazaar"
+                  : "Create Bazaar"}
             </Button>
           </div>
         </form>

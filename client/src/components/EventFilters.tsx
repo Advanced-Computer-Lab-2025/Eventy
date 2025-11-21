@@ -42,10 +42,10 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
           <div className="space-y-2">
             {categories.map((category) => (
               <div key={category.id} className="flex items-center gap-2">
-                <Checkbox 
+                <Checkbox
                   id={category.id}
                   data-testid={`checkbox-category-${category.id}`}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     console.log(`${category.label}: ${checked}`)
                   }
                 />
@@ -65,10 +65,10 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
           <div className="space-y-2">
             {locations.map((location) => (
               <div key={location.id} className="flex items-center gap-2">
-                <Checkbox 
+                <Checkbox
                   id={location.id}
                   data-testid={`checkbox-location-${location.id}`}
-                  onCheckedChange={(checked) => 
+                  onCheckedChange={(checked) =>
                     console.log(`${location.label}: ${checked}`)
                   }
                 />
@@ -80,8 +80,8 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
           </div>
         </div>
 
-        <Button 
-          variant="outline" 
+        <Button
+          variant="outline"
           className="w-full"
           data-testid="button-clear-filters"
         >

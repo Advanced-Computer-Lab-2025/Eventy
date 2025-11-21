@@ -3,14 +3,23 @@ import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface Props {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function CreatePrivilegedUserForm({ onSuccess, onCancel }: Props) {
+export default function CreatePrivilegedUserForm({
+  onSuccess,
+  onCancel,
+}: Props) {
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -39,7 +48,9 @@ export default function CreatePrivilegedUserForm({ onSuccess, onCancel }: Props)
       );
       if (onSuccess) onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || err.message || "Failed to create account");
+      setError(
+        err.response?.data?.message || err.message || "Failed to create account"
+      );
     } finally {
       setSubmitting(false);
     }
@@ -87,7 +98,9 @@ export default function CreatePrivilegedUserForm({ onSuccess, onCancel }: Props)
         <Label htmlFor="role">Role</Label>
         <Select
           value={form.role}
-          onValueChange={(value: "admin" | "events_office") => setForm({ ...form, role: value })}
+          onValueChange={(value: "admin" | "events_office") =>
+            setForm({ ...form, role: value })
+          }
         >
           <SelectTrigger id="role">
             <SelectValue />
@@ -111,7 +124,12 @@ export default function CreatePrivilegedUserForm({ onSuccess, onCancel }: Props)
       </div>
 
       <div className="flex justify-end gap-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={submitting}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={submitting}
+        >
           Cancel
         </Button>
         <Button type="submit" disabled={submitting}>

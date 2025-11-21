@@ -18,7 +18,22 @@ router.get(
   )
 );
 
-router.get("/gym/sessions", authMiddleware, facilitiesController.getGymSessions.bind(facilitiesController));
+router.get(
+  "/gym/sessions",
+  authMiddleware,
+  facilitiesController.getGymSessions.bind(facilitiesController)
+);
+
+/**
+ * @route   POST /api/facilities/courts/reserve
+ * @desc    Reserve a court for a specific time slot
+ * @access  Private (Students only)
+ */
+router.post(
+  "/courts/reserve",
+  authMiddleware,
+  facilitiesController.reserveCourt.bind(facilitiesController)
+);
 
 /**
  * @route   POST /api/facilities/admin/gym/sessions

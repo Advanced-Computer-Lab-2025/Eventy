@@ -1,12 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
-import {
-  Calendar,
-  Clock,
-  Users,
-  DollarSign,
-  AlertCircle,
-} from "lucide-react";
+import { Calendar, Clock, Users, DollarSign, AlertCircle } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -165,7 +159,9 @@ export default function EditWorkshop() {
       setRevisionComments(workshop.revisionComments || "");
     } catch (err) {
       console.error(err);
-      setErrorMsg(err instanceof Error ? err.message : "Failed to load workshop");
+      setErrorMsg(
+        err instanceof Error ? err.message : "Failed to load workshop"
+      );
       toast({
         title: "Error",
         description: "Failed to load workshop details",
@@ -227,7 +223,8 @@ export default function EditWorkshop() {
 
       toast({
         title: "Workshop Updated",
-        description: "Your workshop has been successfully updated and is pending re-approval.",
+        description:
+          "Your workshop has been successfully updated and is pending re-approval.",
       });
 
       setTimeout(() => setLocation("/professor/workshops"), 1500);
@@ -236,7 +233,8 @@ export default function EditWorkshop() {
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to update workshop",
+        description:
+          error instanceof Error ? error.message : "Failed to update workshop",
         variant: "destructive",
       });
     } finally {
@@ -249,7 +247,9 @@ export default function EditWorkshop() {
       <div className="min-h-screen bg-background">
         <ProfessorHeader />
         <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="text-muted-foreground">Loading workshop details...</div>
+          <div className="text-muted-foreground">
+            Loading workshop details...
+          </div>
         </div>
       </div>
     );
@@ -287,7 +287,9 @@ export default function EditWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Workshop Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="name">
+                  Workshop Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="name"
                   placeholder="e.g., Advanced Machine Learning"
@@ -301,7 +303,9 @@ export default function EditWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Location <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.location}
                     onValueChange={(value) =>
@@ -319,7 +323,9 @@ export default function EditWorkshop() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faculty Responsible <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Faculty Responsible <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.faculty}
                     onValueChange={(value) =>
@@ -342,13 +348,15 @@ export default function EditWorkshop() {
               {/* Start & End */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startDate">
+                    Start Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="startDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
@@ -362,7 +370,9 @@ export default function EditWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startTime">
+                    Start Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -384,13 +394,15 @@ export default function EditWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endDate">
+                    End Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="endDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
@@ -404,7 +416,9 @@ export default function EditWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endTime">
+                    End Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -433,7 +447,9 @@ export default function EditWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   placeholder="Brief overview of the workshop..."
@@ -447,7 +463,9 @@ export default function EditWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="agenda">Full Agenda <span className="text-red-500">*</span></Label>
+                <Label htmlFor="agenda">
+                  Full Agenda <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="agenda"
                   placeholder="Detailed workshop agenda..."
@@ -462,7 +480,10 @@ export default function EditWorkshop() {
 
               {/* Professors multi-select */}
               <div className="space-y-2">
-                <Label>Professor(s) Participating <span className="text-red-500">*</span></Label>
+                <Label>
+                  Professor(s) Participating{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
                   {professorsOptions.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -484,7 +505,10 @@ export default function EditWorkshop() {
                             }
                           }}
                         />
-                        <Label htmlFor={p.id} className="text-sm cursor-pointer">
+                        <Label
+                          htmlFor={p.id}
+                          className="text-sm cursor-pointer"
+                        >
                           {p.name}{" "}
                           <span className="text-muted-foreground text-xs">
                             ({p.email})
@@ -506,7 +530,9 @@ export default function EditWorkshop() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Required Budget <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="budget">
+                    Required Budget <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -523,7 +549,9 @@ export default function EditWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Funding Source <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Funding Source <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.fundingSource}
                     onValueChange={(value) =>
@@ -542,7 +570,9 @@ export default function EditWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="resources">Extra Resources <span className="text-red-500">*</span></Label>
+                <Label htmlFor="resources">
+                  Extra Resources <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="resources"
                   placeholder="e.g., Projector, laptops..."
@@ -557,7 +587,9 @@ export default function EditWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacity <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="capacity">
+                    Capacity <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -574,13 +606,16 @@ export default function EditWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">Registration Deadline <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="deadline">
+                    Registration Deadline{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="deadline"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.deadline}
                       onChange={(e) =>
                         setFormData({ ...formData, deadline: e.target.value })

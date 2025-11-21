@@ -1,11 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Calendar,
-  Clock,
-  Users,
-  DollarSign
-} from "lucide-react";
+import { Calendar, Clock, Users, DollarSign } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,15 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-
-// ✅ Toast imports
-import {
-  ToastProvider,
-  Toast,
-  ToastTitle,
-  ToastDescription,
-  ToastViewport,
-} from "@/components/ui/toast";
+import { useToast } from "@/hooks/use-toast";
 
 interface WorkshopFormData {
   name: string;
@@ -45,6 +32,7 @@ interface WorkshopFormData {
   resources: string;
   capacity: string;
   deadline: string;
+  price: string;
 }
 
 export default function CreateWorkshop() {
@@ -65,6 +53,7 @@ export default function CreateWorkshop() {
     resources: "",
     capacity: "",
     deadline: "",
+    price: "",
   });
 
   const [professorsOptions, setProfessorsOptions] = useState<
@@ -73,10 +62,7 @@ export default function CreateWorkshop() {
 
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-
-  // ✅ Toast state
-  const [toastOpen, setToastOpen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -84,7 +70,9 @@ export default function CreateWorkshop() {
 
     (async () => {
       try {
-        const res = await fetch("http://localhost:4000/api/users/professors", {
+        const baseUrl =
+          (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
@@ -109,11 +97,16 @@ export default function CreateWorkshop() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
-    setErrorMsg("");
 
     try {
       if (selectedProfessors.length === 0) {
-        throw new Error("Please select at least one professor.");
+        toast({
+          title: "Validation Error",
+          description: "Please select at least one professor.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
       }
 
       const workshopData = {
@@ -132,12 +125,23 @@ export default function CreateWorkshop() {
         extraResources: formData.resources,
         capacity: Number(formData.capacity),
         registrationDeadline: formData.deadline,
+        price: Number(formData.price),
       };
 
       const token = localStorage.getItem("token");
-      if (!token) throw new Error("Not authenticated. Please log in first.");
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in first.",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
-      const res = await fetch("http://localhost:4000/api/events/workshops", {
+      const baseUrl =
+        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+      const res = await fetch(`${baseUrl}/api/events/workshops`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,14 +156,21 @@ export default function CreateWorkshop() {
         throw new Error(data.message || "Failed to create workshop");
       }
 
-      // ✅ Success toast instead of alert
-      setToastOpen(true);
+      toast({
+        title: "Workshop Created! 🎉",
+        description:
+          "Your workshop has been successfully submitted for approval.",
+      });
 
-      // Navigate after toast appears
-      setTimeout(() => setLocation("/professor/workshops"), 2000);
+      setTimeout(() => setLocation("/professor/workshops"), 1500);
     } catch (error) {
       console.error(error);
-      setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to create workshop",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -175,7 +186,6 @@ export default function CreateWorkshop() {
           <p className="text-muted-foreground">
             Fill in the details to create a new workshop
           </p>
-          {errorMsg && <p className="text-red-500 text-sm mt-2">{errorMsg}</p>}
         </div>
 
         <form onSubmit={handleSubmit}>
@@ -186,7 +196,9 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Workshop Name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="name">
+                  Workshop Name <span className="text-red-500">*</span>
+                </Label>
                 <Input
                   id="name"
                   placeholder="e.g., Advanced Machine Learning"
@@ -200,7 +212,9 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Location <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Location <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.location}
                     onValueChange={(value) =>
@@ -218,7 +232,9 @@ export default function CreateWorkshop() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Faculty Responsible <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Faculty Responsible <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.faculty}
                     onValueChange={(value) =>
@@ -241,13 +257,15 @@ export default function CreateWorkshop() {
               {/* Start & End */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="startDate">Start Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startDate">
+                    Start Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="startDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
@@ -261,7 +279,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="startTime">Start Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="startTime">
+                    Start Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -283,13 +303,15 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="endDate">End Date <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endDate">
+                    End Date <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="endDate"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
@@ -303,7 +325,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="endTime">End Time <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="endTime">
+                    End Time <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
@@ -332,7 +356,9 @@ export default function CreateWorkshop() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="description">Description <span className="text-red-500">*</span></Label>
+                <Label htmlFor="description">
+                  Description <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="description"
                   placeholder="Brief overview of the workshop..."
@@ -346,7 +372,9 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="agenda">Full Agenda <span className="text-red-500">*</span></Label>
+                <Label htmlFor="agenda">
+                  Full Agenda <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="agenda"
                   placeholder="Detailed workshop agenda..."
@@ -361,7 +389,10 @@ export default function CreateWorkshop() {
 
               {/* Professors multi-select */}
               <div className="space-y-2">
-                <Label>Professor(s) Participating <span className="text-red-500">*</span></Label>
+                <Label>
+                  Professor(s) Participating{" "}
+                  <span className="text-red-500">*</span>
+                </Label>
                 <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
                   {professorsOptions.length === 0 ? (
                     <p className="text-sm text-muted-foreground">
@@ -383,7 +414,10 @@ export default function CreateWorkshop() {
                             }
                           }}
                         />
-                        <Label htmlFor={p.id} className="text-sm cursor-pointer">
+                        <Label
+                          htmlFor={p.id}
+                          className="text-sm cursor-pointer"
+                        >
                           {p.name}{" "}
                           <span className="text-muted-foreground text-xs">
                             ({p.email})
@@ -405,7 +439,9 @@ export default function CreateWorkshop() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="budget">Required Budget <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="budget">
+                    Required Budget <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -422,7 +458,9 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label>Funding Source <span className="text-red-500">*</span></Label>
+                  <Label>
+                    Funding Source <span className="text-red-500">*</span>
+                  </Label>
                   <Select
                     value={formData.fundingSource}
                     onValueChange={(value) =>
@@ -441,7 +479,29 @@ export default function CreateWorkshop() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="resources">Extra Resources <span className="text-red-500">*</span></Label>
+                <Label htmlFor="price">
+                  Workshop Price <span className="text-red-500">*</span>
+                </Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
+                  <Input
+                    id="price"
+                    type="number"
+                    placeholder="100"
+                    className="pl-10"
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="resources">
+                  Extra Resources <span className="text-red-500">*</span>
+                </Label>
                 <Textarea
                   id="resources"
                   placeholder="e.g., Projector, laptops..."
@@ -456,7 +516,9 @@ export default function CreateWorkshop() {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="capacity">Capacity <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="capacity">
+                    Capacity <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                     <Input
@@ -473,13 +535,16 @@ export default function CreateWorkshop() {
                   </div>
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="deadline">Registration Deadline <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="deadline">
+                    Registration Deadline{" "}
+                    <span className="text-red-500">*</span>
+                  </Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="deadline"
                       type="date"
-                      min={new Date().toISOString().split('T')[0]}
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.deadline}
                       onChange={(e) =>
                         setFormData({ ...formData, deadline: e.target.value })
@@ -513,19 +578,6 @@ export default function CreateWorkshop() {
           </div>
         </form>
       </main>
-
-      {/* ✅ Toast Notification */}
-      <ToastProvider>
-        <Toast open={toastOpen} onOpenChange={setToastOpen}>
-          <div className="flex flex-col space-y-1">
-            <ToastTitle>Workshop Created 🎉</ToastTitle>
-            <ToastDescription>
-              Your workshop has been successfully submitted for approval!
-            </ToastDescription>
-          </div>
-        </Toast>
-        <ToastViewport />
-      </ToastProvider>
     </div>
   );
 }

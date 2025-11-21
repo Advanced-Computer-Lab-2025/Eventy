@@ -9,7 +9,8 @@ import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import { getEventImage } from "@/lib/eventImages";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface Conference {
   _id: string;
@@ -31,27 +32,32 @@ export default function AdminDashboardPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
-  const [totalUpcomingCount, setTotalUpcomingCount] = useState<number | null>(null);
+  const [totalUpcomingCount, setTotalUpcomingCount] = useState<number | null>(
+    null
+  );
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
   const [eventTypeFilter, setEventTypeFilter] = useState<
-    'all' | 'bazaar' | 'trip' | 'workshop' | 'conference' | 'platform_booth'
-  >('all');
-  
+    "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
+  >("all");
 
   useEffect(() => {
     const fetchConferences = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/admin/conferences`,
+          {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }
+        );
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch conferences");
+        if (!res.ok)
+          throw new Error(data.message || "Failed to fetch conferences");
 
         setConferences(data.data || []);
       } catch (err: any) {
@@ -82,10 +88,13 @@ export default function AdminDashboardPage() {
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           const text = await res.text();
-          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
+          throw new Error(
+            `Unexpected response. Preview: ${text.substring(0, 60)}...`
+          );
         }
         const body = await res.json();
-        if (!res.ok) throw new Error(body.message || "Failed to fetch upcoming events");
+        if (!res.ok)
+          throw new Error(body.message || "Failed to fetch upcoming events");
         const eventsList = Array.isArray(body.data) ? body.data : body;
         setUpcomingEvents(eventsList);
         setTotalUpcomingCount(eventsList.length);
@@ -115,10 +124,13 @@ export default function AdminDashboardPage() {
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           const text = await res.text();
-          throw new Error(`Unexpected response. Preview: ${text.substring(0, 60)}...`);
+          throw new Error(
+            `Unexpected response. Preview: ${text.substring(0, 60)}...`
+          );
         }
         const body = await res.json();
-        if (!res.ok) throw new Error(body.message || "Failed to fetch approved events");
+        if (!res.ok)
+          throw new Error(body.message || "Failed to fetch approved events");
         const list = Array.isArray(body.data) ? body.data : body;
         setApprovedEventsCount(Array.isArray(list) ? list.length : 0);
       } catch (err) {
@@ -135,7 +147,10 @@ export default function AdminDashboardPage() {
   };
 
   const formatTime = (dateString: string) => {
-    return new Date(dateString).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return new Date(dateString).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   return (
@@ -152,20 +167,24 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
-          <StatCard 
-            title="Budget Requested (EGP)" 
-            value={(conferences.reduce((sum, c) => sum + (c.requiredBudget || 0), 0)).toLocaleString()} 
-            icon={TrendingUp} 
+          <StatCard
+            title="Budget Requested (EGP)"
+            value={conferences
+              .reduce((sum, c) => sum + (c.requiredBudget || 0), 0)
+              .toLocaleString()}
+            icon={TrendingUp}
           />
-          <StatCard 
-            title="Upcoming Events" 
-            value={totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()} 
-            icon={Calendar} 
+          <StatCard
+            title="Upcoming Events"
+            value={
+              totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()
+            }
+            icon={Calendar}
           />
-          <StatCard 
-            title="Approved Events" 
-            value={approvedLoading ? "-" : approvedEventsCount.toString()} 
-            icon={TrendingUp} 
+          <StatCard
+            title="Approved Events"
+            value={approvedLoading ? "-" : approvedEventsCount.toString()}
+            icon={TrendingUp}
           />
         </div>
 
@@ -176,7 +195,9 @@ export default function AdminDashboardPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Upcoming Events</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">Curated upcoming events across all categories</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Curated upcoming events across all categories
+                    </p>
                   </div>
                   {!eventsLoading && (
                     <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground border">
@@ -188,17 +209,21 @@ export default function AdminDashboardPage() {
               <CardContent className="space-y-6">
                 <div className="flex flex-wrap gap-2">
                   {[
-                    { key: 'all', label: 'All' },
-                    { key: 'bazaar', label: 'Bazaars' },
-                    { key: 'trip', label: 'Trips' },
-                    { key: 'workshop', label: 'Workshops' },
-                    { key: 'conference', label: 'Conferences' },
-                    { key: 'platform_booth', label: 'Platform Booths' },
+                    { key: "all", label: "All" },
+                    { key: "bazaar", label: "Bazaars" },
+                    { key: "trip", label: "Trips" },
+                    { key: "workshop", label: "Workshops" },
+                    { key: "conference", label: "Conferences" },
+                    { key: "platform_booth", label: "Platform Booths" },
                   ].map((opt) => (
                     <Button
                       key={opt.key}
                       size="sm"
-                      variant={eventTypeFilter === (opt.key as any) ? 'default' : 'outline'}
+                      variant={
+                        eventTypeFilter === (opt.key as any)
+                          ? "default"
+                          : "outline"
+                      }
                       onClick={() => setEventTypeFilter(opt.key as any)}
                     >
                       {opt.label}
@@ -214,15 +239,25 @@ export default function AdminDashboardPage() {
                 />
 
                 {eventsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">Loading upcoming events...</div>
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading upcoming events...
+                  </div>
                 ) : eventsError ? (
-                  <div className="text-center py-8 text-red-600">{eventsError}</div>
+                  <div className="text-center py-8 text-red-600">
+                    {eventsError}
+                  </div>
                 ) : upcomingEvents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">No upcoming events found.</div>
+                  <div className="text-center py-8 text-muted-foreground">
+                    No upcoming events found.
+                  </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
                     {upcomingEvents
-                      .filter((e: any) => eventTypeFilter === 'all' ? true : e.eventType === eventTypeFilter)
+                      .filter((e: any) =>
+                        eventTypeFilter === "all"
+                          ? true
+                          : e.eventType === eventTypeFilter
+                      )
                       .slice(0, 6)
                       .map((e: any, index: number) => (
                         <div key={e._id || index} className="h-full">
@@ -231,16 +266,42 @@ export default function AdminDashboardPage() {
                             id={e._id || String(index)}
                             title={e.name || "Untitled Event"}
                             category={(e.eventType || "academic") as any}
-                            date={e.startDate ? new Date(e.startDate).toLocaleDateString("en-US", {
-                              weekday: "short",
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            }) : "TBA"}
-                            time={e.startDate ? new Date(e.startDate).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: true }) : "TBA"}
+                            date={
+                              e.startDate
+                                ? new Date(e.startDate).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      weekday: "short",
+                                      month: "long",
+                                      day: "numeric",
+                                      year: "numeric",
+                                    }
+                                  )
+                                : "TBA"
+                            }
+                            time={
+                              e.startDate
+                                ? new Date(e.startDate).toLocaleTimeString(
+                                    "en-US",
+                                    {
+                                      hour: "2-digit",
+                                      minute: "2-digit",
+                                      hour12: true,
+                                    }
+                                  )
+                                : "TBA"
+                            }
                             location={e.location || "Unknown location"}
-                            attendees={Array.isArray(e.attendees) ? e.attendees.length : (e.attendeesCount || 0)}
-                            image={e.bannerImage || e.image || getEventImage(e.eventType, e.name)}
+                            attendees={
+                              Array.isArray(e.attendees)
+                                ? e.attendees.length
+                                : e.attendeesCount || 0
+                            }
+                            image={
+                              e.bannerImage ||
+                              e.image ||
+                              getEventImage(e.eventType, e.name)
+                            }
                             description={e.description}
                             startDate={e.startDate}
                             endDate={e.endDate}
@@ -262,25 +323,25 @@ export default function AdminDashboardPage() {
                 <CardTitle>Quick Actions</CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Button 
-                  className="w-full" 
-                  variant="outline" 
+                <Button
+                  className="w-full"
+                  variant="outline"
                   onClick={() => setLocation("/admin/users")}
                 >
                   <UserCheck className="h-4 w-4 mr-2" />
                   Manage Users
                 </Button>
-                <Button 
-                  className="w-full" 
-                  variant="outline" 
+                <Button
+                  className="w-full"
+                  variant="outline"
                   onClick={() => setLocation("/vendor-requests")}
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Vendor Requests
                 </Button>
-                <Button 
-                  className="w-full" 
-                  variant="outline" 
+                <Button
+                  className="w-full"
+                  variant="outline"
                   onClick={() => console.log("Settings")}
                 >
                   <Settings className="h-4 w-4 mr-2" />

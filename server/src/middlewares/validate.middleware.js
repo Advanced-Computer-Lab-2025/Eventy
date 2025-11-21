@@ -1,9 +1,7 @@
 // src/middlewares/validate.middleware.js
-import ApiError from '../utils/ApiError.js';
+import ApiError from "../utils/ApiError.js";
 
-
-
-const validate = (schema, property = 'body') => {
+const validate = (schema, property = "body") => {
   return (req, res, next) => {
     if (!schema) return next();
 

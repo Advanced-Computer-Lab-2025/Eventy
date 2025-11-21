@@ -23,8 +23,8 @@ export default function QuickActions({
         <CardTitle>Quick Actions</CardTitle>
       </CardHeader>
       <CardContent className="space-y-2">
-        <Button 
-          className="w-full justify-start gap-2" 
+        <Button
+          className="w-full justify-start gap-2"
           onClick={onCreateEvent}
           data-testid="button-create-event"
         >

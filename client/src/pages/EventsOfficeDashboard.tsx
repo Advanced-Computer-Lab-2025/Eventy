@@ -2,10 +2,34 @@ import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CalendarDays, CheckCircle2, Clock, Plus, Calendar, Edit, Search, AlertCircle, X, ClipboardList, Dumbbell } from "lucide-react";
+import {
+  CalendarDays,
+  CheckCircle2,
+  Clock,
+  Plus,
+  Calendar,
+  Edit,
+  Search,
+  AlertCircle,
+  X,
+  ClipboardList,
+  Dumbbell,
+  Store,
+  Plane,
+  Archive,
+  FileText,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
@@ -13,8 +37,10 @@ import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
+import { useToast } from "@/hooks/use-toast";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface Bazaar {
   _id: string;
@@ -28,6 +54,7 @@ interface Bazaar {
 }
 
 export default function EventsOfficeDashboard() {
+  const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [bazaars, setBazaars] = useState<Bazaar[]>([]);
   const [loadingBazaars, setLoadingBazaars] = useState(true);
@@ -43,12 +70,35 @@ export default function EventsOfficeDashboard() {
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [upcomingError, setUpcomingError] = useState("");
   const [eventTypeFilter, setEventTypeFilter] = useState<
-    'all' | 'bazaar' | 'trip' | 'workshop' | 'conference' | 'platform_booth'
-  >('all');
+    "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
+  >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
+  const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
+
+  // Past events states
+  const [pastEvents, setPastEvents] = useState<any[]>([]);
+  const [pastEventsLoading, setPastEventsLoading] = useState(false);
+  const [pastEventsError, setPastEventsError] = useState("");
+  const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [pastEventSearch, setPastEventSearch] = useState("");
+
+  // Extra totals
+  const [totalTrips, setTotalTrips] = useState<number | null>(null);
+  const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
+  const [totalBooths, setTotalBooths] = useState<number | null>(null);
+
+  const filteredPastEvents = pastEvents.filter((event: any) => {
+    const q = pastEventSearch.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      (event.name || "").toLowerCase().includes(q) ||
+      (event.eventType || "").toLowerCase().includes(q) ||
+      (event.location || "").toLowerCase().includes(q)
+    );
+  });
 
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -106,8 +156,11 @@ export default function EventsOfficeDashboard() {
       const data = await res.json();
       if (res.ok) {
         const workshops = Array.isArray(data.data) ? data.data : data;
-        const pendingCount = workshops.filter((w: any) => w.status === "pending").length;
+        const pendingCount = workshops.filter(
+          (w: any) => w.status === "pending"
+        ).length;
         setPendingWorkshops(pendingCount);
+        setTotalWorkshops(Array.isArray(workshops) ? workshops.length : 0);
         if (pendingCount > 0) {
           setShowWorkshopNotif(true);
         }
@@ -117,12 +170,39 @@ export default function EventsOfficeDashboard() {
     }
   };
 
+  const fetchCountByType = async (type: "trip" | "platform_booth") => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/search?type=${type}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Failed to fetch events");
+      const items = Array.isArray(data.data) ? data.data : [];
+      if (type === "trip") setTotalTrips(items.length);
+      if (type === "platform_booth") setTotalBooths(items.length);
+    } catch (e) {
+      if (type === "trip") setTotalTrips(0);
+      if (type === "platform_booth") setTotalBooths(0);
+    }
+  };
+
   const handleReminderLater = () => {
     setShowWorkshopNotif(false);
     // Remind after 5 minutes
-    const timeout = setTimeout(() => {
-      setShowWorkshopNotif(true);
-    }, 5 * 60 * 1000);
+    const timeout = setTimeout(
+      () => {
+        setShowWorkshopNotif(true);
+      },
+      5 * 60 * 1000
+    );
     setReminderTime(timeout);
   };
 
@@ -131,23 +211,97 @@ export default function EventsOfficeDashboard() {
     if (reminderTime) clearTimeout(reminderTime);
   };
 
+  const handleArchiveEvent = async (eventId: string) => {
+    try {
+      setArchivingId(eventId);
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}/archive`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to archive event");
+      }
+
+      // Remove the archived event from the past events list
+      setPastEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+
+      toast({
+        title: "Event archived",
+        description: "The event has been successfully archived.",
+      });
+    } catch (err: any) {
+      console.error("Error archiving event:", err);
+      toast({
+        title: "Failed to archive event",
+        description:
+          err.message || "An error occurred while archiving the event.",
+        variant: "destructive",
+      });
+    } finally {
+      setArchivingId(null);
+    }
+  };
+
+  const fetchPastEvents = async () => {
+    setPastEventsLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/past`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch past events");
+      }
+      const data = await res.json();
+      // Only keep non-archived events
+      const items = Array.isArray(data.data) ? data.data : [];
+      setPastEvents(items.filter((e: any) => e.status !== "archived"));
+    } catch (err: any) {
+      setPastEventsError(err.message || "Failed to fetch past events");
+      setPastEvents([]);
+    } finally {
+      setPastEventsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBazaars();
     fetchPendingWorkshops();
-
+    fetchPastEvents();
+    fetchCountByType("trip");
+    fetchCountByType("platform_booth");
     const fetchConferences = async () => {
       try {
         setLoadingConfs(true);
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/admin/conferences`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }
+        );
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch conferences");
+        if (!res.ok)
+          throw new Error(data.message || "Failed to fetch conferences");
         setConferences(Array.isArray(data.data) ? data.data : data);
       } catch (e) {
         setConferences([]);
@@ -167,9 +321,10 @@ export default function EventsOfficeDashboard() {
     let filtered = conferences;
     if (confSearch) {
       const q = confSearch.toLowerCase();
-      filtered = conferences.filter((c) =>
-        (c.name || "").toLowerCase().includes(q) ||
-        (c.description || "").toLowerCase().includes(q)
+      filtered = conferences.filter(
+        (c) =>
+          (c.name || "").toLowerCase().includes(q) ||
+          (c.description || "").toLowerCase().includes(q)
       );
     }
     setFilteredConfs(filtered);
@@ -184,7 +339,7 @@ export default function EventsOfficeDashboard() {
     startDate: b.startDate,
     endDate: b.endDate,
     registrationDeadline: b.registrationDeadline || b.endDate,
-    status: ((b.status || "approved") as any),
+    status: (b.status || "approved") as any,
     attendees: undefined,
     capacity: undefined,
     bannerImage: undefined,
@@ -195,95 +350,171 @@ export default function EventsOfficeDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <EventsOfficeHeader />
-      
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-          {/* Main Title and Info Section */}
-          <div className="lg:col-span-2">
-            <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
-            <p className="text-muted-foreground">
-              Create and manage bazaars, conferences, trips, and workshop approvals all in one place.
-            </p>
-            {/* Stats Row */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-              <StatCard
-                title="Total Bazaars"
-                value={loadingBazaars ? "-" : bazaars.length}
-                icon={CalendarDays}
-                themed
-              />
-              <StatCard
-                title="Total Events"
-                value={(loadingBazaars || loadingConfs) ? "-" : (bazaars.length + conferences.length)}
-                icon={Clock}
-                themed
-              />
-              <StatCard
-                title="Total Conferences"
-                value={loadingConfs ? "-" : conferences.length}
-                icon={CheckCircle2}
-                themed
-              />
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Events Office Dashboard</h1>
+          <p className="text-muted-foreground">
+            Create and manage bazaars, conferences, trips, and workshop
+            approvals all in one place.
+          </p>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
+            {/* Left: Stats in two rows */}
+            <div className="lg:col-span-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <StatCard
+                  title="Total Bazaars"
+                  value={loadingBazaars ? "-" : bazaars.length}
+                  icon={CalendarDays}
+                  themed
+                />
+                <StatCard
+                  title="Total Events"
+                  value={
+                    loadingBazaars || loadingConfs
+                      ? "-"
+                      : bazaars.length + conferences.length
+                  }
+                  icon={Clock}
+                  themed
+                />
+                <StatCard
+                  title="Total Conferences"
+                  value={loadingConfs ? "-" : conferences.length}
+                  icon={CheckCircle2}
+                  themed
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
+                <StatCard
+                  title="Total Trips"
+                  value={totalTrips == null ? "-" : totalTrips}
+                  icon={Calendar}
+                  themed
+                />
+                <StatCard
+                  title="Total Workshops"
+                  value={totalWorkshops == null ? "-" : totalWorkshops}
+                  icon={ClipboardList}
+                  themed
+                />
+                <StatCard
+                  title="Total Booths"
+                  value={totalBooths == null ? "-" : totalBooths}
+                  icon={Archive}
+                  themed
+                />
+              </div>
             </div>
+            {/* Right: Quick Actions Card */}
+            <div className="lg:col-span-1">
+              <Card className="h-full">
+                <CardHeader className="flex justify-center">
+                  <CardTitle className="text-center">Quick Actions</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-col items-center gap-3">
+                    <>
+                      <Button
+                        className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                        onClick={() => setIsCreateEventDialogOpen(true)}
+                        data-testid="button-header-create-event"
+                      >
+                        <Plus className="h-4 w-4" />
+                        <span className="text-xs sm:text-sm leading-tight text-center">
+                          Create Event
+                        </span>
+                      </Button>
+                      <Dialog
+                        open={isCreateEventDialogOpen}
+                        onOpenChange={setIsCreateEventDialogOpen}
+                      >
+                        <DialogContent className="max-w-sm">
+                          <DialogHeader>
+                            <DialogTitle>Create an event</DialogTitle>
+                            <DialogDescription>
+                              Choose which type of event to create
+                            </DialogDescription>
+                          </DialogHeader>
 
-          </div>
+                          <div className="grid gap-2 mt-4">
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/bazaar");
+                              }}
+                            >
+                              <Store className="h-4 w-4" />
+                              <span>Create Bazaar</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setIsCreateGymDialogOpen(true);
+                              }}
+                            >
+                              <Dumbbell className="h-4 w-4" />
+                              <span>Create Gym Session</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/events-office/create/conference");
+                              }}
+                            >
+                              <CalendarDays className="h-4 w-4" />
+                              <span>Create Conference</span>
+                            </Button>
+                            <Button
+                              className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
+                              onClick={() => {
+                                setIsCreateEventDialogOpen(false);
+                                setLocation("/create/trip");
+                              }}
+                            >
+                              <Plane className="h-4 w-4" />
+                              <span>Create Trip</span>
+                            </Button>
+                          </div>
 
-          {/* Action Buttons Card */}
-          <div className="lg:col-span-1">
-            <div className="space-y-6">
-            <Card className="h-full">
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setLocation("/create/bazaar")}
-                  data-testid="button-header-create-bazaar"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Bazaar
-                </button>
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setLocation("/events-office/create/conference")}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Conference
-                </button>
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setLocation("/create/trip")}
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Trip
-                </button>
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-primary text-primary-foreground px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setIsCreateGymDialogOpen(true)}
-                >
-                  <Dumbbell className="h-4 w-4" />
-                  Create Gym Session
-                </button>
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-amber-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setLocation("/approvals/workshops")}
-                >
-                  <CheckCircle2 className="h-4 w-4" />
-                  Workshop Approvals
-                </button>
-                <button
-                  className="w-full inline-flex items-center justify-center gap-2 rounded-md bg-indigo-600 text-white px-4 py-2 text-sm font-medium shadow hover:opacity-90"
-                  onClick={() => setLocation("/vendor-requests")}
-                  data-testid="button-quick-vendor-requests"
-                >
-                  <ClipboardList className="h-4 w-4" />
-                  Vendor Requests
-                </button>
-              </CardContent>
-            </Card>
-            {/* Sidebar kept for Quick Actions only */}
-          </div>
+                          <DialogFooter>
+                            <Button
+                              variant="outline"
+                              onClick={() => setIsCreateEventDialogOpen(false)}
+                            >
+                              Cancel
+                            </Button>
+                          </DialogFooter>
+                        </DialogContent>
+                      </Dialog>
+                    </>
+                    {/* Create Gym Session moved into Create Event dialog */}
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/approvals/workshops")}
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Workshop Approvals
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/vendor-requests")}
+                      data-testid="button-quick-vendor-requests"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Vendor Requests
+                      </span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 
@@ -296,9 +527,14 @@ export default function EventsOfficeDashboard() {
                   <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-300" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-100 mb-2">Pending Workshops</h3>
+                  <h3 className="font-semibold text-lg text-amber-900 dark:text-amber-100 mb-2">
+                    Pending Workshops
+                  </h3>
                   <p className="text-sm text-amber-800 dark:text-amber-200 mb-4">
-                    You have <span className="font-semibold">{pendingWorkshops}</span> workshop{pendingWorkshops !== 1 ? "s" : ""} awaiting approval.
+                    You have{" "}
+                    <span className="font-semibold">{pendingWorkshops}</span>{" "}
+                    workshop{pendingWorkshops !== 1 ? "s" : ""} awaiting
+                    approval.
                   </p>
                   <div className="flex gap-2 flex-wrap">
                     <Button
@@ -340,17 +576,21 @@ export default function EventsOfficeDashboard() {
             <CardContent className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {[
-                  { key: 'all', label: 'All' },
-                  { key: 'bazaar', label: 'Bazaars' },
-                  { key: 'trip', label: 'Trips' },
-                  { key: 'workshop', label: 'Workshops' },
-                  { key: 'conference', label: 'Conferences' },
-                  { key: 'platform_booth', label: 'Platform Booths' },
+                  { key: "all", label: "All" },
+                  { key: "bazaar", label: "Bazaars" },
+                  { key: "trip", label: "Trips" },
+                  { key: "workshop", label: "Workshops" },
+                  { key: "conference", label: "Conferences" },
+                  { key: "platform_booth", label: "Platform Booths" },
                 ].map((opt) => (
                   <Button
                     key={opt.key}
                     size="sm"
-                    variant={eventTypeFilter === (opt.key as any) ? 'default' : 'outline'}
+                    variant={
+                      eventTypeFilter === (opt.key as any)
+                        ? "default"
+                        : "outline"
+                    }
                     onClick={() => setEventTypeFilter(opt.key as any)}
                   >
                     {opt.label}
@@ -358,7 +598,16 @@ export default function EventsOfficeDashboard() {
                 ))}
               </div>
               <EventSearch
-                onSearchResults={(results) => setUpcomingEvents(results)}
+                onSearchResults={(results) => {
+                  // Filter to show only upcoming events
+                  const now = new Date();
+                  const upcomingEvts = results.filter((event: any) => {
+                    const eventEndDate = new Date(event.endDate);
+                    eventEndDate.setUTCHours(23, 59, 59, 999);
+                    return eventEndDate.getTime() >= now.getTime();
+                  });
+                  setUpcomingEvents(upcomingEvts);
+                }}
                 onLoading={(isLoading) => setUpcomingLoading(isLoading)}
                 onError={(msg) => setUpcomingError(msg)}
                 placeholder="Search events by name, professor, or type..."
@@ -370,46 +619,167 @@ export default function EventsOfficeDashboard() {
               ) : upcomingEvents.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">No upcoming events found</p>
-                  <p className="text-sm">Events will appear here as they are created</p>
+                  <p className="text-lg font-medium mb-2">
+                    No upcoming events found
+                  </p>
+                  <p className="text-sm">
+                    Events will appear here as they are created
+                  </p>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {upcomingEvents
-                    .filter((event: any) => eventTypeFilter === 'all' ? true : event.eventType === eventTypeFilter)
+                    .filter((event: any) =>
+                      eventTypeFilter === "all"
+                        ? true
+                        : event.eventType === eventTypeFilter
+                    )
                     .filter((event: any) => !event?.deletedAt)
                     .slice(0, 8)
                     .map((event: any, index: number) => (
-                    <EventCard
-                      key={event._id || index}
-                      id={event._id || String(index)}
-                      title={event.name || "Untitled Event"}
-                      category={(event.eventType || "academic") as any}
-                      date={event.startDate
-                        ? new Date(event.startDate).toLocaleDateString("en-US", {
-                            weekday: "short",
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "TBA"}
-                      time={event.startDate
-                        ? new Date(event.startDate).toLocaleTimeString("en-US", {
-                            hour: "2-digit",
-                            minute: "2-digit",
-                            hour12: true,
-                          })
-                        : "TBA"}
-                      location={event.location || "Unknown location"}
-                      attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
-                      image={event.bannerImage || event.image || getEventImage(event.eventType, event.name)}
-                      description={event.description}
-                      startDate={event.startDate}
-                      endDate={event.endDate}
-                      capacity={-1}
-                      vendors={event.vendors || []}
-                      showDetailedView={true}
-                    />
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={event.location || "Unknown location"}
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={
+                          event.bannerImage ||
+                          event.image ||
+                          getEventImage(event.eventType, event.name)
+                        }
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        capacity={-1}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                      />
+                    ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Past Events */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>Past Events</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="Search past events..."
+                  value={pastEventSearch}
+                  onChange={(e) => setPastEventSearch(e.target.value)}
+                  className="w-64"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => fetchPastEvents()}
+                >
+                  Refresh
+                </Button>
+              </div>
+              {pastEventsLoading ? (
+                <p>Loading past events...</p>
+              ) : pastEventsError ? (
+                <p className="text-red-500">{pastEventsError}</p>
+              ) : filteredPastEvents.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p className="text-lg font-medium mb-2">
+                    No past events found
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                  {filteredPastEvents.slice(0, 8).map((event: any) => (
+                    <div key={event._id} className="relative">
+                      <EventCard
+                        id={event._id}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={event.location || "Unknown location"}
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={
+                          event.bannerImage ||
+                          event.image ||
+                          getEventImage(event.eventType, event.name)
+                        }
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        capacity={-1}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                        canDelete={false}
+                        onArchive={() => handleArchiveEvent(event._id)}
+                        isArchiving={archivingId === event._id}
+                      />
+                    </div>
                   ))}
                 </div>
               )}
@@ -450,17 +820,32 @@ export default function EventsOfficeDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {filteredConfs.map((c: any) => (
-                    <div key={c._id} className="border rounded-lg p-4 flex flex-col gap-2">
-                      <div className="font-semibold line-clamp-2">{c.name || "Untitled Conference"}</div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">{c.description}</div>
+                    <div
+                      key={c._id}
+                      className="border rounded-lg p-4 flex flex-col gap-2"
+                    >
+                      <div className="font-semibold line-clamp-2">
+                        {c.name || "Untitled Conference"}
+                      </div>
+                      <div className="text-sm text-muted-foreground line-clamp-2">
+                        {c.description}
+                      </div>
                       <div className="text-xs text-muted-foreground">
-                        {c.startDate ? new Date(c.startDate).toLocaleString() : "TBA"}
-                        {c.endDate ? ` - ${new Date(c.endDate).toLocaleString()}` : ""}
+                        {c.startDate
+                          ? new Date(c.startDate).toLocaleString()
+                          : "TBA"}
+                        {c.endDate
+                          ? ` - ${new Date(c.endDate).toLocaleString()}`
+                          : ""}
                       </div>
                       <div className="pt-2">
                         <Button
                           variant="outline"
-                          onClick={() => setLocation(`/events-office/events/conference/edit/${c._id}`)}
+                          onClick={() =>
+                            setLocation(
+                              `/events-office/events/conference/edit/${c._id}`
+                            )
+                          }
                           className="w-full justify-center"
                         >
                           <Edit className="h-4 w-4 mr-2" /> Edit

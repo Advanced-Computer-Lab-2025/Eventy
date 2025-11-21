@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 import { User } from "./user.model.js";
 import {
   UserValidation,
@@ -6,7 +6,11 @@ import {
   toggleBlockUserSchema,
   favoriteEventSchema,
 } from "./user.validation.js";
-import { sendRegistrationEmail, sendVerificationEmail } from "../auth/email.service.js";
+import {
+  sendRegistrationEmail,
+  sendVerificationEmail,
+} from "../auth/email.service.js";
+
 import UserService from "./user.service.js";
 
 // Controller class — import this and call its static methods in routes
@@ -87,9 +91,9 @@ export default class UserController {
 
       user.role = role;
       await user.save();
-      
+
       // Send verification email for staff, TA, and professor roles
-      if (role === 'staff' || role === 'ta' || role === 'professor') {
+      if (role === "staff" || role === "ta" || role === "professor") {
         await sendVerificationEmail(user);
       } else {
         await sendRegistrationEmail(user);
@@ -153,8 +157,8 @@ export default class UserController {
       // Call service to handle the block/unblock logic
       const result = await UserService.toggleBlockStatus(
         req.user._id, // current admin's ID
-        userId,       // target user's ID
-        action        // 'block' or 'unblock'
+        userId, // target user's ID
+        action // 'block' or 'unblock'
       );
 
       return res.status(200).json({
@@ -181,7 +185,11 @@ export default class UserController {
       const { eventId } = req.body;
       const userId = req.user._id;
 
-      const result = await UserService.addToFavorites(userId, eventId, req.user.role);
+      const result = await UserService.addToFavorites(
+        userId,
+        eventId,
+        req.user.role
+      );
 
       return res.status(200).json({
         success: true,
@@ -202,7 +210,11 @@ export default class UserController {
       const { eventId } = req.params;
       const userId = req.user._id;
 
-      const result = await UserService.removeFromFavorites(userId, eventId, req.user.role);
+      const result = await UserService.removeFromFavorites(
+        userId,
+        eventId,
+        req.user.role
+      );
 
       return res.status(200).json({
         success: true,

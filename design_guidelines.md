@@ -5,6 +5,7 @@
 **Reference-Based**: Inspired by Luma's modern event aesthetics + Notion's clean information architecture + Partiful's youthful energy. This creates an experience that feels both vibrant and trustworthy for university environments.
 
 **Core Principles**:
+
 - Energy & Movement: Dynamic, vibrant design that captures student enthusiasm
 - Discovery-First: Events showcased beautifully to drive engagement
 - Effortless Registration: Minimal friction from discovery to attendance
@@ -15,6 +16,7 @@
 ## Color Palette
 
 **Light Mode**:
+
 - Primary: 262 70% 55% (Vibrant university purple)
 - Primary Hover: 262 70% 48%
 - Secondary: 180 65% 50% (Energetic teal accent)
@@ -25,6 +27,7 @@
 - Text Secondary: 260 15% 40%
 
 **Dark Mode**:
+
 - Primary: 262 65% 60%
 - Primary Hover: 262 65% 65%
 - Secondary: 180 60% 55%
@@ -35,6 +38,7 @@
 - Text Secondary: 260 10% 70%
 
 **Category Colors** (for event types):
+
 - Academic: 210 70% 55% (Blue)
 - Social: 340 75% 58% (Pink)
 - Sports: 25 85% 55% (Orange)
@@ -46,11 +50,13 @@
 ## Typography
 
 **Font Families**:
+
 - Primary: 'Plus Jakarta Sans' (Google Fonts) - Modern, geometric, youthful
 - Display: 'Plus Jakarta Sans Bold' - Strong headlines
 - Mono: 'JetBrains Mono' (for date/time displays)
 
 **Scale**:
+
 - Hero: text-5xl md:text-7xl font-bold (landing, event hero)
 - H1: text-4xl md:text-5xl font-bold
 - H2: text-3xl md:text-4xl font-bold
@@ -65,12 +71,14 @@
 ## Layout System
 
 **Spacing Primitives**: Tailwind units of 3, 4, 6, 8, 12, 16, 24
+
 - Component padding: p-4 to p-6
 - Card spacing: gap-6 to gap-8
 - Section spacing: py-16 md:py-24
 - Containers: max-w-7xl mx-auto px-4 md:px-6
 
 **Grid Patterns**:
+
 - Event Grid: grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6
 - Featured Events: 2-column masonry layout on desktop
 - Calendar: Full-width with sidebar filters
@@ -81,12 +89,15 @@
 ## Component Library
 
 ### Navigation
+
 **Top Navigation**: Sticky header with glassmorphic background (backdrop-blur-xl bg-white/80 dark:bg-surface/80), logo left, search center, user/notifications right. Category pills below main nav on desktop.
 
 **Mobile Navigation**: Bottom tab bar with 5 actions (Discover, Calendar, My Events, Create, Profile) using vibrant gradient active states.
 
 ### Event Discovery
+
 **Event Cards**: Elevated cards (shadow-lg) with:
+
 - Full-width cover image (aspect-[16/9])
 - Category badge (top-left, small pill with category color)
 - Date/time (prominent, using mono font)
@@ -100,6 +111,7 @@
 **Event List View**: Compact horizontal cards with thumbnail left, details right, expandable on click.
 
 ### Calendar Views
+
 **Month View**: Grid with event indicators (colored dots by category), click date to see day details in side panel.
 
 **Week/Day View**: Timeline with event blocks, drag-to-create functionality for admins, color-coded by category.
@@ -107,6 +119,7 @@
 **Filters Panel**: Sticky sidebar with category toggles, date range picker, location filters, search bar.
 
 ### Registration Flow
+
 **Step Indicator**: Progress bar at top showing steps (1. Event Details → 2. Ticket Selection → 3. Information → 4. Confirmation).
 
 **Ticket Selection**: Card-based options with pricing, quantity selectors, feature comparison for different tiers.
@@ -116,6 +129,7 @@
 **Confirmation Screen**: Success animation, QR code ticket, add to calendar buttons, social share options.
 
 ### Admin Dashboard
+
 **Analytics Cards**: Stats with sparkline charts, trend indicators (↑↓), comparison periods.
 
 **Event Management Table**: Sortable columns, bulk actions, quick edit inline, status indicators (Live, Draft, Past).
@@ -123,6 +137,7 @@
 **Creation Wizard**: Multi-step with live preview, media upload with drag-drop, rich text editor for descriptions, duplicate event feature.
 
 ### Data Visualization
+
 **Attendance Charts**: Bar charts for capacity, line graphs for registration trends, pie charts for demographic breakdowns.
 
 **Heatmaps**: Popular event times, peak registration periods, location density.
@@ -131,7 +146,8 @@
 
 ## Images
 
-**Hero Sections**: 
+**Hero Sections**:
+
 - Landing Page: Dynamic collage of university events (concerts, sports, lectures) with vibrant color overlay gradient (purple to teal). Height: h-[500px] md:h-[600px].
 - Event Detail Pages: High-quality event-specific imagery, full-width with text overlay at bottom third.
 
@@ -146,16 +162,19 @@
 ## Interactive States
 
 **Buttons**:
+
 - Primary: Vibrant gradient (from-primary to-secondary), white text, rounded-full, px-8 py-3
 - Secondary: Outline with primary color, transparent bg, hover fills with primary
 - Ghost: Transparent, hover shows subtle bg
 - On images: backdrop-blur-md bg-white/20 border border-white/30
 
-**Cards**: 
+**Cards**:
+
 - Hover: Subtle lift (translateY(-4px)), enhanced shadow, scale image slightly
 - Active: Pressed state (scale-[0.98])
 
-**Focus States**: 
+**Focus States**:
+
 - Ring with primary color (ring-2 ring-primary ring-offset-2)
 - High contrast for accessibility
 
@@ -166,6 +185,7 @@
 **Breakpoints**: sm: 640px, md: 768px, lg: 1024px, xl: 1280px, 2xl: 1536px
 
 **Key Adaptations**:
+
 - Event Grid: 3 cols → 2 cols → 1 col
 - Navigation: Top bar → Bottom tabs
 - Calendar: Sidebar filters → Bottom sheet on mobile
@@ -177,6 +197,7 @@
 ## Animation & Motion
 
 **Strategic Use**:
+
 - Page Transitions: Smooth fade (duration-300)
 - Event Card Hover: Transform + shadow (duration-200)
 - Registration Progress: Step slide-in from right (duration-400)

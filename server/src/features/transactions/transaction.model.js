@@ -29,7 +29,7 @@ const transactionSchema = new mongoose.Schema(
 
     paymentMethod: {
       type: String,
-      enum: ["credit_card", "wallet"],
+      enum: ["credit_card", "wallet", "debit_card"], // Added "debit_card"
     },
 
     description: {
@@ -54,29 +54,8 @@ const transactionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Ensure immutability of transactions (no updates allowed after creation)
-transactionSchema.pre("findOneAndUpdate", function (next) {
-  return next(
-    new Error("Transactions are immutable and cannot be updated.")
-  );
-});
-
-transactionSchema.pre("updateOne", function (next) {
-  return next(
-    new Error("Transactions are immutable and cannot be updated.")
-  );
-});
-
-transactionSchema.pre("deleteOne", function (next) {
-  return next(
-    new Error("Transactions are immutable and cannot be deleted.")
-  );
-});
-
-transactionSchema.pre("remove", function (next) {
-  return next(
-    new Error("Transactions are immutable and cannot be removed.")
-  );
-});
+//reason of removal:
+//i need to allow updates to transactions in case of payment failures or refunds
+//i need to be able to update the status of a transaction from 'pending' to 'completed' or 'failed'
 
 export const Transaction = mongoose.model("Transaction", transactionSchema);

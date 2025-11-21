@@ -1,26 +1,27 @@
-import { useState, useEffect } from 'react';
-import { useFavorites } from '../hooks/useFavorites';
-import { Card, CardContent } from '../components/ui/card';
-import { Button } from '../components/ui/button';
-import { Heart, Loader2, AlertCircle } from 'lucide-react';
-import { Link, useLocation } from 'wouter';
-import { Alert, AlertDescription } from '../components/ui/alert';
-import { useToast } from '../hooks/use-toast';
-import Header from '../components/Header';
-import ProfessorHeader from '../components/ProfessorHeader';
-import StaffHeader from '../components/StaffHeader';
-import StudentHeader from '../components/StudentHeader';
-import EventCard from '../components/EventCard';
-import type { EventCategory } from '../components/CategoryBadge';
+import { useState, useEffect } from "react";
+import { useFavorites } from "../hooks/useFavorites";
+import { Card, CardContent } from "../components/ui/card";
+import { Button } from "../components/ui/button";
+import { Heart, Loader2, AlertCircle } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { Alert, AlertDescription } from "../components/ui/alert";
+import { useToast } from "../hooks/use-toast";
+import Header from "../components/Header";
+import ProfessorHeader from "../components/ProfessorHeader";
+import StaffHeader from "../components/StaffHeader";
+import StudentHeader from "../components/StudentHeader";
+import EventCard from "../components/EventCard";
+import type { EventCategory } from "../components/CategoryBadge";
 
 export default function FavoritesPage() {
-  const { favorites, loading, error, removeFromFavorites, isEventLoading } = useFavorites();
+  const { favorites, loading, error, removeFromFavorites, isEventLoading } =
+    useFavorites();
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    const user = localStorage.getItem('user');
+    const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
       setUserRole(userData.role);
@@ -29,12 +30,12 @@ export default function FavoritesPage() {
 
   const renderHeader = () => {
     switch (userRole) {
-      case 'professor':
+      case "professor":
         return <ProfessorHeader />;
-      case 'staff':
-      case 'ta':
+      case "staff":
+      case "ta":
         return <StaffHeader />;
-      case 'student':
+      case "student":
         return <StudentHeader />;
       default:
         return <Header homeOnly hideSearch />;
@@ -43,42 +44,43 @@ export default function FavoritesPage() {
 
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      year: 'numeric' 
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   };
 
   const formatEventTime = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', { 
-      hour: 'numeric', 
-      minute: '2-digit',
-      hour12: true 
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
     });
   };
 
   const getCategoryFromEvent = (event: any): EventCategory => {
     // Get the event type from multiple possible fields
-    const rawCategory = event.eventType || event.type || event.category || 'academic';
+    const rawCategory =
+      event.eventType || event.type || event.category || "academic";
     const categoryLower = rawCategory.toLowerCase();
-    
+
     // Map to valid EventCategory values
     const categoryMap: Record<string, EventCategory> = {
-      'bazaar': 'bazaar',
-      'workshop': 'workshop',
-      'trip': 'trip',
-      'conference': 'conference',
-      'academic': 'academic',
-      'cultural': 'cultural',
-      'social': 'social',
-      'sports': 'sports',
-      'career': 'career'
+      bazaar: "bazaar",
+      workshop: "workshop",
+      trip: "trip",
+      conference: "conference",
+      academic: "academic",
+      cultural: "cultural",
+      social: "social",
+      sports: "sports",
+      career: "career",
     };
-    
+
     // Return mapped category or default to 'academic'
-    return (categoryMap[categoryLower] || 'academic') as EventCategory;
+    return (categoryMap[categoryLower] || "academic") as EventCategory;
   };
 
   // Initial loading state
@@ -106,14 +108,10 @@ export default function FavoritesPage() {
         <div className="container mx-auto px-4 py-8">
           <Alert variant="destructive" className="max-w-2xl mx-auto mt-12">
             <AlertCircle className="h-4 w-4" />
-            <AlertDescription className="ml-2">
-              {error}
-            </AlertDescription>
+            <AlertDescription className="ml-2">{error}</AlertDescription>
           </Alert>
           <div className="text-center mt-6">
-            <Button onClick={() => window.location.reload()}>
-              Retry
-            </Button>
+            <Button onClick={() => window.location.reload()}>Retry</Button>
           </div>
         </div>
       </div>
@@ -133,9 +131,9 @@ export default function FavoritesPage() {
             </h1>
           </div>
           <p className="text-muted-foreground text-lg">
-            {favorites.length > 0 
-              ? `You have ${favorites.length} favorite event${favorites.length !== 1 ? 's' : ''}`
-              : 'Your saved events will appear here'}
+            {favorites.length > 0
+              ? `You have ${favorites.length} favorite event${favorites.length !== 1 ? "s" : ""}`
+              : "Your saved events will appear here"}
           </p>
         </div>
 
