@@ -36,7 +36,7 @@ export const LoyaltyPartnerController = {
           .json({ status: "fail", message: "Duplicate entry detected." });
       }
       // Custom errors thrown in service (e.g., vendor already applied)
-      if (err.message === "You have already applied for the loyalty program.") {
+      if (err.message === "You already have an active loyalty program.") {
         return res.status(409).json({ status: "fail", message: err.message });
       }
 

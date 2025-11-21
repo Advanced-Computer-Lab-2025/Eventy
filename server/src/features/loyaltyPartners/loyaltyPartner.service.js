@@ -75,7 +75,6 @@ export const LoyaltyPartnerService = {
 
     return {
       message: "Successfully cancelled loyalty program participation",
-      cancelledAt: existing.deletedAt,
     };
   },
 
