@@ -102,7 +102,6 @@ export default function VendorRequests() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventNames, setEventNames] = useState<Record<string, string>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const { toast } = useToast();
@@ -170,67 +169,19 @@ export default function VendorRequests() {
     fetchApplications();
   }, [token]);
 
-  useEffect(() => {
-    if (!token || requests.length === 0) return; // Wait for token and requests
-
-    // After applications are loaded, fetch unique event names
-    const loadEventNames = async () => {
-      const uniqueIds = Array.from(
-        new Set(
-          requests
-            .map((r) => r?.event)
-            .filter(
-              (id): id is string => typeof id === "string" && id.length > 0
-            )
-        )
-      ).filter((id) => !(id in eventNames));
-
-      if (uniqueIds.length === 0) return;
-
-      try {
-        const entries = await Promise.all(
-          uniqueIds.map(async (id) => {
-            try {
-              const res = await fetch(
-                `http://localhost:4000/api/events/${id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                  },
-                  credentials: "include",
-                }
-              );
-
-              const contentType = res.headers.get("content-type");
-              if (!contentType || !contentType.includes("application/json")) {
-                // Non-JSON or forbidden; fall back
-                return [id, id] as const;
-              }
-
-              const body = await res.json();
-              if (!res.ok) {
-                // Forbidden for admin/events_office under current route roles
-                return [id, id] as const;
-              }
-
-              const name = body?.data?.name || body?.data?.event?.name || id;
-              return [id, name] as const;
-            } catch {
-              return [id, id] as const;
-            }
-          })
-        );
-
-        setEventNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-      } catch {
-        // ignore; names will remain IDs
-      }
-    };
-
-    loadEventNames();
-  }, [requests, token, eventNames]);
+  // Helper function to get event name from request
+  const getEventName = (request: any): string => {
+    // If event is populated (object with name property)
+    if (
+      request?.event &&
+      typeof request.event === "object" &&
+      request.event.name
+    ) {
+      return request.event.name;
+    }
+    // If event is just an ID string or null/undefined, return N/A
+    return "N/A";
+  };
 
   const handleApprove = async (requestId: string) => {
     if (!token) {
@@ -360,10 +311,7 @@ export default function VendorRequests() {
                       <TableCell className="font-medium">
                         {request?.createdBy?.companyName || "Unknown"}
                       </TableCell>
-                      <TableCell>
-                        {eventNames[request?.event] ||
-                          (request?.event ? "Loading..." : "N/A")}
-                      </TableCell>
+                      <TableCell>{getEventName(request)}</TableCell>
                       <TableCell>{request?.boothSize || "-"}</TableCell>
                       <TableCell>
                         {Array.isArray(request?.attendees)
@@ -451,7 +399,7 @@ export default function VendorRequests() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="font-medium">Event</div>
-                    <div>{eventNames[selected?.event] || "Unknown"}</div>
+                    <div>{getEventName(selected)}</div>
                   </div>
                   <div>
                     <div className="font-medium">Type</div>
