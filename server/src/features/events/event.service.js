@@ -2,6 +2,9 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import { TransactionService } from "../transactions/transaction.service.js";
+const transactionService = new TransactionService();
+import NotificationService from "../notifications/notification.service.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -19,6 +22,8 @@ export async function createBazaar(data, user) {
     registrationDeadline: data.registrationDeadline,
     eventType: "bazaar",
     createdBy: user.id,
+    startTime: data.startTime,
+    endTime: data.endTime,
   };
 
   // Save to database
@@ -99,6 +104,8 @@ export const createConference = async (data, userId) => {
     fundingSource,
     extraResources,
     agenda,
+    startTime,
+    endTime,
   } = data;
 
   // Validate required fields
@@ -125,6 +132,8 @@ export const createConference = async (data, userId) => {
     extraResources,
     agenda,
     websiteUrl,
+    startTime,
+    endTime,
     createdBy: userId,
   });
 
@@ -307,7 +316,8 @@ export const registerUserToEvent = async (user, eventId) => {
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({
     attendees: userId,
-    status: "approved", // Only fetch approved events
+    status: "approved",
+    deletedAt: null, // Only fetch events that are not deleted
   }).populate("attendees", "name email role");
   return events;
 };
@@ -511,10 +521,23 @@ export const acceptWorkshop = async (workshopId) => {
     workshopId,
     { status: "approved" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Accepted",
+      message: `Your workshop "${event.name}" has been approved by the Events Office and is now published!`,
+    });
+  }
+
   return event;
 };
 
@@ -538,10 +561,23 @@ export const rejectWorkshop = async (workshopId) => {
     workshopId,
     { status: "rejected" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Rejected",
+      message: `Your workshop "${event.name}" has been rejected by the Events Office.`,
+    });
+  }
+
   return event;
 };
 
@@ -605,21 +641,50 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
-  const match = {};
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
-  if (eventType) match.eventType = eventType;
-  if (startDate || endDate) {
-    match.startDate = {};
-    if (startDate) match.startDate.$gte = new Date(startDate);
-    if (endDate) match.startDate.$lte = new Date(endDate);
+  const match = {
+    deletedAt: null,
+    status: { $in: ["approved", "archived"] },
+  };
+
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
+  }
+
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
+  }
+
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
+  }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
   }
 
   const skip = (page - 1) * limit;
@@ -633,6 +698,7 @@ export const getAttendeesReport = async (options = {}) => {
         name: 1,
         eventType: 1,
         startDate: 1,
+        endDate: 1,
         location: 1,
         attendeesCount: {
           $ifNull: [
@@ -677,7 +743,10 @@ export const getAttendeesReport = async (options = {}) => {
     events: result.events || [],
   };
 };
-
+// Get workshop by ID
+export const getWorkshopById = async (workshopId) => {
+  return Event.findById(workshopId);
+};
 export const archiveEvent = async (eventId, user) => {
   // Authorization
   if (!user || user.role !== "events_office") {
@@ -731,6 +800,54 @@ export const archiveEvent = async (eventId, user) => {
   }
 
   return updatedEvent;
+};
+
+/**
+ * Cancels a user's registration for an event and processes a refund if eligible.
+ * - Only allows cancellation at least 2 weeks before the event start date.
+ * - Removes the user from the event's attendees.
+ * - Initiates a refund using TransactionService.
+ * @param {string} eventId - The ID of the event to cancel registration for.
+ * @param {string} userId - The ID of the user cancelling registration.
+ * @returns {Promise<Object>} Refund details including eventId, refundedAmount, paymentMethod, and transactionId.
+ * @throws {ApiError} If event not found, cancellation not allowed, or user not registered.
+ */
+export const cancelEventRegistration = async (eventId, userId) => {
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  const now = new Date();
+  const twoWeeksBefore = new Date(event.startDate);
+  twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+  if (now > twoWeeksBefore) {
+    throw new ApiError(
+      400,
+      "Cancellations are only allowed at least 2 weeks before the event."
+    );
+  }
+
+  const isRegistered = event.attendees.some(
+    (att) => att.toString() === userId.toString()
+  );
+  if (!isRegistered)
+    throw new ApiError(400, "User not registered for this event.");
+
+  // Remove attendee
+  event.attendees = event.attendees.filter(
+    (att) => att.toString() !== userId.toString()
+  );
+  await event.save();
+
+  // Refund logic
+  const refund = await transactionService.refundUserForEvent(userId, event._id);
+
+  return {
+    eventId,
+    refundedAmount: refund.amount,
+    paymentMethod: refund.paymentMethod,
+    transactionId: refund._id,
+  };
 };
 
 export const restrictAccess = async (eventId, rolesToRestrict, user) => {

@@ -6,6 +6,7 @@ import {
   Share2,
   Store,
   Trash2,
+  Archive,
   Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,11 +86,15 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  isRegistered?: boolean;
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
+  onFeedback?: () => void;
+  onArchive?: () => void;
+  isArchiving?: boolean;
   canDelete?: boolean;
   className?: string;
 }
@@ -116,6 +121,10 @@ export default function EventCard({
   onShare,
   onDelete,
   onViewDetails,
+  onFeedback,
+  isRegistered = false,
+  onArchive,
+  isArchiving = false,
   canDelete = false,
   className,
 }: EventCardProps) {
@@ -135,7 +144,8 @@ export default function EventCard({
       roleAllowsDelete = role === "admin" || role === "events_office";
     }
   } catch {}
-  const canShowDelete = roleAllowsDelete;
+  // Respect parent component's `canDelete` prop in addition to role
+  const canShowDelete = roleAllowsDelete && canDelete;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
@@ -166,7 +176,9 @@ export default function EventCard({
 
   return (
     <Card
-      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${className || ""}`}
+      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${
+        className || ""
+      }`}
       data-testid={`card-event-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -314,13 +326,48 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {canRegister && (
+              {isRegistered && startDate && new Date() > new Date(startDate) ? (
                 <Button
                   className="flex-1"
-                  onClick={onRegister}
-                  data-testid={`button-register-${id}`}
+                  onClick={onFeedback}
+                  data-testid={`button-feedback-${id}`}
                 >
-                  Register
+                  Give Feedback
+                </Button>
+              ) : (
+                canRegister && (
+                  <Button
+                    className="flex-1"
+                    onClick={onRegister}
+                    data-testid={`button-register-${id}`}
+                  >
+                    Register
+                  </Button>
+                )
+              )}
+              {onArchive && (
+                <Button
+                  className={canRegister ? "flex-1" : "w-full"}
+                  onClick={async (e) => {
+                    if ((e as any).stopPropagation)
+                      (e as any).stopPropagation();
+                    try {
+                      await onArchive();
+                    } catch (err) {
+                      // parent handles errors
+                    }
+                  }}
+                  disabled={isArchiving}
+                  data-testid={`button-archive-${id}`}
+                >
+                  {isArchiving ? (
+                    "Archiving..."
+                  ) : (
+                    <>
+                      <Archive className="h-4 w-4 mr-1" />
+                      Archive
+                    </>
+                  )}
                 </Button>
               )}
               {onViewDetails && (
@@ -427,13 +474,46 @@ export default function EventCard({
 
             {showActions && (
               <div className="flex gap-2 pt-2">
-                {isRegisterable && (
+                {isRegistered &&
+                startDate &&
+                new Date() > new Date(startDate) ? (
                   <Button
-                    onClick={onRegister}
+                    onClick={onFeedback}
                     className="flex-1"
-                    data-testid={`button-register-${id}`}
+                    data-testid={`button-feedback-${id}`}
                   >
-                    Register
+                    Give Feedback
+                  </Button>
+                ) : (
+                  isRegisterable && (
+                    <Button
+                      onClick={onRegister}
+                      className="flex-1"
+                      data-testid={`button-register-${id}`}
+                    >
+                      Register
+                    </Button>
+                  )
+                )}
+                {onArchive && (
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={async (e) => {
+                      if ((e as any).stopPropagation)
+                        (e as any).stopPropagation();
+                      try {
+                        await onArchive();
+                      } catch (err) {
+                        // parent handles errors
+                      }
+                    }}
+                    disabled={isArchiving}
+                    data-testid={`button-archive-compact-${id}`}
+                    className="bg-primary text-primary-foreground"
+                  >
+                    <Archive className="h-4 w-4 mr-1" />
+                    Archive
                   </Button>
                 )}
                 <Button

@@ -29,11 +29,12 @@ router.post(
 /**
  * @route   POST /api/transactions/confirm
  * @desc    Confirm Stripe payment
- * @access  Public (Stripe webhook or frontend)
+ * @access  Student, Staff, TA, Professor, Vendor
  */
 router.post(
   "/confirm",
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
   transactionController.confirmStripePayment.bind(transactionController)
 );
 
@@ -48,6 +49,17 @@ router.post(
   validate(walletTopUpSchema, "body"),
   roleMiddleware(["student", "staff", "ta", "professor"]),
   transactionController.topUpWallet.bind(transactionController)
+);
+/**
+ * @route   GET /api/transactions/me
+ * @desc    Get all transactions for the logged-in user
+ * @access  Student, Staff, TA, Professor
+ */
+router.get(
+  "/me",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  transactionController.getMyTransactions.bind(transactionController)
 );
 
 export default router;

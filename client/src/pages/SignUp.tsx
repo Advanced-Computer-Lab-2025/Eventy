@@ -20,7 +20,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import Logo from "@/components/Logo";
+import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
+import { FileUploadWithCrop } from "@/components/ui/file-upload-with-crop";
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
@@ -49,6 +51,11 @@ export default function SignUp() {
     companyLogoUrl: "",
     taxCardUrl: "",
   });
+
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [isUploadingTax, setIsUploadingTax] = useState(false);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [taxFile, setTaxFile] = useState<File | null>(null);
 
   const validateStudentId = (id: string): boolean => {
     const studentIdPattern = /^\d{2}-\d{4}$/;
@@ -501,49 +508,93 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="vendor-logo">Company Logo URL</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="vendor-logo"
-                      type="url"
-                      placeholder="https://example.com/logo.png"
-                      className="pl-10"
-                      value={vendorForm.companyLogoUrl}
-                      onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          companyLogoUrl: e.target.value,
-                        })
-                      }
-                      data-testid="input-vendor-logo"
-                      required
-                    />
-                  </div>
-                </div>
+                <FileUploadWithCrop
+                  label="Company Logo"
+                  description="Upload your company logo."
+                  accept="application/pdf,image/*"
+                  maxSize={5}
+                  enableCrop={true}
+                  cropAspectRatio={1}
+                  previewType="image"
+                  value={vendorForm.companyLogoUrl}
+                  isUploading={isUploadingLogo}
+                  onFileSelect={async (file) => {
+                    try {
+                      setIsUploadingLogo(true);
+                      const res = await bazaarApiService.uploadVendorDocument(
+                        file as File
+                      );
+                      setVendorForm({
+                        ...vendorForm,
+                        companyLogoUrl: res.url,
+                      });
+                      setLogoFile(file as File);
+                      toast({
+                        title: "Success",
+                        description: "Logo uploaded successfully!",
+                      });
+                    } catch (err: any) {
+                      toast({
+                        variant: "destructive",
+                        title: "Upload failed",
+                        description: err?.message || "Could not upload logo",
+                      });
+                    } finally {
+                      setIsUploadingLogo(false);
+                    }
+                  }}
+                  onRemove={() => {
+                    setVendorForm({
+                      ...vendorForm,
+                      companyLogoUrl: "",
+                    });
+                    setLogoFile(null);
+                  }}
+                />
 
-                <div className="space-y-2">
-                  <Label htmlFor="vendor-tax">Tax Card URL</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="vendor-tax"
-                      type="url"
-                      placeholder="https://example.com/tax-card.pdf"
-                      className="pl-10"
-                      value={vendorForm.taxCardUrl}
-                      onChange={(e) =>
-                        setVendorForm({
-                          ...vendorForm,
-                          taxCardUrl: e.target.value,
-                        })
-                      }
-                      data-testid="input-vendor-tax"
-                      required
-                    />
-                  </div>
-                </div>
+                <FileUploadWithCrop
+                  label="Tax Card"
+                  description="Upload your tax registration card."
+                  accept="application/pdf,image/*"
+                  maxSize={5}
+                  enableCrop={false}
+                  previewType="document"
+                  value={vendorForm.taxCardUrl}
+                  isUploading={isUploadingTax}
+                  onFileSelect={async (file) => {
+                    try {
+                      setIsUploadingTax(true);
+                      const res = await bazaarApiService.uploadVendorDocument(
+                        file as File
+                      );
+                      setVendorForm({
+                        ...vendorForm,
+                        taxCardUrl: res.url,
+                      });
+                      setTaxFile(file as File);
+                      toast({
+                        title: "Success",
+                        description: "Tax card uploaded successfully!",
+                      });
+                    } catch (err: any) {
+                      toast({
+                        variant: "destructive",
+                        title: "Upload failed",
+                        description:
+                          err?.message || "Could not upload tax card",
+                      });
+                    } finally {
+                      setIsUploadingTax(false);
+                    }
+                  }}
+                  onRemove={() => {
+                    setVendorForm({
+                      ...vendorForm,
+                      taxCardUrl: "",
+                    });
+                    setTaxFile(null);
+                  }}
+                />
 
                 <Button
                   type="submit"

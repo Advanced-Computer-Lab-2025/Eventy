@@ -36,6 +36,11 @@ const applicationSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected", "cancelled"],
       default: "pending",
     },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "overdue"],
+      default: "pending",
+    },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
