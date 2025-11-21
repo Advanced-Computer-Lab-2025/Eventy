@@ -65,118 +65,137 @@ class UserService {
     return targetUser;
   }
 
-async getAllUsers(req) {
-  try {
-    if (!req.user || req.user.role !== "admin") {
-      throw new ApiError(403, "Access denied. Admins only.");
-    }
+  async getAllUsers(req) {
+    try {
+      if (!req.user || req.user.role !== "admin") {
+        throw new ApiError(403, "Access denied. Admins only.");
+      }
 
-    const currentUserId = req.user.id || req.user._id;
+      const currentUserId = req.user.id || req.user._id;
 
-    const users = await User.find(
-      { status: { $in: ["active", "blocked"] } },
-      "-password"
-    )
-      .sort({ createdAt: -1 })
-      .select(
-        "firstName lastName email role status deletedAt createdAt updatedAt studentStaffId"
+      const users = await User.find(
+        { status: { $in: ["active", "blocked"] } },
+        "-password"
       )
-      .lean();
+        .sort({ createdAt: -1 })
+        .select(
+          "firstName lastName email role status deletedAt createdAt updatedAt studentStaffId"
+        )
+        .lean();
 
-    if (!users || users.length === 0) {
-      throw new ApiError(404, "No users found.");
+      if (!users || users.length === 0) {
+        throw new ApiError(404, "No users found.");
+      }
+
+      // Move current user to the front
+      const currentUserIndex = users.findIndex(
+        (u) => u._id.toString() === currentUserId.toString()
+      );
+
+      if (currentUserIndex > 0) {
+        const [currentUser] = users.splice(currentUserIndex, 1);
+        users.unshift(currentUser);
+      }
+
+      return users;
+    } catch (err) {
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(500, `Error retrieving users: ${err.message}`);
     }
-
-    // Move current user to the front
-    const currentUserIndex = users.findIndex(
-      (u) => u._id.toString() === currentUserId.toString()
-    );
-    
-    if (currentUserIndex > 0) {
-      const [currentUser] = users.splice(currentUserIndex, 1);
-      users.unshift(currentUser);
-    }
-
-    return users;
-  } catch (err) {
-    if (err instanceof ApiError) throw err;
-    throw new ApiError(500, `Error retrieving users: ${err.message}`);
   }
-}
 
   async toggleBlockStatus(currentAdminId, userId, action) {
     // Prevent blocking self
     if (currentAdminId.toString() === userId.toString()) {
-      throw new ApiError(403, 'You cannot block or unblock yourself');
+      throw new ApiError(403, "You cannot block or unblock yourself");
     }
 
     const user = await User.findById(userId);
     if (!user) {
-      throw new ApiError(404, 'User not found');
+      throw new ApiError(404, "User not found");
     }
 
     // Update user status
-    user.status = action === 'block' ? 'blocked' : 'active';
+    user.status = action === "block" ? "blocked" : "active";
     await user.save();
 
     return {
       userId: user._id,
       status: user.status,
-      message: `User ${action === 'block' ? 'blocked' : 'unblocked'} successfully`
+      message: `User ${action === "block" ? "blocked" : "unblocked"} successfully`,
     };
   }
 
   // Favorites methods (moved from controller, same logic)
   async addToFavorites(userId, eventId, role) {
     try {
-      console.log('Service addToFavorites called:', { userId, eventId, role });
+      console.log("Service addToFavorites called:", { userId, eventId, role });
 
-      // Validate request
+      // --- Validate eventId ---
       const { error } = favoriteEventSchema.validate({ eventId });
       if (error) {
-        console.error('Validation error:', error);
-        throw new ApiError(400, `Invalid event ID: ${error.details[0].message}`);
+        console.error("Validation error:", error);
+        throw new ApiError(
+          400,
+          `Invalid event ID: ${error.details[0].message}`
+        );
       }
 
       // Check if user is allowed to add to favorites
-      const allowedRoles = ['student', 'staff', 'ta', 'professor'];
+      const allowedRoles = ["student", "staff", "ta", "professor"];
       if (!allowedRoles.includes(role)) {
-        console.error('Unauthorized role:', role);
-        throw new ApiError(403, 'Only students, staff, TAs, and professors can add events to favorites');
+        console.error("Unauthorized role:", role);
+        throw new ApiError(
+          403,
+          "Only students, staff, TAs, and professors can add events to favorites"
+        );
       }
 
       // Import the Event model
-      const { Event } = await import('../events/event.model.js');
+      const { Event } = await import("../events/event.model.js");
 
-      // Verify the event exists and is not deleted
-      const event = await Event.findOne({ _id: eventId, deletedAt: null });
-      if (!event) {
-        console.log('Event not found or deleted:', eventId);
-        throw new ApiError(404, 'Event not found or has been deleted');
+      // --- Verify event exists, is approved, and not deleted ---
+      const eventExists = await Event.findOne({
+        _id: eventId,
+        deletedAt: null,
+        status: "approved",
+      }).lean();
+
+      if (!eventExists) {
+        throw new ApiError(404, "Event not found, deleted, or not approved");
       }
 
-      // Atomically add the event to the user's favorites
+      // --- Fetch user favorites only ---
+      const oldUser = await User.findById(userId, { favoriteEvents: 1 });
+      if (!oldUser) {
+        throw new ApiError(404, "User not found");
+      }
+
+      // --- Check if already in favorites ---
+      if (oldUser.favoriteEvents.includes(eventId)) {
+        return {
+          message: "Event already in favorites",
+          data: { eventId, favoritesCount: oldUser.favoriteEvents.length },
+        };
+      }
+
+      // --- Atomic add to favorites ---
       const user = await User.findByIdAndUpdate(
         userId,
-        { $addToSet: { favoriteEvents: eventId } }, // Add only if not already present
-        { new: true, fields: { favoriteEvents: 1 } } // Return only the updated favoriteEvents field
+        { $addToSet: { favoriteEvents: eventId } },
+        { new: true, fields: { favoriteEvents: 1 } } // Return only favoriteEvents
       );
 
-      if (!user) {
-        throw new ApiError(404, 'User not found');
-      }
-
-      console.log('Updated user favorites:', user.favoriteEvents);
+      console.log("[Service] Updated user favorites:", user.favoriteEvents);
 
       return {
-        message: user.favoriteEvents.includes(eventId)
-          ? 'Event added to favorites'
-          : 'Event already in favorites',
+        message: "Event added to favorites",
         data: { eventId, favoritesCount: user.favoriteEvents.length },
       };
     } catch (err) {
+      console.error("[Service] addToFavorites error:", err);
       if (err instanceof ApiError) throw err;
-      throw new ApiError(500, err.message || 'Error in addToFavorites');
+      throw new ApiError(500, err.message || "Error in addToFavorites");
     }
   }
 
@@ -189,64 +208,86 @@ async getAllUsers(req) {
       }
 
       // Check if user is allowed to remove from favorites
-      const allowedRoles = ['student', 'staff', 'ta', 'professor'];
+      const allowedRoles = ["student", "staff", "ta", "professor"];
       if (!allowedRoles.includes(role)) {
-        throw new ApiError(403, 'Only students, staff, TAs, and professors can manage favorites');
+        throw new ApiError(
+          403,
+          "Only students, staff, TAs, and professors can manage favorites"
+        );
+      }
+
+      // Fetch user first to check favorites
+      const user = await User.findById(userId, { favoriteEvents: 1 });
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      // Check if event is in favorites
+      if (!user.favoriteEvents.includes(eventId)) {
+        throw new ApiError(404, "Event is not in favorites");
       }
 
       // Remove from favorites
-      const user = await User.findByIdAndUpdate(
+      const updatedUser = await User.findByIdAndUpdate(
         userId,
         { $pull: { favoriteEvents: eventId } },
         { new: true }
       );
 
-      if (!user) {
-        throw new ApiError(404, 'User not found');
-      }
-
       return {
-        message: 'Event removed from favorites',
-        data: { eventId, favoritesCount: user.favoriteEvents.length },
+        message: "Event removed from favorites",
+        data: { eventId, favoritesCount: updatedUser.favoriteEvents.length },
       };
     } catch (err) {
       if (err instanceof ApiError) throw err;
-      throw new ApiError(500, err.message || 'Error in removeFromFavorites');
+      throw new ApiError(500, err.message || "Error in removeFromFavorites");
     }
   }
 
   async getFavoriteEvents(userId, role) {
-  try {
-    console.log('[getFavoriteEvents] Service called for user:', userId, 'role:', role);
+    try {
+      console.log(
+        "[getFavoriteEvents] Service called for user:",
+        userId,
+        "role:",
+        role
+      );
 
-    // Check if user is allowed to view favorites
-    const allowedRoles = ['student', 'staff', 'ta', 'professor'];
-    if (!allowedRoles.includes(role)) {
-      throw new ApiError(403, 'Only students, staff, TAs, and professors can view favorite events');
+      // Check if user is allowed to view favorites
+      const allowedRoles = ["student", "staff", "ta", "professor"];
+      if (!allowedRoles.includes(role)) {
+        throw new ApiError(
+          403,
+          "Only students, staff, TAs, and professors can view favorite events"
+        );
+      }
+
+      // Get user with populated favorite events (include eventType for proper display)
+      const user = await User.findById(userId, { favoriteEvents: 1 })
+        .populate({
+          path: "favoriteEvents",
+          select:
+            "name description location startDate endDate bannerImage status eventType type category", // Added eventType
+          match: { deletedAt: null },
+        })
+        .lean();
+
+      if (!user) {
+        throw new ApiError(404, "User not found");
+      }
+
+      console.log(
+        "[getFavoriteEvents] favorites count:",
+        user.favoriteEvents.length
+      );
+
+      return { data: user.favoriteEvents };
+    } catch (err) {
+      console.error("[getFavoriteEvents] Error:", err);
+      if (err instanceof ApiError) throw err;
+      throw new ApiError(500, err.message || "Error in getFavoriteEvents");
     }
-
-    // Get user with populated favorite events (include eventType for proper display)
-    const user = await User.findById(userId, { favoriteEvents: 1 })
-      .populate({
-        path: 'favoriteEvents',
-        select: 'name description location startDate endDate bannerImage status eventType type category', // Added eventType
-        match: { deletedAt: null },
-      })
-      .lean();
-
-    if (!user) {
-      throw new ApiError(404, 'User not found');
-    }
-
-    console.log('[getFavoriteEvents] favorites count:', user.favoriteEvents.length);
-
-    return { data: user.favoriteEvents };
-  } catch (err) {
-    console.error('[getFavoriteEvents] Error:', err);
-    if (err instanceof ApiError) throw err;
-    throw new ApiError(500, err.message || 'Error in getFavoriteEvents');
   }
-}
 }
 
 export default new UserService();
