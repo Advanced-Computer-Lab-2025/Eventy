@@ -11,7 +11,6 @@ const applicationSchema = new mongoose.Schema(
     event: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Event",
-
     },
     type: {
       type: String,
@@ -35,6 +34,11 @@ const applicationSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["pending", "approved", "rejected", "cancelled"],
+      default: "pending",
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "paid", "overdue"],
       default: "pending",
     },
     createdBy: {

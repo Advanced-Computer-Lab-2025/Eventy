@@ -56,7 +56,7 @@ export default function CreateEventDialog({
             Fill in the details to create a new university event
           </DialogDescription>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="title">Event Title</Label>
@@ -64,7 +64,9 @@ export default function CreateEventDialog({
               id="title"
               placeholder="e.g., AI Workshop"
               value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
               data-testid="input-event-title"
               required
             />
@@ -75,7 +77,9 @@ export default function CreateEventDialog({
               <Label htmlFor="category">Category</Label>
               <Select
                 value={formData.category}
-                onValueChange={(value) => setFormData({ ...formData, category: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, category: value })
+                }
               >
                 <SelectTrigger id="category" data-testid="select-category">
                   <SelectValue placeholder="Select category" />
@@ -99,7 +103,9 @@ export default function CreateEventDialog({
                   placeholder="e.g., Main Hall"
                   className="pl-10"
                   value={formData.location}
-                  onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, location: e.target.value })
+                  }
                   data-testid="input-location"
                   required
                 />
@@ -117,7 +123,9 @@ export default function CreateEventDialog({
                   type="date"
                   className="pl-10"
                   value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, date: e.target.value })
+                  }
                   data-testid="input-date"
                   required
                 />
@@ -130,7 +138,9 @@ export default function CreateEventDialog({
                 id="time"
                 type="time"
                 value={formData.time}
-                onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, time: e.target.value })
+                }
                 data-testid="input-time"
                 required
               />
@@ -144,7 +154,9 @@ export default function CreateEventDialog({
               placeholder="Describe your event..."
               rows={4}
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
               data-testid="input-description"
             />
           </div>

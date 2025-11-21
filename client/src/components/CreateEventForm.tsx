@@ -72,12 +72,13 @@ export default function CreateEventForm({
     if (!values.startTime) nextErrors.startTime = "Start time is required";
     if (!values.endDate) nextErrors.endDate = "End date is required";
     if (!values.endTime) nextErrors.endTime = "End time is required";
-    if (!values.description.trim()) nextErrors.description = "Description is required";
+    if (!values.description.trim())
+      nextErrors.description = "Description is required";
 
     if (includeWebsiteUrl && values.websiteUrl) {
       try {
         // Basic URL format validation
-        // eslint-disable-next-line no-new
+
         new URL(values.websiteUrl);
       } catch {
         nextErrors.websiteUrl = "Enter a valid URL (including protocol)";
@@ -110,7 +111,12 @@ export default function CreateEventForm({
         });
       }
     }
-    if (values.startDate && values.startTime && values.endDate && values.endTime) {
+    if (
+      values.startDate &&
+      values.startTime &&
+      values.endDate &&
+      values.endTime
+    ) {
       const start = new Date(`${values.startDate}T${values.startTime}:00`);
       const end = new Date(`${values.endDate}T${values.endTime}:00`);
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
@@ -150,7 +156,9 @@ export default function CreateEventForm({
               onChange={(e) => setValues({ ...values, name: e.target.value })}
               required
             />
-            {errors.name && <p className="text-sm text-red-500">{errors.name}</p>}
+            {errors.name && (
+              <p className="text-sm text-red-500">{errors.name}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -161,10 +169,14 @@ export default function CreateEventForm({
                 type="date"
                 min={todayLocal()}
                 value={values.startDate}
-                onChange={(e) => setValues({ ...values, startDate: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, startDate: e.target.value })
+                }
                 required
               />
-              {errors.startDate && <p className="text-sm text-red-500">{errors.startDate}</p>}
+              {errors.startDate && (
+                <p className="text-sm text-red-500">{errors.startDate}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -173,10 +185,14 @@ export default function CreateEventForm({
                 id="startTime"
                 type="time"
                 value={values.startTime}
-                onChange={(e) => setValues({ ...values, startTime: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, startTime: e.target.value })
+                }
                 required
               />
-              {errors.startTime && <p className="text-sm text-red-500">{errors.startTime}</p>}
+              {errors.startTime && (
+                <p className="text-sm text-red-500">{errors.startTime}</p>
+              )}
             </div>
           </div>
 
@@ -188,10 +204,14 @@ export default function CreateEventForm({
                 type="date"
                 min={values.startDate || todayLocal()}
                 value={values.endDate}
-                onChange={(e) => setValues({ ...values, endDate: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, endDate: e.target.value })
+                }
                 required
               />
-              {errors.endDate && <p className="text-sm text-red-500">{errors.endDate}</p>}
+              {errors.endDate && (
+                <p className="text-sm text-red-500">{errors.endDate}</p>
+              )}
             </div>
 
             <div className="space-y-2">
@@ -200,10 +220,14 @@ export default function CreateEventForm({
                 id="endTime"
                 type="time"
                 value={values.endTime}
-                onChange={(e) => setValues({ ...values, endTime: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, endTime: e.target.value })
+                }
                 required
               />
-              {errors.endTime && <p className="text-sm text-red-500">{errors.endTime}</p>}
+              {errors.endTime && (
+                <p className="text-sm text-red-500">{errors.endTime}</p>
+              )}
             </div>
           </div>
 
@@ -214,7 +238,9 @@ export default function CreateEventForm({
               placeholder="Provide a short description of the conference..."
               rows={4}
               value={values.description}
-              onChange={(e) => setValues({ ...values, description: e.target.value })}
+              onChange={(e) =>
+                setValues({ ...values, description: e.target.value })
+              }
               required
             />
             {errors.description && (
@@ -230,7 +256,9 @@ export default function CreateEventForm({
                 type="url"
                 placeholder="https://example.org"
                 value={values.websiteUrl || ""}
-                onChange={(e) => setValues({ ...values, websiteUrl: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, websiteUrl: e.target.value })
+                }
                 required
               />
               {errors.websiteUrl && (
@@ -247,7 +275,9 @@ export default function CreateEventForm({
                 placeholder="Provide a detailed agenda for the conference..."
                 rows={4}
                 value={values.agenda || ""}
-                onChange={(e) => setValues({ ...values, agenda: e.target.value })}
+                onChange={(e) =>
+                  setValues({ ...values, agenda: e.target.value })
+                }
                 required
               />
               {errors.agenda && (
@@ -267,10 +297,14 @@ export default function CreateEventForm({
                   step="0.01"
                   placeholder="10000"
                   value={values.requiredBudget || ""}
-                  onChange={(e) => setValues({ ...values, requiredBudget: e.target.value })}
+                  onChange={(e) =>
+                    setValues({ ...values, requiredBudget: e.target.value })
+                  }
                 />
                 {errors.requiredBudget && (
-                  <p className="text-sm text-red-500">{errors.requiredBudget}</p>
+                  <p className="text-sm text-red-500">
+                    {errors.requiredBudget}
+                  </p>
                 )}
               </div>
 
@@ -281,7 +315,10 @@ export default function CreateEventForm({
                   className="w-full border rounded-md px-3 py-2 bg-background"
                   value={values.fundingSource || ""}
                   onChange={(e) =>
-                    setValues({ ...values, fundingSource: e.target.value as any })
+                    setValues({
+                      ...values,
+                      fundingSource: e.target.value as any,
+                    })
                   }
                 >
                   <option value="" disabled>
@@ -307,5 +344,3 @@ export default function CreateEventForm({
     </form>
   );
 }
-
-

@@ -1,8 +1,20 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, ChevronLeft, ChevronRight, Dumbbell, Search, Bell, User as UserIcon, Home , ArrowLeft} from "lucide-react";
+import {
+  Calendar,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Dumbbell,
+  Search,
+  Bell,
+  User as UserIcon,
+  Home,
+  ArrowLeft,
+} from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
+import StaffHeader from "@/components/StaffHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,7 +25,6 @@ import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
-
 
 type Slot = {
   startTime: string;
@@ -44,7 +55,9 @@ const formatTimeToAMPM = (time: string) => {
 
 export default function SportsFacilities() {
   const [, setLocation] = useLocation();
-  const [courtSchedules, setCourtSchedules] = useState<Record<CourtType, CourtSchedule[]>>({
+  const [courtSchedules, setCourtSchedules] = useState<
+    Record<CourtType, CourtSchedule[]>
+  >({
     basketball: [],
     tennis: [],
     football: [],
@@ -54,7 +67,9 @@ export default function SportsFacilities() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(undefined);
+  const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(
+    undefined
+  );
 
   useEffect(() => {
     // Fetch user role from token
@@ -90,8 +105,14 @@ export default function SportsFacilities() {
       .finally(() => setLoading(false));
   }, []);
 
-  const handleReserveCourt = (courtType: CourtType, date: string, slot: Slot) => {
-    alert(`${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`);
+  const handleReserveCourt = (
+    courtType: CourtType,
+    date: string,
+    slot: Slot
+  ) => {
+    alert(
+      `${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`
+    );
   };
 
   const handleCreateSuccess = (createdDate: Date) => {
@@ -138,54 +159,8 @@ export default function SportsFacilities() {
         <ProfessorHeader />
       ) : userRole === "events_office" ? (
         <EventsOfficeHeader />
-      ) : (userRole === "staff" || userRole === "ta") ? (
-        <div className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="flex h-16 items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Logo size="xl" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-5 w-5" />
-                </Button>
-                <ThemeToggle />
-                <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setLocation("/staff-ta")}
-              >
-                <Home className="h-4 w-4" />
-                Home
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setLocation("/my-events")}
-              >
-                <Calendar className="h-4 w-4" />
-                My Events
-              </Button>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                className="gap-2"
-                onClick={() => setLocation("/sports")}
-              >
-                <Dumbbell className="h-4 w-4" />
-                Sports Facilities
-              </Button>
-            </div>
-          </div>
-        </div>
+      ) : userRole === "staff" || userRole === "ta" ? (
+        <StaffHeader homeHref="/staff-ta" />
       ) : (
         <StudentHeader />
       )}
@@ -199,7 +174,10 @@ export default function SportsFacilities() {
           </p>
         </div>
 
-        <Tabs defaultValue={canViewCourts ? "courts" : "gym"} className="space-y-6">
+        <Tabs
+          defaultValue={canViewCourts ? "courts" : "gym"}
+          className="space-y-6"
+        >
           <TabsList>
             {canViewCourts && (
               <TabsTrigger value="courts">
@@ -216,85 +194,88 @@ export default function SportsFacilities() {
           {/* COURT SCHEDULES */}
           {canViewCourts && (
             <TabsContent value="courts">
-            {/* Centered Date Navigation — for courts only */}
-            <div className="flex items-center justify-center gap-4 my-6">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
-                disabled={currentDayIndex === 0}
-              >
-                <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-              </Button>
-              <div className="text-lg font-semibold min-w-[250px] text-center">
-                {formattedDate}
+              {/* Centered Date Navigation — for courts only */}
+              <div className="flex items-center justify-center gap-4 my-6">
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentDayIndex((prev) => Math.max(0, prev - 1))
+                  }
+                  disabled={currentDayIndex === 0}
+                >
+                  <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+                </Button>
+                <div className="text-lg font-semibold min-w-[250px] text-center">
+                  {formattedDate}
+                </div>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    setCurrentDayIndex((prev) => Math.min(6, prev + 1))
+                  }
+                  disabled={currentDayIndex === 6}
+                >
+                  Next <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
-              <Button
-                variant="outline"
-                onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
-                disabled={currentDayIndex === 6}
-              >
-                Next <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </div>
 
-
-            {loading ? (
-              <div className="text-center text-muted-foreground">
-                Loading court schedules...
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-3">
-                {Object.entries(COURT_NAMES).map(([type, label]) => (
-                  <Card key={type} className="flex flex-col justify-between">
-                    <CardHeader>
-                      <CardTitle className="text-xl text-center">
-                        {label}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-col gap-2">
-                        {currentSchedules[type as CourtType]?.length > 0 ? (
-                          currentSchedules[type as CourtType].map(
-                            (slot, sidx) => (
-                              <Button
-                                key={sidx}
-                                variant="outline"
-                                className="w-full justify-start gap-2"
-                                disabled={slot.status !== "available"}
-                                onClick={() =>
-                                  handleReserveCourt(
-                                    type as CourtType,
-                                    formattedDate,
-                                    slot
-                                  )
-                                }
-                              >
-                                <Clock className="h-4 w-4" />
-                                {formatTimeToAMPM(slot.startTime)} –{" "}
-                                {formatTimeToAMPM(slot.endTime)}
-                                {slot.status !== "available" && (
-                                  <Badge
-                                    variant="destructive"
-                                    className="ml-2"
-                                  >
-                                    Booked
-                                  </Badge>
-                                )}
-                              </Button>
+              {loading ? (
+                <div className="text-center text-muted-foreground">
+                  Loading court schedules...
+                </div>
+              ) : (
+                <div className="grid gap-6 md:grid-cols-3">
+                  {Object.entries(COURT_NAMES).map(([type, label]) => (
+                    <Card key={type} className="flex flex-col justify-between">
+                      <CardHeader>
+                        <CardTitle className="text-xl text-center">
+                          {label}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col gap-2">
+                          {currentSchedules[type as CourtType]?.length > 0 ? (
+                            currentSchedules[type as CourtType].map(
+                              (slot, sidx) => (
+                                <Button
+                                  key={sidx}
+                                  variant="outline"
+                                  className="w-full justify-start gap-2"
+                                  disabled={slot.status !== "available"}
+                                  onClick={() =>
+                                    handleReserveCourt(
+                                      type as CourtType,
+                                      formattedDate,
+                                      slot
+                                    )
+                                  }
+                                >
+                                  <Clock className="h-4 w-4" />
+                                  {formatTimeToAMPM(slot.startTime)} –{" "}
+                                  {formatTimeToAMPM(slot.endTime)}
+                                  {slot.status !== "available" && (
+                                    <Badge
+                                      variant="destructive"
+                                      className="ml-2"
+                                    >
+                                      Booked
+                                    </Badge>
+                                  )}
+                                </Button>
+                              )
                             )
-                          )
-                        ) : (
-                          <p className="text-muted-foreground text-sm text-center">
-                            No slots available for this day.
-                          </p>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </TabsContent>
+                          ) : (
+                            <p className="text-muted-foreground text-sm text-center">
+                              No slots available for this day.
+                            </p>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </TabsContent>
           )}
 
           {/* GYM SCHEDULES */}

@@ -1,4 +1,13 @@
-import { Bell, Home, CalendarDays, Store, CheckCircle2, Plane, ClipboardList, Dumbbell } from "lucide-react";
+import {
+  Bell,
+  Home,
+  CheckCircle2,
+  Plane,
+  ClipboardList,
+  Dumbbell,
+  Archive,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -19,7 +28,11 @@ export default function EventsOfficeHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
@@ -36,27 +49,7 @@ export default function EventsOfficeHeader() {
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Home
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/bazaar")}
-            data-testid="button-nav-bazaars"
-          >
-            <Store className="h-4 w-4" />
-            Bazaars
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/events-office/create/conference")}
-            data-testid="button-nav-conferences"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Conferences
+            Dashboard
           </Button>
           <Button
             variant="ghost"
@@ -68,7 +61,7 @@ export default function EventsOfficeHeader() {
             <Plane className="h-4 w-4" />
             Trips
           </Button>
-                    <Button
+          <Button
             variant="ghost"
             size="sm"
             className="gap-2"
@@ -98,13 +91,26 @@ export default function EventsOfficeHeader() {
             <ClipboardList className="h-4 w-4" />
             Vendor Requests
           </Button>
-          {/* <Button
+          <Button
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
-          /> */}
+            onClick={() => setLocation("/events-office/archived")}
+            data-testid="button-nav-archived"
+          >
+            <Archive className="h-4 w-4" />
+            Archived
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/reports/attendees")}
+            data-testid="button-nav-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Attendees Report
+          </Button>
         </div>
       </div>
     </header>

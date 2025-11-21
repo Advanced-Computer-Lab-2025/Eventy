@@ -1,11 +1,14 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import CreateEventForm, { CreateEventFormValues } from "@/components/CreateEventForm";
+import CreateEventForm, {
+  CreateEventFormValues,
+} from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface Conference {
   _id: string;
@@ -40,21 +43,27 @@ export default function EditConference() {
     const fetchConference = async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`, {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`,
+          {
+            headers: {
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }
+        );
 
         const contentType = res.headers.get("content-type");
         if (!contentType || !contentType.includes("application/json")) {
           const text = await res.text();
-          throw new Error(`Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`);
+          throw new Error(
+            `Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`
+          );
         }
 
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch conference");
+        if (!res.ok)
+          throw new Error(data.message || "Failed to fetch conference");
 
         setConference(data.data);
       } catch (err: any) {
@@ -69,7 +78,7 @@ export default function EditConference() {
 
   const handleSubmit = async (values: CreateEventFormValues) => {
     if (!conferenceId) return;
-    
+
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
@@ -80,30 +89,37 @@ export default function EditConference() {
         endDate: `${values.endDate}T${values.endTime}:00.000Z`,
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
-        requiredBudget: values.requiredBudget ? Number(values.requiredBudget) : 1000,
+        requiredBudget: values.requiredBudget
+          ? Number(values.requiredBudget)
+          : 1000,
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
       };
 
-      const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`, {
-        method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-        body: JSON.stringify(payload),
-      });
-      
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        }
+      );
 
       const contentType = res.headers.get("content-type");
       if (!contentType || !contentType.includes("application/json")) {
         const text = await res.text();
-        throw new Error(`Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`);
+        throw new Error(
+          `Unexpected response (${res.status}). Preview: ${text.substring(0, 120)}...`
+        );
       }
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to update conference");
+      if (!res.ok)
+        throw new Error(data.message || "Failed to update conference");
 
       setLocation("/events-office/dashboard");
     } catch (err: any) {
@@ -114,7 +130,7 @@ export default function EditConference() {
   };
 
   const formatDateForInput = (dateString: string) => {
-    return new Date(dateString).toISOString().split('T')[0];
+    return new Date(dateString).toISOString().split("T")[0];
   };
 
   const formatTimeForInput = (dateString: string) => {
@@ -144,7 +160,9 @@ export default function EditConference() {
               <CardTitle>Error</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-red-500 mb-4">{error || "Conference not found"}</p>
+              <p className="text-red-500 mb-4">
+                {error || "Conference not found"}
+              </p>
               <Button onClick={() => setLocation("/events-office/dashboard")}>
                 Back to Events Office Dashboard
               </Button>
@@ -175,12 +193,16 @@ export default function EditConference() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold">Edit Conference</h1>
-            <Button variant="outline" onClick={() => setLocation("/events-office/dashboard")}>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/events-office/dashboard")}
+            >
               Back to Events Office
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Update conference details. The conference website will contain all the conference's details.
+            Update conference details. The conference website will contain all
+            the conference's details.
           </p>
         </div>
 

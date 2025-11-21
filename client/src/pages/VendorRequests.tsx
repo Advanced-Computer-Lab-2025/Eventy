@@ -23,20 +23,35 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
-const token = localStorage.getItem("token");
+async function updateVendorStatus(
+  requestId: string,
+  status: "approved" | "rejected",
+  token: string | null
+) {
+  if (!token) {
+    throw new Error("Authentication token is required");
+  }
 
-async function updateVendorStatus(requestId: string, status: "approved" | "rejected") {
   try {
-    const response = await fetch(`http://localhost:4000/api/applications/${requestId}/status`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ status }),
-    });
+    const response = await fetch(
+      `http://localhost:4000/api/applications/${requestId}/status`,
+      {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status }),
+      }
+    );
 
     // CRITICAL FIX 1: Check Content-Type header before trying to parse the body.
     const contentType = response.headers.get("content-type");
@@ -47,7 +62,7 @@ async function updateVendorStatus(requestId: string, status: "approved" | "rejec
         `Server Error: Expected JSON, but received non-JSON (Status: ${response.status}). Preview: ${text.substring(0, 50)}...`
       );
     }
-    
+
     // CRITICAL FIX 2: Only parse JSON if we know it's JSON.
     const data = await response.json();
 
@@ -62,7 +77,6 @@ async function updateVendorStatus(requestId: string, status: "approved" | "rejec
     alert(err.message);
   }
 }
-
 
 //todo: remove mock functionality
 // const vendorRequests = [
@@ -92,17 +106,33 @@ export default function VendorRequests() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const { toast } = useToast();
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "pending" | "approved" | "rejected"
+  >("all");
+  const [token, setToken] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  let userRole: string | null = null;
-  try {
-    if (token) {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload?.role || null;
+  // Initialize token and userRole on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+
+    if (storedToken) {
+      try {
+        const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        setUserRole(payload?.role || null);
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+        setUserRole(null);
+      }
+    } else {
+      setUserRole(null);
     }
-  } catch {}
+  }, []);
 
   useEffect(() => {
+    if (!token) return; // Wait for token to be loaded
+
     const fetchApplications = async () => {
       try {
         setLoading(true);
@@ -138,16 +168,20 @@ export default function VendorRequests() {
       }
     };
     fetchApplications();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
+    if (!token || requests.length === 0) return; // Wait for token and requests
+
     // After applications are loaded, fetch unique event names
     const loadEventNames = async () => {
       const uniqueIds = Array.from(
         new Set(
           requests
             .map((r) => r?.event)
-            .filter((id): id is string => typeof id === "string" && id.length > 0)
+            .filter(
+              (id): id is string => typeof id === "string" && id.length > 0
+            )
         )
       ).filter((id) => !(id in eventNames));
 
@@ -157,14 +191,17 @@ export default function VendorRequests() {
         const entries = await Promise.all(
           uniqueIds.map(async (id) => {
             try {
-              const res = await fetch(`http://localhost:4000/api/events/${id}`, {
-                method: "GET",
-                headers: {
-                  "Content-Type": "application/json",
-                  ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                },
-                credentials: "include",
-              });
+              const res = await fetch(
+                `http://localhost:4000/api/events/${id}`,
+                {
+                  method: "GET",
+                  headers: {
+                    "Content-Type": "application/json",
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                  },
+                  credentials: "include",
+                }
+              );
 
               const contentType = res.headers.get("content-type");
               if (!contentType || !contentType.includes("application/json")) {
@@ -192,38 +229,67 @@ export default function VendorRequests() {
       }
     };
 
-    if (requests.length > 0) {
-      loadEventNames();
-    }
-  }, [requests]);
+    loadEventNames();
+  }, [requests, token, eventNames]);
 
   const handleApprove = async (requestId: string) => {
-  const updatedApp = await updateVendorStatus(requestId, "approved");
-  if (updatedApp) {
-    setRequests((prev) =>
-      prev.map((r: any) => (r._id === requestId ? { ...r, status: "approved" } : r))
-    );
-    toast({ title: "Request approved", description: "The vendor request has been approved." });
-  }
-};
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "approved", token);
+    if (updatedApp) {
+      setRequests((prev) =>
+        prev.map((r: any) =>
+          r._id === requestId ? { ...r, status: "approved" } : r
+        )
+      );
+      toast({
+        title: "Request approved",
+        description: "The vendor request has been approved.",
+      });
+      return updatedApp;
+    }
+    return null;
+  };
 
   const handleReject = async (requestId: string) => {
-  const updatedApp = await updateVendorStatus(requestId, "rejected");
-  if (updatedApp) {
-    setRequests((prev) =>
-      prev.map((r: any) => (r._id === requestId ? { ...r, status: "rejected" } : r))
-    );
-    toast({ title: "Request rejected", description: "The vendor request has been rejected.", variant: "destructive" });
-  }
-};
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "rejected", token);
+    if (updatedApp) {
+      setRequests((prev) =>
+        prev.map((r: any) =>
+          r._id === requestId ? { ...r, status: "rejected" } : r
+        )
+      );
+      toast({
+        title: "Request rejected",
+        description: "The vendor request has been rejected.",
+        variant: "destructive",
+      });
+      return updatedApp;
+    }
+    return null;
+  };
 
   const handleViewDocuments = (requestId: string) => {
     const req = requests.find((r) => r._id === requestId);
     setSelected(req || null);
     setDetailsOpen(!!req);
   };
-
-  
 
   return (
     <div className="min-h-screen bg-background">
@@ -234,7 +300,7 @@ export default function VendorRequests() {
       ) : (
         <Header />
       )}
-      
+
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
@@ -249,7 +315,10 @@ export default function VendorRequests() {
           </CardHeader> */}
           <CardContent>
             <div className="flex items-center justify-end mb-4 gap-2">
-              <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => setStatusFilter(v as any)}
+              >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by status" />
                 </SelectTrigger>
@@ -262,79 +331,97 @@ export default function VendorRequests() {
               </Select>
             </div>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">Loading requests...</div>
+              <div className="text-center py-8 text-muted-foreground">
+                Loading requests...
+              </div>
             ) : error ? (
               <div className="text-center py-8 text-red-600">{error}</div>
             ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Company Name</TableHead>
-                  <TableHead>Event</TableHead>
-                  <TableHead>Booth Size</TableHead>
-                  <TableHead>Attendees</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(statusFilter === "all" ? requests : requests.filter((r) => r.status === statusFilter)).map((request: any) => (
-                  <TableRow key={request._id} data-testid={`row-request-${request._id}`}>
-                    <TableCell className="font-medium">{request?.createdBy?.companyName || "Unknown"}</TableCell>
-                    <TableCell>{eventNames[request?.event] || (request?.event ? "Loading..." : "N/A")}</TableCell>
-                    <TableCell>{request?.boothSize || "-"}</TableCell>
-                    <TableCell>{Array.isArray(request?.attendees) ? request.attendees.length : 0}</TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={
-                          request.status === "approved"
-                            ? "bg-green-100 text-green-700 border-green-200"
-                            : request.status === "rejected"
-                            ? "bg-red-100 text-red-700 border-red-200"
-                            : "bg-yellow-100 text-yellow-800 border-yellow-200"
-                        }
-                      >
-                        {request.status?.charAt(0).toUpperCase() + request.status?.slice(1)}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleViewDocuments(request._id)}
-                          data-testid={`button-view-${request._id}`}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {request.status === "pending" && (
-                          <>
-                            <Button
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                              onClick={() => handleApprove(request._id)}
-                              data-testid={`button-approve-${request._id}`}
-                            >
-                              <CheckCircle className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => handleReject(request._id)}
-                              data-testid={`button-reject-${request._id}`}
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Company Name</TableHead>
+                    <TableHead>Event</TableHead>
+                    <TableHead>Booth Size</TableHead>
+                    <TableHead>Attendees</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {(statusFilter === "all"
+                    ? requests
+                    : requests.filter((r) => r.status === statusFilter)
+                  ).map((request: any) => (
+                    <TableRow
+                      key={request._id}
+                      data-testid={`row-request-${request._id}`}
+                    >
+                      <TableCell className="font-medium">
+                        {request?.createdBy?.companyName || "Unknown"}
+                      </TableCell>
+                      <TableCell>
+                        {eventNames[request?.event] ||
+                          (request?.event ? "Loading..." : "N/A")}
+                      </TableCell>
+                      <TableCell>{request?.boothSize || "-"}</TableCell>
+                      <TableCell>
+                        {Array.isArray(request?.attendees)
+                          ? request.attendees.length
+                          : 0}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={
+                            request.status === "approved"
+                              ? "bg-green-100 text-green-700 border-green-200"
+                              : request.status === "rejected"
+                                ? "bg-red-100 text-red-700 border-red-200"
+                                : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                          }
+                        >
+                          {request.status?.charAt(0).toUpperCase() +
+                            request.status?.slice(1)}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewDocuments(request._id)}
+                            data-testid={`button-view-${request._id}`}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {request.status === "pending" && (
+                            <>
+                              <Button
+                                size="sm"
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                                onClick={() => handleApprove(request._id)}
+                                data-testid={`button-approve-${request._id}`}
+                              >
+                                <CheckCircle className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleReject(request._id)}
+                                data-testid={`button-reject-${request._id}`}
+                              >
+                                <XCircle className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </CardContent>
         </Card>
@@ -385,11 +472,12 @@ export default function VendorRequests() {
                           selected?.status === "approved"
                             ? "bg-green-100 text-green-700 border-green-200"
                             : selected?.status === "rejected"
-                            ? "bg-red-100 text-red-700 border-red-200"
-                            : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                              ? "bg-red-100 text-red-700 border-red-200"
+                              : "bg-yellow-100 text-yellow-800 border-yellow-200"
                         }
                       >
-                        {selected?.status?.charAt(0).toUpperCase() + selected?.status?.slice(1)}
+                        {selected?.status?.charAt(0).toUpperCase() +
+                          selected?.status?.slice(1)}
                       </Badge>
                     </div>
                   </div>
@@ -401,14 +489,23 @@ export default function VendorRequests() {
                   </div>
                   <div>
                     <div className="font-medium">Created At</div>
-                    <div>{selected?.createdAt ? new Date(selected.createdAt).toLocaleString() : "-"}</div>
+                    <div>
+                      {selected?.createdAt
+                        ? new Date(selected.createdAt).toLocaleString()
+                        : "-"}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="font-medium">Company Logo</div>
                     {selected?.createdBy?.companyLogoUrl ? (
-                      <a className="text-primary underline" href={selected.createdBy.companyLogoUrl} target="_blank" rel="noreferrer">
+                      <a
+                        className="text-primary underline"
+                        href={selected.createdBy.companyLogoUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         View Logo
                       </a>
                     ) : (
@@ -418,7 +515,12 @@ export default function VendorRequests() {
                   <div>
                     <div className="font-medium">Tax Card</div>
                     {selected?.createdBy?.taxCardUrl ? (
-                      <a className="text-primary underline" href={selected.createdBy.taxCardUrl} target="_blank" rel="noreferrer">
+                      <a
+                        className="text-primary underline"
+                        href={selected.createdBy.taxCardUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
                         View Document
                       </a>
                     ) : (
@@ -428,7 +530,8 @@ export default function VendorRequests() {
                 </div>
                 <div>
                   <div className="font-medium mb-1">Attendees</div>
-                  {Array.isArray(selected?.attendees) && selected.attendees.length > 0 ? (
+                  {Array.isArray(selected?.attendees) &&
+                  selected.attendees.length > 0 ? (
                     <ul className="list-disc pl-5 space-y-1">
                       {selected.attendees.map((a: any) => (
                         <li key={`${a.name}-${a.email}`}>
@@ -445,9 +548,11 @@ export default function VendorRequests() {
                     <Button
                       className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={async () => {
-                        await handleApprove(selected._id);
-                        setSelected((prev: any) => (prev ? { ...prev, status: "approved" } : prev));
-                        setDetailsOpen(false);
+                        const updatedApp = await handleApprove(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "approved" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-approve-${selected._id}`}
                     >
@@ -456,9 +561,11 @@ export default function VendorRequests() {
                     <Button
                       variant="destructive"
                       onClick={async () => {
-                        await handleReject(selected._id);
-                        setSelected((prev: any) => (prev ? { ...prev, status: "rejected" } : prev));
-                        setDetailsOpen(false);
+                        const updatedApp = await handleReject(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "rejected" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-reject-${selected._id}`}
                     >

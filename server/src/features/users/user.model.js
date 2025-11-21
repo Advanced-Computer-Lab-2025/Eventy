@@ -15,12 +15,11 @@ const userSchema = new mongoose.Schema(
         return ["student", "staff", "ta", "professor"].includes(this.role);
       },
     },
-    email: { type: String, required: true, unique: true, index: true },
+    email: { type: String, required: true, index: true },
     password: { type: String, required: true },
 
     studentStaffId: {
       type: String,
-      unique: true,
       sparse: true,
       required: function () {
         return ["student", "staff", "ta", "professor"].includes(this.role);
@@ -42,9 +41,9 @@ const userSchema = new mongoose.Schema(
     },
     status: {
       type: String,
-      enum: ['active', 'blocked'],
-      default: 'active',
-      index: true
+      enum: ["active", "blocked"],
+      default: "active",
+      index: true,
     },
     role: {
       type: String,
@@ -63,7 +62,7 @@ const userSchema = new mongoose.Schema(
     status: {
       type: String,
       required: true,
-      enum: ["pending", "active", "deleted","blocked"],
+      enum: ["pending", "active", "deleted", "blocked"],
       default: "active",
     },
 
@@ -77,18 +76,20 @@ const userSchema = new mongoose.Schema(
       },
     ],
 
-    // New fields for verification email after the admin verifies their role
-    isVerified: { type: Boolean, default: true }, 
+    // ✅ New fields for verification email after the admin verifies their role	"The verification mail should contain a verification link that automatically redirects me to the login page"
+    isVerified: { type: Boolean, default: true }, // changed this
     verificationToken: { type: String },
 
-    deletedAt: { type: Date, default: null }, 
+    deletedAt: { type: Date, default: null },
 
     // Store favorite events for students, staff, TAs, and professors
-    favoriteEvents: [{
-      type: mongoose.Schema.Types.ObjectId,
-      ref: 'Event',
-      default: []
-    }],
+    favoriteEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Event",
+        default: [],
+      },
+    ],
   },
   { timestamps: true }
 );
@@ -98,7 +99,24 @@ userSchema.index({ firstName: 1 }); // Index for firstName search
 userSchema.index({ lastName: 1 }); // Index for lastName search
 userSchema.index({ firstName: 1, lastName: 1 }); // Compound index for full name search
 userSchema.index({ role: 1 }); // Index for role filtering
-userSchema.index({ status: 1 }); // Index for status filtering
+// Unique email ONLY when status is not "deleted"
+userSchema.index(
+  { email: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { status: { $ne: "deleted" } },
+  }
+);
+
+// Unique studentStaffId ONLY when status is not "deleted"
+userSchema.index(
+  { studentStaffId: 1 },
+  {
+    unique: true,
+    sparse: true,
+    partialFilterExpression: { status: { $ne: "deleted" } },
+  }
+);
 
 userSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);

@@ -13,9 +13,8 @@ class NotificationController {
           .status(401)
           .json({ success: false, message: "Unauthorized: user id not found" });
       }
-      const notifications = await NotificationService.getNotificationsByUserId(
-        userId
-      );
+      const notifications =
+        await NotificationService.getNotificationsByUserId(userId);
       res.json({ success: true, data: notifications });
     } catch (err) {
       res
@@ -74,9 +73,8 @@ class NotificationController {
   static async deleteNotification(req, res) {
     try {
       const notificationId = req.params.id;
-      const deleted = await NotificationService.softDeleteNotification(
-        notificationId
-      );
+      const deleted =
+        await NotificationService.softDeleteNotification(notificationId);
       if (!deleted) {
         return res
           .status(404)

@@ -1,10 +1,13 @@
 import { useState } from "react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import CreateEventForm, { CreateEventFormValues } from "@/components/CreateEventForm";
+import CreateEventForm, {
+  CreateEventFormValues,
+} from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 export default function CreateConference() {
   const [, setLocation] = useLocation();
@@ -21,7 +24,9 @@ export default function CreateConference() {
         endDate: `${values.endDate}T${values.endTime}:00.000Z`,
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
-        requiredBudget: values.requiredBudget ? Number(values.requiredBudget) : 1000,
+        requiredBudget: values.requiredBudget
+          ? Number(values.requiredBudget)
+          : 1000,
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
       };
@@ -37,7 +42,8 @@ export default function CreateConference() {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Failed to create conference");
+      if (!res.ok)
+        throw new Error(data.message || "Failed to create conference");
 
       setLocation("/events-office/dashboard");
     } catch (err: any) {
@@ -54,12 +60,16 @@ export default function CreateConference() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-4xl font-bold">Create Conference</h1>
-            <Button variant="outline" onClick={() => setLocation("/events-office/dashboard")}>
+            <Button
+              variant="outline"
+              onClick={() => setLocation("/events-office/dashboard")}
+            >
               Back to Events Office
             </Button>
           </div>
           <p className="text-muted-foreground">
-            Create a new conference. The conference website will contain all the conference's details.
+            Create a new conference. The conference website will contain all the
+            conference's details.
           </p>
         </div>
 
@@ -76,5 +86,3 @@ export default function CreateConference() {
     </div>
   );
 }
-
-

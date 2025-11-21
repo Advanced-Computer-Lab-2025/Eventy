@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { Search, Bell, LayoutGrid, User, Home, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,9 +26,20 @@ interface HeaderProps {
   hideBottomNav?: boolean;
 }
 
-export default function Header({ onSearch, homeOnly = false, homeHref = "/", hideSearch = false, showHomeTop = false, hideBottomNav = false }: HeaderProps) {
+export default function Header({
+  onSearch,
+  homeOnly = false,
+  homeHref = "/",
+  hideSearch = false,
+  showHomeTop = false,
+  hideBottomNav = false,
+}: HeaderProps) {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<{ firstName?: string; lastName?: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -63,7 +74,7 @@ export default function Header({ onSearch, homeOnly = false, homeHref = "/", hid
                 data-testid="button-header-home-top"
               >
                 <Home className="h-4 w-4" />
-                Home
+                Dashboard
               </Button>
             )}
           </div>
@@ -83,7 +94,11 @@ export default function Header({ onSearch, homeOnly = false, homeHref = "/", hid
           )}
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
@@ -94,32 +109,67 @@ export default function Header({ onSearch, homeOnly = false, homeHref = "/", hid
         </div>
 
         {!hideBottomNav && (
-        <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-          {homeOnly ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => setLocation(homeHref)}
-              data-testid="button-nav-home"
-            >
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-          ) : (
-            <>
-              <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-all">
-                <LayoutGrid className="h-4 w-4" />
-                All Events
+          <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
+            {homeOnly ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                onClick={() => setLocation(homeHref)}
+                data-testid="button-nav-home"
+              >
+                <Home className="h-4 w-4" />
+                Dashboard
               </Button>
-              <Button variant="ghost" size="sm" data-testid="button-nav-academic">Academic</Button>
-              <Button variant="ghost" size="sm" data-testid="button-nav-social">Social</Button>
-              <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
-              <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
-              <Button variant="ghost" size="sm" data-testid="button-nav-career">Career</Button>
-            </>
-          )}
-        </div>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  data-testid="button-nav-all"
+                >
+                  <LayoutGrid className="h-4 w-4" />
+                  All Events
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-nav-academic"
+                >
+                  Academic
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-nav-social"
+                >
+                  Social
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-nav-sports"
+                >
+                  Sports
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-nav-cultural"
+                >
+                  Cultural
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  data-testid="button-nav-career"
+                >
+                  Career
+                </Button>
+              </>
+            )}
+          </div>
         )}
       </div>
     </header>
