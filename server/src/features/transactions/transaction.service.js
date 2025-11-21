@@ -25,16 +25,6 @@ export class TransactionService {
     const event = await Event.findById(eventId);
     if (!event) throw new Error("Event not found");
 
-    if (
-      !event.attendees?.some(
-        (attendeeId) => attendeeId.toString() === userId.toString()
-      )
-    ) {
-      throw new Error(
-        "You must be registered for this event before making a payment."
-      );
-    }
-
     const amount = Number(event.price);
     if (isNaN(amount)) throw new Error("Event price is invalid");
 
