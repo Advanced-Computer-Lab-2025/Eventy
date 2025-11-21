@@ -685,6 +685,9 @@ export default function EventsOfficeDashboard() {
                                   (item) => item.name === name
                                 );
                                 const labelColor = segmentData?.color || "#333";
+                                // Show "Booth" instead of "Platform Booth" on chart label
+                                const displayName =
+                                  name === "Platform Booth" ? "Booth" : name;
                                 return (
                                   <text
                                     x={x}
@@ -694,7 +697,7 @@ export default function EventsOfficeDashboard() {
                                     dominantBaseline="central"
                                     fontSize="11"
                                   >
-                                    {`${name}: ${value}`}
+                                    {`${displayName}: ${value}`}
                                   </text>
                                 );
                               }}
