@@ -775,6 +775,22 @@ export default function VendorDashboard() {
                       {vendorStats.totalApplications} approved
                     </p>
                   </div>
+
+                  {/* Total Applications */}
+                  <div className="text-center border-t pt-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium">
+                        Total Applications
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {vendorStats.totalApplications}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendorStats.pendingCount} pending review
+                    </p>
+                  </div>
                 </CardContent>
               </Card>
             </div>
