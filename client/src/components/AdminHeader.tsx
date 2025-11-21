@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Home, Users, FileText } from "lucide-react";
+import { Bell, Home, Users, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -34,34 +34,12 @@ export default function AdminHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
-            data-testid="button-nav-all"
+            data-testid="button-nav-admin-dashboard"
+            onClick={() => setLocation("/admin")}
           >
-            <LayoutGrid className="h-4 w-4" />
-            All Events
+            <Home className="h-4 w-4" />
+            Dashboard
           </Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-academic">
-            Academic
-          </Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-social">
-            Social
-          </Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-sports">
-            Sports
-          </Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-cultural">
-            Cultural
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/reports/attendees")}
-            data-testid="button-nav-reports"
-          >
-            <FileText className="h-4 w-4" />
-            Attendees Report
-          </Button>
-          {/* ✅ New Users Button */}
           <Button
             variant="ghost"
             size="sm"
@@ -72,16 +50,15 @@ export default function AdminHeader() {
             <Users className="h-4 w-4" />
             Users
           </Button>
-
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
-            data-testid="button-nav-admin-dashboard"
-            onClick={() => setLocation("/admin")}
+            onClick={() => setLocation("/reports/attendees")}
+            data-testid="button-nav-reports"
           >
-            <Home className="h-4 w-4" />
-            Home
+            <FileText className="h-4 w-4" />
+            Attendees Report
           </Button>
         </div>
       </div>

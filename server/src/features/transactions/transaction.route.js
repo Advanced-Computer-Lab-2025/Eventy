@@ -34,7 +34,7 @@ router.post(
 router.post(
   "/confirm",
   authMiddleware,
-  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
+  roleMiddleware(["student", "staff", "ta", "professor"]),
   transactionController.confirmStripePayment.bind(transactionController)
 );
 
@@ -47,8 +47,19 @@ router.post(
   "/wallet/top-up",
   authMiddleware,
   validate(walletTopUpSchema, "body"),
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
   transactionController.topUpWallet.bind(transactionController)
+);
+/**
+ * @route   GET /api/transactions/me
+ * @desc    Get all transactions for the logged-in user
+ * @access  Student, Staff, TA, Professor
+ */
+router.get(
+  "/me",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  transactionController.getMyTransactions.bind(transactionController)
 );
 
 export default router;

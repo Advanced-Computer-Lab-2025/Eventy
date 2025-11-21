@@ -25,6 +25,17 @@ router.get(
 );
 
 /**
+ * @route   POST /api/facilities/courts/reserve
+ * @desc    Reserve a court for a specific time slot
+ * @access  Private (Students only)
+ */
+router.post(
+  "/courts/reserve",
+  authMiddleware,
+  facilitiesController.reserveCourt.bind(facilitiesController)
+);
+
+/**
  * @route   POST /api/facilities/admin/gym/sessions
  * @desc    Create a new gym session (Admin or Events Office only)
  * @access  Private

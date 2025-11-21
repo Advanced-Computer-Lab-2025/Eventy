@@ -31,12 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const token = localStorage.getItem("token");
-
 async function updateVendorStatus(
   requestId: string,
-  status: "approved" | "rejected"
+  status: "approved" | "rejected",
+  token: string | null
 ) {
+  if (!token) {
+    throw new Error("Authentication token is required");
+  }
+
   try {
     const response = await fetch(
       `http://localhost:4000/api/applications/${requestId}/status`,
@@ -106,16 +109,30 @@ export default function VendorRequests() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "rejected"
   >("all");
+  const [token, setToken] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  let userRole: string | null = null;
-  try {
-    if (token) {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload?.role || null;
+  // Initialize token and userRole on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+
+    if (storedToken) {
+      try {
+        const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        setUserRole(payload?.role || null);
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+        setUserRole(null);
+      }
+    } else {
+      setUserRole(null);
     }
-  } catch {}
+  }, []);
 
   useEffect(() => {
+    if (!token) return; // Wait for token to be loaded
+
     const fetchApplications = async () => {
       try {
         setLoading(true);
@@ -151,9 +168,11 @@ export default function VendorRequests() {
       }
     };
     fetchApplications();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
+    if (!token || requests.length === 0) return; // Wait for token and requests
+
     // After applications are loaded, fetch unique event names
     const loadEventNames = async () => {
       const uniqueIds = Array.from(
@@ -210,13 +229,20 @@ export default function VendorRequests() {
       }
     };
 
-    if (requests.length > 0) {
-      loadEventNames();
-    }
-  }, [requests]);
+    loadEventNames();
+  }, [requests, token, eventNames]);
 
   const handleApprove = async (requestId: string) => {
-    const updatedApp = await updateVendorStatus(requestId, "approved");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "approved", token);
     if (updatedApp) {
       setRequests((prev) =>
         prev.map((r: any) =>
@@ -227,11 +253,22 @@ export default function VendorRequests() {
         title: "Request approved",
         description: "The vendor request has been approved.",
       });
+      return updatedApp;
     }
+    return null;
   };
 
   const handleReject = async (requestId: string) => {
-    const updatedApp = await updateVendorStatus(requestId, "rejected");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "rejected", token);
     if (updatedApp) {
       setRequests((prev) =>
         prev.map((r: any) =>
@@ -243,7 +280,9 @@ export default function VendorRequests() {
         description: "The vendor request has been rejected.",
         variant: "destructive",
       });
+      return updatedApp;
     }
+    return null;
   };
 
   const handleViewDocuments = (requestId: string) => {
@@ -509,11 +548,11 @@ export default function VendorRequests() {
                     <Button
                       className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={async () => {
-                        await handleApprove(selected._id);
-                        setSelected((prev: any) =>
-                          prev ? { ...prev, status: "approved" } : prev
-                        );
-                        setDetailsOpen(false);
+                        const updatedApp = await handleApprove(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "approved" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-approve-${selected._id}`}
                     >
@@ -522,11 +561,11 @@ export default function VendorRequests() {
                     <Button
                       variant="destructive"
                       onClick={async () => {
-                        await handleReject(selected._id);
-                        setSelected((prev: any) =>
-                          prev ? { ...prev, status: "rejected" } : prev
-                        );
-                        setDetailsOpen(false);
+                        const updatedApp = await handleReject(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "rejected" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-reject-${selected._id}`}
                     >

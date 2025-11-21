@@ -59,6 +59,14 @@ router.get(
   eventsController.getMyWorkshops.bind(eventsController)
 );
 
+// Get participants and remaining spots for a workshop (professor only)
+router.get(
+  "/workshops/:workshopId/participants",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.getWorkshopParticipants.bind(eventsController)
+);
+
 // Accept workshop
 router.patch(
   "/:id/accept",
