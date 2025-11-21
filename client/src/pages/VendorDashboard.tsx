@@ -620,79 +620,96 @@ export default function VendorDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="pt-0 px-4">
-                  <ResponsiveContainer width="100%" height={280}>
-                    <PieChart>
-                      <Pie
-                        data={applicationStatusData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={5}
-                        dataKey="value"
-                        label={({
-                          name,
-                          value,
-                          cx,
-                          cy,
-                          midAngle,
-                          outerRadius,
-                        }) => {
-                          if (value === 0) return null;
-                          const RADIAN = Math.PI / 180;
-                          const radius = outerRadius + 25; // Add distance from chart for spacing
-                          const x = cx + radius * Math.cos(-midAngle * RADIAN);
-                          const y = cy + radius * Math.sin(-midAngle * RADIAN);
-                          // Find the color for this segment
-                          const segmentData = applicationStatusData.find(
-                            (item) => item.name === name
-                          );
-                          const labelColor = segmentData?.color || "#333";
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              fill={labelColor}
-                              textAnchor={x > cx ? "start" : "end"}
-                              dominantBaseline="central"
-                              fontSize="11"
-                            >
-                              {`${name}: ${value}`}
-                            </text>
-                          );
-                        }}
-                        labelLine={{
-                          stroke: "#666",
-                          strokeWidth: 1,
-                        }}
-                      >
-                        {applicationStatusData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        formatter={(value: number) => Math.floor(value)}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                  <div className="mt-4 flex justify-center">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
-                      {applicationStatusData.map((item) => (
-                        <div
-                          key={item.name}
-                          className="flex items-center gap-2"
-                        >
-                          <div
-                            className="w-3 h-3 rounded-full flex-shrink-0"
-                            style={{ backgroundColor: item.color }}
-                          />
-                          <span className="text-muted-foreground font-medium">
-                            {item.name}
-                          </span>
-                        </div>
-                      ))}
+                  {applicationStatusData.length === 0 ||
+                  applicationStatusData.every((item) => item.value === 0) ? (
+                    <div className="h-[280px] flex flex-col items-center justify-center">
+                      <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground text-sm">
+                        No applications yet
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Start by applying to a bazaar or booth
+                      </p>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={applicationStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={({
+                              name,
+                              value,
+                              cx,
+                              cy,
+                              midAngle,
+                              outerRadius,
+                            }) => {
+                              if (value === 0) return null;
+                              const RADIAN = Math.PI / 180;
+                              const radius = outerRadius + 25; // Add distance from chart for spacing
+                              const x =
+                                cx + radius * Math.cos(-midAngle * RADIAN);
+                              const y =
+                                cy + radius * Math.sin(-midAngle * RADIAN);
+                              // Find the color for this segment
+                              const segmentData = applicationStatusData.find(
+                                (item) => item.name === name
+                              );
+                              const labelColor = segmentData?.color || "#333";
+                              return (
+                                <text
+                                  x={x}
+                                  y={y}
+                                  fill={labelColor}
+                                  textAnchor={x > cx ? "start" : "end"}
+                                  dominantBaseline="central"
+                                  fontSize="11"
+                                >
+                                  {`${name}: ${value}`}
+                                </text>
+                              );
+                            }}
+                            labelLine={{
+                              stroke: "#666",
+                              strokeWidth: 1,
+                            }}
+                          >
+                            {applicationStatusData.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number) => Math.floor(value)}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-4 flex justify-center">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          {applicationStatusData.map((item) => (
+                            <div
+                              key={item.name}
+                              className="flex items-center gap-2"
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-muted-foreground font-medium">
+                                {item.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
 
@@ -704,24 +721,39 @@ export default function VendorDashboard() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <ResponsiveContainer width="100%" height={280}>
-                    <BarChart data={applicationTypeData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis
-                        tickFormatter={(value) => Math.floor(value).toString()}
-                        allowDecimals={false}
-                      />
-                      <Tooltip
-                        formatter={(value: number) => Math.floor(value)}
-                      />
-                      <Bar dataKey="value" fill="#8884d8" barSize={60}>
-                        {applicationTypeData.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
+                  {applicationTypeData.length === 0 ||
+                  applicationTypeData.every((item) => item.value === 0) ? (
+                    <div className="h-[280px] flex flex-col items-center justify-center">
+                      <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground text-sm">
+                        No applications yet
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Start by applying to a bazaar or booth
+                      </p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={applicationTypeData}>
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis
+                          tickFormatter={(value) =>
+                            Math.floor(value).toString()
+                          }
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          formatter={(value: number) => Math.floor(value)}
+                        />
+                        <Bar dataKey="value" fill="#8884d8" barSize={60}>
+                          {applicationTypeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </CardContent>
               </Card>
 
