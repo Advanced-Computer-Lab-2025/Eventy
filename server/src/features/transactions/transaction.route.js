@@ -47,7 +47,7 @@ router.post(
   "/wallet/top-up",
   authMiddleware,
   validate(walletTopUpSchema, "body"),
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
   transactionController.topUpWallet.bind(transactionController)
 );
 
