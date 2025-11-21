@@ -79,7 +79,7 @@ class UserService {
       )
         .sort({ createdAt: -1 })
         .select(
-          "firstName lastName email role status deletedAt createdAt updatedAt studentStaffId"
+          "firstName lastName email role status deletedAt createdAt updatedAt studentStaffId companyName"
         )
         .lean();
 

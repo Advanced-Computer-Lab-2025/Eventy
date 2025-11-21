@@ -48,8 +48,9 @@ import {
 
 interface User {
   _id: string;
-  firstName: string;
-  lastName: string;
+  firstName?: string;
+  lastName?: string;
+  companyName?: string;
   email: string;
   role: string | null;
   status: string;
@@ -230,11 +231,19 @@ export default function AdminUsers() {
       </div>
     );
 
+  // Helper function to get display name
+  const getDisplayName = (user: User): string => {
+    if (user.role === "vendor" && user.companyName) {
+      return user.companyName;
+    }
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "N/A";
+  };
+
   const filteredUsers = users.filter((user) => {
     const q = searchQuery.toLowerCase();
+    const displayName = getDisplayName(user).toLowerCase();
     const matchesSearch =
-      `${user.firstName} ${user.lastName}`.toLowerCase().includes(q) ||
-      user.email.toLowerCase().includes(q);
+      displayName.includes(q) || user.email.toLowerCase().includes(q);
     const matchesRole =
       roleFilter === "all" || (user.role || "").toLowerCase() === roleFilter;
     const matchesStatus =
@@ -386,8 +395,7 @@ export default function AdminUsers() {
                 {filteredUsers.map((user) => (
                   <TableRow key={user._id} data-testid={`row-user-${user._id}`}>
                     <TableCell className="font-medium">
-                      {" "}
-                      {`${user.firstName} ${user.lastName}`}
+                      {getDisplayName(user)}
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
@@ -502,7 +510,9 @@ export default function AdminUsers() {
                       key={user._id}
                       data-testid={`row-pending-user-${user._id}`}
                     >
-                      <TableCell className="font-medium">{`${user.firstName} ${user.lastName}`}</TableCell>
+                      <TableCell className="font-medium">
+                        {getDisplayName(user)}
+                      </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
                         <Badge variant="outline">Unassigned</Badge>
