@@ -9,9 +9,6 @@ export interface FavoriteEvent {
   endDate: string;
   bannerImage?: string;
   status: string;
-  eventType?: string; // Add eventType field
-  type?: string; // Fallback field
-  category?: string; // Fallback field
 }
 
 export const favoritesApi = {

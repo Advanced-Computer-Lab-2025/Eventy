@@ -88,4 +88,34 @@ router.get(
   UserController.getFavoriteEvents
 );
 
+// PATCH /api/users/:userId/block-status - Block/Unblock a user (admin only)
+router.patch(
+  "/:userId/block-status",
+  authMiddleware,
+  role(["admin"]),
+  UserController.toggleBlockStatus
+);
+
+// Favorite events routes for students, staff, TAs, and professors
+router.post(
+  "/favorites",
+  authMiddleware,
+  role(["student", "staff", "ta", "professor"]),
+  UserController.addToFavorites
+);
+
+router.delete(
+  "/favorites/:eventId",
+  authMiddleware,
+  role(["student", "staff", "ta", "professor"]),
+  UserController.removeFromFavorites
+);
+
+router.get(
+  "/favorites",
+  authMiddleware,
+  role(["student", "staff", "ta", "professor"]),
+  UserController.getFavoriteEvents
+);
+
 export default router;

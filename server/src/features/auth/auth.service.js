@@ -143,7 +143,20 @@ export const loginUser = async (data) => {
   if (!user) {
     throw new Error("No account found with this email.");
   }
-
+  switch (user.status) {
+    case "blocked":
+      throw new Error("You are currently a blocked user");
+    case "deleted":
+      throw new Error("This account has been deleted.");
+    case "pending":
+      throw new Error(
+        "Your account is pending verification. Please check your email."
+      );
+    case "active":
+      break; // Continue with login process
+    default:
+      throw new Error("Invalid account status.");
+  }
   // ✅ Step 3: GUC email check (for non-vendor users)
   if (
     user.role !== "vendor" &&
