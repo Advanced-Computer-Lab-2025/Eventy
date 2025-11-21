@@ -34,7 +34,7 @@ router.post(
 router.post(
   "/confirm",
   authMiddleware,
-  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
+  roleMiddleware(["student", "staff", "ta", "professor"]),
   transactionController.confirmStripePayment.bind(transactionController)
 );
 
@@ -47,7 +47,7 @@ router.post(
   "/wallet/top-up",
   authMiddleware,
   validate(walletTopUpSchema, "body"),
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  roleMiddleware(["student", "staff", "ta", "professor", "vendor"]),
   transactionController.topUpWallet.bind(transactionController)
 );
 /**
