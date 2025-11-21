@@ -712,4 +712,40 @@ export class EventsController {
       next(err);
     }
   }
+  // Cancel event registration (for Student/Staff/TA/Professor)
+  async cancelEventRegistration(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only registered users can cancel their registrations."
+        );
+      }
+
+      const result = await eventService.cancelEventRegistration(
+        eventId,
+        userId
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            result,
+            "Registration cancelled and amount refunded."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
 }

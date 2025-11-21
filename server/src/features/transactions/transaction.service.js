@@ -439,4 +439,45 @@ export class TransactionService {
       transaction,
     };
   }
+  /**
+   * Refunds a user for a specific event.
+   * @param {string} userId - User's ID
+   * @param {string} eventId - Event's ID
+   * @returns {Promise<Object>} Refund transaction details
+   * @throws {Error} If no successful transaction found or wallet not found
+   */
+  async refundUserForEvent(userId, eventId) {
+    // Find successful transaction for that event
+    const transaction = await Transaction.findOne({
+      userId,
+      "relatedEntity.type": "Event",
+      "relatedEntity.id": eventId,
+      status: "completed",
+      type: "payment",
+    });
+
+    if (!transaction) {
+      throw new Error("No successful transaction found for this event.");
+    }
+
+    // Always refund to wallet balance
+    const user = await User.findById(userId);
+    if (!user) throw new Error("User not found");
+
+    user.walletBalance += transaction.amount;
+    await user.save();
+
+    // Create refund transaction
+    const refundTransaction = await Transaction.create({
+      userId,
+      type: "refund",
+      amount: transaction.amount,
+      status: "completed",
+      paymentMethod: "wallet", // Always set to wallet
+      description: `Refund for event cancellation (${eventId})`,
+      relatedEntity: { type: "Event", id: eventId },
+    });
+
+    return refundTransaction;
+  }
 }
