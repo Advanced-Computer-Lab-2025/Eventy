@@ -11,6 +11,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  restrictAccessSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -660,15 +661,13 @@ export class EventsController {
       }
 
       // Validate request body
-      const { roles } = req.body;
-      if (!Array.isArray(roles)) {
-        throw new ApiError(400, "Roles must be provided as an array");
-      }
+      const { error } = restrictAccessSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
 
       // Call service to restrict access
       const event = await eventService.restrictAccess(
         req.params.id,
-        roles,
+        req.body.roles,
         req.user
       );
 

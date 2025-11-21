@@ -300,3 +300,9 @@ export const getAttendeesReportSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 }).options({ stripUnknown: true });
+
+export const restrictAccessSchema = Joi.object({
+  roles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .required(),
+});
