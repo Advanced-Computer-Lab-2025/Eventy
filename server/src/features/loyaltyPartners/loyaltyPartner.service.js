@@ -23,6 +23,13 @@ export const LoyaltyPartnerService = {
     };
   },
 
+  async getAllUserIds() {
+    const users = await User.find({
+      role: { $in: ["student", "staff", "ta", "professor"] },
+    }).select("_id");
+
+    return users.map((user) => user._id);
+  },
   async applyLoyaltyProgram(vendorId, data) {
     // Check if vendor already has an active loyalty program
     const existing = await LoyaltyPartner.findOne({
@@ -51,6 +58,14 @@ export const LoyaltyPartnerService = {
       cancelledProgram.deletedAt = null; // Remove cancellation timestamp
 
       await cancelledProgram.save();
+      // Notify users about the reactivation
+      await NotificationService.createNotification({
+        title: "Loyalty Program Reactivated",
+        message: `The loyalty program for ${cancelledProgram.vendorName} has been reactivated.`,
+        // recipients: await this.getAllUserIds(), // Fetch all relevant user IDs
+        recipients: await LoyaltyPartnerService.getAllUserIds(),
+        createdAt: new Date(),
+      });
       return cancelledProgram;
     }
 
@@ -71,6 +86,15 @@ export const LoyaltyPartnerService = {
       promoCode: data.promoCode,
       termsAndConditions: data.termsAndConditions,
       expiryDate: data.expiryDate,
+    });
+
+    // Notify users about the new loyalty partner
+    await NotificationService.createNotification({
+      title: "New Loyalty Partner Added",
+      message: `A new partner, ${vendorName}, has joined the GUC loyalty program!`,
+      //recipients: await this.getAllUserIds(), // Fetch all relevant user IDs
+      recipients: await LoyaltyPartnerService.getAllUserIds(),
+      createdAt: new Date(),
     });
 
     return newApplication;
