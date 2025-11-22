@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import { Event } from "../events/event.model.js";
 import mongoose from "mongoose";
 import * as UserModule from "../users/user.model.js";
+import { sendCommentDeletionWarning } from "../auth/email.service.js";
 const User = UserModule.default ?? UserModule.User ?? UserModule;
 
 export async function submitFeedbackService(
@@ -111,7 +112,12 @@ export async function getUserEventFeedbackService(userId, eventId) {
   return feedback;
 }
 
-export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
+export async function deleteCommentByAdmin(
+  adminId,
+  feedbackId,
+  commentId,
+  deletionReason
+) {
   // Validate IDs
   if (
     !mongoose.Types.ObjectId.isValid(adminId) ||
@@ -121,8 +127,10 @@ export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
     throw new ApiError(400, "Invalid adminId, feedbackId, or commentId.");
   }
 
-  // Ensure caller is an admin
-  const admin = await User.findById(adminId).select("role");
+  // Ensure caller is an admin (populate name/email for notifications)
+  const admin = await User.findById(adminId).select(
+    "role firstName lastName email"
+  );
   if (!admin) {
     throw new ApiError(401, "Admin user not found.");
   }
@@ -130,11 +138,18 @@ export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
     throw new ApiError(403, "Access denied. Admins only.");
   }
 
-  // Load feedback document
-  const feedback = await Feedback.findById(feedbackId);
+  // Load feedback document with populated user data and comments' authors
+  const feedback = await Feedback.findById(feedbackId)
+    .populate("userId", "firstName lastName email role")
+    .populate("comments.userId", "firstName lastName email role");
+
   if (!feedback) {
     throw new ApiError(404, "Feedback not found.");
   }
+
+  // Get the event details for the email (safe lookup)
+  const event = await Event.findById(feedback.eventId).select("name").lean();
+  const eventName = event?.name ?? "the event";
 
   // Ensure comments array exists
   const comments = Array.isArray(feedback.comments) ? feedback.comments : [];
@@ -157,12 +172,57 @@ export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
     throw new ApiError(400, "Comment already deleted.");
   }
 
+  // Get comment author details (may already be populated)
+  let commentAuthor = null;
+  if (
+    comment.userId &&
+    typeof comment.userId === "object" &&
+    comment.userId.email
+  ) {
+    commentAuthor = comment.userId;
+  } else if (comment.userId) {
+    commentAuthor = await User.findById(comment.userId).select(
+      "firstName lastName email role"
+    );
+  }
+
+  // Store comment body before deletion for email
+  const commentBody = comment.body ?? "";
+
   // Soft-delete only the comment (do not remove whole feedback)
   comment.deletedAt = new Date();
   if ("status" in comment) comment.status = "deleted";
 
   // Persist changes
   await feedback.save();
+
+  // Send warning email to comment author if they have allowed roles
+  const allowedRoles = ["student", "staff", "ta", "professor", "events_office"];
+  if (
+    commentAuthor &&
+    commentAuthor.email &&
+    allowedRoles.includes((commentAuthor.role ?? "").toLowerCase())
+  ) {
+    (async () => {
+      try {
+        await sendCommentDeletionWarning({
+          userName:
+            `${commentAuthor.firstName ?? ""} ${commentAuthor.lastName ?? ""}`.trim() ||
+            "User",
+          userEmail: commentAuthor.email,
+          eventName,
+          commentBody,
+          deletionReason: deletionReason || "inappropriate content",
+        });
+      } catch (emailError) {
+        // log but do not fail the request
+        console.error(
+          "Failed to send comment deletion warning email:",
+          emailError
+        );
+      }
+    })();
+  }
 
   // Return minimal sanitized info about deleted comment
   return {
