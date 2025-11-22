@@ -6,6 +6,8 @@ import {
   payForEventBodySchema,
   payForEventParamsSchema,
   walletTopUpSchema,
+  payForApplicationBodySchema,
+  payForApplicationParamsSchema,
 } from "./transaction.validation.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
@@ -60,6 +62,31 @@ router.get(
   authMiddleware,
   roleMiddleware(["student", "staff", "ta", "professor"]),
   transactionController.getMyTransactions.bind(transactionController)
+);
+
+/**
+ * @route   POST /api/transactions/applications/:applicationId/pay
+ * @desc    Pay for a vendor application (bazaar or booth)
+ * @access  Vendor
+ */
+router.post(
+  "/applications/:applicationId/pay",
+  authMiddleware,
+  validate(payForApplicationParamsSchema, "params"),
+  validate(payForApplicationBodySchema, "body"),
+  roleMiddleware(["vendor"]),
+  transactionController.payForApplication.bind(transactionController)
+);
+
+/**
+ * @route   GET /api/transactions/stripe-key
+ * @desc    Get Stripe publishable key
+ * @access  Authenticated users
+ */
+router.get(
+  "/stripe-key",
+  authMiddleware,
+  transactionController.getStripePublishableKey.bind(transactionController)
 );
 
 export default router;
