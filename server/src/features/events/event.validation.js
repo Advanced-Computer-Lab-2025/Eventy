@@ -24,6 +24,9 @@ export const createTripSchema = Joi.object({
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required(),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
 });
 
 export const createConferenceSchema = Joi.object({
