@@ -5,6 +5,7 @@ import {
   gymSessionsQuerySchema,
   cancelGymSessionSchema,
   editGymSessionSchema,
+  reserveCourtSchema,
 } from "./facility.validation.js";
 
 export class FacilitiesController {
@@ -21,6 +22,37 @@ export class FacilitiesController {
         data: schedules,
       });
     } catch (error) {
+      next(error);
+    }
+  }
+
+  async reserveCourt(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+      if (req.user.role !== "student") {
+        throw new ApiError(403, "Only students can reserve courts.");
+      }
+      const { error } = reserveCourtSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      const reservation = await FacilitiesService.reserveCourt(
+        req.user.id,
+        req.body
+      );
+
+      res.status(201).json({
+        success: true,
+        message: "Court reserved successfully.",
+        data: reservation,
+      });
+    } catch (error) {
+      if (error.code === 11000) {
+        return res.status(409).json({
+          message: "This time slot is already booked",
+        });
+      }
       next(error);
     }
   }

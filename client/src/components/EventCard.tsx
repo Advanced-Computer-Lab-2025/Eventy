@@ -2,7 +2,6 @@ import {
   Calendar,
   MapPin,
   Users,
-  Bookmark,
   Share2,
   Store,
   Trash2,
@@ -10,6 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FavoriteButton } from "./FavoriteButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
@@ -86,11 +86,13 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  isRegistered?: boolean;
   onRegister?: () => void;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
   onViewDetails?: () => void;
+  onFeedback?: () => void;
   onArchive?: () => void;
   isArchiving?: boolean;
   canDelete?: boolean;
@@ -119,6 +121,8 @@ export default function EventCard({
   onShare,
   onDelete,
   onViewDetails,
+  onFeedback,
+  isRegistered = false,
   onArchive,
   isArchiving = false,
   canDelete = false,
@@ -130,18 +134,24 @@ export default function EventCard({
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  // Determine user role for delete permission
+
+  // Determine user role for delete permission and favorite button visibility
   let roleAllowsDelete = false;
+  let roleAllowsFavorites = false;
   try {
     const token = localStorage.getItem("token");
     if (token) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const role = payload?.role;
       roleAllowsDelete = role === "admin" || role === "events_office";
+      roleAllowsFavorites = ["student", "staff", "ta", "professor"].includes(
+        role
+      );
     }
   } catch {}
   // Respect parent component's `canDelete` prop in addition to role
   const canShowDelete = roleAllowsDelete && canDelete;
+  const canShowFavorites = roleAllowsFavorites;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
@@ -172,7 +182,9 @@ export default function EventCard({
 
   return (
     <Card
-      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${className || ""}`}
+      className={`group overflow-hidden hover-elevate transition-all duration-200 hover:-translate-y-1 hover:shadow-lg flex flex-col ${
+        className || ""
+      }`}
       data-testid={`card-event-${id}`}
     >
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
@@ -320,14 +332,24 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {canRegister && onRegister && (
+              {isRegistered && startDate && new Date() > new Date(startDate) ? (
                 <Button
                   className="flex-1"
-                  onClick={onRegister}
-                  data-testid={`button-register-${id}`}
+                  onClick={onFeedback}
+                  data-testid={`button-feedback-${id}`}
                 >
-                  Register
+                  Give Feedback
                 </Button>
+              ) : (
+                canRegister && (
+                  <Button
+                    className="flex-1"
+                    onClick={onRegister}
+                    data-testid={`button-register-${id}`}
+                  >
+                    Register
+                  </Button>
+                )
               )}
               {onArchive && (
                 <Button
@@ -354,15 +376,22 @@ export default function EventCard({
                   )}
                 </Button>
               )}
-              {onViewDetails && (
-                <Button
-                  className={canRegister ? "flex-1" : "w-full"}
-                  variant="outline"
-                  onClick={onViewDetails}
-                >
-                  View Details
-                </Button>
-              )}
+              <div className="flex gap-2 ml-auto">
+                {" "}
+                {onViewDetails && (
+                  <Button
+                    className={canRegister ? "flex-1" : "flex-1"}
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails();
+                    }}
+                  >
+                    View Details
+                  </Button>
+                )}
+                {canShowFavorites && <FavoriteButton eventId={id} />}
+              </div>
               {canShowDelete && !hasRegistrations && (
                 <Button
                   variant="destructive"
@@ -457,15 +486,27 @@ export default function EventCard({
             )}
 
             {showActions && (
-              <div className="flex gap-2 pt-2">
-                {isRegisterable && onRegister && (
+              <div className="flex flex-col gap-2 pt-2">
+                {isRegistered &&
+                startDate &&
+                new Date() > new Date(startDate) ? (
                   <Button
-                    onClick={onRegister}
+                    onClick={onFeedback}
                     className="flex-1"
-                    data-testid={`button-register-${id}`}
+                    data-testid={`button-feedback-${id}`}
                   >
-                    Register
+                    Give Feedback
                   </Button>
+                ) : (
+                  isRegisterable && (
+                    <Button
+                      onClick={onRegister}
+                      className="w-full"
+                      data-testid={`button-register-${id}`}
+                    >
+                      Register
+                    </Button>
+                  )
                 )}
                 {onArchive && (
                   <Button
@@ -488,22 +529,28 @@ export default function EventCard({
                     Archive
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onSave}
-                  data-testid={`button-save-${id}`}
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onShare}
-                  data-testid={`button-share-${id}`}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                  {" "}
+                  {canShowFavorites && (
+                    <div
+                      className="relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <FavoriteButton eventId={id} />
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShare?.();
+                    }}
+                    data-testid={`button-share-${id}`}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 {canShowDelete && !hasRegistrations && (
                   <Button
                     variant="destructive"
