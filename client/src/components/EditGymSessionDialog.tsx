@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 type GymSession = {
@@ -20,6 +22,7 @@ type GymSession = {
   type: string;
   maxParticipants: number;
   instructor: string;
+  restrictedRoles?: string[];
 };
 
 type EditGymSessionDialogProps = {
@@ -68,6 +71,15 @@ export default function EditGymSessionDialog({
 }: EditGymSessionDialogProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+    { value: "vendor", label: "Vendors" },
+  ];
 
   const {
     register,
@@ -87,6 +99,7 @@ export default function EditGymSessionDialog({
         startTime: formattedTime,
         durationMinutes: session.durationMinutes,
       });
+      setRestrictedRoles(session.restrictedRoles || []);
     }
   }, [session, open, reset]);
 
@@ -106,10 +119,13 @@ export default function EditGymSessionDialog({
       if (data.date) updateData.date = data.date;
       if (data.startTime) {
         // Convert 24-hour format (HH:MM) to 12-hour format (hh:mm AM/PM)
-        updateData.time = convertTo12HourFormat(data.startTime);
+        updateData.startTime = convertTo12HourFormat(data.startTime);
       }
       if (data.durationMinutes)
-        updateData.duration = Number(data.durationMinutes);
+        updateData.durationMinutes = Number(data.durationMinutes);
+
+      // Always send restrictedRoles when editing (even if empty) to clear restrictions
+      updateData.restrictedRoles = restrictedRoles;
 
       const response = await fetch(
         `http://localhost:4000/api/facilities/gym/sessions/${session._id}`,
@@ -228,6 +244,45 @@ export default function EditGymSessionDialog({
                 {errors.durationMinutes.message}
               </p>
             )}
+          </div>
+
+          {/* Restrict Access Section */}
+          <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+            <div className="flex items-start gap-2">
+              <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+              <div className="flex-1">
+                <Label className="text-base font-semibold">
+                  Restrict Access (Optional)
+                </Label>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Select which roles should NOT be able to view or register for
+                  this session
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+              {availableRoles.map((role) => (
+                <div key={role.value} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`restrict-${role.value}`}
+                    checked={restrictedRoles.includes(role.value)}
+                    onCheckedChange={(checked) => {
+                      setRestrictedRoles(
+                        checked
+                          ? [...restrictedRoles, role.value]
+                          : restrictedRoles.filter((r) => r !== role.value)
+                      );
+                    }}
+                  />
+                  <Label
+                    htmlFor={`restrict-${role.value}`}
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    {role.label}
+                  </Label>
+                </div>
+              ))}
+            </div>
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
