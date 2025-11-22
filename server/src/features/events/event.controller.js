@@ -14,6 +14,7 @@ import {
   restrictAccessSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
+import NotificationService from "../notifications/notification.service.js";
 
 //Write your code in this class!!!
 
@@ -283,6 +284,30 @@ export class EventsController {
         req.body,
         req.user.id
       );
+
+      // Create notification for Events Office users
+      try {
+        const eventsOfficeUsers = await User.find({
+          role: "events_office",
+          status: "active",
+          deletedAt: null,
+        }).select("_id firstName lastName");
+
+        if (eventsOfficeUsers.length > 0) {
+          await NotificationService.createNotification({
+            recipients: eventsOfficeUsers.map((u) => u._id),
+            title: "New Workshop Submission",
+            message: `${req.user.firstName || "Professor"} submitted a workshop: ${req.body.name}`,
+            link: "/approvals/workshops",
+          });
+        }
+      } catch (notifErr) {
+        // Log but do not fail the main request
+        console.error(
+          "Failed to create notification for workshop submission",
+          notifErr
+        );
+      }
 
       return res
         .status(201)
