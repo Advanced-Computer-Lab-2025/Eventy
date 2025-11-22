@@ -20,6 +20,7 @@ import {
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface ApplicationPaymentDialogProps {
   open: boolean;
@@ -221,17 +222,49 @@ export default function ApplicationPaymentDialog({
   // Calculate fee (this should match the backend calculation)
   const estimatedFee = application.type === "booth" ? 50 : 60;
 
+  const { theme } = useTheme();
+
   const options = useMemo(
     () =>
       clientSecret
         ? {
             clientSecret,
             appearance: {
-              theme: "stripe" as const,
+              theme: "stripe",
+              variables: {
+                ...(theme === "dark" && {
+                  // These three control ALL text inside every input & dropdown,
+                  // including country.
+                  colorText: "#e5e5e5",
+                  colorTextSecondary: "#bbbbbb",
+                  colorTextPlaceholder: "#888888",
+
+                  // DO NOT override backgrounds → keeps boxes white!
+                }),
+
+                fontFamily: '"Plus Jakarta Sans", system-ui, sans-serif',
+                borderRadius: "0.5rem",
+              },
+
+              rules:
+                theme === "dark"
+                  ? {
+                      // Make the COUNTRY text readable
+                      ".SelectInput": {
+                        color: "#e5e5e5 !important",
+                      },
+                      ".SelectInput--empty": {
+                        color: "#888888 !important",
+                      },
+                      ".Input--empty": {
+                        color: "#888888 !important",
+                      },
+                    }
+                  : {},
             },
           }
         : null,
-    [clientSecret]
+    [clientSecret, theme]
   );
 
   return (
