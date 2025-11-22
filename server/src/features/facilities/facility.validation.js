@@ -98,3 +98,33 @@ export const editGymSessionSchema = Joi.object({
     "object.min":
       "At least one field (date, time, or duration) must be provided",
   });
+
+export const reserveCourtSchema = Joi.object({
+  date: Joi.date().required().messages({
+    "any.required": "data is required",
+    "date.base": "Date must be a valid date",
+  }),
+  courtType: Joi.string()
+    .valid("basketball", "tennis", "football")
+    .required()
+    .messages({
+      "any.only": "Court type must be one of basketball, tennis, or football",
+      "any.required": "Court type is required",
+    }),
+  startTime: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i)
+    .required()
+    .messages({
+      "any.required": "Start time is required",
+      "string.pattern.base":
+        "Start time must be in format hh:mm AM/PM (e.g., 02:00 PM)",
+    }),
+  endTime: Joi.string()
+    .pattern(/^(0?[1-9]|1[0-2]):[0-5][0-9]\s?(AM|PM)$/i)
+    .required()
+    .messages({
+      "any.required": "End time is required",
+      "string.pattern.base":
+        "End time must be in format hh:mm AM/PM (e.g., 03:00 PM)",
+    }),
+});

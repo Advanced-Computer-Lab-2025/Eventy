@@ -18,6 +18,12 @@ export const createTripSchema = Joi.object({
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
   capacity: Joi.number().integer().min(1).optional(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
 });
 
 export const createConferenceSchema = Joi.object({
@@ -324,6 +330,10 @@ export const updateBazaarSchema = Joi.object({
 }).min(1);
 
 export const getAttendeesReportSchema = Joi.object({
+  name: Joi.string().trim().optional().messages({
+    "string.base": "Name filter must be text",
+  }),
+
   eventType: Joi.string()
     .valid("conference", "workshop", "bazaar", "trip", "platform_booth")
     .optional()
@@ -336,11 +346,25 @@ export const getAttendeesReportSchema = Joi.object({
     "date.base": "startDate must be a valid ISO date",
   }),
 
-  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional().messages({
-    "date.base": "endDate must be a valid ISO date",
-    "date.min": "endDate cannot be before startDate",
-  }),
+  endDate: Joi.date()
+    .iso()
+    .when("startDate", {
+      is: Joi.exist(),
+      then: Joi.date().min(Joi.ref("startDate")),
+      otherwise: Joi.date().iso().optional(),
+    })
+    .optional()
+    .messages({
+      "date.base": "endDate must be a valid ISO date",
+      "date.min": "endDate cannot be before startDate",
+    }),
 
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 }).options({ stripUnknown: true });
+
+export const restrictAccessSchema = Joi.object({
+  roles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .required(),
+});

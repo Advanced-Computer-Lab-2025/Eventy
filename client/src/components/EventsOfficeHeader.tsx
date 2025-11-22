@@ -1,8 +1,6 @@
 import {
   Bell,
   Home,
-  CalendarDays,
-  Store,
   CheckCircle2,
   Plane,
   ClipboardList,
@@ -53,26 +51,6 @@ export default function EventsOfficeHeader() {
           >
             <Home className="h-4 w-4" />
             Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/bazaar")}
-            data-testid="button-nav-bazaars"
-          >
-            <Store className="h-4 w-4" />
-            Bazaars
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/events-office/create/conference")}
-            data-testid="button-nav-conferences"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Conferences
           </Button>
           <Button
             variant="ghost"
