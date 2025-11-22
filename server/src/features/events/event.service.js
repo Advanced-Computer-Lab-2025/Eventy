@@ -2,6 +2,7 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import { Transaction } from "../transactions/transaction.model.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -724,84 +725,158 @@ export const archiveEvent = async (eventId, user) => {
 };
 
 export const getSalesReport = async (options = {}) => {
-  const {
-    page = 1,
-    limit = 10,
-    sortBy = "startDate", // default sort field
-    order = "desc", // default sort order
-  } = options;
+  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
 
-  const match = {
+  const skip = (page - 1) * limit;
+
+  const eventFilter = {
     deletedAt: null,
     status: "approved",
   };
 
-  const skip = (page - 1) * limit;
-  const sortOrder = order === "asc" ? 1 : -1;
+  if (eventType && String(eventType).trim() !== "") {
+    eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
+  }
 
-  const [result] = await Event.aggregate([
-    { $match: match },
+  if (startDate || endDate) {
+    eventFilter.startDate = {};
+    if (startDate) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      eventFilter.startDate.$gte = s;
+    }
+    if (endDate) {
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      eventFilter.startDate.$lte = e;
+    }
+  }
 
-    // Ensure attendeesCount exists
+  const allEvents = await Event.find(eventFilter)
+    .select("_id name eventType startDate endDate location")
+    .lean();
+
+  const eventIds = allEvents.map((e) => e._id);
+
+  const transactionData = await Transaction.aggregate([
+    {
+      $match: {
+        "relatedEntity.id": { $in: eventIds },
+        "relatedEntity.type": "Event",
+        type: "payment",
+        status: { $in: ["completed", "failed"] },
+      },
+    },
     {
       $addFields: {
-        attendeesCount: {
-          $ifNull: [
-            "$attendeesCount",
-            { $size: { $ifNull: ["$attendees", []] } },
-          ],
+        netAmount: {
+          $cond: {
+            if: { $eq: ["$status", "failed"] },
+            then: { $multiply: ["$amount", -1] },
+            else: "$amount",
+          },
         },
       },
     },
-
-    // Calculate revenue
     {
-      $project: {
-        name: 1,
-        eventType: 1,
-        startDate: 1,
-        endDate: 1,
-        location: 1,
-        price: 1,
-        attendeesCount: 1,
-        revenue: { $multiply: ["$price", "$attendeesCount"] },
-      },
-    },
-
-    {
-      $facet: {
-        events: [
-          { $sort: { [sortBy]: sortOrder } },
-          { $skip: skip },
-          { $limit: limit },
-        ],
-        totals: [
-          {
-            $group: {
-              _id: null,
-              totalEvents: { $sum: 1 },
-              totalAttendees: { $sum: "$attendeesCount" },
-              totalRevenue: { $sum: "$revenue" },
-            },
+      $group: {
+        _id: "$relatedEntity.id",
+        totalRevenue: { $sum: "$netAmount" },
+        grossRevenue: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "completed"] }, "$amount", 0],
           },
-        ],
+        },
+        totalRefunds: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "failed"] }, "$amount", 0],
+          },
+        },
+        walletPayments: {
+          $sum: {
+            $cond: [{ $eq: ["$paymentMethod", "wallet"] }, "$netAmount", 0],
+          },
+        },
+        cardPayments: {
+          $sum: {
+            $cond: [
+              { $in: ["$paymentMethod", ["credit_card", "debit_card"]] },
+              "$netAmount",
+              0,
+            ],
+          },
+        },
+        transactionCount: { $sum: 1 },
       },
     },
   ]);
 
-  const totals = result?.totals?.[0] || {
-    totalEvents: 0,
-    totalAttendees: 0,
-    totalRevenue: 0,
+  const revenueMap = {};
+  transactionData.forEach((item) => {
+    revenueMap[item._id.toString()] = {
+      totalRevenue: item.totalRevenue || 0,
+      grossRevenue: item.grossRevenue || 0,
+      totalRefunds: item.totalRefunds || 0,
+      walletPayments: item.walletPayments || 0,
+      cardPayments: item.cardPayments || 0,
+      transactionCount: item.transactionCount || 0,
+    };
+  });
+
+  const eventsWithRevenue = allEvents.map((event) => {
+    const eventIdStr = event._id.toString();
+    const revenue = revenueMap[eventIdStr] || {
+      totalRevenue: 0,
+      grossRevenue: 0,
+      totalRefunds: 0,
+      walletPayments: 0,
+      cardPayments: 0,
+      transactionCount: 0,
+    };
+
+    return {
+      _id: event._id,
+      eventName: event.name,
+      eventType: event.eventType,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      location: event.location,
+      ...revenue,
+    };
+  });
+
+  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  const totals = {
+    totalEvents: eventsWithRevenue.length,
+    totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
+    totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
+    totalWalletPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.walletPayments,
+      0
+    ),
+    totalCardPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.cardPayments,
+      0
+    ),
   };
+
+  const paginatedEvents = eventsWithRevenue.slice(skip, skip + limit);
 
   return {
     totalEvents: totals.totalEvents,
-    totalAttendees: totals.totalAttendees,
     totalRevenue: totals.totalRevenue,
+    grossRevenue: totals.grossRevenue,
+    totalRefunds: totals.totalRefunds,
+    netRevenue: totals.totalRevenue,
+    paymentBreakdown: {
+      wallet: totals.totalWalletPayments,
+      card: totals.totalCardPayments,
+    },
     page,
     limit,
-    totalPages: Math.ceil((totals.totalEvents || 0) / limit),
-    events: result.events || [],
+    totalPages: Math.ceil(totals.totalEvents / limit),
+    events: paginatedEvents,
   };
 };

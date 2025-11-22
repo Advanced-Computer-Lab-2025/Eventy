@@ -346,6 +346,9 @@ export const getAttendeesReportSchema = Joi.object({
 }).options({ stripUnknown: true });
 
 export const getSalesReportSchema = Joi.object({
-  page: Joi.number().integer().min(1).default(1),
-  limit: Joi.number().integer().min(1).max(100).default(10),
-}).options({ stripUnknown: true });
+  eventType: Joi.string().optional().allow(""),
+  startDate: Joi.date().iso().optional(),
+  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  limit: Joi.number().integer().min(1).max(100).optional(),
+});

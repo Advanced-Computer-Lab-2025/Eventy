@@ -688,9 +688,12 @@ export class EventsController {
         return next(new ApiError(400, "Validation failed", error.details));
 
       // ✅ Use the validated values
-      const { page, limit } = value;
+      const { eventType, startDate, endDate, page, limit } = value;
 
       const report = await eventService.getSalesReport({
+        eventType,
+        startDate,
+        endDate,
         page: page || 1,
         limit: limit || 10,
       });
