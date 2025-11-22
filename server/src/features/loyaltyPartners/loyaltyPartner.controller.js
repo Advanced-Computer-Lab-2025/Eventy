@@ -36,7 +36,7 @@ export const LoyaltyPartnerController = {
           .json({ status: "fail", message: "Duplicate entry detected." });
       }
       // Custom errors thrown in service (e.g., vendor already applied)
-      if (err.message === "You have already applied for the loyalty program.") {
+      if (err.message === "You already have an active loyalty program.") {
         return res.status(409).json({ status: "fail", message: err.message });
       }
 
@@ -45,6 +45,51 @@ export const LoyaltyPartnerController = {
       }
       // default server error
       return res.status(500).json({ error: "Internal server error." });
+    }
+  },
+
+  async cancel(req, res) {
+    try {
+      const vendorId = req.user.id; // Get vendor ID from authenticated user
+      const result = await LoyaltyPartnerService.cancelLoyaltyProgram(vendorId);
+
+      res.status(200).json({
+        status: "success",
+        message: result.message,
+        cancelledAt: result.cancelledAt,
+      });
+    } catch (err) {
+      console.error("Error cancelling loyalty program:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to cancel loyalty program";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
+    }
+  },
+
+  async getStatus(req, res) {
+    try {
+      const vendorId = req.user.id; // Get vendor ID from authenticated user
+      const status = await LoyaltyPartnerService.getVendorStatus(vendorId);
+
+      res.status(200).json({
+        status: "success",
+        data: status,
+      });
+    } catch (err) {
+      console.error("Error getting vendor loyalty status:", err);
+
+      const statusCode = err.statusCode || 500;
+      const message = err.message || "Failed to get loyalty status";
+
+      res.status(statusCode).json({
+        status: "error",
+        message: message,
+      });
     }
   },
 };

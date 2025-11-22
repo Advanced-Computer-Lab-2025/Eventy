@@ -31,12 +31,15 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const token = localStorage.getItem("token");
-
 async function updateVendorStatus(
   requestId: string,
-  status: "approved" | "rejected"
+  status: "approved" | "rejected",
+  token: string | null
 ) {
+  if (!token) {
+    throw new Error("Authentication token is required");
+  }
+
   try {
     const response = await fetch(
       `http://localhost:4000/api/applications/${requestId}/status`,
@@ -99,23 +102,36 @@ export default function VendorRequests() {
   const [requests, setRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [eventNames, setEventNames] = useState<Record<string, string>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<any | null>(null);
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "rejected"
   >("all");
+  const [token, setToken] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
-  let userRole: string | null = null;
-  try {
-    if (token) {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      userRole = payload?.role || null;
+  // Initialize token and userRole on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("token");
+    setToken(storedToken);
+
+    if (storedToken) {
+      try {
+        const payload = JSON.parse(atob(storedToken.split(".")[1]));
+        setUserRole(payload?.role || null);
+      } catch (err) {
+        console.error("Failed to decode token:", err);
+        setUserRole(null);
+      }
+    } else {
+      setUserRole(null);
     }
-  } catch {}
+  }, []);
 
   useEffect(() => {
+    if (!token) return; // Wait for token to be loaded
+
     const fetchApplications = async () => {
       try {
         setLoading(true);
@@ -151,72 +167,33 @@ export default function VendorRequests() {
       }
     };
     fetchApplications();
-  }, []);
+  }, [token]);
 
-  useEffect(() => {
-    // After applications are loaded, fetch unique event names
-    const loadEventNames = async () => {
-      const uniqueIds = Array.from(
-        new Set(
-          requests
-            .map((r) => r?.event)
-            .filter(
-              (id): id is string => typeof id === "string" && id.length > 0
-            )
-        )
-      ).filter((id) => !(id in eventNames));
-
-      if (uniqueIds.length === 0) return;
-
-      try {
-        const entries = await Promise.all(
-          uniqueIds.map(async (id) => {
-            try {
-              const res = await fetch(
-                `http://localhost:4000/api/events/${id}`,
-                {
-                  method: "GET",
-                  headers: {
-                    "Content-Type": "application/json",
-                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-                  },
-                  credentials: "include",
-                }
-              );
-
-              const contentType = res.headers.get("content-type");
-              if (!contentType || !contentType.includes("application/json")) {
-                // Non-JSON or forbidden; fall back
-                return [id, id] as const;
-              }
-
-              const body = await res.json();
-              if (!res.ok) {
-                // Forbidden for admin/events_office under current route roles
-                return [id, id] as const;
-              }
-
-              const name = body?.data?.name || body?.data?.event?.name || id;
-              return [id, name] as const;
-            } catch {
-              return [id, id] as const;
-            }
-          })
-        );
-
-        setEventNames((prev) => ({ ...prev, ...Object.fromEntries(entries) }));
-      } catch {
-        // ignore; names will remain IDs
-      }
-    };
-
-    if (requests.length > 0) {
-      loadEventNames();
+  // Helper function to get event name from request
+  const getEventName = (request: any): string => {
+    // If event is populated (object with name property)
+    if (
+      request?.event &&
+      typeof request.event === "object" &&
+      request.event.name
+    ) {
+      return request.event.name;
     }
-  }, [requests]);
+    // If event is just an ID string or null/undefined, return N/A
+    return "N/A";
+  };
 
   const handleApprove = async (requestId: string) => {
-    const updatedApp = await updateVendorStatus(requestId, "approved");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "approved", token);
     if (updatedApp) {
       setRequests((prev) =>
         prev.map((r: any) =>
@@ -227,11 +204,22 @@ export default function VendorRequests() {
         title: "Request approved",
         description: "The vendor request has been approved.",
       });
+      return updatedApp;
     }
+    return null;
   };
 
   const handleReject = async (requestId: string) => {
-    const updatedApp = await updateVendorStatus(requestId, "rejected");
+    if (!token) {
+      toast({
+        title: "Error",
+        description: "Authentication token is missing.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    const updatedApp = await updateVendorStatus(requestId, "rejected", token);
     if (updatedApp) {
       setRequests((prev) =>
         prev.map((r: any) =>
@@ -243,7 +231,9 @@ export default function VendorRequests() {
         description: "The vendor request has been rejected.",
         variant: "destructive",
       });
+      return updatedApp;
     }
+    return null;
   };
 
   const handleViewDocuments = (requestId: string) => {
@@ -321,10 +311,7 @@ export default function VendorRequests() {
                       <TableCell className="font-medium">
                         {request?.createdBy?.companyName || "Unknown"}
                       </TableCell>
-                      <TableCell>
-                        {eventNames[request?.event] ||
-                          (request?.event ? "Loading..." : "N/A")}
-                      </TableCell>
+                      <TableCell>{getEventName(request)}</TableCell>
                       <TableCell>{request?.boothSize || "-"}</TableCell>
                       <TableCell>
                         {Array.isArray(request?.attendees)
@@ -412,7 +399,7 @@ export default function VendorRequests() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="font-medium">Event</div>
-                    <div>{eventNames[selected?.event] || "Unknown"}</div>
+                    <div>{getEventName(selected)}</div>
                   </div>
                   <div>
                     <div className="font-medium">Type</div>
@@ -509,11 +496,11 @@ export default function VendorRequests() {
                     <Button
                       className="bg-green-600 hover:bg-green-700 text-white"
                       onClick={async () => {
-                        await handleApprove(selected._id);
-                        setSelected((prev: any) =>
-                          prev ? { ...prev, status: "approved" } : prev
-                        );
-                        setDetailsOpen(false);
+                        const updatedApp = await handleApprove(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "approved" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-approve-${selected._id}`}
                     >
@@ -522,11 +509,11 @@ export default function VendorRequests() {
                     <Button
                       variant="destructive"
                       onClick={async () => {
-                        await handleReject(selected._id);
-                        setSelected((prev: any) =>
-                          prev ? { ...prev, status: "rejected" } : prev
-                        );
-                        setDetailsOpen(false);
+                        const updatedApp = await handleReject(selected._id);
+                        if (updatedApp) {
+                          setSelected({ ...selected, status: "rejected" });
+                          setDetailsOpen(false);
+                        }
                       }}
                       data-testid={`dialog-reject-${selected._id}`}
                     >

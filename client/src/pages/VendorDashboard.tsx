@@ -510,16 +510,21 @@ export default function VendorDashboard() {
       />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Store className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Welcome, {companyName}! Manage your bazaar applications and platform
-            booth requests.
-          </p>
-        </div>
+        {activeTab !== "platform-booths" &&
+          activeTab !== "participating" &&
+          activeTab !== "pending" &&
+          activeTab !== "rejected" && (
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Store className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Welcome, {companyName}! Manage your bazaar applications and
+                platform booth requests.
+              </p>
+            </div>
+          )}
 
         <Tabs
           value={activeTab}
@@ -798,6 +803,15 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="participating" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircle className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">My Participations</h1>
+              </div>
+              <p className="text-muted-foreground">
+                View all your approved applications and platform booth requests.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredApprovedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
@@ -912,6 +926,15 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Pending Requests</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Applications and requests that are currently under review.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredPendingApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
@@ -1008,6 +1031,16 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="rejected" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <XCircle className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Rejected Applications</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Applications that were not approved. You can review and reapply
+                if needed.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredRejectedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
