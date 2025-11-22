@@ -954,3 +954,192 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
 
   return event;
 };
+
+export const getSalesReport = async (options = {}) => {
+  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  const skip = (page - 1) * limit;
+
+  const eventFilter = {
+    deletedAt: null,
+    status: "approved",
+  };
+
+  if (eventType && String(eventType).trim() !== "") {
+    eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
+  }
+
+  if (startDate || endDate) {
+    eventFilter.startDate = {};
+    if (startDate) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      eventFilter.startDate.$gte = s;
+    }
+    if (endDate) {
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      eventFilter.startDate.$lte = e;
+    }
+  }
+
+  const allEvents = await Event.find(eventFilter)
+    .select("_id name eventType startDate endDate location")
+    .lean();
+
+  const eventIds = allEvents.map((e) => e._id);
+
+  const transactionData = await Transaction.aggregate([
+    // 1️⃣ Match completed transactions that have a related entity ID
+    {
+      $match: {
+        "relatedEntity.id": { $ne: null }, // ignore transactions without an ID
+        type: { $in: ["payment", "refund"] },
+        status: "completed",
+      },
+    },
+
+    // 2️⃣ Add netAmount: payments positive, refunds negative
+    {
+      $addFields: {
+        netAmount: {
+          $cond: [
+            { $eq: ["$type", "refund"] },
+            { $multiply: ["$amount", -1] },
+            "$amount",
+          ],
+        },
+      },
+    },
+
+    // 3️⃣ Group by event ID
+    {
+      $group: {
+        _id: "$relatedEntity.id",
+        totalRevenue: { $sum: "$netAmount" },
+        grossRevenue: {
+          $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
+        },
+        totalRefunds: {
+          $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] },
+        },
+        walletPayments: {
+          $sum: {
+            $cond: [{ $eq: ["$paymentMethod", "wallet"] }, "$netAmount", 0],
+          },
+        },
+        cardPayments: {
+          $sum: {
+            $cond: [
+              { $in: ["$paymentMethod", ["credit_card", "debit_card"]] },
+              "$netAmount",
+              0,
+            ],
+          },
+        },
+        transactionCount: { $sum: 1 },
+      },
+    },
+
+    // 4️⃣ Lookup event details if needed (optional)
+    {
+      $lookup: {
+        from: "events", // your events collection
+        localField: "_id",
+        foreignField: "_id",
+        as: "event",
+      },
+    },
+    { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+
+    // 5️⃣ Project final report fields
+    {
+      $project: {
+        _id: 1,
+        eventName: "$event.name",
+        eventType: "$event.type",
+        startDate: "$event.startDate",
+        endDate: "$event.endDate",
+        location: "$event.location",
+        totalRevenue: 1,
+        grossRevenue: 1,
+        totalRefunds: 1,
+        walletPayments: 1,
+        cardPayments: 1,
+        transactionCount: 1,
+      },
+    },
+
+    // 6️⃣ Optional: sort by totalRevenue descending
+    { $sort: { totalRevenue: -1 } },
+  ]);
+
+  const revenueMap = {};
+  transactionData.forEach((item) => {
+    revenueMap[item._id.toString()] = {
+      totalRevenue: item.totalRevenue || 0,
+      grossRevenue: item.grossRevenue || 0,
+      totalRefunds: item.totalRefunds || 0,
+      walletPayments: item.walletPayments || 0,
+      cardPayments: item.cardPayments || 0,
+      transactionCount: item.transactionCount || 0,
+    };
+  });
+
+  const eventsWithRevenue = allEvents.map((event) => {
+    const eventIdStr = event._id.toString();
+    const revenue = revenueMap[eventIdStr] || {
+      totalRevenue: 0,
+      grossRevenue: 0,
+      totalRefunds: 0,
+      walletPayments: 0,
+      cardPayments: 0,
+      transactionCount: 0,
+    };
+
+    return {
+      _id: event._id,
+      eventName: event.name,
+      eventType: event.eventType,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      location: event.location,
+      ...revenue,
+    };
+  });
+
+  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  const totals = {
+    totalEvents: eventsWithRevenue.length,
+    totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
+    totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
+    totalWalletPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.walletPayments,
+      0
+    ),
+    totalCardPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.cardPayments,
+      0
+    ),
+  };
+
+  const paginatedEvents = eventsWithRevenue.slice(skip, skip + limit);
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalRevenue: totals.totalRevenue,
+    grossRevenue: totals.grossRevenue,
+    totalRefunds: totals.totalRefunds,
+    netRevenue: totals.totalRevenue,
+    paymentBreakdown: {
+      wallet: totals.totalWalletPayments,
+      card: totals.totalCardPayments,
+    },
+    page,
+    limit,
+    totalPages: Math.ceil(totals.totalEvents / limit),
+    events: paginatedEvents,
+  };
+};

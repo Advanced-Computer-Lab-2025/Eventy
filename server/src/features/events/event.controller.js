@@ -12,6 +12,7 @@ import {
   updateWorkshopSchema,
   getAttendeesReportSchema,
   restrictAccessSchema,
+  getSalesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 import NotificationService from "../notifications/notification.service.js";
@@ -807,6 +808,37 @@ export class EventsController {
             event,
             "Event access restrictions updated successfully"
           )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getSalesReport(req, res, next) {
+    try {
+      // ✅ Validate query params
+      const { error, value } = getSalesReportSchema.validate(req.query, {
+        abortEarly: false,
+      });
+
+      if (error)
+        return next(new ApiError(400, "Validation failed", error.details));
+
+      // ✅ Use the validated values
+      const { eventType, startDate, endDate, page, limit } = value;
+
+      const report = await eventService.getSalesReport({
+        eventType,
+        startDate,
+        endDate,
+        page: page || 1,
+        limit: limit || 10,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, report, "Sales report generated successfully")
         );
     } catch (err) {
       next(err);
