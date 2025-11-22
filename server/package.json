@@ -31,6 +31,7 @@
     "nodemailer": "^7.0.9",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
+    "react-router-dom": "^6.30.1",
     "resend": "^6.1.2",
     "stripe": "^19.3.0"
   },
