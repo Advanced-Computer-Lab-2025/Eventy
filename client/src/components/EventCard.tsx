@@ -81,6 +81,7 @@ export interface EventCardProps {
   description?: string;
   startDate?: string;
   endDate?: string;
+  durationWeeks?: number;
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
@@ -111,6 +112,7 @@ export default function EventCard({
   description,
   startDate,
   endDate,
+  durationWeeks,
   capacity,
   registrationDeadline,
   vendors = [],
@@ -130,7 +132,8 @@ export default function EventCard({
 }: EventCardProps) {
   const imageSrc = image || getEventImage(String(category), title);
   const isRegisterable = /workshop|trip/i.test(String(category));
-  const isBazaarOrBooth = /bazaar|booth/i.test(String(category));
+  const isBazaar = /bazaar/i.test(String(category));
+  const isPlatformBooth = /platform_booth/i.test(String(category));
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
@@ -226,7 +229,12 @@ export default function EventCard({
                 <div className="flex items-start text-muted-foreground">
                   <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    {startDate && endDate ? (
+                    {isPlatformBooth && durationWeeks ? (
+                      <div>
+                        Active for {durationWeeks} week
+                        {durationWeeks > 1 ? "s" : ""}
+                      </div>
+                    ) : startDate && endDate ? (
                       <div>
                         {formatDate(startDate)}, {formatTime(startDate)} →{" "}
                         {formatDate(endDate)}, {formatTime(endDate)}
@@ -272,8 +280,8 @@ export default function EventCard({
                 </div>
               </div>
 
-              {/* Vendors Section for Bazaar/Booth */}
-              {isBazaarOrBooth && vendors.length > 0 && (
+              {/* Vendors Section for Bazaar only (not platform booths) */}
+              {isBazaar && vendors.length > 0 && (
                 <div className="pt-3 border-t">
                   <div className="flex items-center gap-2 text-foreground font-medium mb-2">
                     <Store className="h-4 w-4 text-primary" />
@@ -462,8 +470,8 @@ export default function EventCard({
               </div>
             </div>
 
-            {/* Vendors section - compact view */}
-            {isBazaarOrBooth && vendors.length > 0 && (
+            {/* Vendors section - compact view (bazaar only, not platform booths) */}
+            {isBazaar && vendors.length > 0 && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 text-foreground font-medium">
                   <Store className="h-4 w-4 text-primary" />

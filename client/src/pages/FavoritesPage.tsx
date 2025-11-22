@@ -166,7 +166,13 @@ export default function FavoritesPage() {
                 category={getCategoryFromEvent(event)}
                 date={formatEventDate(event.startDate)}
                 time={formatEventTime(event.startDate)}
-                location={event.location}
+                location={
+                  event.location ||
+                  (event.eventType === "platform_booth"
+                    ? event.locationPreference
+                    : null) ||
+                  "Unknown location"
+                }
                 attendees={0}
                 image={event.bannerImage}
                 description={event.description}
