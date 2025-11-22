@@ -189,36 +189,42 @@ export default function TripManagement() {
       }
 
       // Build payload compatible with backend model/validation:
-      // - merge date + time into ISO datetimes for startDate/endDate
-      // - keep startTime/endTime as separate string fields (required by backend model)
+      // - Keep date and time fields separate
       // - convert numeric fields to numbers
       const payload: any = { ...formData };
 
-      // merge date + time -> ISO string (if time missing use 00:00)
-      const startTimeValue =
-        formData.startTime && formData.startTime.trim()
-          ? formData.startTime.trim()
-          : "00:00";
-      const endTimeValue =
-        formData.endTime && formData.endTime.trim()
-          ? formData.endTime.trim()
-          : "00:00";
-
+      // Format dates as ISO dates (without time) and keep time fields separate
       if (formData.startDate) {
-        payload.startDate = new Date(
-          `${formData.startDate}T${startTimeValue}:00`
-        ).toISOString();
+        payload.startDate = new Date(formData.startDate)
+          .toISOString()
+          .split("T")[0];
       }
       if (formData.endDate) {
-        payload.endDate = new Date(
-          `${formData.endDate}T${endTimeValue}:00`
-        ).toISOString();
+        payload.endDate = new Date(formData.endDate)
+          .toISOString()
+          .split("T")[0];
       }
 
-      // Keep startTime and endTime as separate string fields (required by backend model)
-      // Time input type="time" returns values in "HH:mm" format (24-hour)
-      payload.startTime = startTimeValue;
-      payload.endTime = endTimeValue;
+      // Keep time fields as they are, ensuring they're not empty strings
+      if (!formData.startTime) {
+        toast({
+          title: "Start time required",
+          description: "Please provide a start time for the trip.",
+          variant: "destructive",
+        });
+        return;
+      }
+      if (!formData.endTime) {
+        toast({
+          title: "End time required",
+          description: "Please provide an end time for the trip.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      payload.startTime = formData.startTime;
+      payload.endTime = formData.endTime;
 
       // registrationDeadline -> full ISO date (backend expects Date)
       if (formData.registrationDeadline) {

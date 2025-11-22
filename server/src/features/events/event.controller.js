@@ -11,6 +11,7 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  restrictAccessSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
 
@@ -708,6 +709,73 @@ export class EventsController {
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+  // Cancel event registration (for Student/Staff/TA/Professor)
+  async cancelEventRegistration(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only registered users can cancel their registrations."
+        );
+      }
+
+      const result = await eventService.cancelEventRegistration(
+        eventId,
+        userId
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            result,
+            "Registration cancelled and amount refunded."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+  async restrictAccess(req, res, next) {
+    try {
+      // Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Validate request body
+      const { error } = restrictAccessSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      // Call service to restrict access
+      const event = await eventService.restrictAccess(
+        req.params.id,
+        req.body.roles,
+        req.user
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            event,
+            "Event access restrictions updated successfully"
+          )
+        );
     } catch (err) {
       next(err);
     }

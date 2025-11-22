@@ -1,12 +1,10 @@
 import { useState, useEffect } from "react";
 import EventCard from "@/components/EventCard";
-import EventHero from "@/components/EventHero";
 import EventFilters from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
 import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
-import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 
 // Define Event type for type safety
@@ -90,7 +88,22 @@ export default function Home() {
   };
 
   const handleSearchResults = (results: any[]) => {
-    setEvents(results);
+    // Sort events to prioritize bazaars first, then by startDate
+    const sortedResults = [...results].sort((a, b) => {
+      const aIsBazaar = a.eventType === "bazaar";
+      const bIsBazaar = b.eventType === "bazaar";
+
+      // If one is a bazaar and the other isn't, bazaar comes first
+      if (aIsBazaar && !bIsBazaar) return -1;
+      if (!aIsBazaar && bIsBazaar) return 1;
+
+      // If both are bazaars or both are not, sort by startDate
+      const aDate = a.startDate ? new Date(a.startDate).getTime() : 0;
+      const bDate = b.startDate ? new Date(b.startDate).getTime() : 0;
+      return aDate - bDate;
+    });
+
+    setEvents(sortedResults);
     // After first results, we're no longer in initial loading
     if (loading) setLoading(false);
   };
@@ -111,47 +124,6 @@ export default function Home() {
       <StudentHeader />
 
       <main className="pb-20 md:pb-8">
-        {!loading && events.length > 0 && (
-          <EventHero
-            title={events[0].name || "Untitled Event"}
-            category={(events[0].eventType || "academic") as any}
-            date={
-              events[0].startDate
-                ? new Date(events[0].startDate).toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "long",
-                    day: "numeric",
-                    year: "numeric",
-                  })
-                : "TBA"
-            }
-            time={
-              events[0].startDate
-                ? new Date(events[0].startDate).toLocaleTimeString("en-US", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                    hour12: true,
-                  })
-                : "TBA"
-            }
-            location={events[0].location || "Unknown location"}
-            attendees={
-              Array.isArray(events[0].attendees)
-                ? events[0].attendees.length
-                : events[0].attendeesCount || 0
-            }
-            image={
-              events[0].image ||
-              getEventImage(events[0].eventType, events[0].name)
-            }
-            description={
-              events[0].description ||
-              "Discover and register for exciting upcoming events across campus."
-            }
-            onRegister={() => handleRegisterEvent(events[0]._id)}
-          />
-        )}
-
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-72 flex-shrink-0">

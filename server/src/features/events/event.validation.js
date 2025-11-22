@@ -32,6 +32,12 @@ export const createTripSchema = Joi.object({
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
   capacity: Joi.number().integer().min(1).optional(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required(),
 });
 
 export const createConferenceSchema = Joi.object({
@@ -380,3 +386,9 @@ export const getAttendeesReportSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 }).options({ stripUnknown: true });
+
+export const restrictAccessSchema = Joi.object({
+  roles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .required(),
+});
