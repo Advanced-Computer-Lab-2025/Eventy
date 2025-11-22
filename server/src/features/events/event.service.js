@@ -759,38 +759,38 @@ export const getSalesReport = async (options = {}) => {
   const eventIds = allEvents.map((e) => e._id);
 
   const transactionData = await Transaction.aggregate([
+    // 1️⃣ Match completed transactions that have a related entity ID
     {
       $match: {
-        "relatedEntity.id": { $in: eventIds },
-        "relatedEntity.type": "Event",
-        type: "payment",
-        status: { $in: ["completed", "failed"] },
+        "relatedEntity.id": { $ne: null }, // ignore transactions without an ID
+        type: { $in: ["payment", "refund"] },
+        status: "completed",
       },
     },
+
+    // 2️⃣ Add netAmount: payments positive, refunds negative
     {
       $addFields: {
         netAmount: {
-          $cond: {
-            if: { $eq: ["$status", "failed"] },
-            then: { $multiply: ["$amount", -1] },
-            else: "$amount",
-          },
+          $cond: [
+            { $eq: ["$type", "refund"] },
+            { $multiply: ["$amount", -1] },
+            "$amount",
+          ],
         },
       },
     },
+
+    // 3️⃣ Group by event ID
     {
       $group: {
         _id: "$relatedEntity.id",
         totalRevenue: { $sum: "$netAmount" },
         grossRevenue: {
-          $sum: {
-            $cond: [{ $eq: ["$status", "completed"] }, "$amount", 0],
-          },
+          $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
         },
         totalRefunds: {
-          $sum: {
-            $cond: [{ $eq: ["$status", "failed"] }, "$amount", 0],
-          },
+          $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] },
         },
         walletPayments: {
           $sum: {
@@ -809,6 +809,38 @@ export const getSalesReport = async (options = {}) => {
         transactionCount: { $sum: 1 },
       },
     },
+
+    // 4️⃣ Lookup event details if needed (optional)
+    {
+      $lookup: {
+        from: "events", // your events collection
+        localField: "_id",
+        foreignField: "_id",
+        as: "event",
+      },
+    },
+    { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+
+    // 5️⃣ Project final report fields
+    {
+      $project: {
+        _id: 1,
+        eventName: "$event.name",
+        eventType: "$event.type",
+        startDate: "$event.startDate",
+        endDate: "$event.endDate",
+        location: "$event.location",
+        totalRevenue: 1,
+        grossRevenue: 1,
+        totalRefunds: 1,
+        walletPayments: 1,
+        cardPayments: 1,
+        transactionCount: 1,
+      },
+    },
+
+    // 6️⃣ Optional: sort by totalRevenue descending
+    { $sort: { totalRevenue: -1 } },
   ]);
 
   const revenueMap = {};
