@@ -6,7 +6,10 @@ import ApiError from "../../utils/ApiError.js";
 class PollServiceClass {
   async createBoothConflictPoll({ applicationIds, question, createdBy }) {
     if (!Array.isArray(applicationIds) || applicationIds.length < 2) {
-      throw new ApiError(400, "At least two applications are required to create a poll");
+      throw new ApiError(
+        400,
+        "At least two applications are required to create a poll"
+      );
     }
 
     const objectIds = [];
@@ -154,4 +157,3 @@ class PollServiceClass {
 }
 
 export const PollService = new PollServiceClass();
-
