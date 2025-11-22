@@ -1,7 +1,28 @@
 import { LoyaltyPartner } from "./loyaltyPartner.model.js";
 import { User } from "../users/user.model.js";
+import NotificationService from "../notifications/notification.service.js";
 
 export const LoyaltyPartnerService = {
+  async getLoyaltyProgramStatus(vendorId) {
+    const existing = await LoyaltyPartner.findOne({ vendorId });
+
+    if (!existing) {
+      return { status: "not_participated" };
+    }
+
+    return {
+      status: existing.status,
+      application: {
+        discountRate: existing.discountRate,
+        promoCode: existing.promoCode,
+        termsAndConditions: existing.termsAndConditions,
+        expiryDate: existing.expiryDate,
+        createdAt: existing.createdAt,
+        updatedAt: existing.updatedAt,
+      },
+    };
+  },
+
   async applyLoyaltyProgram(vendorId, data) {
     // Check if vendor already has an active loyalty program
     const existing = await LoyaltyPartner.findOne({
@@ -53,6 +74,38 @@ export const LoyaltyPartnerService = {
     });
 
     return newApplication;
+  },
+
+  async getApprovedLoyaltyPartners() {
+    try {
+      // Find all loyalty partners with verified status
+      const verifiedPartners = await LoyaltyPartner.find({ status: "active" })
+        .populate({
+          path: "vendorId",
+          select: "name email",
+        })
+        .select(
+          "vendorId discountRate promoCode termsAndConditions expiryDate createdAt"
+        )
+        .lean();
+
+      // Transform the data to include vendor name
+      const partners = verifiedPartners.map((partner) => ({
+        vendorId: partner.vendorId._id,
+        vendorName: partner.vendorId.name,
+        vendorEmail: partner.vendorId.email,
+        discountRate: partner.discountRate,
+        promoCode: partner.promoCode,
+        termsAndConditions: partner.termsAndConditions,
+        expiryDate: partner.expiryDate,
+        createdAt: partner.createdAt,
+      }));
+
+      return partners;
+    } catch (error) {
+      console.error("Error fetching approved loyalty partners:", error);
+      throw new Error("Failed to fetch loyalty partners");
+    }
   },
 
   async cancelLoyaltyProgram(vendorId) {
