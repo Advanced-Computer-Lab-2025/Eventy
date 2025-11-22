@@ -8,9 +8,7 @@ import {
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
 
-const stripe = new Stripe({
-  apiKey: process.env.STRIPE_SECRET_KEY,
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export class TransactionService {
   async payForEvent({ userId, eventId, paymentMethod }) {
