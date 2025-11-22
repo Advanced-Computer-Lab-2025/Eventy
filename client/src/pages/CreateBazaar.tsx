@@ -98,12 +98,24 @@ export default function CreateBazaar() {
         setSubmitting(false);
         return;
       }
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        formData.startTime && formData.startTime.trim()
+          ? formData.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        formData.endTime && formData.endTime.trim()
+          ? formData.endTime.trim()
+          : "00:00";
+
       const payload: any = {
         name: formData.name,
         description: formData.description,
         location: formData.location,
-        startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
-        endDate: `${formData.endDate}T${formData.endTime}:00.000Z`,
+        startDate: `${formData.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${formData.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         registrationDeadline: formData.deadline
           ? `${formData.deadline}T23:59:59.000Z`
           : undefined,
@@ -140,9 +152,28 @@ export default function CreateBazaar() {
             (editingId ? "Failed to update bazaar" : "Failed to create bazaar")
         );
 
-      setLocation("/events-office/dashboard");
+      const isEdit = Boolean(editingId);
+      toast({
+        title: isEdit ? "Bazaar updated" : "Bazaar created",
+        description: isEdit
+          ? "The bazaar was updated successfully."
+          : "The bazaar was created successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      const errorMessage = err.message || "Something went wrong";
+      setError(errorMessage);
+      toast({
+        title: editingId
+          ? "Failed to update bazaar"
+          : "Failed to create bazaar",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }

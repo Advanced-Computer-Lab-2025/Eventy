@@ -6,6 +6,7 @@ import CreateEventForm, {
 } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -27,6 +28,7 @@ interface Conference {
 export default function EditConference() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/events-office/events/conference/edit/:id");
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conference, setConference] = useState<Conference | null>(null);
@@ -84,10 +86,21 @@ export default function EditConference() {
     try {
       const token = localStorage.getItem("token");
 
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        values.startTime && values.startTime.trim()
+          ? values.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        values.endTime && values.endTime.trim()
+          ? values.endTime.trim()
+          : "00:00";
       const payload: any = {
         name: values.name,
-        startDate: `${values.startDate}T${values.startTime}:00.000Z`,
-        endDate: `${values.endDate}T${values.endTime}:00.000Z`,
+        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
         requiredBudget: values.requiredBudget
@@ -125,9 +138,21 @@ export default function EditConference() {
       if (!res.ok)
         throw new Error(data.message || "Failed to update conference");
 
-      setLocation("/events-office/dashboard");
+      toast({
+        title: "Conference updated",
+        description: "The conference was updated successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      toast({
+        title: "Failed to update conference",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -138,7 +163,10 @@ export default function EditConference() {
   };
 
   const formatTimeForInput = (dateString: string) => {
-    return new Date(dateString).toTimeString().slice(0, 5);
+    if (!dateString) return "";
+    // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
+    const timeMatch = dateString.match(/T(\d{2}:\d{2})/);
+    return timeMatch ? timeMatch[1] : "";
   };
 
   if (loading) {
@@ -180,9 +208,13 @@ export default function EditConference() {
   const initialValues: Partial<CreateEventFormValues> = {
     name: conference.name,
     startDate: formatDateForInput(conference.startDate),
-    startTime: formatTimeForInput(conference.startDate),
+    // Use separate startTime field if available, otherwise extract from date
+    startTime:
+      (conference as any).startTime ?? formatTimeForInput(conference.startDate),
     endDate: formatDateForInput(conference.endDate),
-    endTime: formatTimeForInput(conference.endDate),
+    // Use separate endTime field if available, otherwise extract from date
+    endTime:
+      (conference as any).endTime ?? formatTimeForInput(conference.endDate),
     description: conference.description,
     websiteUrl: conference.websiteUrl || "",
     requiredBudget: conference.requiredBudget?.toString() || "",

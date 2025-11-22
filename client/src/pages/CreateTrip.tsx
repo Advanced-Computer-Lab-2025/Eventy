@@ -83,18 +83,22 @@ export default function TripManagement() {
   const handleOpenModal = (trip: any = null) => {
     if (trip) {
       setEditingId(trip._id);
+      // Extract time from separate startTime/endTime fields if available, otherwise from ISO date strings
+      const getTimeFromDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
+        const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
+        return timeMatch ? timeMatch[1] : "";
+      };
+
       setFormData({
         name: trip.name ?? "",
         location: trip.location ?? "",
         price: trip.price ?? "",
         startDate: trip.startDate?.split?.("T")[0] ?? "",
-        startTime: trip.startDate
-          ? new Date(trip.startDate).toTimeString().slice(0, 5)
-          : "",
+        startTime: trip.startTime ?? getTimeFromDate(trip.startDate ?? ""),
         endDate: trip.endDate?.split?.("T")[0] ?? "",
-        endTime: trip.endDate
-          ? new Date(trip.endDate).toTimeString().slice(0, 5)
-          : "",
+        endTime: trip.endTime ?? getTimeFromDate(trip.endDate ?? ""),
         description: trip.description ?? "",
         capacity: trip.capacity ?? "",
         registrationDeadline: trip.registrationDeadline?.split?.("T")[0] ?? "",
