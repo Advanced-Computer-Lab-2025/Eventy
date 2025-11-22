@@ -10,6 +10,7 @@ import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
+import AdminRatings from "@/pages/AdminRatings";
 import CreateConference from "@/pages/CreateConference";
 import EditConference from "@/pages/EditConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
@@ -49,6 +50,11 @@ function Router() {
       <Route path="/admin">
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboardPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/admin/ratings">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <AdminRatings />
         </ProtectedRoute>
       </Route>
       <Route path="/events-office/create/conference">

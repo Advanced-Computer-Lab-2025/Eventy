@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Home, Users } from "lucide-react"; 
+import { Bell, LayoutGrid, User, Home, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -17,7 +17,11 @@ export default function AdminHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" data-testid="button-notifications">
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
               <Bell className="h-5 w-5" />
             </Button>
             <ThemeToggle />
@@ -26,14 +30,27 @@ export default function AdminHeader() {
         </div>
 
         <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-nav-all">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-all"
+          >
             <LayoutGrid className="h-4 w-4" />
             All Events
           </Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-academic">Academic</Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-social">Social</Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-sports">Sports</Button>
-          <Button variant="ghost" size="sm" data-testid="button-nav-cultural">Cultural</Button>
+          <Button variant="ghost" size="sm" data-testid="button-nav-academic">
+            Academic
+          </Button>
+          <Button variant="ghost" size="sm" data-testid="button-nav-social">
+            Social
+          </Button>
+          <Button variant="ghost" size="sm" data-testid="button-nav-sports">
+            Sports
+          </Button>
+          <Button variant="ghost" size="sm" data-testid="button-nav-cultural">
+            Cultural
+          </Button>
 
           {/* ✅ New Users Button */}
           <Button
@@ -45,6 +62,17 @@ export default function AdminHeader() {
           >
             <Users className="h-4 w-4" />
             Users
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-ratings"
+            onClick={() => setLocation("/admin/ratings")}
+          >
+            <Star className="h-4 w-4" />
+            Ratings
           </Button>
 
           <Button
