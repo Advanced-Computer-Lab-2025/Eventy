@@ -5,9 +5,8 @@ import { Event } from "../events/event.model.js"; // Import your Event model
 import Application from "../applications/application.model.js"; // Import Application model
 import { sendPaymentReceipt } from "../auth/email.service.js";
 
-const stripe = new Stripe(
-  process.env.STRIPE_SECRET_KEY || "sk_test_placeholder"
-);
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+
 export class TransactionService {
   async payForEvent({ userId, eventId, paymentMethod }) {
     // Check if user already paid for this event
