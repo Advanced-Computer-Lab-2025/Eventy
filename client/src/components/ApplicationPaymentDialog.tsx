@@ -263,16 +263,11 @@ export default function ApplicationPaymentDialog({
           <div className="space-y-4">
             <div>
               <h3 className="font-semibold text-lg mb-4">Payment Method</h3>
-              <div className="flex gap-2 mb-4">
-                <Button
-                  type="button"
-                  variant="default"
-                  className="flex-1"
-                  disabled
-                >
-                  <CreditCard className="h-4 w-4 mr-2" />
+              <div className="flex items-center gap-2 mb-2 p-3 bg-purple-50 dark:bg-purple-950/50 rounded-lg border border-purple-200 dark:border-purple-800">
+                <CreditCard className="h-4 w-4 text-purple-700 dark:text-purple-300" />
+                <span className="text-sm text-purple-700 dark:text-purple-300 font-medium">
                   Credit or Debit Card
-                </Button>
+                </span>
               </div>
             </div>
 
