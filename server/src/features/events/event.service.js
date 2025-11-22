@@ -991,7 +991,11 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
     case "csv":
       const parser = new Parser({
-        fields: ["firstName", "lastName", "role"],
+        fields: [
+          { label: "First Name", value: "firstName" },
+          { label: "Last Name", value: "lastName" },
+          { label: "Role", value: "role" },
+        ],
         header: true,
       });
       buffer = Buffer.from(parser.parse(registeredUsers), "utf-8");
