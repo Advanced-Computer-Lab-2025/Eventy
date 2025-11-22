@@ -18,7 +18,7 @@ export default function CreateConference() {
     try {
       const token = localStorage.getItem("token");
 
-      const payload = {
+      const payload: any = {
         name: values.name,
         startDate: `${values.startDate}T${values.startTime}:00.000Z`,
         endDate: `${values.endDate}T${values.endTime}:00.000Z`,
@@ -30,6 +30,11 @@ export default function CreateConference() {
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
       };
+
+      // Add restricted roles if provided
+      if (values.restrictedRoles && values.restrictedRoles.length > 0) {
+        payload.restrictedRoles = values.restrictedRoles;
+      }
 
       const res = await fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
         method: "POST",

@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 
 export default function TripManagement() {
@@ -30,6 +31,14 @@ export default function TripManagement() {
     capacity: "",
     registrationDeadline: "",
   });
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+  ];
 
   const apiBase =
     (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
@@ -90,6 +99,7 @@ export default function TripManagement() {
         capacity: trip.capacity ?? "",
         registrationDeadline: trip.registrationDeadline?.split?.("T")[0] ?? "",
       });
+      setRestrictedRoles(trip.restrictedRoles ?? []);
     } else {
       setEditingId(null);
       setFormData({
@@ -104,6 +114,7 @@ export default function TripManagement() {
         capacity: "",
         registrationDeadline: "",
       });
+      setRestrictedRoles([]);
     }
     setShowModal(true);
   };
@@ -111,6 +122,7 @@ export default function TripManagement() {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingId(null);
+    setRestrictedRoles([]);
   };
 
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
@@ -232,6 +244,15 @@ export default function TripManagement() {
       // numeric conversions
       if (payload.price !== "") payload.price = Number(payload.price);
       if (payload.capacity !== "") payload.capacity = Number(payload.capacity);
+
+      // Add restricted roles
+      // When editing, always send restrictedRoles (even if empty) to clear restrictions
+      // When creating, only send if there are restrictions
+      if (editingId) {
+        payload.restrictedRoles = restrictedRoles;
+      } else if (restrictedRoles.length > 0) {
+        payload.restrictedRoles = restrictedRoles;
+      }
 
       // POST/PATCH paths are under /api/events/
       const url = editingId
@@ -630,6 +651,51 @@ export default function TripManagement() {
                     </div>
                   </div>
                 </div>
+
+                {/* Restrict Access Section */}
+                <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                  <div className="flex items-start gap-2">
+                    <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                    <div className="flex-1">
+                      <Label className="text-base font-semibold">
+                        Restrict Access (Optional)
+                      </Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Select which roles should NOT be able to view or
+                        register for this trip
+                      </p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                    {availableRoles.map((role) => (
+                      <div
+                        key={role.value}
+                        className="flex items-center space-x-2"
+                      >
+                        <Checkbox
+                          id={`restrict-${role.value}`}
+                          checked={restrictedRoles.includes(role.value)}
+                          onCheckedChange={(checked) => {
+                            setRestrictedRoles(
+                              checked
+                                ? [...restrictedRoles, role.value]
+                                : restrictedRoles.filter(
+                                    (r) => r !== role.value
+                                  )
+                            );
+                          }}
+                        />
+                        <Label
+                          htmlFor={`restrict-${role.value}`}
+                          className="text-sm font-normal cursor-pointer"
+                        >
+                          {role.label}
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex justify-end space-x-2 pt-4">
                   <Button variant="outline" onClick={handleCloseModal}>
                     Cancel

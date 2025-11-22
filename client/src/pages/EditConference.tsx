@@ -21,6 +21,7 @@ interface Conference {
   fundingSource?: "external" | "guc";
   extraResources?: string;
   agenda?: string;
+  restrictedRoles?: string[];
 }
 
 export default function EditConference() {
@@ -83,7 +84,7 @@ export default function EditConference() {
     try {
       const token = localStorage.getItem("token");
 
-      const payload = {
+      const payload: any = {
         name: values.name,
         startDate: `${values.startDate}T${values.startTime}:00.000Z`,
         endDate: `${values.endDate}T${values.endTime}:00.000Z`,
@@ -95,6 +96,9 @@ export default function EditConference() {
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
       };
+
+      // Always send restrictedRoles when editing (even if empty) to clear restrictions
+      payload.restrictedRoles = values.restrictedRoles || [];
 
       const res = await fetch(
         `${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`,
