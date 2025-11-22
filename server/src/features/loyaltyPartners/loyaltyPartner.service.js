@@ -79,7 +79,7 @@ export const LoyaltyPartnerService = {
   async getApprovedLoyaltyPartners() {
     try {
       // Find all loyalty partners with verified status
-      const verifiedPartners = await LoyaltyPartner.find({ status: "verified" })
+      const verifiedPartners = await LoyaltyPartner.find({ status: "active" })
         .populate({
           path: "vendorId",
           select: "name email",
