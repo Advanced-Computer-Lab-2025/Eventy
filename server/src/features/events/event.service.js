@@ -2,7 +2,9 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
-import { Transaction } from "../transactions/transaction.model.js";
+import { TransactionService } from "../transactions/transaction.service.js";
+const transactionService = new TransactionService();
+import NotificationService from "../notifications/notification.service.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -22,6 +24,7 @@ export async function createBazaar(data, user) {
     createdBy: user.id,
     startTime: data.startTime,
     endTime: data.endTime,
+    restrictedRoles: data.restrictedRoles || [],
   };
 
   // Save to database
@@ -55,8 +58,30 @@ export const createTrip = async (tripData, createdBy) => {
     throw new ApiError(400, "Price must be a valid number");
   }
 
+  // Validate required fields
+  if (!tripData.startTime) {
+    throw new ApiError(400, "Start time is required");
+  }
+
+  if (!tripData.endTime) {
+    throw new ApiError(400, "End time is required");
+  }
+
+  // Extract date and time fields
+  const startDateTime = new Date(tripData.startDate);
+  const endDateTime = new Date(tripData.endDate);
+
+  // Validate date format
+  if (isNaN(startDateTime.getTime())) {
+    throw new ApiError(400, "Invalid start date format");
+  }
+
+  if (isNaN(endDateTime.getTime())) {
+    throw new ApiError(400, "Invalid end date format");
+  }
+
   // Ensure end date is after start date
-  if (new Date(tripData.endDate) <= new Date(tripData.startDate)) {
+  if (endDateTime <= startDateTime) {
     throw new ApiError(400, "End date must be after start date");
   }
 
@@ -64,6 +89,7 @@ export const createTrip = async (tripData, createdBy) => {
     ...tripData,
     eventType: "trip",
     createdBy,
+    restrictedRoles: tripData.restrictedRoles || [],
   });
 
   return newTrip;
@@ -111,6 +137,7 @@ export const createConference = async (data, userId) => {
     startTime,
     endTime,
     createdBy: userId,
+    restrictedRoles: data.restrictedRoles || [],
   });
 
   return event;
@@ -169,6 +196,7 @@ export const createWorkshop = async (workshopData, professorId) => {
     eventType: "workshop",
     createdBy: professorId,
     status: "pending",
+    restrictedRoles: workshopData.restrictedRoles || [],
   });
 
   return workshop;
@@ -283,7 +311,6 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
-  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -299,14 +326,24 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async (includeVendors = false) => {
+export const getUpcomingEventsService = async (
+  includeVendors = false,
+  userRole = null
+) => {
   const now = new Date();
 
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  })
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
@@ -318,15 +355,25 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
  * Get all upcoming events with their vendors (via applications).
  * @returns {Promise<Array>} Array of event objects with vendors array.
  */
-export const getUpcomingEventsWithVendors = async () => {
+export const getUpcomingEventsWithVendors = async (
+  includeVendors = true,
+  userRole = null
+) => {
   const now = new Date();
 
-  // Get all approved upcoming events
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  }).lean();
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  // Get all approved upcoming events
+  const events = await Event.find(filter).lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -386,13 +433,14 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Soft delete: set deletedAt timestamp
+  // Soft delete: set deletedAt timestamp and clear restrictedRoles
   event.deletedAt = new Date();
+  event.restrictedRoles = [];
   await event.save();
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type }) => {
+export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   const now = new Date();
   const filter = {
@@ -400,6 +448,11 @@ export const searchEvents = async ({ name, type }) => {
     startDate: { $gte: now },
     deletedAt: null,
   };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
 
   // If both name and type are provided and are the same (unified search)
   // Use OR logic to search across all fields
@@ -498,10 +551,23 @@ export const acceptWorkshop = async (workshopId) => {
     workshopId,
     { status: "approved" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Accepted",
+      message: `Your workshop "${event.name}" has been approved by the Events Office and is now published!`,
+    });
+  }
+
   return event;
 };
 
@@ -525,10 +591,23 @@ export const rejectWorkshop = async (workshopId) => {
     workshopId,
     { status: "rejected" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Rejected",
+      message: `Your workshop "${event.name}" has been rejected by the Events Office.`,
+    });
+  }
+
   return event;
 };
 
@@ -556,19 +635,30 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
   return event;
 };
 
-export const getEventById = async (eventId) => {
+export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
+
+  // Check if the user's role is restricted from viewing this event
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    if (event.restrictedRoles && event.restrictedRoles.includes(userRole)) {
+      throw new ApiError(
+        403,
+        "Access denied: You are not allowed to view this event"
+      );
+    }
+  }
+
   return event;
 };
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
-      "name location price startDate endDate description capacity registrationDeadline"
+      "name location price startDate endDate description capacity registrationDeadline restrictedRoles"
     )
     .lean();
 
@@ -592,24 +682,50 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
-
 /**
  * Aggregates attendee statistics for all events.
  * Supports optional filtering by eventType, date range, and pagination.
  */
 export const getAttendeesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const match = {
     deletedAt: null,
-    status: "approved",
+    status: { $in: ["approved", "archived"] },
   };
 
-  if (eventType) match.eventType = eventType;
-  if (startDate || endDate) {
-    match.startDate = {};
-    if (startDate) match.startDate.$gte = new Date(startDate);
-    if (endDate) match.startDate.$lte = new Date(endDate);
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
+  }
+
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
+  }
+
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
+  }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
   }
 
   const skip = (page - 1) * limit;
@@ -668,7 +784,10 @@ export const getAttendeesReport = async (options = {}) => {
     events: result.events || [],
   };
 };
-
+// Get workshop by ID
+export const getWorkshopById = async (workshopId) => {
+  return Event.findById(workshopId);
+};
 export const archiveEvent = async (eventId, user) => {
   // Authorization
   if (!user || user.role !== "events_office") {
@@ -722,6 +841,118 @@ export const archiveEvent = async (eventId, user) => {
   }
 
   return updatedEvent;
+};
+
+/**
+ * Cancels a user's registration for an event and processes a refund if eligible.
+ * - Only allows cancellation at least 2 weeks before the event start date.
+ * - Removes the user from the event's attendees.
+ * - Initiates a refund using TransactionService.
+ * @param {string} eventId - The ID of the event to cancel registration for.
+ * @param {string} userId - The ID of the user cancelling registration.
+ * @returns {Promise<Object>} Refund details including eventId, refundedAmount, paymentMethod, and transactionId.
+ * @throws {ApiError} If event not found, cancellation not allowed, or user not registered.
+ */
+export const cancelEventRegistration = async (eventId, userId) => {
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  const now = new Date();
+  const twoWeeksBefore = new Date(event.startDate);
+  twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+  if (now > twoWeeksBefore) {
+    throw new ApiError(
+      400,
+      "Cancellations are only allowed at least 2 weeks before the event."
+    );
+  }
+
+  const isRegistered = event.attendees.some(
+    (att) => att.toString() === userId.toString()
+  );
+  if (!isRegistered)
+    throw new ApiError(400, "User not registered for this event.");
+
+  // Remove attendee
+  event.attendees = event.attendees.filter(
+    (att) => att.toString() !== userId.toString()
+  );
+  await event.save();
+
+  // Refund logic
+  const refund = await transactionService.refundUserForEvent(userId, event._id);
+
+  return {
+    eventId,
+    refundedAmount: refund.amount,
+    paymentMethod: refund.paymentMethod,
+    transactionId: refund._id,
+  };
+};
+
+export const restrictAccess = async (eventId, rolesToRestrict, user) => {
+  // Authorization check
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Only Events Office can restrict event access");
+  }
+
+  // Ensure unique roles and validate them
+  const uniqueRoles = [...new Set(rolesToRestrict)];
+  const validRoles = [
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "vendor",
+    "events_office",
+    "admin",
+  ];
+  const invalidRoles = uniqueRoles.filter((role) => !validRoles.includes(role));
+  if (invalidRoles.length > 0) {
+    throw new ApiError(
+      400,
+      `Invalid roles provided: ${invalidRoles.join(", ")}`
+    );
+  }
+
+  // Replace the input array with unique roles
+  rolesToRestrict = uniqueRoles;
+
+  // Find and validate event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot modify restrictions for a deleted event");
+  }
+
+  // Check if event is archived
+  if (event.status === "archived") {
+    throw new ApiError(400, "Cannot modify restrictions for an archived event");
+  }
+
+  // Check if the exact same restrictions are already in place
+  const currentRestrictions = event.restrictedRoles || [];
+  const isIdenticalRestriction =
+    rolesToRestrict.length === currentRestrictions.length &&
+    rolesToRestrict.every((role) => currentRestrictions.includes(role)) &&
+    currentRestrictions.every((role) => rolesToRestrict.includes(role));
+
+  if (isIdenticalRestriction) {
+    throw new ApiError(
+      400,
+      "These role restrictions are already in place for this event"
+    );
+  }
+
+  // Update restricted roles
+  event.restrictedRoles = rolesToRestrict;
+  await event.save();
+
+  return event;
 };
 
 export const getSalesReport = async (options = {}) => {

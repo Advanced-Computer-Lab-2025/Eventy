@@ -47,7 +47,7 @@ export default function EventsReport() {
   const [error, setError] = useState("");
 
   // Filters
-  const [eventName, setEventName] = useState("");
+  const [name, setEventName] = useState("");
   const [eventType, setEventType] = useState("all");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState(""); // ✅ Added endDate filter
@@ -63,7 +63,7 @@ export default function EventsReport() {
 
       // Build query params
       const params = new URLSearchParams();
-      if (eventName.trim()) params.append("eventName", eventName.trim());
+      if (name.trim()) params.append("name", name.trim());
       if (eventType && eventType !== "all")
         params.append("eventType", eventType);
       if (startDate) params.append("startDate", startDate);
@@ -100,7 +100,7 @@ export default function EventsReport() {
 
   useEffect(() => {
     fetchReport();
-  }, [page, eventType, eventName, startDate, endDate]); // ✅ Added endDate to dependencies
+  }, [page, eventType, name, startDate, endDate]); // ✅ Added endDate to dependencies
 
   const handleClearFilters = () => {
     setEventName("");
@@ -171,7 +171,7 @@ export default function EventsReport() {
               <Input
                 type="text"
                 placeholder="Enter event name..."
-                value={eventName}
+                value={name}
                 onChange={(e) => setEventName(e.target.value)}
               />
             </div>
@@ -189,6 +189,7 @@ export default function EventsReport() {
                   <SelectItem value="trip">Trip</SelectItem>
                   <SelectItem value="bazaar">Bazaar</SelectItem>
                   <SelectItem value="conference">Conference</SelectItem>
+                  <SelectItem value="platform_booth">Platform Booth</SelectItem>
                 </SelectContent>
               </Select>
             </div>

@@ -11,9 +11,11 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  restrictAccessSchema,
   getSalesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
+import NotificationService from "../notifications/notification.service.js";
 
 //Write your code in this class!!!
 
@@ -34,6 +36,42 @@ export class EventsController {
     } catch (err) {
       console.error("Error in createBazaar controller:", err);
       next(new ApiError(400, err.message));
+    }
+  }
+
+  async getWorkshopParticipants(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const userId = req.user._id || req.user.id;
+      // Find the workshop and ensure professor is creator
+      const workshop = await eventService.getWorkshopById(workshopId);
+      if (!workshop) throw new ApiError(404, "Workshop not found");
+      if (workshop.eventType !== "workshop")
+        throw new ApiError(400, "Not a workshop");
+      if (String(workshop.createdBy) !== String(userId))
+        throw new ApiError(
+          403,
+          "Forbidden: Only the creator professor can view participants"
+        );
+      // Populate attendees
+      await workshop.populate("attendees", "firstName lastName email");
+      const participants = (workshop.attendees || []).map((attendee) => ({
+        _id: attendee._id,
+        name: `${attendee.firstName} ${attendee.lastName}`,
+        email: attendee.email,
+      }));
+      const remainingSpots = (workshop.capacity || 0) - participants.length;
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { participants, remainingSpots },
+            "Participants and remaining spots fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
     }
   }
 
@@ -247,6 +285,30 @@ export class EventsController {
         req.body,
         req.user.id
       );
+
+      // Create notification for Events Office users
+      try {
+        const eventsOfficeUsers = await User.find({
+          role: "events_office",
+          status: "active",
+          deletedAt: null,
+        }).select("_id firstName lastName");
+
+        if (eventsOfficeUsers.length > 0) {
+          await NotificationService.createNotification({
+            recipients: eventsOfficeUsers.map((u) => u._id),
+            title: "New Workshop Submission",
+            message: `${req.user.firstName || "Professor"} submitted a workshop: ${req.body.name}`,
+            link: "/approvals/workshops",
+          });
+        }
+      } catch (notifErr) {
+        // Log but do not fail the main request
+        console.error(
+          "Failed to create notification for workshop submission",
+          notifErr
+        );
+      }
 
       return res
         .status(201)
@@ -527,7 +589,11 @@ export class EventsController {
   // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
-      const events = await eventService.getUpcomingEventsWithVendors(true);
+      const userRole = req.user?.role;
+      const events = await eventService.getUpcomingEventsWithVendors(
+        true,
+        userRole
+      );
       return res
         .status(200)
         .json(
@@ -548,8 +614,10 @@ export class EventsController {
         throw new ApiError(400, "Please provide a name or type to search.");
       }
 
+      const userRole = req.user?.role;
+
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type });
+      const events = await eventService.searchEvents({ name, type, userRole });
 
       return res
         .status(200)
@@ -584,7 +652,8 @@ export class EventsController {
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
-      const event = await eventService.getEventById(eventId);
+      const userRole = req.user?.role;
+      const event = await eventService.getEventById(eventId, userRole);
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event fetched successfully"));
@@ -629,9 +698,10 @@ export class EventsController {
         return next(new ApiError(400, "Validation failed", error.details));
 
       // ✅ Use the validated values
-      const { eventType, startDate, endDate, page, limit } = value;
+      const { name, eventType, startDate, endDate, page, limit } = value;
 
       const report = await eventService.getAttendeesReport({
+        name,
         eventType,
         startDate,
         endDate,
@@ -672,6 +742,73 @@ export class EventsController {
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+  // Cancel event registration (for Student/Staff/TA/Professor)
+  async cancelEventRegistration(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only registered users can cancel their registrations."
+        );
+      }
+
+      const result = await eventService.cancelEventRegistration(
+        eventId,
+        userId
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            result,
+            "Registration cancelled and amount refunded."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+  async restrictAccess(req, res, next) {
+    try {
+      // Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Validate request body
+      const { error } = restrictAccessSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      // Call service to restrict access
+      const event = await eventService.restrictAccess(
+        req.params.id,
+        req.body.roles,
+        req.user
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            event,
+            "Event access restrictions updated successfully"
+          )
+        );
     } catch (err) {
       next(err);
     }

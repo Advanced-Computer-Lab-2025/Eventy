@@ -12,6 +12,13 @@ import {
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
 interface Workshop {
@@ -35,6 +42,47 @@ export default function WorkshopManagement() {
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [ParticipantsOpenFor, setParticipantsOpenFor] = useState<string | null>(
+    null
+  );
+  const [participants, setParticipants] = useState<
+    { _id: string; name: string; email?: string }[]
+  >([]);
+  const [remainingSpots, setRemainingSpots] = useState<number>(0);
+  const [participantsLoading, setParticipantsLoading] = useState(false);
+  const [participantsError, setParticipantsError] = useState("");
+  const fetchParticipants = async (workshopId: string) => {
+    setParticipantsLoading(true);
+    setParticipantsError("");
+    try {
+      const token = localStorage.getItem("token");
+      const baseUrl =
+        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+      const res = await fetch(
+        `${baseUrl}/api/events/workshops/${workshopId}/participants`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Failed to fetch participants");
+      }
+      const json = await res.json();
+      const data = json.data || {};
+      setParticipants(
+        Array.isArray(data.participants) ? data.participants : []
+      );
+      setRemainingSpots(
+        typeof data.remainingSpots === "number" ? data.remainingSpots : 0
+      );
+    } catch (e: any) {
+      setParticipantsError(e.message || "Failed to fetch participants");
+      setParticipants([]);
+      setRemainingSpots(0);
+    } finally {
+      setParticipantsLoading(false);
+    }
+  };
 
   useEffect(() => {
     fetchMyWorkshops();
@@ -48,7 +96,9 @@ export default function WorkshopManagement() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/api/events/me/workshops", {
+      const baseUrl =
+        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+      const res = await fetch(`${baseUrl}/api/events/me/workshops`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -70,7 +120,7 @@ export default function WorkshopManagement() {
     const variants: Record<string, { className: string; label: string }> = {
       pending: {
         className:
-          "ml-2 bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200 dark:border-blue-800",
+          "ml-2 bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
         label: "Pending Approval",
       },
       approved: {
@@ -208,41 +258,82 @@ export default function WorkshopManagement() {
                       </div>
                     </div>
 
-                    {workshop.revisionComments && (
-                      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-md">
-                        <p className="text-xs font-semibold text-yellow-800 dark:text-yellow-200 mb-1">
-                          Revision Required:
-                        </p>
-                        <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                          {workshop.revisionComments}
-                        </p>
-                      </div>
-                    )}
+                    {/* Removed revisionComments display; now shown only on Edit Workshop page */}
                   </div>
 
-                  <Button
-                    className="w-full mt-auto"
-                    variant="outline"
-                    onClick={() =>
-                      setLocation(`/professor/edit-workshop/${workshop._id}`)
-                    }
-                    disabled={
-                      workshop.status !== "pending" &&
-                      workshop.status !== "needs_revision"
-                    }
-                  >
-                    <Edit className="mr-2 h-4 w-4" />
-                    {workshop.status === "approved" ||
-                    workshop.status === "rejected"
-                      ? "Cannot Edit"
-                      : "Edit Workshop"}
-                  </Button>
+                  <div className="mt-auto flex gap-2">
+                    <Button
+                      className="flex-1"
+                      variant="outline"
+                      onClick={() =>
+                        setLocation(`/professor/edit-workshop/${workshop._id}`)
+                      }
+                      disabled={
+                        workshop.status !== "pending" &&
+                        workshop.status !== "needs_revision"
+                      }
+                    >
+                      <Edit className="mr-2 h-4 w-4" />
+                      {workshop.status === "approved" ||
+                      workshop.status === "rejected"
+                        ? "Cannot Edit"
+                        : "Edit Workshop"}
+                    </Button>
+                    <Button
+                      className="flex-1 bg-purple-600 hover:bg-purple-700 text-white dark:bg-purple-500 dark:hover:bg-purple-600 focus:ring-2 focus:ring-purple-300 dark:focus:ring-purple-800"
+                      onClick={() => {
+                        setParticipantsOpenFor(workshop._id);
+                        fetchParticipants(workshop._id);
+                      }}
+                    >
+                      View Participants
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}
           </div>
         )}
       </main>
+      {/* Participants Dialog */}
+      <Dialog
+        open={!!ParticipantsOpenFor}
+        onOpenChange={(open) => !open && setParticipantsOpenFor(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Participants</DialogTitle>
+            <DialogDescription>
+              {participantsLoading
+                ? "Loading participants..."
+                : participantsError
+                  ? participantsError
+                  : `Remaining spots: ${remainingSpots}`}
+            </DialogDescription>
+          </DialogHeader>
+          {!participantsLoading && !participantsError && (
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              {participants.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  No participants yet.
+                </p>
+              ) : (
+                participants.map((p) => (
+                  <div
+                    key={p._id}
+                    className="flex items-center justify-between text-sm border rounded-md px-3 py-2"
+                  >
+                    <span className="font-medium truncate">{p.name}</span>
+                  </div>
+                ))
+              )}
+              <div className="pt-2 text-xs text-muted-foreground border-t">
+                Total: {participants.length}
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
