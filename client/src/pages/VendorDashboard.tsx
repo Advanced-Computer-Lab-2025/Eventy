@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Users,
   Target,
+  CreditCard,
 } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
+import ApplicationPaymentDialog from "@/components/ApplicationPaymentDialog";
 import StatCard from "@/components/StatCard";
 import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
@@ -93,6 +95,11 @@ export default function VendorDashboard() {
   const [applicationToCancel, setApplicationToCancel] = useState<string | null>(
     null
   );
+
+  // Payment dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedApplicationForPayment, setSelectedApplicationForPayment] =
+    useState<Application | null>(null);
 
   const { toast } = useToast();
 
@@ -837,8 +844,8 @@ export default function VendorDashboard() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
+                    <CardContent className="flex flex-col flex-grow">
+                      <div className="space-y-2 text-sm mb-4 flex-grow">
                         {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -885,6 +892,32 @@ export default function VendorDashboard() {
                           )}
                         </div>
                       </div>
+                      {application.paymentStatus === "paid" ? (
+                        <Button
+                          className="w-full mt-auto bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-not-allowed"
+                          variant="outline"
+                          disabled
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Already Paid
+                        </Button>
+                      ) : application.paymentStatus === "overdue" ? (
+                        <Button className="w-full mt-auto" disabled>
+                          Payment Overdue
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => {
+                            setSelectedApplicationForPayment(application);
+                            setPaymentDialogOpen(true);
+                          }}
+                          className="w-full mt-auto"
+                          variant="default"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Pay Now
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -1167,6 +1200,19 @@ export default function VendorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Dialog */}
+      {selectedApplicationForPayment && (
+        <ApplicationPaymentDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          application={selectedApplicationForPayment}
+          onPaymentSuccess={() => {
+            fetchApplicationsData();
+            setSelectedApplicationForPayment(null);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -263,4 +263,11 @@ router.patch(
   eventsController.restrictAccess.bind(eventsController)
 );
 
+router.get(
+  "/reports/sales",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getSalesReport.bind(eventsController)
+);
+
 export default router;

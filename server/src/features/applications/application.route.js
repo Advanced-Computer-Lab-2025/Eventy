@@ -13,6 +13,27 @@ import validateQuery from "../../middlewares/validateQuery.middleware.js";
 const router = express.Router();
 const applicationController = new ApplicationController();
 
+// Public attendee routes - MUST come before parameterized routes to avoid conflicts
+/**
+ * @route   GET /api/applications/attendee/verify/:token
+ * @desc    Display attendee details as HTML page (for QR code scanning)
+ * @access  Public (via token)
+ */
+router.get(
+  "/attendee/verify/:token",
+  applicationController.getAttendeeByTokenHTML.bind(applicationController)
+);
+
+/**
+ * @route   GET /api/applications/attendee/:token
+ * @desc    Get attendee details via QR code token (public endpoint - JSON)
+ * @access  Public (via token)
+ */
+router.get(
+  "/attendee/:token",
+  applicationController.getAttendeeByToken.bind(applicationController)
+);
+
 router.get(
   "/me",
   authMiddleware,

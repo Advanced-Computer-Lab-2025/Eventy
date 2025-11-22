@@ -4,6 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface CreateEventFormValues {
@@ -17,6 +19,7 @@ export interface CreateEventFormValues {
   requiredBudget?: string;
   fundingSource?: "external" | "guc";
   agenda?: string;
+  restrictedRoles?: string[];
 }
 
 interface CreateEventFormProps {
@@ -25,6 +28,7 @@ interface CreateEventFormProps {
   includeWebsiteUrl?: boolean;
   includeBudgetAndFunding?: boolean;
   includeAgenda?: boolean;
+  includeRestrictAccess?: boolean;
   submitLabel?: string;
   title?: string;
   initialValues?: Partial<CreateEventFormValues>;
@@ -36,6 +40,7 @@ export default function CreateEventForm({
   includeWebsiteUrl = true,
   includeBudgetAndFunding = true,
   includeAgenda = true,
+  includeRestrictAccess = true,
   submitLabel = "Create",
   title = "Event Information",
   initialValues = {},
@@ -51,10 +56,18 @@ export default function CreateEventForm({
     requiredBudget: initialValues.requiredBudget || "",
     fundingSource: initialValues.fundingSource || undefined,
     agenda: initialValues.agenda || "",
+    restrictedRoles: initialValues.restrictedRoles || [],
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+  ];
 
   // Helper: today's date in local timezone as YYYY-MM-DD
   const todayLocal = () => {
@@ -330,6 +343,48 @@ export default function CreateEventForm({
                 {errors.fundingSource && (
                   <p className="text-sm text-red-500">{errors.fundingSource}</p>
                 )}
+              </div>
+            </div>
+          )}
+
+          {includeRestrictAccess && (
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-start gap-2">
+                <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                <div className="flex-1">
+                  <Label className="text-base font-semibold">
+                    Restrict Access (Optional)
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select which roles should NOT be able to view or register
+                    for this event
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                {availableRoles.map((role) => (
+                  <div key={role.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`restrict-${role.value}`}
+                      checked={values.restrictedRoles?.includes(role.value)}
+                      onCheckedChange={(checked) => {
+                        const currentRoles = values.restrictedRoles || [];
+                        setValues({
+                          ...values,
+                          restrictedRoles: checked
+                            ? [...currentRoles, role.value]
+                            : currentRoles.filter((r) => r !== role.value),
+                        });
+                      }}
+                    />
+                    <Label
+                      htmlFor={`restrict-${role.value}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {role.label}
+                    </Label>
+                  </div>
+                ))}
               </div>
             </div>
           )}

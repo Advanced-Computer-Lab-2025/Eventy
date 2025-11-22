@@ -148,7 +148,9 @@ export default function EventCard({
         role
       );
     }
-  } catch {}
+  } catch {
+    // Ignore token parsing errors
+  }
   // Respect parent component's `canDelete` prop in addition to role
   const canShowDelete = roleAllowsDelete && canDelete;
   const canShowFavorites = roleAllowsFavorites;

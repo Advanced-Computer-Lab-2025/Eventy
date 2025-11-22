@@ -85,9 +85,11 @@ export class FacilitiesController {
       if (error) throw new ApiError(400, error.details[0].message);
 
       const { month, year } = req.query;
+      const userRole = req.user?.role;
       const sessions = await FacilitiesService.getGymSessions(
         parseInt(month),
-        parseInt(year)
+        parseInt(year),
+        userRole
       );
 
       res.status(200).json({
