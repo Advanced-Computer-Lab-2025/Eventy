@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Info } from "lucide-react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateBazaar() {
@@ -26,6 +27,15 @@ export default function CreateBazaar() {
   const [error, setError] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+    { value: "vendor", label: "Vendors" },
+  ];
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -98,7 +108,7 @@ export default function CreateBazaar() {
           ? formData.endTime.trim()
           : "00:00";
 
-      const payload = {
+      const payload: any = {
         name: formData.name,
         description: formData.description,
         location: formData.location,
@@ -110,6 +120,15 @@ export default function CreateBazaar() {
           ? `${formData.deadline}T23:59:59.000Z`
           : undefined,
       };
+
+      // Add restricted roles
+      // When editing, always send restrictedRoles (even if empty) to clear restrictions
+      // When creating, only send if there are restrictions
+      if (editingId) {
+        payload.restrictedRoles = restrictedRoles;
+      } else if (restrictedRoles.length > 0) {
+        payload.restrictedRoles = restrictedRoles;
+      }
 
       const url = editingId
         ? `${API_BASE_URL}/api/events/bazaars/${editingId}`
@@ -201,6 +220,7 @@ export default function CreateBazaar() {
           description: b.description || "",
           deadline: toDate(b.registrationDeadline),
         });
+        setRestrictedRoles(b.restrictedRoles || []);
       } catch (e: any) {
         setError(e.message || "Failed to load bazaar");
       } finally {
@@ -369,6 +389,48 @@ export default function CreateBazaar() {
                   data-testid="input-deadline"
                   required
                 />
+              </div>
+
+              {/* Restrict Access Section */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-start gap-2">
+                  <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <div className="flex-1">
+                    <Label className="text-base font-semibold">
+                      Restrict Access (Optional)
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select which roles should NOT be able to view or register
+                      for this bazaar
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  {availableRoles.map((role) => (
+                    <div
+                      key={role.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={`restrict-${role.value}`}
+                        checked={restrictedRoles.includes(role.value)}
+                        onCheckedChange={(checked) => {
+                          setRestrictedRoles(
+                            checked
+                              ? [...restrictedRoles, role.value]
+                              : restrictedRoles.filter((r) => r !== role.value)
+                          );
+                        }}
+                      />
+                      <Label
+                        htmlFor={`restrict-${role.value}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {role.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
               </div>
             </CardContent>
           </Card>

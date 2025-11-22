@@ -563,7 +563,11 @@ export class EventsController {
   // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
-      const events = await eventService.getUpcomingEventsWithVendors(true);
+      const userRole = req.user?.role;
+      const events = await eventService.getUpcomingEventsWithVendors(
+        true,
+        userRole
+      );
       return res
         .status(200)
         .json(
@@ -584,8 +588,10 @@ export class EventsController {
         throw new ApiError(400, "Please provide a name or type to search.");
       }
 
+      const userRole = req.user?.role;
+
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type });
+      const events = await eventService.searchEvents({ name, type, userRole });
 
       return res
         .status(200)
@@ -620,7 +626,8 @@ export class EventsController {
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
-      const event = await eventService.getEventById(eventId);
+      const userRole = req.user?.role;
+      const event = await eventService.getEventById(eventId, userRole);
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event fetched successfully"));

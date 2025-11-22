@@ -24,6 +24,7 @@ export async function createBazaar(data, user) {
     createdBy: user.id,
     startTime: data.startTime,
     endTime: data.endTime,
+    restrictedRoles: data.restrictedRoles || [],
   };
 
   // Save to database
@@ -88,6 +89,7 @@ export const createTrip = async (tripData, createdBy) => {
     ...tripData,
     eventType: "trip",
     createdBy,
+    restrictedRoles: tripData.restrictedRoles || [],
   });
 
   return newTrip;
@@ -135,6 +137,7 @@ export const createConference = async (data, userId) => {
     startTime,
     endTime,
     createdBy: userId,
+    restrictedRoles: data.restrictedRoles || [],
   });
 
   return event;
@@ -193,6 +196,7 @@ export const createWorkshop = async (workshopData, professorId) => {
     eventType: "workshop",
     createdBy: professorId,
     status: "pending",
+    restrictedRoles: workshopData.restrictedRoles || [],
   });
 
   return workshop;
@@ -322,14 +326,24 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async (includeVendors = false) => {
+export const getUpcomingEventsService = async (
+  includeVendors = false,
+  userRole = null
+) => {
   const now = new Date();
 
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  })
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
@@ -341,15 +355,25 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
  * Get all upcoming events with their vendors (via applications).
  * @returns {Promise<Array>} Array of event objects with vendors array.
  */
-export const getUpcomingEventsWithVendors = async () => {
+export const getUpcomingEventsWithVendors = async (
+  includeVendors = true,
+  userRole = null
+) => {
   const now = new Date();
 
-  // Get all approved upcoming events
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  }).lean();
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  // Get all approved upcoming events
+  const events = await Event.find(filter).lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -409,13 +433,14 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Soft delete: set deletedAt timestamp
+  // Soft delete: set deletedAt timestamp and clear restrictedRoles
   event.deletedAt = new Date();
+  event.restrictedRoles = [];
   await event.save();
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type }) => {
+export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   const now = new Date();
   const filter = {
@@ -423,6 +448,11 @@ export const searchEvents = async ({ name, type }) => {
     startDate: { $gte: now },
     deletedAt: null,
   };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
 
   // If both name and type are provided and are the same (unified search)
   // Use OR logic to search across all fields
@@ -605,19 +635,30 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
   return event;
 };
 
-export const getEventById = async (eventId) => {
+export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
+
+  // Check if the user's role is restricted from viewing this event
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    if (event.restrictedRoles && event.restrictedRoles.includes(userRole)) {
+      throw new ApiError(
+        403,
+        "Access denied: You are not allowed to view this event"
+      );
+    }
+  }
+
   return event;
 };
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
-      "name location price startDate endDate description capacity registrationDeadline"
+      "name location price startDate endDate description capacity registrationDeadline restrictedRoles"
     )
     .lean();
 

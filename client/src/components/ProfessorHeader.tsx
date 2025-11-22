@@ -49,7 +49,7 @@ export default function ProfessorHeader({
             data-testid="button-nav-workshops"
           >
             <BookOpen className="h-4 w-4" />
-            Workshops
+            My Workshops
           </Button>
           <Button
             variant="ghost"
