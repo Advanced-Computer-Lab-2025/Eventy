@@ -58,7 +58,6 @@ export default function CreateGymSessionDialog({
     { value: "staff", label: "Staff" },
     { value: "ta", label: "Teaching Assistants" },
     { value: "professor", label: "Professors" },
-    { value: "vendor", label: "Vendors" },
   ];
 
   const handleSubmit = async (e: React.FormEvent) => {

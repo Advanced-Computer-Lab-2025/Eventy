@@ -78,7 +78,6 @@ export default function EditGymSessionDialog({
     { value: "staff", label: "Staff" },
     { value: "ta", label: "Teaching Assistants" },
     { value: "professor", label: "Professors" },
-    { value: "vendor", label: "Vendors" },
   ];
 
   const {

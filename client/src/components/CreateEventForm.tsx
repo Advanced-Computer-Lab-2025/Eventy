@@ -67,7 +67,6 @@ export default function CreateEventForm({
     { value: "staff", label: "Staff" },
     { value: "ta", label: "Teaching Assistants" },
     { value: "professor", label: "Professors" },
-    { value: "vendor", label: "Vendors" },
   ];
 
   // Helper: today's date in local timezone as YYYY-MM-DD
