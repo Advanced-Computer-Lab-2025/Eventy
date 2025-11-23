@@ -329,7 +329,7 @@ export default function SalesReport() {
             <CardTitle className="text-sm font-medium">Total Refunds</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-red-600">
+            <p className="text-2xl font-bold text-red-500">
               {formatCurrency(reportData?.totalRefunds || 0)}
             </p>
           </CardContent>
@@ -340,7 +340,7 @@ export default function SalesReport() {
             <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">
+            <p className="text-2xl font-bold text-emerald-500">
               {formatCurrency(reportData?.netRevenue || 0)}
             </p>
           </CardContent>
@@ -380,7 +380,7 @@ export default function SalesReport() {
             ) : (
               <Download className="h-4 w-4" />
             )}
-            Export Excel
+            Export CSV
           </Button>
         </CardHeader>
         <CardContent>
@@ -508,12 +508,12 @@ export default function SalesReport() {
                         <TableCell className="text-right">
                           {formatCurrency(event.grossRevenue || 0)}
                         </TableCell>
-                        <TableCell className="text-right text-red-600">
+                        <TableCell className="text-right text-red-500">
                           {event.totalRefunds > 0
                             ? formatCurrency(event.totalRefunds)
                             : "$0.00"}
                         </TableCell>
-                        <TableCell className="text-right font-bold text-green-600">
+                        <TableCell className="text-right font-bold text-emerald-500">
                           {formatCurrency(event.totalRevenue || 0)}
                         </TableCell>
                         <TableCell className="text-right text-muted-foreground">
