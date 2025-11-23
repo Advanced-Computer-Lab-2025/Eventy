@@ -117,8 +117,8 @@ export default function EventsOfficeDashboard() {
   const [totalBooths, setTotalBooths] = useState<number | null>(null);
 
   // Combined filtered events
-  const allEvents = [...upcomingEvents, ...pastEvents];
-  const filteredEvents = allEvents.filter((event: any) => {
+  const combinedEvents = [...upcomingEvents, ...pastEvents];
+  const filteredEvents = combinedEvents.filter((event: any) => {
     const q = eventSearch.trim().toLowerCase();
     const matchesSearch =
       !q ||
@@ -370,7 +370,6 @@ export default function EventsOfficeDashboard() {
         credentials: "include",
       });
 
-
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || "Failed to fetch upcoming events");
@@ -384,7 +383,7 @@ export default function EventsOfficeDashboard() {
       setUpcomingLoading(false);
     }
   };
- 
+
   const fetchAllEvents = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -795,7 +794,7 @@ export default function EventsOfficeDashboard() {
                                 );
                               }}
                               labelLine={(props: any) => {
-                                if (props.value === 0) return null;
+                                if (props.value === 0) return <g />;
                                 const { points } = props;
                                 return (
                                   <path
