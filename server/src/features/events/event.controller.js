@@ -780,7 +780,7 @@ export class EventsController {
       next(err);
     }
   }
- 
+
   // Cancel event registration (for Student/Staff/TA/Professor)
   async cancelEventRegistration(req, res, next) {
     try {
@@ -854,7 +854,7 @@ export class EventsController {
       next(err);
     }
   }
-  
+
   async restrictAccess(req, res, next) {
     try {
       // Check authentication
