@@ -297,8 +297,9 @@ class FacilitiesServiceClass {
       throw error;
     }
 
-    if (session.status === "cancelled") {
-      const error = new Error("Gym session cancelled");
+    // Only allow registration if status is strictly 'upcoming'
+    if (session.status !== "upcoming") {
+      const error = new Error("You can only register for upcoming sessions.");
       error.statusCode = 400;
       throw error;
     }
@@ -316,7 +317,7 @@ class FacilitiesServiceClass {
     }
 
     session.attendees.push(userId);
-    session.save();
+    await session.save();
     return session;
   }
 
