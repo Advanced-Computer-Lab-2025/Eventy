@@ -630,7 +630,7 @@ export default function EventsOfficeDashboard() {
                         handleCloseNotif();
                         setLocation("/approvals/workshops");
                       }}
-                      className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600"
+                      className="bg-amber-600 hover:bg-amber-700 dark:bg-amber-700 dark:hover:bg-amber-600 border-amber-600 hover:border-amber-700 dark:border-amber-700 dark:hover:border-amber-600"
                     >
                       Review Approvals
                     </Button>
