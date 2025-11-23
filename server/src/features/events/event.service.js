@@ -2,6 +2,15 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import xlsx from "xlsx";
+import PDFDocument from "pdfkit";
+import { Parser } from "json2csv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { TransactionService } from "../transactions/transaction.service.js";
 const transactionService = new TransactionService();
 import NotificationService from "../notifications/notification.service.js";
@@ -841,6 +850,265 @@ export const archiveEvent = async (eventId, user) => {
   }
 
   return updatedEvent;
+};
+
+export const getEventRegisteredUsers = async (eventId) => {
+  // Find event and populate attendees with firstName, lastName and role
+  const event = await Event.findById(eventId)
+    .select("attendees deletedAt")
+    .populate("attendees", "firstName lastName role");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view attendees of a deleted event");
+  }
+
+  // Check if attendees array is empty or doesn't exist
+  if (!event.attendees || event.attendees.length === 0) {
+    throw new ApiError(404, "No registered users for this event");
+  }
+
+  // Map to minimal shape with only required fields
+  const registeredUsers = event.attendees.map((user) => ({
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  }));
+
+  return registeredUsers;
+};
+
+export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
+  const validFormats = ["xlsx", "pdf", "csv"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  const registeredUsers = await getEventRegisteredUsers(eventId);
+  const event = await Event.findById(eventId).select("name");
+  const eventName = event?.name || "event";
+  const sanitizedEventName = eventName.replace(/[^a-z0-9]/gi, "_");
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  switch (format.toLowerCase()) {
+    case "xlsx":
+      const worksheetData = [
+        ["First Name", "Last Name", "Role"],
+        ...registeredUsers.map((user) => [
+          user.firstName,
+          user.lastName,
+          user.role,
+        ]),
+      ];
+      const worksheet = xlsx.utils.aoa_to_sheet(worksheetData);
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
+        fill: { fgColor: { rgb: "210051" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "210051" } },
+          bottom: { style: "thin", color: { rgb: "210051" } },
+          left: { style: "thin", color: { rgb: "210051" } },
+          right: { style: "thin", color: { rgb: "210051" } },
+        },
+      };
+
+      worksheet["A1"].s = headerStyle;
+      worksheet["B1"].s = headerStyle;
+      worksheet["C1"].s = headerStyle;
+
+      for (let i = 2; i <= registeredUsers.length + 1; i++) {
+        const rowStyle = {
+          fill: { fgColor: { rgb: i % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
+          border: {
+            top: { style: "thin", color: { rgb: "E5E7EB" } },
+            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+            left: { style: "thin", color: { rgb: "E5E7EB" } },
+            right: { style: "thin", color: { rgb: "E5E7EB" } },
+          },
+        };
+        ["A", "B", "C"].forEach((col) => {
+          if (worksheet[`${col}${i}`]) worksheet[`${col}${i}`].s = rowStyle;
+        });
+      }
+
+      worksheet["!cols"] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }];
+
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Registered Users");
+      buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+      mimeType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
+      break;
+
+    case "pdf":
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks = [];
+      doc.on("data", (chunk) => chunks.push(chunk));
+
+      const logoLightPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-light.png"
+      );
+      const logoDarkPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-dark.png"
+      );
+
+      // Watermark
+      if (fs.existsSync(logoLightPath)) {
+        doc
+          .save()
+          .opacity(0.03)
+          .image(
+            logoLightPath,
+            doc.page.width / 2 - 150,
+            doc.page.height / 2 - 150,
+            { width: 300, height: 300 }
+          )
+          .restore();
+      }
+
+      // Header function for all pages
+      const drawHeader = () => {
+        if (fs.existsSync(logoLightPath)) {
+          doc.image(logoLightPath, 50, 40, { width: 70 });
+        }
+        doc
+          .fillColor("#1a202c")
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .text("Registered Users Report", 135, 45)
+          .fillColor("#4a5568")
+          .fontSize(15)
+          .font("Helvetica")
+          .text(`Event: ${eventName}`, 135, 70)
+          .fontSize(11)
+          .fillColor("#718096")
+          .text(
+            `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+            135,
+            90
+          );
+        doc
+          .moveTo(50, 115)
+          .lineTo(doc.page.width - 50, 115)
+          .strokeColor("#E5E7EB")
+          .lineWidth(1)
+          .stroke();
+      };
+
+      drawHeader();
+
+      // Total users count below purple line
+      doc.y = 130;
+      doc
+        .fontSize(12)
+        .fillColor("#210051")
+        .font("Helvetica-Bold")
+        .text(`Total Registered Users: ${registeredUsers.length}`, 50, doc.y, {
+          align: "left",
+        });
+
+      doc.y += 10;
+
+      const col1X = 50,
+        col2X = 220,
+        col3X = 390,
+        rowHeight = 25;
+
+      // Table header
+      doc
+        .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+        .fillColor("#210051")
+        .fill();
+      const headerY = doc.y + 8;
+      doc
+        .fillColor("#FFFFFF")
+        .fontSize(12)
+        .font("Helvetica-Bold")
+        .text("First Name", col1X + 5, headerY, { width: 160 })
+        .text("Last Name", col2X + 5, headerY, { width: 160 })
+        .text("Role", col3X + 5, headerY, { width: 150 });
+      doc.y += rowHeight;
+
+      // Table rows
+      doc.font("Helvetica").fontSize(11);
+      registeredUsers.forEach((user, index) => {
+        if (doc.y > doc.page.height - 80) {
+          doc.addPage();
+          drawHeader();
+          doc.y = 130;
+
+          // Redraw table header on new page
+          doc
+            .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+            .fillColor("#210051")
+            .fill();
+          doc
+            .fillColor("#FFFFFF")
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text("First Name", col1X + 5, doc.y + 8, { width: 160 })
+            .text("Last Name", col2X + 5, doc.y + 8, { width: 160 })
+            .text("Role", col3X + 5, doc.y + 8, { width: 150 });
+          doc.y += rowHeight;
+          doc.font("Helvetica").fontSize(11);
+        }
+
+        const currentY = doc.y;
+        // Alternating row colors
+        doc
+          .rect(col1X, currentY, doc.page.width - 100, rowHeight)
+          .fillColor(index % 2 === 0 ? "#F9FAFB" : "#FFFFFF")
+          .fill();
+
+        doc
+          .fillColor("#1F2937")
+          .text(user.firstName || "-", col1X + 5, currentY + 6, { width: 160 })
+          .text(user.lastName || "-", col2X + 5, currentY + 6, { width: 160 })
+          .text(user.role || "-", col3X + 5, currentY + 6, { width: 150 });
+        doc.y = currentY + rowHeight;
+      });
+
+      doc.end();
+      await new Promise((resolve) =>
+        doc.on("end", () => {
+          buffer = Buffer.concat(chunks);
+          resolve();
+        })
+      );
+      mimeType = "application/pdf";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.pdf`;
+      break;
+
+    case "csv":
+      const parser = new Parser({
+        fields: [
+          { label: "First Name", value: "firstName" },
+          { label: "Last Name", value: "lastName" },
+          { label: "Role", value: "role" },
+        ],
+        header: true,
+      });
+      buffer = Buffer.from(parser.parse(registeredUsers), "utf-8");
+      mimeType = "text/csv";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.csv`;
+      break;
+  }
+
+  return { buffer, filename, mimeType };
 };
 
 /**
