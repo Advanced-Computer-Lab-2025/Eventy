@@ -326,14 +326,15 @@ export default function GymScheduleViewer({
                       <TableCell>{session.durationMinutes} min</TableCell>
                       <TableCell>{session.instructor || "TBA"}</TableCell>
                       <TableCell>
-                        <span
-                          className="text-muted-foreground font-medium text-sm whitespace-nowrap"
-                          style={{ letterSpacing: "0.01em" }}
-                        >
-                          {isFull
-                            ? "Full"
-                            : `${seatsLeft} seat${seatsLeft === 1 ? "" : "s"} left`}
-                        </span>
+                        {isFull ? (
+                          <span className="font-bold text-red-500 text-sm whitespace-nowrap">
+                            Full
+                          </span>
+                        ) : (
+                          <span className="font-bold text-emerald-500 text-sm whitespace-nowrap">
+                            {seatsLeft} seat{seatsLeft === 1 ? "" : "s"} left
+                          </span>
+                        )}
                       </TableCell>
                       {canRegister && (
                         <TableCell>
