@@ -793,13 +793,13 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
       const headerStyle = {
         font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-        fill: { fgColor: { rgb: "7C3AED" } },
+        fill: { fgColor: { rgb: "210051" } },
         alignment: { horizontal: "center", vertical: "center" },
         border: {
-          top: { style: "thin", color: { rgb: "7C3AED" } },
-          bottom: { style: "thin", color: { rgb: "7C3AED" } },
-          left: { style: "thin", color: { rgb: "7C3AED" } },
-          right: { style: "thin", color: { rgb: "7C3AED" } },
+          top: { style: "thin", color: { rgb: "210051" } },
+          bottom: { style: "thin", color: { rgb: "210051" } },
+          left: { style: "thin", color: { rgb: "210051" } },
+          right: { style: "thin", color: { rgb: "210051" } },
         },
       };
 
@@ -850,7 +850,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       if (fs.existsSync(logoLightPath)) {
         doc
           .save()
-          .opacity(0.08)
+          .opacity(0.03)
           .image(
             logoLightPath,
             doc.page.width / 2 - 150,
@@ -862,58 +862,46 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
       // Header function for all pages
       const drawHeader = () => {
-        if (fs.existsSync(logoDarkPath)) {
-          doc.image(logoDarkPath, 50, 45, { width: 60 });
+        if (fs.existsSync(logoLightPath)) {
+          doc.image(logoLightPath, 50, 40, { width: 70 });
         }
         doc
-          .fillColor("#7C3AED")
+          .fillColor("#1a202c")
           .fontSize(22)
           .font("Helvetica-Bold")
-          .text("Registered Users Report", 130, 50)
-          .fillColor("#1F2937")
-          .fontSize(16)
+          .text("Registered Users Report", 135, 45)
+          .fillColor("#4a5568")
+          .fontSize(15)
           .font("Helvetica")
-          .text(`Event: ${eventName}`, 130, 78)
+          .text(`Event: ${eventName}`, 135, 70)
           .fontSize(11)
-          .fillColor("#6B7280")
+          .fillColor("#718096")
           .text(
             `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
-            130,
-            100
+            135,
+            90
           );
         doc
-          .moveTo(50, 130)
-          .lineTo(doc.page.width - 50, 130)
-          .strokeColor("#7C3AED")
-          .lineWidth(2)
+          .moveTo(50, 115)
+          .lineTo(doc.page.width - 50, 115)
+          .strokeColor("#E5E7EB")
+          .lineWidth(1)
           .stroke();
-      };
-
-      // Footer function for all pages
-      const drawFooter = () => {
-        const footerY = doc.page.height - 40;
-        doc
-          .fontSize(8)
-          .fillColor("#6B7280")
-          .font("Helvetica")
-          .text("Eventy - GUC Event Management System", 50, footerY, {
-            align: "center",
-          });
       };
 
       drawHeader();
 
       // Total users count below purple line
-      doc.y = 145;
+      doc.y = 130;
       doc
         .fontSize(12)
-        .fillColor("#7C3AED")
+        .fillColor("#210051")
         .font("Helvetica-Bold")
         .text(`Total Registered Users: ${registeredUsers.length}`, 50, doc.y, {
           align: "left",
         });
 
-      doc.y += 25;
+      doc.y += 10;
 
       const col1X = 50,
         col2X = 220,
@@ -923,7 +911,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       // Table header
       doc
         .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
-        .fillColor("#7C3AED")
+        .fillColor("#210051")
         .fill();
       const headerY = doc.y + 8;
       doc
@@ -933,21 +921,20 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
         .text("First Name", col1X + 5, headerY, { width: 160 })
         .text("Last Name", col2X + 5, headerY, { width: 160 })
         .text("Role", col3X + 5, headerY, { width: 150 });
-      doc.y += rowHeight + 5;
+      doc.y += rowHeight;
 
       // Table rows
       doc.font("Helvetica").fontSize(11);
       registeredUsers.forEach((user, index) => {
         if (doc.y > doc.page.height - 80) {
-          drawFooter();
           doc.addPage();
           drawHeader();
-          doc.y = 145;
+          doc.y = 130;
 
           // Redraw table header on new page
           doc
             .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
-            .fillColor("#7C3AED")
+            .fillColor("#210051")
             .fill();
           doc
             .fillColor("#FFFFFF")
@@ -956,17 +943,16 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
             .text("First Name", col1X + 5, doc.y + 8, { width: 160 })
             .text("Last Name", col2X + 5, doc.y + 8, { width: 160 })
             .text("Role", col3X + 5, doc.y + 8, { width: 150 });
-          doc.y += rowHeight + 5;
+          doc.y += rowHeight;
           doc.font("Helvetica").fontSize(11);
         }
 
         const currentY = doc.y;
-        if (index % 2 === 0) {
-          doc
-            .rect(col1X, currentY, doc.page.width - 100, rowHeight)
-            .fillColor("#F9FAFB")
-            .fill();
-        }
+        // Alternating row colors
+        doc
+          .rect(col1X, currentY, doc.page.width - 100, rowHeight)
+          .fillColor(index % 2 === 0 ? "#F9FAFB" : "#FFFFFF")
+          .fill();
 
         doc
           .fillColor("#1F2937")
@@ -975,8 +961,6 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
           .text(user.role || "-", col3X + 5, currentY + 6, { width: 150 });
         doc.y = currentY + rowHeight;
       });
-
-      drawFooter();
 
       doc.end();
       await new Promise((resolve) =>
