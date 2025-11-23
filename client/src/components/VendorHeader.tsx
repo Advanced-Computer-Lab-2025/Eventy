@@ -1,15 +1,5 @@
-import {
-  Search,
-  Bell,
-  Home,
-  Store,
-  CheckCircle,
-  Clock,
-  XCircle,
-  User,
-} from "lucide-react";
+import { Bell, Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
@@ -19,15 +9,11 @@ import { Gift } from "lucide-react";
 import LoyaltyProgramDialog from "./LoyaltyProgramDialog";
 
 interface VendorHeaderProps {
-  onSearch?: (query: string) => void;
-  hideSearch?: boolean;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
 }
 
 export default function VendorHeader({
-  onSearch,
-  hideSearch = false,
   activeTab = "upcoming",
   onTabChange,
 }: VendorHeaderProps) {
@@ -62,20 +48,6 @@ export default function VendorHeader({
           <div className="flex items-center gap-2">
             <Logo size="xl" />
           </div>
-
-          {!hideSearch && (
-            <div className="hidden md:flex flex-1 max-w-md mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder="Search..."
-                  className="pl-10"
-                  onChange={(e) => onSearch?.(e.target.value)}
-                  data-testid="input-search"
-                />
-              </div>
-            </div>
-          )}
 
           <div className="flex items-center gap-2">
             <Button
