@@ -305,7 +305,7 @@ class FacilitiesServiceClass {
     }
 
     if (session.attendees.includes(userId)) {
-      const error = new Error("User already registered for this session");
+      const error = new Error("You have already registered for this session");
       error.statusCode = 400;
       throw error;
     }
