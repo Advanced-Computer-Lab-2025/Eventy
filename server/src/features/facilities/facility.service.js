@@ -276,6 +276,49 @@ class FacilitiesServiceClass {
       notificationsSent: session.attendees ? session.attendees.length : 0,
     };
   }
+  /**
+   * registeres for a gym session
+   * @param {string} sessionId - The ID of the gym session to register for
+   * @param {string} userId - The ID of the user registering
+   * @returns {Object} The updated session
+   * @throws {Error} If session not found, is full, or user already registered
+   */
+  async registerForGymSession(sessionId, userId) {
+    const session = await GymSession.findById(sessionId);
+    if (!session) {
+      const error = new Error("Gym session not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (session.deletedAt != null) {
+      const error = new Error("Gym session deleted");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (session.status === "cancelled") {
+      const error = new Error("Gym session cancelled");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (session.attendees.includes(userId)) {
+      const error = new Error("User already registered for this session");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (session.attendees.length >= session.maxParticipants) {
+      const error = new Error("Gym session is full");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    session.attendees.push(userId);
+    session.save();
+    return session;
+  }
 
   /**
    * Edits a gym session and notifies all registered participants.
@@ -367,4 +410,5 @@ class FacilitiesServiceClass {
     };
   }
 }
+
 export const FacilitiesService = new FacilitiesServiceClass();

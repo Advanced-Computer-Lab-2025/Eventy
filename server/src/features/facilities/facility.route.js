@@ -47,6 +47,15 @@ router.post(
 );
 
 /**
+ *
+ */
+router.post(
+  "/gym/sessions/:sessionId/register",
+  authMiddleware,
+  facilitiesController.registerForGymSession.bind(facilitiesController)
+);
+
+/**
  * @route   PATCH /api/facilities/gym/sessions/:sessionId/cancel
  * @desc    Cancel a gym session by ID (Events Office only)
  * @access  Private

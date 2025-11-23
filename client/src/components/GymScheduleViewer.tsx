@@ -129,10 +129,31 @@ export default function GymScheduleViewer({
   };
 
   const handleRegister = async (sessionId: string) => {
-    // TODO: Implement registration logic
+    //gym session registration logic
+    const response = await fetch(
+      `http://localhost:4000/api/facilities/gym/sessions/${sessionId}/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      toast({
+        title: "Error",
+        description:
+          errorData.message || "Failed to register for the gym session.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
-      title: "Registration",
-      description: "Registration functionality will be implemented soon.",
+      title: "Success",
+      description: "Successfully registered for the gym session.",
     });
   };
 

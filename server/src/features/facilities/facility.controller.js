@@ -6,6 +6,7 @@ import {
   cancelGymSessionSchema,
   editGymSessionSchema,
   reserveCourtSchema,
+  registerForGymSessionSchema,
 } from "./facility.validation.js";
 
 export class FacilitiesController {
@@ -195,6 +196,44 @@ export class FacilitiesController {
         success: true,
         message: "Gym session updated successfully.",
         data: result,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  async registerForGymSession(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Only allow specific roles to view gym schedules
+      const allowedRoles = [
+        "student",
+        "staff",
+        "events_office",
+        "ta",
+        "professor",
+      ];
+      if (!allowedRoles.includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: You do not have permission to view gym schedules"
+        );
+      }
+      const { error } = registerForGymSessionSchema.validate(req.params);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      const { sessionId } = req.params;
+      const session = await FacilitiesService.registerForGymSession(
+        sessionId,
+        req.user.id
+      );
+      res.status(200).json({
+        success: true,
+        message: "Registered for gym session successfully.",
+        data: session,
       });
     } catch (error) {
       next(error);
