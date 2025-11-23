@@ -701,9 +701,17 @@ export default function EventsOfficeDashboard() {
                                   </text>
                                 );
                               }}
-                              labelLine={{
-                                stroke: "#666",
-                                strokeWidth: 1,
+                              labelLine={(props: any) => {
+                                if (props.value === 0) return null;
+                                const { points } = props;
+                                return (
+                                  <path
+                                    d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`}
+                                    stroke="#666"
+                                    strokeWidth={1}
+                                    fill="none"
+                                  />
+                                );
                               }}
                             >
                               {attendeesChartData.map((entry, index) => (

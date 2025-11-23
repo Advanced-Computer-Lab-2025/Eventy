@@ -683,9 +683,23 @@ export default function VendorDashboard() {
                                 </text>
                               );
                             }}
-                            labelLine={{
-                              stroke: "#666",
-                              strokeWidth: 1,
+                            labelLine={(props: any) => {
+                              if (props.value === 0) return null;
+                              return (
+                                <path
+                                  d={props.points?.reduce(
+                                    (acc: string, point: any, i: number) => {
+                                      return i === 0
+                                        ? `M${point.x},${point.y}`
+                                        : `${acc}L${point.x},${point.y}`;
+                                    },
+                                    ""
+                                  )}
+                                  stroke="#666"
+                                  strokeWidth={1}
+                                  fill="none"
+                                />
+                              );
                             }}
                           >
                             {applicationStatusData.map((entry, index) => (
