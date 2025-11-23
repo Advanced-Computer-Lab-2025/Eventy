@@ -52,9 +52,9 @@ export class TransactionController {
   async confirmStripePayment(req, res) {
     try {
       const { paymentIntentId } = req.body;
-      const userRole = req.user?.role;
+      const userRole = req.user.role;
       const allowedRoles = ["student", "staff", "ta", "professor", "vendor"];
-      if (userRole && !allowedRoles.includes(userRole)) {
+      if (!allowedRoles.includes(userRole)) {
         return res.status(403).json({
           error: `Access denied. Only ${allowedRoles.join(
             ", "
@@ -93,7 +93,32 @@ export class TransactionController {
       res.status(400).json({ error: error.message });
     }
   }
+  /**
+   * Get all transactions for the logged-in user
+   * @param {import("express").Request} req
+   * @param {import("express").Response} res
+   */
+  async getMyTransactions(req, res) {
+    try {
+      const userId = req.user._id;
+      const userRole = req.user.role;
+      const allowedRoles = ["student", "staff", "ta", "professor"];
+      if (!allowedRoles.includes(userRole)) {
+        return res.status(403).json({
+          error: `Access denied. Only ${allowedRoles.join(
+            ", "
+          )} can perform this action.`,
+        });
+      }
+      const transactions =
+        await this.transactionService.getUserTransactions(userId);
 
+      res.status(200).json({ transactions });
+    } catch (error) {
+      console.error("Get transactions error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
   /**
    * Handles payment for a vendor application (bazaar or booth).
    * @param {import("express").Request} req - Express request object
@@ -124,6 +149,27 @@ export class TransactionController {
     } catch (error) {
       console.error("Application payment error:", error);
       res.status(400).json({ error: error.message });
+    }
+  }
+
+  /**
+   * Returns the Stripe publishable key for the frontend.
+   * @param {import("express").Request} req - Express request object
+   * @param {import("express").Response} res - Express response object
+   * @returns {Promise<void>}
+   */
+  async getStripePublishableKey(req, res) {
+    try {
+      const publishableKey = process.env.STRIPE_PUBLISHABLE_KEY;
+      if (!publishableKey) {
+        return res.status(500).json({
+          error: "Stripe publishable key not configured",
+        });
+      }
+      res.status(200).json({ publishableKey });
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
+      res.status(500).json({ error: "Failed to get Stripe publishable key" });
     }
   }
 }

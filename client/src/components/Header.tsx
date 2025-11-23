@@ -74,7 +74,7 @@ export default function Header({
                 data-testid="button-header-home-top"
               >
                 <Home className="h-4 w-4" />
-                Home
+                Dashboard
               </Button>
             )}
           </div>
@@ -119,7 +119,7 @@ export default function Header({
                 data-testid="button-nav-home"
               >
                 <Home className="h-4 w-4" />
-                Home
+                Dashboard
               </Button>
             ) : (
               <>
