@@ -703,7 +703,11 @@ export default function VendorDashboard() {
                             }}
                           >
                             {applicationStatusData.map((entry, index) => (
-                              <Cell key={`cell-${index}`} fill={entry.color} />
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke="none"
+                              />
                             ))}
                           </Pie>
                           <Tooltip

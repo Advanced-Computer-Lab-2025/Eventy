@@ -718,6 +718,7 @@ export default function EventsOfficeDashboard() {
                                 <Cell
                                   key={`cell-${index}`}
                                   fill={entry.color}
+                                  stroke="none"
                                 />
                               ))}
                             </Pie>
