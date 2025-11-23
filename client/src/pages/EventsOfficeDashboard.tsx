@@ -822,7 +822,10 @@ export default function EventsOfficeDashboard() {
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={280}>
-                        <BarChart data={revenueChartData}>
+                        <BarChart
+                          data={revenueChartData}
+                          margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                        >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis dataKey="name" />
                           <YAxis
