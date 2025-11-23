@@ -11,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 
 //todo: remove mock functionality
-const recentEvents = [ 
+const recentEvents = [
   {
     id: "1",
     title: "AI & Machine Learning Workshop",
@@ -172,7 +172,11 @@ export default function Dashboard() {
                             : "TBA"
                         }
                         location={event.location || "Unknown location"}
-                        attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
                         vendors={event.vendors || []}
                         onRegister={() => console.log("hakoona batata")}
                         onSave={() => console.log("Save:", event.name)}

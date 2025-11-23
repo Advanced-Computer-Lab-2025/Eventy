@@ -2,6 +2,18 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import xlsx from "xlsx";
+import PDFDocument from "pdfkit";
+import { Parser } from "json2csv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+import { TransactionService } from "../transactions/transaction.service.js";
+const transactionService = new TransactionService();
+import NotificationService from "../notifications/notification.service.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -19,6 +31,9 @@ export async function createBazaar(data, user) {
     registrationDeadline: data.registrationDeadline,
     eventType: "bazaar",
     createdBy: user.id,
+    startTime: data.startTime,
+    endTime: data.endTime,
+    restrictedRoles: data.restrictedRoles || [],
   };
 
   // Save to database
@@ -52,8 +67,30 @@ export const createTrip = async (tripData, createdBy) => {
     throw new ApiError(400, "Price must be a valid number");
   }
 
+  // Validate required fields
+  if (!tripData.startTime) {
+    throw new ApiError(400, "Start time is required");
+  }
+
+  if (!tripData.endTime) {
+    throw new ApiError(400, "End time is required");
+  }
+
+  // Extract date and time fields
+  const startDateTime = new Date(tripData.startDate);
+  const endDateTime = new Date(tripData.endDate);
+
+  // Validate date format
+  if (isNaN(startDateTime.getTime())) {
+    throw new ApiError(400, "Invalid start date format");
+  }
+
+  if (isNaN(endDateTime.getTime())) {
+    throw new ApiError(400, "Invalid end date format");
+  }
+
   // Ensure end date is after start date
-  if (new Date(tripData.endDate) <= new Date(tripData.startDate)) {
+  if (endDateTime <= startDateTime) {
     throw new ApiError(400, "End date must be after start date");
   }
 
@@ -61,6 +98,7 @@ export const createTrip = async (tripData, createdBy) => {
     ...tripData,
     eventType: "trip",
     createdBy,
+    restrictedRoles: tripData.restrictedRoles || [],
   });
 
   return newTrip;
@@ -77,6 +115,8 @@ export const createConference = async (data, userId) => {
     fundingSource,
     extraResources,
     agenda,
+    startTime,
+    endTime,
   } = data;
 
   // Validate required fields
@@ -103,7 +143,10 @@ export const createConference = async (data, userId) => {
     extraResources,
     agenda,
     websiteUrl,
+    startTime,
+    endTime,
     createdBy: userId,
+    restrictedRoles: data.restrictedRoles || [],
   });
 
   return event;
@@ -162,6 +205,7 @@ export const createWorkshop = async (workshopData, professorId) => {
     eventType: "workshop",
     createdBy: professorId,
     status: "pending",
+    restrictedRoles: workshopData.restrictedRoles || [],
   });
 
   return workshop;
@@ -200,10 +244,10 @@ export async function editWorkshop(workshopId, updateData, user) {
   // Check if workshop has already started
   const now = new Date();
   const workshopStartDateTime = new Date(workshop.startDate);
-  
+
   // If startTime exists, combine it with startDate
   if (workshop.startTime) {
-    const [hours, minutes] = workshop.startTime.split(':').map(Number);
+    const [hours, minutes] = workshop.startTime.split(":").map(Number);
     workshopStartDateTime.setHours(hours, minutes, 0, 0);
   }
 
@@ -276,7 +320,6 @@ export const registerUserToEvent = async (user, eventId) => {
   }
 
   // 5️⃣ Register the user
-  event.fundingSource ?? fundingSource.toLowerCase();
   event.attendees.push(user._id);
   await event.save();
 
@@ -286,19 +329,30 @@ export const registerUserToEvent = async (user, eventId) => {
 export const getEventsByUser = async (userId) => {
   const events = await Event.find({
     attendees: userId,
-    status: "approved", // Only fetch approved events
+    status: "approved",
+    deletedAt: null, // Only fetch events that are not deleted
   }).populate("attendees", "name email role");
   return events;
 };
 
-export const getUpcomingEventsService = async (includeVendors = false) => {
+export const getUpcomingEventsService = async (
+  includeVendors = false,
+  userRole = null
+) => {
   const now = new Date();
 
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  })
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
@@ -310,15 +364,25 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
  * Get all upcoming events with their vendors (via applications).
  * @returns {Promise<Array>} Array of event objects with vendors array.
  */
-export const getUpcomingEventsWithVendors = async () => {
+export const getUpcomingEventsWithVendors = async (
+  includeVendors = true,
+  userRole = null
+) => {
   const now = new Date();
 
-  // Get all approved upcoming events
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     startDate: { $gte: now },
     deletedAt: null,
-  }).lean();
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  // Get all approved upcoming events
+  const events = await Event.find(filter).lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -378,13 +442,14 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Soft delete: set deletedAt timestamp
+  // Soft delete: set deletedAt timestamp and clear restrictedRoles
   event.deletedAt = new Date();
+  event.restrictedRoles = [];
   await event.save();
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type }) => {
+export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   const now = new Date();
   const filter = {
@@ -392,6 +457,11 @@ export const searchEvents = async ({ name, type }) => {
     startDate: { $gte: now },
     deletedAt: null,
   };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
 
   // If both name and type are provided and are the same (unified search)
   // Use OR logic to search across all fields
@@ -490,10 +560,23 @@ export const acceptWorkshop = async (workshopId) => {
     workshopId,
     { status: "approved" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Accepted",
+      message: `Your workshop "${event.name}" has been approved by the Events Office and is now published!`,
+    });
+  }
+
   return event;
 };
 
@@ -517,10 +600,23 @@ export const rejectWorkshop = async (workshopId) => {
     workshopId,
     { status: "rejected" },
     { new: true }
-  );
+  ).populate("professors", "firstName lastName email");
+
   if (!event) {
     throw new ApiError(404, "Workshop not found");
   }
+
+  // Send notification to all professors associated with the workshop
+  if (event.professors && event.professors.length > 0) {
+    const recipientIds = event.professors.map((prof) => prof._id);
+
+    await NotificationService.createNotification({
+      recipients: recipientIds,
+      title: "Workshop Rejected",
+      message: `Your workshop "${event.name}" has been rejected by the Events Office.`,
+    });
+  }
+
   return event;
 };
 
@@ -548,19 +644,30 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
   return event;
 };
 
-export const getEventById = async (eventId) => {
+export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
+
+  // Check if the user's role is restricted from viewing this event
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    if (event.restrictedRoles && event.restrictedRoles.includes(userRole)) {
+      throw new ApiError(
+        403,
+        "Access denied: You are not allowed to view this event"
+      );
+    }
+  }
+
   return event;
 };
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
-      "name location price startDate endDate description capacity registrationDeadline"
+      "name location price startDate endDate description capacity registrationDeadline restrictedRoles"
     )
     .lean();
 
@@ -584,3 +691,723 @@ export async function getAllEvents() {
     throw new ApiError(500, "Error fetching events");
   }
 }
+/**
+ * Aggregates attendee statistics for all events.
+ * Supports optional filtering by eventType, date range, and pagination.
+ */
+export const getAttendeesReport = async (options = {}) => {
+  const { name, eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  // Helper: safely escape regex special characters in user input
+  const escapeRegex = (str) =>
+    String(str).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const match = {
+    deletedAt: null,
+    status: { $in: ["approved", "archived"] },
+  };
+
+  // Name filter (partial, case-insensitive) applied to event 'name'
+  if (name && name.trim()) {
+    match.name = { $regex: escapeRegex(name.trim()), $options: "i" };
+  }
+
+  // Event type filter
+  if (eventType && eventType !== "all" && eventType !== "All Types") {
+    match.eventType = eventType.toLowerCase();
+  }
+
+  // ------------------- DATE FILTERS -------------------
+  if (startDate && !endDate) {
+    // Only startDate → all events starting from this date onward
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    match.startDate = { $gte: filterStart };
+  }
+
+  if (startDate && endDate) {
+    // Range query
+    const filterStart = new Date(new Date(startDate).setHours(0, 0, 0, 0));
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.startDate = { $gte: filterStart };
+    match.endDate = { $lte: filterEnd };
+  }
+
+  if (!startDate && endDate) {
+    const filterEnd = new Date(new Date(endDate).setHours(23, 59, 59, 999));
+    match.endDate = { $lte: filterEnd };
+  }
+
+  const skip = (page - 1) * limit;
+
+  // MongoDB aggregation for performance
+  const [result] = await Event.aggregate([
+    { $match: match },
+
+    {
+      $project: {
+        name: 1,
+        eventType: 1,
+        startDate: 1,
+        endDate: 1,
+        location: 1,
+        attendeesCount: {
+          $ifNull: [
+            "$attendeesCount",
+            { $size: { $ifNull: ["$attendees", []] } },
+          ],
+        },
+      },
+    },
+
+    {
+      $facet: {
+        events: [
+          { $sort: { startDate: -1 } },
+          { $skip: skip },
+          { $limit: limit },
+        ],
+        totals: [
+          {
+            $group: {
+              _id: null,
+              totalEvents: { $sum: 1 },
+              totalAttendees: { $sum: "$attendeesCount" },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+
+  const totals = result?.totals?.[0] || {
+    totalEvents: 0,
+    totalAttendees: 0,
+  };
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalAttendees: totals.totalAttendees,
+    page,
+    limit,
+    totalPages: Math.ceil((totals.totalEvents || 0) / limit),
+    events: result.events || [],
+  };
+};
+// Get workshop by ID
+export const getWorkshopById = async (workshopId) => {
+  return Event.findById(workshopId);
+};
+export const archiveEvent = async (eventId, user) => {
+  // Authorization
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Forbidden: Only Events Office can archive events");
+  }
+
+  const now = new Date();
+
+  // Atomic update — this ensures only eligible events are modified
+  const updatedEvent = await Event.findOneAndUpdate(
+    {
+      _id: eventId,
+      deletedAt: null, // not deleted
+      status: { $ne: "archived" }, // not already archived
+      endDate: { $lte: now }, // event has ended
+    },
+    {
+      $set: {
+        status: "archived",
+        archivedAt: now,
+        archivedBy: user.id,
+      },
+    },
+    { new: true } // return the updated document
+  );
+
+  // Handle if no document was updated (meaning one of the conditions failed)
+  if (!updatedEvent) {
+    // Now check what the reason could be
+    const existingEvent = await Event.findById(eventId);
+
+    if (!existingEvent) {
+      throw new ApiError(404, "Event not found");
+    } else if (existingEvent.deletedAt !== null) {
+      throw new ApiError(400, "Cannot archive a deleted event");
+    } else if (existingEvent.status === "archived") {
+      throw new ApiError(400, "Event is already archived");
+    } else if (!existingEvent.endDate) {
+      throw new ApiError(
+        400,
+        "Event does not have an endDate and cannot be archived"
+      );
+    } else if (new Date(existingEvent.endDate) > now) {
+      throw new ApiError(400, "Cannot archive an event before its end date");
+    } else {
+      throw new ApiError(
+        400,
+        "Event could not be archived due to unknown reason"
+      );
+    }
+  }
+
+  return updatedEvent;
+};
+
+export const getEventRegisteredUsers = async (eventId) => {
+  // Find event and populate attendees with firstName, lastName and role
+  const event = await Event.findById(eventId)
+    .select("attendees deletedAt")
+    .populate("attendees", "firstName lastName role");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view attendees of a deleted event");
+  }
+
+  // Check if attendees array is empty or doesn't exist
+  if (!event.attendees || event.attendees.length === 0) {
+    throw new ApiError(404, "No registered users for this event");
+  }
+
+  // Map to minimal shape with only required fields
+  const registeredUsers = event.attendees.map((user) => ({
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  }));
+
+  return registeredUsers;
+};
+
+export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
+  const validFormats = ["xlsx", "pdf", "csv"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  const registeredUsers = await getEventRegisteredUsers(eventId);
+  const event = await Event.findById(eventId).select("name");
+  const eventName = event?.name || "event";
+  const sanitizedEventName = eventName.replace(/[^a-z0-9]/gi, "_");
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  switch (format.toLowerCase()) {
+    case "xlsx":
+      const worksheetData = [
+        ["First Name", "Last Name", "Role"],
+        ...registeredUsers.map((user) => [
+          user.firstName,
+          user.lastName,
+          user.role,
+        ]),
+      ];
+      const worksheet = xlsx.utils.aoa_to_sheet(worksheetData);
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
+        fill: { fgColor: { rgb: "210051" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "210051" } },
+          bottom: { style: "thin", color: { rgb: "210051" } },
+          left: { style: "thin", color: { rgb: "210051" } },
+          right: { style: "thin", color: { rgb: "210051" } },
+        },
+      };
+
+      worksheet["A1"].s = headerStyle;
+      worksheet["B1"].s = headerStyle;
+      worksheet["C1"].s = headerStyle;
+
+      for (let i = 2; i <= registeredUsers.length + 1; i++) {
+        const rowStyle = {
+          fill: { fgColor: { rgb: i % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
+          border: {
+            top: { style: "thin", color: { rgb: "E5E7EB" } },
+            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+            left: { style: "thin", color: { rgb: "E5E7EB" } },
+            right: { style: "thin", color: { rgb: "E5E7EB" } },
+          },
+        };
+        ["A", "B", "C"].forEach((col) => {
+          if (worksheet[`${col}${i}`]) worksheet[`${col}${i}`].s = rowStyle;
+        });
+      }
+
+      worksheet["!cols"] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }];
+
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Registered Users");
+      buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+      mimeType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
+      break;
+
+    case "pdf":
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks = [];
+      doc.on("data", (chunk) => chunks.push(chunk));
+
+      const logoLightPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-light.png"
+      );
+      const logoDarkPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-dark.png"
+      );
+
+      // Watermark
+      if (fs.existsSync(logoLightPath)) {
+        doc
+          .save()
+          .opacity(0.03)
+          .image(
+            logoLightPath,
+            doc.page.width / 2 - 150,
+            doc.page.height / 2 - 150,
+            { width: 300, height: 300 }
+          )
+          .restore();
+      }
+
+      // Header function for all pages
+      const drawHeader = () => {
+        if (fs.existsSync(logoLightPath)) {
+          doc.image(logoLightPath, 50, 40, { width: 70 });
+        }
+        doc
+          .fillColor("#1a202c")
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .text("Registered Users Report", 135, 45)
+          .fillColor("#4a5568")
+          .fontSize(15)
+          .font("Helvetica")
+          .text(`Event: ${eventName}`, 135, 70)
+          .fontSize(11)
+          .fillColor("#718096")
+          .text(
+            `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+            135,
+            90
+          );
+        doc
+          .moveTo(50, 115)
+          .lineTo(doc.page.width - 50, 115)
+          .strokeColor("#E5E7EB")
+          .lineWidth(1)
+          .stroke();
+      };
+
+      drawHeader();
+
+      // Total users count below purple line
+      doc.y = 130;
+      doc
+        .fontSize(12)
+        .fillColor("#210051")
+        .font("Helvetica-Bold")
+        .text(`Total Registered Users: ${registeredUsers.length}`, 50, doc.y, {
+          align: "left",
+        });
+
+      doc.y += 10;
+
+      const col1X = 50,
+        col2X = 220,
+        col3X = 390,
+        rowHeight = 25;
+
+      // Table header
+      doc
+        .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+        .fillColor("#210051")
+        .fill();
+      const headerY = doc.y + 8;
+      doc
+        .fillColor("#FFFFFF")
+        .fontSize(12)
+        .font("Helvetica-Bold")
+        .text("First Name", col1X + 5, headerY, { width: 160 })
+        .text("Last Name", col2X + 5, headerY, { width: 160 })
+        .text("Role", col3X + 5, headerY, { width: 150 });
+      doc.y += rowHeight;
+
+      // Table rows
+      doc.font("Helvetica").fontSize(11);
+      registeredUsers.forEach((user, index) => {
+        if (doc.y > doc.page.height - 80) {
+          doc.addPage();
+          drawHeader();
+          doc.y = 130;
+
+          // Redraw table header on new page
+          doc
+            .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+            .fillColor("#210051")
+            .fill();
+          doc
+            .fillColor("#FFFFFF")
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text("First Name", col1X + 5, doc.y + 8, { width: 160 })
+            .text("Last Name", col2X + 5, doc.y + 8, { width: 160 })
+            .text("Role", col3X + 5, doc.y + 8, { width: 150 });
+          doc.y += rowHeight;
+          doc.font("Helvetica").fontSize(11);
+        }
+
+        const currentY = doc.y;
+        // Alternating row colors
+        doc
+          .rect(col1X, currentY, doc.page.width - 100, rowHeight)
+          .fillColor(index % 2 === 0 ? "#F9FAFB" : "#FFFFFF")
+          .fill();
+
+        doc
+          .fillColor("#1F2937")
+          .text(user.firstName || "-", col1X + 5, currentY + 6, { width: 160 })
+          .text(user.lastName || "-", col2X + 5, currentY + 6, { width: 160 })
+          .text(user.role || "-", col3X + 5, currentY + 6, { width: 150 });
+        doc.y = currentY + rowHeight;
+      });
+
+      doc.end();
+      await new Promise((resolve) =>
+        doc.on("end", () => {
+          buffer = Buffer.concat(chunks);
+          resolve();
+        })
+      );
+      mimeType = "application/pdf";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.pdf`;
+      break;
+
+    case "csv":
+      const parser = new Parser({
+        fields: [
+          { label: "First Name", value: "firstName" },
+          { label: "Last Name", value: "lastName" },
+          { label: "Role", value: "role" },
+        ],
+        header: true,
+      });
+      buffer = Buffer.from(parser.parse(registeredUsers), "utf-8");
+      mimeType = "text/csv";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.csv`;
+      break;
+  }
+
+  return { buffer, filename, mimeType };
+};
+
+/**
+ * Cancels a user's registration for an event and processes a refund if eligible.
+ * - Only allows cancellation at least 2 weeks before the event start date.
+ * - Removes the user from the event's attendees.
+ * - Initiates a refund using TransactionService.
+ * @param {string} eventId - The ID of the event to cancel registration for.
+ * @param {string} userId - The ID of the user cancelling registration.
+ * @returns {Promise<Object>} Refund details including eventId, refundedAmount, paymentMethod, and transactionId.
+ * @throws {ApiError} If event not found, cancellation not allowed, or user not registered.
+ */
+export const cancelEventRegistration = async (eventId, userId) => {
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  const now = new Date();
+  const twoWeeksBefore = new Date(event.startDate);
+  twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+  if (now > twoWeeksBefore) {
+    throw new ApiError(
+      400,
+      "Cancellations are only allowed at least 2 weeks before the event."
+    );
+  }
+
+  const isRegistered = event.attendees.some(
+    (att) => att.toString() === userId.toString()
+  );
+  if (!isRegistered)
+    throw new ApiError(400, "User not registered for this event.");
+
+  // Remove attendee
+  event.attendees = event.attendees.filter(
+    (att) => att.toString() !== userId.toString()
+  );
+  await event.save();
+
+  // Refund logic
+  const refund = await transactionService.refundUserForEvent(userId, event._id);
+
+  return {
+    eventId,
+    refundedAmount: refund.amount,
+    paymentMethod: refund.paymentMethod,
+    transactionId: refund._id,
+  };
+};
+
+export const restrictAccess = async (eventId, rolesToRestrict, user) => {
+  // Authorization check
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(403, "Only Events Office can restrict event access");
+  }
+
+  // Ensure unique roles and validate them
+  const uniqueRoles = [...new Set(rolesToRestrict)];
+  const validRoles = [
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "vendor",
+    "events_office",
+    "admin",
+  ];
+  const invalidRoles = uniqueRoles.filter((role) => !validRoles.includes(role));
+  if (invalidRoles.length > 0) {
+    throw new ApiError(
+      400,
+      `Invalid roles provided: ${invalidRoles.join(", ")}`
+    );
+  }
+
+  // Replace the input array with unique roles
+  rolesToRestrict = uniqueRoles;
+
+  // Find and validate event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot modify restrictions for a deleted event");
+  }
+
+  // Check if event is archived
+  if (event.status === "archived") {
+    throw new ApiError(400, "Cannot modify restrictions for an archived event");
+  }
+
+  // Check if the exact same restrictions are already in place
+  const currentRestrictions = event.restrictedRoles || [];
+  const isIdenticalRestriction =
+    rolesToRestrict.length === currentRestrictions.length &&
+    rolesToRestrict.every((role) => currentRestrictions.includes(role)) &&
+    currentRestrictions.every((role) => rolesToRestrict.includes(role));
+
+  if (isIdenticalRestriction) {
+    throw new ApiError(
+      400,
+      "These role restrictions are already in place for this event"
+    );
+  }
+
+  // Update restricted roles
+  event.restrictedRoles = rolesToRestrict;
+  await event.save();
+
+  return event;
+};
+
+export const getSalesReport = async (options = {}) => {
+  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  const skip = (page - 1) * limit;
+
+  const eventFilter = {
+    deletedAt: null,
+    status: "approved",
+  };
+
+  if (eventType && String(eventType).trim() !== "") {
+    eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
+  }
+
+  if (startDate || endDate) {
+    eventFilter.startDate = {};
+    if (startDate) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      eventFilter.startDate.$gte = s;
+    }
+    if (endDate) {
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      eventFilter.startDate.$lte = e;
+    }
+  }
+
+  const allEvents = await Event.find(eventFilter)
+    .select("_id name eventType startDate endDate location")
+    .lean();
+
+  const eventIds = allEvents.map((e) => e._id);
+
+  const transactionData = await Transaction.aggregate([
+    // 1️⃣ Match completed transactions that have a related entity ID
+    {
+      $match: {
+        "relatedEntity.id": { $ne: null }, // ignore transactions without an ID
+        type: { $in: ["payment", "refund"] },
+        status: "completed",
+      },
+    },
+
+    // 2️⃣ Add netAmount: payments positive, refunds negative
+    {
+      $addFields: {
+        netAmount: {
+          $cond: [
+            { $eq: ["$type", "refund"] },
+            { $multiply: ["$amount", -1] },
+            "$amount",
+          ],
+        },
+      },
+    },
+
+    // 3️⃣ Group by event ID
+    {
+      $group: {
+        _id: "$relatedEntity.id",
+        totalRevenue: { $sum: "$netAmount" },
+        grossRevenue: {
+          $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
+        },
+        totalRefunds: {
+          $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] },
+        },
+        walletPayments: {
+          $sum: {
+            $cond: [{ $eq: ["$paymentMethod", "wallet"] }, "$netAmount", 0],
+          },
+        },
+        cardPayments: {
+          $sum: {
+            $cond: [
+              { $in: ["$paymentMethod", ["credit_card", "debit_card"]] },
+              "$netAmount",
+              0,
+            ],
+          },
+        },
+        transactionCount: { $sum: 1 },
+      },
+    },
+
+    // 4️⃣ Lookup event details if needed (optional)
+    {
+      $lookup: {
+        from: "events", // your events collection
+        localField: "_id",
+        foreignField: "_id",
+        as: "event",
+      },
+    },
+    { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+
+    // 5️⃣ Project final report fields
+    {
+      $project: {
+        _id: 1,
+        eventName: "$event.name",
+        eventType: "$event.type",
+        startDate: "$event.startDate",
+        endDate: "$event.endDate",
+        location: "$event.location",
+        totalRevenue: 1,
+        grossRevenue: 1,
+        totalRefunds: 1,
+        walletPayments: 1,
+        cardPayments: 1,
+        transactionCount: 1,
+      },
+    },
+
+    // 6️⃣ Optional: sort by totalRevenue descending
+    { $sort: { totalRevenue: -1 } },
+  ]);
+
+  const revenueMap = {};
+  transactionData.forEach((item) => {
+    revenueMap[item._id.toString()] = {
+      totalRevenue: item.totalRevenue || 0,
+      grossRevenue: item.grossRevenue || 0,
+      totalRefunds: item.totalRefunds || 0,
+      walletPayments: item.walletPayments || 0,
+      cardPayments: item.cardPayments || 0,
+      transactionCount: item.transactionCount || 0,
+    };
+  });
+
+  const eventsWithRevenue = allEvents.map((event) => {
+    const eventIdStr = event._id.toString();
+    const revenue = revenueMap[eventIdStr] || {
+      totalRevenue: 0,
+      grossRevenue: 0,
+      totalRefunds: 0,
+      walletPayments: 0,
+      cardPayments: 0,
+      transactionCount: 0,
+    };
+
+    return {
+      _id: event._id,
+      eventName: event.name,
+      eventType: event.eventType,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      location: event.location,
+      ...revenue,
+    };
+  });
+
+  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  const totals = {
+    totalEvents: eventsWithRevenue.length,
+    totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
+    totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
+    totalWalletPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.walletPayments,
+      0
+    ),
+    totalCardPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.cardPayments,
+      0
+    ),
+  };
+
+  const paginatedEvents = eventsWithRevenue.slice(skip, skip + limit);
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalRevenue: totals.totalRevenue,
+    grossRevenue: totals.grossRevenue,
+    totalRefunds: totals.totalRefunds,
+    netRevenue: totals.totalRevenue,
+    paymentBreakdown: {
+      wallet: totals.totalWalletPayments,
+      card: totals.totalCardPayments,
+    },
+    page,
+    limit,
+    totalPages: Math.ceil(totals.totalEvents / limit),
+    events: paginatedEvents,
+  };
+};

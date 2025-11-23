@@ -148,7 +148,11 @@ export default function StaffUpcomingEvents() {
                     : "TBA"
                 }
                 location={event.location || "Unknown location"}
-                attendees={Array.isArray(event.attendees) ? event.attendees.length : (event.attendeesCount || 0)}
+                attendees={
+                  Array.isArray(event.attendees)
+                    ? event.attendees.length
+                    : event.attendeesCount || 0
+                }
                 image={event.bannerImage || event.image}
                 description={event.description}
                 startDate={event.startDate}
@@ -158,7 +162,6 @@ export default function StaffUpcomingEvents() {
                 vendors={event.vendors || []}
                 showDetailedView={true}
                 onRegister={() => handleRegisterEvent(event._id)}
-                onSave={() => console.log("Save:", event.name)}
                 onShare={() => console.log("Share:", event.name)}
                 onViewDetails={() => console.log("View details:", event.name)}
               />

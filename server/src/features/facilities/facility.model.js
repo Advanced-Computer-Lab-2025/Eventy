@@ -48,6 +48,13 @@ const gymSessionSchema = new mongoose.Schema(
       enum: ["upcoming", "cancelled", "completed"],
       default: "upcoming",
     },
+    restrictedRoles: [
+      {
+        type: String,
+        enum: ["student", "staff", "ta", "professor", "vendor"],
+        default: [],
+      },
+    ],
     deletedAt: {
       type: Date,
       default: null,
@@ -95,6 +102,11 @@ const courtBookingSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+courtBookingSchema.index(
+  { courtType: 1, date: 1, startTime: 1, endTime: 1 },
+  { unique: true }
 );
 
 const CourtBooking = mongoose.model("CourtBooking", courtBookingSchema);

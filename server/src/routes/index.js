@@ -7,6 +7,10 @@ import applicationRoutes from "../features/applications/application.route.js";
 import facilityRoutes from "../features/facilities/facility.route.js";
 import notificationRoutes from "../features/notifications/notification.route.js";
 import uploadRoutes from "../features/upload/upload.route.js";
+import loyaltyPartnerRoutes from "../features/loyaltyPartners/loyaltyPartner.route.js";
+import feedbackRoutes from "../features/feedback/feedback.routes.js";
+import transactionRoutes from "../features/transactions/transaction.route.js";
+import pollRoutes from "../features/polls/poll.route.js";
 
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
@@ -44,5 +48,12 @@ router.use("/facilities", facilityRoutes);
 router.use("/notifications", notificationRoutes);
 // upload routes
 router.use("/upload", uploadRoutes);
-
+// loyalty partner routes
+router.use("/loyalty-partners", loyaltyPartnerRoutes);
+// feedback routes
+router.use("/feedback", feedbackRoutes);
+//transaction routes
+router.use("/transactions", transactionRoutes);
+// poll routes
+router.use("/polls", pollRoutes);
 export default router;

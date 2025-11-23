@@ -6,7 +6,16 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, MapPin, Users, ClipboardList, Store, GraduationCap, Route, Megaphone } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  ClipboardList,
+  Store,
+  GraduationCap,
+  Route,
+  Megaphone,
+} from "lucide-react";
 import CategoryBadge from "./CategoryBadge";
 
 interface EventDetailsDialogProps {
@@ -91,7 +100,9 @@ export default function EventDetailsDialog({
             </span>
             <span className="flex items-center gap-1">
               <ClipboardList className="h-4 w-4" />
-              <Badge className={getStatusClasses(event.status)}>{event.status}</Badge>
+              <Badge className={getStatusClasses(event.status)}>
+                {event.status}
+              </Badge>
             </span>
           </div>
           {event.agenda && (

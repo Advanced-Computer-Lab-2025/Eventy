@@ -28,10 +28,14 @@ import EventsOfficeDashboard from "@/pages/EventsOfficeDashboard";
 import StaffTADashboard from "@/pages/StaffTADashboard";
 import NotFound from "@/pages/not-found";
 import EmailVerified from "@/pages/EmailVerified";
+import AttendeeDetails from "@/pages/AttendeeDetails";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
+import ArchivedEvents from "@/pages/ArchivedEvents";
+import FavoritesPage from "@/pages/FavoritesPage";
 
+import EventsOfficeReportPage from "@/pages/EventsReportPage";
 function Router() {
   return (
     <Switch>
@@ -39,6 +43,7 @@ function Router() {
       <Route path="/signup" component={SignUp} />
       <Route path="/login" component={Login} />
       <Route path="/verify-email/:token" component={EmailVerified} />
+      <Route path="/attendee/:token" component={AttendeeDetails} />
       <Route path="/dashboard" component={Dashboard} />
 
       <Route path="/home">
@@ -121,6 +126,12 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/events-office/archived">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <ArchivedEvents />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/sports">
         <ProtectedRoute
           allowedRoles={[
@@ -163,6 +174,16 @@ function Router() {
       </Route>
       <Route path="/events" component={EventListPage} />
 
+      <Route path="/favorites">
+        <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
+          <FavoritesPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/reports/attendees">
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <EventsOfficeReportPage />
+        </ProtectedRoute>
+      </Route>
       <Route component={NotFound} />
     </Switch>
   );

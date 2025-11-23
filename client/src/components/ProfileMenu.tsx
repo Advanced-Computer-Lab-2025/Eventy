@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { LogOut, User } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -15,7 +15,11 @@ import { Button } from "@/components/ui/button";
 
 export default function ProfileMenu() {
   const [, setLocation] = useLocation();
-  const [user, setUser] = useState<{ firstName?: string; lastName?: string; email?: string } | null>(null);
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+  } | null>(null);
 
   useEffect(() => {
     try {
@@ -55,14 +59,17 @@ export default function ProfileMenu() {
             <User className="h-5 w-5 text-primary" />
           </div>
           <div>
-              <DropdownMenuLabel className="text-sm font-semibold">
-                {(() => {
-                  if (!user) return "Guest";
-                  // Prefer companyName for vendors, otherwise fall back to first+last name
-                  if ((user as any).companyName) return (user as any).companyName;
-                  return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "Guest";
-                })()}
-              </DropdownMenuLabel>
+            <DropdownMenuLabel className="text-sm font-semibold">
+              {(() => {
+                if (!user) return "Guest";
+                // Prefer companyName for vendors, otherwise fall back to first+last name
+                if ((user as any).companyName) return (user as any).companyName;
+                return (
+                  `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                  "Guest"
+                );
+              })()}
+            </DropdownMenuLabel>
             <div className="text-xs text-muted-foreground">
               {user?.email || "Not signed in"}
             </div>

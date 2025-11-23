@@ -2,7 +2,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth"; // we’ll use this for login/signup
 
-
 const firebaseConfig = {
   apiKey: "AIzaSyAh4y6ZPfUUboWFlDSZVnHN8Y9v6XFU-sk",
   authDomain: "eventy-febcc.firebaseapp.com",

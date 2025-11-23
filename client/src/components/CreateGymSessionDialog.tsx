@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Dumbbell } from "lucide-react";
+import { Calendar, Clock, Users, Dumbbell, Info } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -49,7 +50,15 @@ export default function CreateGymSessionDialog({
     instructor: "",
     maxParticipants: "",
   });
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
   const { toast } = useToast();
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,30 +72,35 @@ export default function CreateGymSessionDialog({
 
       // Convert 24-hour time to 12-hour AM/PM format
       const convertTo12Hour = (time24: string) => {
-        const [hours, minutes] = time24.split(':');
+        const [hours, minutes] = time24.split(":");
         const hour = parseInt(hours);
-        const period = hour >= 12 ? 'PM' : 'AM';
+        const period = hour >= 12 ? "PM" : "AM";
         const hour12 = hour % 12 || 12;
         return `${hour12}:${minutes} ${period}`;
       };
 
-      const response = await fetch("http://localhost:4000/api/facilities/admin/gym/sessions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          date: formData.date,
-          time: convertTo12Hour(formData.time),
-          duration: parseInt(formData.duration),
-          type: formData.type.toLowerCase(),
-          instructor: formData.instructor,
-          maxParticipants: formData.maxParticipants
-            ? parseInt(formData.maxParticipants)
-            : undefined,
-        }),
-      });
+      const response = await fetch(
+        "http://localhost:4000/api/facilities/admin/gym/sessions",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            date: formData.date,
+            time: convertTo12Hour(formData.time),
+            duration: parseInt(formData.duration),
+            type: formData.type.toLowerCase(),
+            instructor: formData.instructor,
+            maxParticipants: formData.maxParticipants
+              ? parseInt(formData.maxParticipants)
+              : undefined,
+            restrictedRoles:
+              restrictedRoles.length > 0 ? restrictedRoles : undefined,
+          }),
+        }
+      );
 
       const data = await response.json();
 
@@ -111,6 +125,7 @@ export default function CreateGymSessionDialog({
         instructor: "",
         maxParticipants: "",
       });
+      setRestrictedRoles([]);
 
       onOpenChange(false);
       if (onSuccess) {
@@ -120,7 +135,10 @@ export default function CreateGymSessionDialog({
       console.error("Failed to create gym session:", error);
       toast({
         title: "Error",
-        description: error instanceof Error ? error.message : "Failed to create gym session",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to create gym session",
         variant: "destructive",
       });
     } finally {
@@ -159,7 +177,9 @@ export default function CreateGymSessionDialog({
               </Label>
               <Select
                 value={formData.type}
-                onValueChange={(value) => setFormData({ ...formData, type: value })}
+                onValueChange={(value) =>
+                  setFormData({ ...formData, type: value })
+                }
                 required
               >
                 <SelectTrigger id="type">
@@ -180,7 +200,14 @@ export default function CreateGymSessionDialog({
               <Label htmlFor="date">
                 Date <span className="text-red-500">*</span>
               </Label>
-              <div className="relative cursor-pointer" onClick={() => (document.getElementById('date') as HTMLInputElement)?.showPicker?.()}>
+              <div
+                className="relative cursor-pointer"
+                onClick={() =>
+                  (
+                    document.getElementById("date") as HTMLInputElement
+                  )?.showPicker?.()
+                }
+              >
                 <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="date"
@@ -191,7 +218,7 @@ export default function CreateGymSessionDialog({
                     // Ensure year is only 4 digits
                     const dateValue = e.target.value;
                     if (dateValue) {
-                      const [year, month, day] = dateValue.split('-');
+                      const [year, month, day] = dateValue.split("-");
                       if (year && year.length === 4) {
                         setFormData({ ...formData, date: dateValue });
                       }
@@ -210,14 +237,23 @@ export default function CreateGymSessionDialog({
               <Label htmlFor="time">
                 Time <span className="text-red-500">*</span>
               </Label>
-              <div className="relative cursor-pointer" onClick={() => (document.getElementById('time') as HTMLInputElement)?.showPicker?.()}>
+              <div
+                className="relative cursor-pointer"
+                onClick={() =>
+                  (
+                    document.getElementById("time") as HTMLInputElement
+                  )?.showPicker?.()
+                }
+              >
                 <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
                 <Input
                   id="time"
                   type="time"
                   className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   value={formData.time}
-                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, time: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -238,7 +274,9 @@ export default function CreateGymSessionDialog({
                   placeholder="60"
                   className="pl-10"
                   value={formData.duration}
-                  onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, duration: e.target.value })
+                  }
                   required
                 />
               </div>
@@ -257,7 +295,9 @@ export default function CreateGymSessionDialog({
                 type="text"
                 placeholder="Enter instructor's name"
                 value={formData.instructor}
-                onChange={(e) => setFormData({ ...formData, instructor: e.target.value })}
+                onChange={(e) =>
+                  setFormData({ ...formData, instructor: e.target.value })
+                }
                 required
               />
               <p className="text-xs text-muted-foreground">
@@ -267,7 +307,9 @@ export default function CreateGymSessionDialog({
 
             {/* Max Participants */}
             <div className="space-y-2">
-              <Label htmlFor="maxParticipants">Max Participants (Optional)</Label>
+              <Label htmlFor="maxParticipants">
+                Max Participants (Optional)
+              </Label>
               <div className="relative">
                 <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -279,7 +321,10 @@ export default function CreateGymSessionDialog({
                   className="pl-10"
                   value={formData.maxParticipants}
                   onChange={(e) =>
-                    setFormData({ ...formData, maxParticipants: e.target.value })
+                    setFormData({
+                      ...formData,
+                      maxParticipants: e.target.value,
+                    })
                   }
                 />
               </div>
@@ -287,10 +332,54 @@ export default function CreateGymSessionDialog({
                 Leave empty for default (20 participants) or set max 100
               </p>
             </div>
+
+            {/* Restrict Access Section */}
+            <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+              <div className="flex items-start gap-2">
+                <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                <div className="flex-1">
+                  <Label className="text-base font-semibold">
+                    Restrict Access (Optional)
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Select which roles should NOT be able to view or register
+                    for this session
+                  </p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                {availableRoles.map((role) => (
+                  <div key={role.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`restrict-${role.value}`}
+                      checked={restrictedRoles.includes(role.value)}
+                      onCheckedChange={(checked) => {
+                        setRestrictedRoles(
+                          checked
+                            ? [...restrictedRoles, role.value]
+                            : restrictedRoles.filter((r) => r !== role.value)
+                        );
+                      }}
+                    />
+                    <Label
+                      htmlFor={`restrict-${role.value}`}
+                      className="text-sm font-normal cursor-pointer"
+                    >
+                      {role.label}
+                    </Label>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={handleCancel} disabled={loading}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleCancel}
+              disabled={loading}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

@@ -18,7 +18,7 @@ interface BoothApplicationDialogProps {
   onOpenChange: (open: boolean) => void;
   boothId: string;
   boothNumber: number | string;
-  attendees: Array<{ name: string; email: string }>;
+  attendees: Array<{ name: string; email: string; individualID?: string }>;
   boothSize: "2x2" | "4x4";
   durationWeeks: number;
 }
@@ -37,10 +37,10 @@ export default function BoothApplicationDialog({
 
   const validateForm = () => {
     // Check if all attendees have both name and email
-    const validAttendees = attendees.filter(attendee => 
-      attendee.name.trim() && attendee.email.trim()
+    const validAttendees = attendees.filter(
+      (attendee) => attendee.name.trim() && attendee.email.trim()
     );
-    
+
     if (validAttendees.length === 0) {
       toast({
         title: "Validation Error",
@@ -56,7 +56,43 @@ export default function BoothApplicationDialog({
       if (!emailRegex.test(attendee.email)) {
         toast({
           title: "Validation Error",
-          description: `Invalid email format for ${attendee.name || 'attendee'}.`,
+          description: `Invalid email format for ${attendee.name || "attendee"}.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
+    // Check for missing IDs and collect all attendees without IDs
+    // Check all attendees that have at least a name (so we can display them)
+    const attendeesToCheck = attendees.filter(
+      (attendee) => attendee.name && attendee.name.trim()
+    );
+    const attendeesWithoutID = attendeesToCheck.filter(
+      (attendee) => !attendee.individualID
+    );
+
+    if (attendeesWithoutID.length > 0) {
+      const firstNames = attendeesWithoutID
+        .map((attendee) => {
+          const trimmedName = attendee.name.trim();
+          return trimmedName.split(" ")[0]; // Get first name only
+        })
+        .filter((name) => name.length > 0);
+
+      if (firstNames.length > 0) {
+        let namesList: string;
+        if (firstNames.length === 1) {
+          namesList = firstNames[0];
+        } else if (firstNames.length === 2) {
+          namesList = `${firstNames[0]} and ${firstNames[1]}`;
+        } else {
+          namesList = `${firstNames.slice(0, -1).join(", ")}, and ${firstNames[firstNames.length - 1]}`;
+        }
+
+        toast({
+          title: "Validation Error",
+          description: `Please upload an ID card for ${namesList}.`,
           variant: "destructive",
         });
         return false;
@@ -72,10 +108,10 @@ export default function BoothApplicationDialog({
     }
 
     setIsSubmitting(true);
-    
+
     try {
-      const validAttendees = attendees.filter(attendee => 
-        attendee.name.trim() && attendee.email.trim()
+      const validAttendees = attendees.filter(
+        (attendee) => attendee.name.trim() && attendee.email.trim()
       );
 
       console.log("Submitting booth application with data:", {
@@ -83,11 +119,15 @@ export default function BoothApplicationDialog({
         attendees: validAttendees,
         boothSize,
         durationWeeks,
-        locationPreference: `Booth ${boothNumber}`
+        locationPreference: `Booth ${boothNumber}`,
       });
 
       await bazaarApiService.applyToBooth(boothId, {
-        attendees: validAttendees,
+        attendees: validAttendees.map((attendee) => ({
+          name: attendee.name,
+          email: attendee.email,
+          individualID: attendee.individualID || "",
+        })),
         boothSize,
         durationWeeks, // Use the actual duration from the form
         locationPreference: `Booth ${boothNumber}`, // Use booth number as location preference
@@ -101,10 +141,13 @@ export default function BoothApplicationDialog({
       onOpenChange(false);
     } catch (error) {
       console.error("Error submitting booth application:", error);
-      
+
       // Extract error message from the error object
-      const errorMessage = error instanceof Error ? error.message : "Failed to submit your booth application. Please try again.";
-      
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to submit your booth application. Please try again.";
+
       toast({
         title: "Application Submission Failed",
         description: errorMessage,
@@ -133,16 +176,23 @@ export default function BoothApplicationDialog({
             Confirm your application details for this platform booth.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
           {/* Booth Details */}
           <Card>
             <CardContent className="p-4">
               <h4 className="font-semibold mb-2">Booth Details</h4>
               <div className="space-y-1 text-sm text-muted-foreground">
-                <p><strong>Booth Number:</strong> {boothNumber}</p>
-                <p><strong>Booth Size:</strong> {boothSize}</p>
-                <p><strong>Duration:</strong> {durationWeeks} week{durationWeeks > 1 ? 's' : ''}</p>
+                <p>
+                  <strong>Booth Number:</strong> {boothNumber}
+                </p>
+                <p>
+                  <strong>Booth Size:</strong> {boothSize}
+                </p>
+                <p>
+                  <strong>Duration:</strong> {durationWeeks} week
+                  {durationWeeks > 1 ? "s" : ""}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -152,15 +202,36 @@ export default function BoothApplicationDialog({
             <CardContent className="p-4">
               <h4 className="font-semibold mb-2 flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Attendees ({attendees.filter(a => a.name.trim() && a.email.trim()).length})
+                Attendees (
+                {
+                  attendees.filter((a) => a.name.trim() && a.email.trim())
+                    .length
+                }
+                )
               </h4>
-              <div className="space-y-1 text-sm text-muted-foreground">
+              <div className="space-y-2 text-sm text-muted-foreground">
                 {attendees
-                  .filter(attendee => attendee.name.trim() && attendee.email.trim())
+                  .filter(
+                    (attendee) => attendee.name.trim() && attendee.email.trim()
+                  )
                   .map((attendee, index) => (
-                    <p key={index}>
-                      <strong>{attendee.name}</strong> - {attendee.email}
-                    </p>
+                    <div
+                      key={index}
+                      className="flex items-center justify-between"
+                    >
+                      <p>
+                        <strong>{attendee.name}</strong> - {attendee.email}
+                      </p>
+                      {attendee.individualID ? (
+                        <span className="text-green-600 text-xs">
+                          ✓ ID Uploaded
+                        </span>
+                      ) : (
+                        <span className="text-red-600 text-xs">
+                          ⚠ ID Required
+                        </span>
+                      )}
+                    </div>
                   ))}
               </div>
             </CardContent>
@@ -176,7 +247,7 @@ export default function BoothApplicationDialog({
           >
             Cancel
           </Button>
-          <Button 
+          <Button
             onClick={handleSubmit}
             disabled={isSubmitting}
             className="min-w-[120px]"

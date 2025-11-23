@@ -1,4 +1,4 @@
-import { Bell, LayoutGrid, User, Home, Users, Star } from "lucide-react";
+import { Bell, LayoutGrid, User, Home, Users, Star , FileText} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -63,7 +63,6 @@ export default function AdminHeader() {
             <Users className="h-4 w-4" />
             Users
           </Button>
-
           <Button
             variant="ghost"
             size="sm"
@@ -82,8 +81,8 @@ export default function AdminHeader() {
             data-testid="button-nav-admin-dashboard"
             onClick={() => setLocation("/admin")}
           >
-            <Home className="h-4 w-4" />
-            Home
+            <FileText className="h-4 w-4" />
+            Attendees Report
           </Button>
         </div>
       </div>

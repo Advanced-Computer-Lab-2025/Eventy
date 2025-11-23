@@ -49,10 +49,20 @@ export default function WorkshopApprovals() {
   const [revisionComments, setRevisionComments] = useState("");
   const [searchInput, setSearchInput] = useState("");
   const searchTimerRef = useRef<number | null>(null);
-  
-  const apiBase = (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
 
-  const faculties = ["MET", "IET", "EMS", "Pharmacy & Biotechnology", "Dentistry", "BI", "Management", "Applied Arts"];
+  const apiBase =
+    (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+
+  const faculties = [
+    "MET",
+    "IET",
+    "EMS",
+    "Pharmacy & Biotechnology",
+    "Dentistry",
+    "BI",
+    "Management",
+    "Applied Arts",
+  ];
 
   // Fetch all workshops
   const fetchAllWorkshops = async () => {
@@ -92,15 +102,21 @@ export default function WorkshopApprovals() {
     const lowerQuery = query.toLowerCase();
     return workshopsToSearch.filter((w) => {
       const nameMatch = w.name?.toLowerCase().includes(lowerQuery);
-      const creatorMatch = `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
-        .toLowerCase()
-        .includes(lowerQuery);
+      const creatorMatch =
+        `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
+          .toLowerCase()
+          .includes(lowerQuery);
       return nameMatch || creatorMatch;
     });
   };
 
   // Apply status, faculty filters, and search to workshops
-  const applyFilters = (workshops: any[], status: string, faculty: string, search: string = "") => {
+  const applyFilters = (
+    workshops: any[],
+    status: string,
+    faculty: string,
+    search: string = ""
+  ) => {
     let filtered = workshops.filter((w) => {
       const statusMatch = status === "all" || w.status === status;
       const facultyMatch = faculty === "all" || w.faculty === faculty;
@@ -163,7 +179,10 @@ export default function WorkshopApprovals() {
       setShowDetailsDialog(false);
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error("Error approving workshop:", err.response?.data || err.message);
+      console.error(
+        "Error approving workshop:",
+        err.response?.data || err.message
+      );
       alert("❌ Failed to approve workshop");
     }
   };
@@ -180,7 +199,10 @@ export default function WorkshopApprovals() {
       setShowDetailsDialog(false);
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error("Error rejecting workshop:", err.response?.data || err.message);
+      console.error(
+        "Error rejecting workshop:",
+        err.response?.data || err.message
+      );
       alert("❌ Failed to reject workshop");
     }
   };
@@ -205,7 +227,10 @@ export default function WorkshopApprovals() {
       handleStatusFilterChange("needs_revision");
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error("Error requesting edits:", err.response?.data || err.message);
+      console.error(
+        "Error requesting edits:",
+        err.response?.data || err.message
+      );
       alert("❌ Failed to request edits");
     }
   };
@@ -221,7 +246,8 @@ export default function WorkshopApprovals() {
     setShowEditRequestDialog(true);
   };
 
-  if (loading && allWorkshops.length === 0) return <p className="p-8">Loading workshops...</p>;
+  if (loading && allWorkshops.length === 0)
+    return <p className="p-8">Loading workshops...</p>;
 
   return (
     <div className="min-h-screen bg-background">
@@ -247,20 +273,27 @@ export default function WorkshopApprovals() {
               onChange={(e) => setSearchInput(e.target.value)}
               className="w-full"
             />
-           
           </div>
           <div className="w-full md:w-48">
-            <Label htmlFor="faculty-filter" className="mb-2 block text-sm font-medium">
+            <Label
+              htmlFor="faculty-filter"
+              className="mb-2 block text-sm font-medium"
+            >
               Filter by Faculty
             </Label>
-            <Select value={facultyFilter} onValueChange={handleFacultyFilterChange}>
+            <Select
+              value={facultyFilter}
+              onValueChange={handleFacultyFilterChange}
+            >
               <SelectTrigger id="faculty-filter">
                 <SelectValue placeholder="Select Faculty" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Faculties</SelectItem>
                 {faculties
-                  .filter((faculty): faculty is string => typeof faculty === "string")
+                  .filter(
+                    (faculty): faculty is string => typeof faculty === "string"
+                  )
                   .map((faculty) => (
                     <SelectItem key={faculty} value={faculty}>
                       {faculty}
@@ -287,14 +320,15 @@ export default function WorkshopApprovals() {
                   {statusFilter === "all"
                     ? "All Workshops"
                     : statusFilter === "needs_revision"
-                    ? "Workshops with Requested Edits"
-                    : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Workshops`}
+                      ? "Workshops with Requested Edits"
+                      : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Workshops`}
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 {filteredWorkshops.length === 0 ? (
                   <p className="text-muted-foreground text-center py-6">
-                    No {statusFilter === "all" ? "" : statusFilter} workshops found.
+                    No {statusFilter === "all" ? "" : statusFilter} workshops
+                    found.
                   </p>
                 ) : (
                   <Table>
@@ -312,7 +346,9 @@ export default function WorkshopApprovals() {
                     <TableBody>
                       {filteredWorkshops.map((workshop) => (
                         <TableRow key={workshop._id}>
-                          <TableCell className="font-medium">{workshop.name}</TableCell>
+                          <TableCell className="font-medium">
+                            {workshop.name}
+                          </TableCell>
                           <TableCell>{workshop.faculty}</TableCell>
                           <TableCell>
                             {new Date(workshop.startDate).toLocaleDateString()}
@@ -320,7 +356,9 @@ export default function WorkshopApprovals() {
                           <TableCell>
                             {new Date(workshop.endDate).toLocaleDateString()}
                           </TableCell>
-                          <TableCell>{workshop.requiredBudget || "—"}</TableCell>
+                          <TableCell>
+                            {workshop.requiredBudget || "—"}
+                          </TableCell>
                           <TableCell>
                             <Badge
                               variant={
@@ -330,10 +368,10 @@ export default function WorkshopApprovals() {
                               }
                               className={
                                 workshop.status === "approved"
-                                  ? "bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-700 text-white border-0"
+                                  ? "bg-green-600 hover:bg-green-700 text-white border-0"
                                   : workshop.status === "needs_revision"
-                                  ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-700 text-white border-0"
-                                  : ""
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white border-0"
+                                    : ""
                               }
                             >
                               {workshop.status === "needs_revision"
@@ -346,7 +384,7 @@ export default function WorkshopApprovals() {
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
                                 onClick={() => handleViewDetails(workshop)}
                               >
                                 <Info className="h-4 w-4" />
@@ -355,7 +393,7 @@ export default function WorkshopApprovals() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                    className="bg-green-600 hover:bg-green-700"
                                     onClick={() => handleApprove(workshop._id)}
                                   >
                                     <CheckCircle className="h-4 w-4" />
@@ -363,7 +401,6 @@ export default function WorkshopApprovals() {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                                     onClick={() => handleReject(workshop._id)}
                                   >
                                     <XCircle className="h-4 w-4" />
@@ -371,8 +408,10 @@ export default function WorkshopApprovals() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
-                                    onClick={() => openEditRequestDialog(workshop)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                                    onClick={() =>
+                                      openEditRequestDialog(workshop)
+                                    }
                                   >
                                     <Edit className="h-4 w-4" />
                                   </Button>
@@ -442,7 +481,9 @@ export default function WorkshopApprovals() {
                   <p>
                     <strong>Revision Comments:</strong>
                   </p>
-                  <p className="mt-1 text-sm">{selectedWorkshop.revisionComments}</p>
+                  <p className="mt-1 text-sm">
+                    {selectedWorkshop.revisionComments}
+                  </p>
                 </div>
               )}
             </div>
@@ -451,21 +492,20 @@ export default function WorkshopApprovals() {
           {selectedWorkshop?.status === "pending" && (
             <DialogFooter className="flex justify-end gap-3 mt-4">
               <Button
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                className="bg-green-600 hover:bg-green-700"
                 onClick={() => handleApprove(selectedWorkshop._id)}
               >
                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
               </Button>
               <Button
                 variant="destructive"
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                 onClick={() => handleReject(selectedWorkshop._id)}
               >
                 <XCircle className="mr-2 h-4 w-4" /> Reject
               </Button>
               <Button
                 variant="outline"
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                 onClick={() => {
                   setShowDetailsDialog(false);
                   setShowEditRequestDialog(true);
@@ -479,7 +519,10 @@ export default function WorkshopApprovals() {
       </Dialog>
 
       {/* Request Edits Dialog */}
-      <Dialog open={showEditRequestDialog} onOpenChange={setShowEditRequestDialog}>
+      <Dialog
+        open={showEditRequestDialog}
+        onOpenChange={setShowEditRequestDialog}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Request Edits</DialogTitle>
