@@ -747,6 +747,30 @@ export class EventsController {
     }
   }
 
+  // Unarchive an event (restore to approved status)
+  async unarchiveEvent(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can unarchive events"
+        );
+      }
+
+      const event = await eventService.unarchiveEvent(req.params.id, req.user);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event unarchived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Get all registered users for an event (name and role only)
   async getEventRegisteredUsers(req, res, next) {
     try {

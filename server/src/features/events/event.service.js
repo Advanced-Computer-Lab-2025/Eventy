@@ -854,6 +854,51 @@ export const archiveEvent = async (eventId, user) => {
   return updatedEvent;
 };
 
+export const unarchiveEvent = async (eventId, user) => {
+  // Authorization
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(
+      403,
+      "Forbidden: Only Events Office can unarchive events"
+    );
+  }
+
+  // Find the archived event
+  const existingEvent = await Event.findOne({
+    _id: eventId,
+    deletedAt: null,
+    status: "archived",
+  });
+
+  if (!existingEvent) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      throw new ApiError(404, "Event not found");
+    } else if (event.deletedAt !== null) {
+      throw new ApiError(400, "Cannot unarchive a deleted event");
+    } else if (event.status !== "archived") {
+      throw new ApiError(400, "Event is not archived");
+    }
+  }
+
+  // Update event to approved status
+  const updatedEvent = await Event.findByIdAndUpdate(
+    eventId,
+    {
+      $set: {
+        status: "approved",
+      },
+      $unset: {
+        archivedAt: "",
+        archivedBy: "",
+      },
+    },
+    { new: true }
+  );
+
+  return updatedEvent;
+};
+
 export const getEventRegisteredUsers = async (eventId) => {
   // Find event and populate attendees with firstName, lastName and role
   const event = await Event.findById(eventId)

@@ -7,6 +7,7 @@ import {
   Trash2,
   Archive,
   Clock,
+  ArchiveRestore,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -96,6 +97,8 @@ export interface EventCardProps {
   onFeedback?: () => void;
   onArchive?: () => void;
   isArchiving?: boolean;
+  onUnarchive?: () => void;
+  isUnarchiving?: boolean;
   canDelete?: boolean;
   className?: string;
 }
@@ -126,6 +129,8 @@ export default function EventCard({
   isRegistered = false,
   onArchive,
   isArchiving = false,
+  onUnarchive,
+  isUnarchiving = false,
   canDelete = false,
   status,
   className,
@@ -382,11 +387,10 @@ export default function EventCard({
                   )}
                 </Button>
               )}
-              <div className="flex gap-2 ml-auto">
-                {" "}
+              <div className="flex gap-2 justify-center w-full">
                 {onViewDetails && (
                   <Button
-                    className={canRegister ? "flex-1" : "flex-1"}
+                    className="flex-1"
                     variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -394,6 +398,29 @@ export default function EventCard({
                     }}
                   >
                     View Details
+                  </Button>
+                )}
+                {onUnarchive && (
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUnarchive();
+                    }}
+                    disabled={isUnarchiving}
+                  >
+                    {isUnarchiving ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Unarchiving...
+                      </>
+                    ) : (
+                      <>
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Unarchive
+                      </>
+                    )}
                   </Button>
                 )}
                 {canShowFavorites && <FavoriteButton eventId={id} />}
