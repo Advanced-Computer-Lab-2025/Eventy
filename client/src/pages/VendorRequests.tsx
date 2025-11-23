@@ -1,9 +1,9 @@
-import { CheckCircle, XCircle, Eye, Download } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Plus } from "lucide-react";
 import Header from "@/components/Header";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
@@ -73,10 +73,39 @@ async function updateVendorStatus(
     }
 
     return data.data; // updated application
-  } catch (err: any) {
+  } catch (err: unknown) {
     console.error(err);
-    alert(err.message);
+    const errorMessage =
+      err instanceof Error ? err.message : "Failed to update status";
+    throw new Error(errorMessage);
   }
+}
+
+interface VendorRequest {
+  _id: string;
+  type: "bazaar" | "booth";
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  boothSize: "2x2" | "4x4";
+  durationWeeks?: number;
+  locationPreference?: string;
+  createdAt: string;
+  attendees: Array<{ name: string; email: string }>;
+  event?:
+    | {
+        _id: string;
+        name: string;
+        description?: string;
+        startDate?: string;
+        endDate?: string;
+        location?: string;
+      }
+    | string;
+  createdBy?: {
+    companyName?: string;
+    email?: string;
+    companyLogoUrl?: string;
+    taxCardUrl?: string;
+  };
 }
 
 //todo: remove mock functionality
@@ -100,11 +129,11 @@ async function updateVendorStatus(
 // ];
 
 export default function VendorRequests() {
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<VendorRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const [selected, setSelected] = useState<any | null>(null);
+  const [selected, setSelected] = useState<VendorRequest | null>(null);
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<
     "all" | "pending" | "approved" | "rejected"
@@ -162,8 +191,10 @@ export default function VendorRequests() {
 
         const apps = Array.isArray(body.data) ? body.data : [];
         setRequests(apps);
-      } catch (err: any) {
-        setError(err.message || "Failed to load applications");
+      } catch (err: unknown) {
+        setError(
+          err instanceof Error ? err.message : "Failed to load applications"
+        );
       } finally {
         setLoading(false);
       }
@@ -172,7 +203,7 @@ export default function VendorRequests() {
   }, [token]);
 
   // Helper function to get event name from request
-  const getEventName = (request: any): string => {
+  const getEventName = (request: VendorRequest): string => {
     // If event is populated (object with name property)
     if (
       request?.event &&
@@ -195,18 +226,29 @@ export default function VendorRequests() {
       return null;
     }
 
-    const updatedApp = await updateVendorStatus(requestId, "approved", token);
-    if (updatedApp) {
-      setRequests((prev) =>
-        prev.map((r: any) =>
-          r._id === requestId ? { ...r, status: "approved" } : r
-        )
-      );
+    try {
+      const updatedApp = await updateVendorStatus(requestId, "approved", token);
+      if (updatedApp) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r._id === requestId ? { ...r, status: "approved" } : r
+          )
+        );
+        toast({
+          title: "Request approved",
+          description: "The vendor request has been approved.",
+        });
+        return updatedApp;
+      }
+    } catch (error: unknown) {
       toast({
-        title: "Request approved",
-        description: "The vendor request has been approved.",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to approve the request.",
+        variant: "destructive",
       });
-      return updatedApp;
     }
     return null;
   };
@@ -221,19 +263,30 @@ export default function VendorRequests() {
       return null;
     }
 
-    const updatedApp = await updateVendorStatus(requestId, "rejected", token);
-    if (updatedApp) {
-      setRequests((prev) =>
-        prev.map((r: any) =>
-          r._id === requestId ? { ...r, status: "rejected" } : r
-        )
-      );
+    try {
+      const updatedApp = await updateVendorStatus(requestId, "rejected", token);
+      if (updatedApp) {
+        setRequests((prev) =>
+          prev.map((r) =>
+            r._id === requestId ? { ...r, status: "rejected" } : r
+          )
+        );
+        toast({
+          title: "Request rejected",
+          description: "The vendor request has been rejected.",
+          variant: "destructive",
+        });
+        return updatedApp;
+      }
+    } catch (error: unknown) {
       toast({
-        title: "Request rejected",
-        description: "The vendor request has been rejected.",
+        title: "Error",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to reject the request.",
         variant: "destructive",
       });
-      return updatedApp;
     }
     return null;
   };
@@ -271,6 +324,7 @@ export default function VendorRequests() {
               onClick={handleGoToPolls}
               className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
             >
+              <Plus className="mr-1 h-4 w-4" />
               Create Poll
             </Button>
           )}
@@ -284,7 +338,11 @@ export default function VendorRequests() {
             <div className="flex items-center justify-end mb-4 gap-2">
               <Select
                 value={statusFilter}
-                onValueChange={(v) => setStatusFilter(v as any)}
+                onValueChange={(v) =>
+                  setStatusFilter(
+                    v as "all" | "pending" | "approved" | "rejected"
+                  )
+                }
               >
                 <SelectTrigger className="w-[200px]">
                   <SelectValue placeholder="Filter by status" />
@@ -319,7 +377,7 @@ export default function VendorRequests() {
                   {(statusFilter === "all"
                     ? requests
                     : requests.filter((r) => r.status === statusFilter)
-                  ).map((request: any) => (
+                  ).map((request) => (
                     <TableRow
                       key={request._id}
                       data-testid={`row-request-${request._id}`}
@@ -497,7 +555,7 @@ export default function VendorRequests() {
                   {Array.isArray(selected?.attendees) &&
                   selected.attendees.length > 0 ? (
                     <ul className="list-disc pl-5 space-y-1">
-                      {selected.attendees.map((a: any) => (
+                      {selected.attendees.map((a) => (
                         <li key={`${a.name}-${a.email}`}>
                           {a.name} — {a.email}
                         </li>
@@ -541,7 +599,6 @@ export default function VendorRequests() {
             )}
           </DialogContent>
         </Dialog>
-
       </main>
     </div>
   );
