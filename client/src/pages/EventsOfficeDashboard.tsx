@@ -134,9 +134,15 @@ export default function EventsOfficeDashboard() {
   };
 
   const handleClearFilters = () => {
-    setShowUpcoming(false);
-    setShowPast(false);
-    setSelectedEventTypes([]);
+    setShowUpcoming(true);
+    setShowPast(true);
+    setSelectedEventTypes([
+      "bazaar",
+      "trip",
+      "workshop",
+      "conference",
+      "platform_booth",
+    ]);
     setEventSearch("");
     setDisplayLimit(12);
   };
@@ -671,6 +677,14 @@ export default function EventsOfficeDashboard() {
                     {/* Time Period Filter */}
                     <div className="space-y-3">
                       <div className="text-sm font-semibold">Time Period</div>
+                      {!showUpcoming && !showPast && (
+                        <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
+                          <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 font-medium">
+                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                            <span>Select at least one time period</span>
+                          </p>
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <div className="flex items-center gap-2">
                           <Checkbox
