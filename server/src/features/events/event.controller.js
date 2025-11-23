@@ -746,6 +746,41 @@ export class EventsController {
       next(err);
     }
   }
+
+  // Get all registered users for an event (name and role only)
+  async getEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can view registered users lists
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can view event registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const registeredUsers =
+        await eventService.getEventRegisteredUsers(eventId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            registeredUsers,
+            "Event registered users fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Cancel event registration (for Student/Staff/TA/Professor)
   async cancelEventRegistration(req, res, next) {
     try {
@@ -782,6 +817,44 @@ export class EventsController {
       next(err);
     }
   }
+
+  // Export registered users for an event in various formats
+  async exportEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can export registered users
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can export registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const { format = "xlsx" } = req.query; // Default to xlsx if not specified
+
+      const { buffer, filename, mimeType } =
+        await eventService.exportEventRegisteredUsers(eventId, format);
+
+      // Set headers for file download
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", buffer.length);
+
+      // Send the file buffer
+      return res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async restrictAccess(req, res, next) {
     try {
       // Check authentication
