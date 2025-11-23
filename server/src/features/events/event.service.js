@@ -2,9 +2,20 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import xlsx from "xlsx";
+import PDFDocument from "pdfkit";
+import { Parser } from "json2csv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { TransactionService } from "../transactions/transaction.service.js";
 const transactionService = new TransactionService();
+import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
+import mongoose from "mongoose";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -24,6 +35,7 @@ export async function createBazaar(data, user) {
     createdBy: user.id,
     startTime: data.startTime,
     endTime: data.endTime,
+    restrictedRoles: data.restrictedRoles || [],
   };
 
   // Save to database
@@ -88,6 +100,7 @@ export const createTrip = async (tripData, createdBy) => {
     ...tripData,
     eventType: "trip",
     createdBy,
+    restrictedRoles: tripData.restrictedRoles || [],
   });
 
   return newTrip;
@@ -135,6 +148,7 @@ export const createConference = async (data, userId) => {
     startTime,
     endTime,
     createdBy: userId,
+    restrictedRoles: data.restrictedRoles || [],
   });
 
   return event;
@@ -193,6 +207,7 @@ export const createWorkshop = async (workshopData, professorId) => {
     eventType: "workshop",
     createdBy: professorId,
     status: "pending",
+    restrictedRoles: workshopData.restrictedRoles || [],
   });
 
   return workshop;
@@ -322,17 +337,27 @@ export const getEventsByUser = async (userId) => {
   return events;
 };
 
-export const getUpcomingEventsService = async (includeVendors = false) => {
+export const getUpcomingEventsService = async (
+  includeVendors = false,
+  userRole = null
+) => {
   const now = new Date();
 
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     deletedAt: null,
     $or: [
       { startDate: { $gte: now } }, // Regular events with future startDate
       { eventType: "platform_booth" }, // Platform booths (may not have startDate)
     ],
-  })
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
     .populate("professors", "name email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
@@ -344,19 +369,28 @@ export const getUpcomingEventsService = async (includeVendors = false) => {
  * Get all upcoming events with their vendors (via applications).
  * @returns {Promise<Array>} Array of event objects with vendors array.
  */
-export const getUpcomingEventsWithVendors = async () => {
+export const getUpcomingEventsWithVendors = async (
+  includeVendors = true,
+  userRole = null
+) => {
   const now = new Date();
 
-  // Get all approved upcoming events
-  // Include platform booths even if they don't have a startDate
-  const events = await Event.find({
+  const filter = {
     status: "approved",
     deletedAt: null,
     $or: [
       { startDate: { $gte: now } }, // Regular events with future startDate
       { eventType: "platform_booth" }, // Platform booths (may not have startDate)
     ],
-  }).lean();
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  // Get all approved upcoming events
+  const events = await Event.find(filter).lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -416,13 +450,14 @@ export async function deleteEvent(eventId, user) {
     throw new ApiError(409, "Cannot delete event with registered users.");
   }
 
-  // Soft delete: set deletedAt timestamp
+  // Soft delete: set deletedAt timestamp and clear restrictedRoles
   event.deletedAt = new Date();
+  event.restrictedRoles = [];
   await event.save();
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type }) => {
+export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   // Include platform booths even if they don't have a startDate
   const now = new Date();
@@ -438,6 +473,11 @@ export const searchEvents = async ({ name, type }) => {
       },
     ],
   };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
 
   // If both name and type are provided and are the same (unified search)
   // Use OR logic to search across all fields
@@ -624,19 +664,30 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
   return event;
 };
 
-export const getEventById = async (eventId) => {
+export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
+
+  // Check if the user's role is restricted from viewing this event
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    if (event.restrictedRoles && event.restrictedRoles.includes(userRole)) {
+      throw new ApiError(
+        403,
+        "Access denied: You are not allowed to view this event"
+      );
+    }
+  }
+
   return event;
 };
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
-      "name location price startDate endDate description capacity registrationDeadline"
+      "name location price startDate endDate description capacity registrationDeadline restrictedRoles"
     )
     .lean();
 
@@ -821,6 +872,265 @@ export const archiveEvent = async (eventId, user) => {
   return updatedEvent;
 };
 
+export const getEventRegisteredUsers = async (eventId) => {
+  // Find event and populate attendees with firstName, lastName and role
+  const event = await Event.findById(eventId)
+    .select("attendees deletedAt")
+    .populate("attendees", "firstName lastName role");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view attendees of a deleted event");
+  }
+
+  // Check if attendees array is empty or doesn't exist
+  if (!event.attendees || event.attendees.length === 0) {
+    throw new ApiError(404, "No registered users for this event");
+  }
+
+  // Map to minimal shape with only required fields
+  const registeredUsers = event.attendees.map((user) => ({
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  }));
+
+  return registeredUsers;
+};
+
+export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
+  const validFormats = ["xlsx", "pdf", "csv"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  const registeredUsers = await getEventRegisteredUsers(eventId);
+  const event = await Event.findById(eventId).select("name");
+  const eventName = event?.name || "event";
+  const sanitizedEventName = eventName.replace(/[^a-z0-9]/gi, "_");
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  switch (format.toLowerCase()) {
+    case "xlsx":
+      const worksheetData = [
+        ["First Name", "Last Name", "Role"],
+        ...registeredUsers.map((user) => [
+          user.firstName,
+          user.lastName,
+          user.role,
+        ]),
+      ];
+      const worksheet = xlsx.utils.aoa_to_sheet(worksheetData);
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
+        fill: { fgColor: { rgb: "210051" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "210051" } },
+          bottom: { style: "thin", color: { rgb: "210051" } },
+          left: { style: "thin", color: { rgb: "210051" } },
+          right: { style: "thin", color: { rgb: "210051" } },
+        },
+      };
+
+      worksheet["A1"].s = headerStyle;
+      worksheet["B1"].s = headerStyle;
+      worksheet["C1"].s = headerStyle;
+
+      for (let i = 2; i <= registeredUsers.length + 1; i++) {
+        const rowStyle = {
+          fill: { fgColor: { rgb: i % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
+          border: {
+            top: { style: "thin", color: { rgb: "E5E7EB" } },
+            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+            left: { style: "thin", color: { rgb: "E5E7EB" } },
+            right: { style: "thin", color: { rgb: "E5E7EB" } },
+          },
+        };
+        ["A", "B", "C"].forEach((col) => {
+          if (worksheet[`${col}${i}`]) worksheet[`${col}${i}`].s = rowStyle;
+        });
+      }
+
+      worksheet["!cols"] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }];
+
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Registered Users");
+      buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+      mimeType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
+      break;
+
+    case "pdf":
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks = [];
+      doc.on("data", (chunk) => chunks.push(chunk));
+
+      const logoLightPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-light.png"
+      );
+      const logoDarkPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-dark.png"
+      );
+
+      // Watermark
+      if (fs.existsSync(logoLightPath)) {
+        doc
+          .save()
+          .opacity(0.03)
+          .image(
+            logoLightPath,
+            doc.page.width / 2 - 150,
+            doc.page.height / 2 - 150,
+            { width: 300, height: 300 }
+          )
+          .restore();
+      }
+
+      // Header function for all pages
+      const drawHeader = () => {
+        if (fs.existsSync(logoLightPath)) {
+          doc.image(logoLightPath, 50, 40, { width: 70 });
+        }
+        doc
+          .fillColor("#1a202c")
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .text("Registered Users Report", 135, 45)
+          .fillColor("#4a5568")
+          .fontSize(15)
+          .font("Helvetica")
+          .text(`Event: ${eventName}`, 135, 70)
+          .fontSize(11)
+          .fillColor("#718096")
+          .text(
+            `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+            135,
+            90
+          );
+        doc
+          .moveTo(50, 115)
+          .lineTo(doc.page.width - 50, 115)
+          .strokeColor("#E5E7EB")
+          .lineWidth(1)
+          .stroke();
+      };
+
+      drawHeader();
+
+      // Total users count below purple line
+      doc.y = 130;
+      doc
+        .fontSize(12)
+        .fillColor("#210051")
+        .font("Helvetica-Bold")
+        .text(`Total Registered Users: ${registeredUsers.length}`, 50, doc.y, {
+          align: "left",
+        });
+
+      doc.y += 10;
+
+      const col1X = 50,
+        col2X = 220,
+        col3X = 390,
+        rowHeight = 25;
+
+      // Table header
+      doc
+        .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+        .fillColor("#210051")
+        .fill();
+      const headerY = doc.y + 8;
+      doc
+        .fillColor("#FFFFFF")
+        .fontSize(12)
+        .font("Helvetica-Bold")
+        .text("First Name", col1X + 5, headerY, { width: 160 })
+        .text("Last Name", col2X + 5, headerY, { width: 160 })
+        .text("Role", col3X + 5, headerY, { width: 150 });
+      doc.y += rowHeight;
+
+      // Table rows
+      doc.font("Helvetica").fontSize(11);
+      registeredUsers.forEach((user, index) => {
+        if (doc.y > doc.page.height - 80) {
+          doc.addPage();
+          drawHeader();
+          doc.y = 130;
+
+          // Redraw table header on new page
+          doc
+            .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+            .fillColor("#210051")
+            .fill();
+          doc
+            .fillColor("#FFFFFF")
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text("First Name", col1X + 5, doc.y + 8, { width: 160 })
+            .text("Last Name", col2X + 5, doc.y + 8, { width: 160 })
+            .text("Role", col3X + 5, doc.y + 8, { width: 150 });
+          doc.y += rowHeight;
+          doc.font("Helvetica").fontSize(11);
+        }
+
+        const currentY = doc.y;
+        // Alternating row colors
+        doc
+          .rect(col1X, currentY, doc.page.width - 100, rowHeight)
+          .fillColor(index % 2 === 0 ? "#F9FAFB" : "#FFFFFF")
+          .fill();
+
+        doc
+          .fillColor("#1F2937")
+          .text(user.firstName || "-", col1X + 5, currentY + 6, { width: 160 })
+          .text(user.lastName || "-", col2X + 5, currentY + 6, { width: 160 })
+          .text(user.role || "-", col3X + 5, currentY + 6, { width: 150 });
+        doc.y = currentY + rowHeight;
+      });
+
+      doc.end();
+      await new Promise((resolve) =>
+        doc.on("end", () => {
+          buffer = Buffer.concat(chunks);
+          resolve();
+        })
+      );
+      mimeType = "application/pdf";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.pdf`;
+      break;
+
+    case "csv":
+      const parser = new Parser({
+        fields: [
+          { label: "First Name", value: "firstName" },
+          { label: "Last Name", value: "lastName" },
+          { label: "Role", value: "role" },
+        ],
+        header: true,
+      });
+      buffer = Buffer.from(parser.parse(registeredUsers), "utf-8");
+      mimeType = "text/csv";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.csv`;
+      break;
+  }
+
+  return { buffer, filename, mimeType };
+};
+
 /**
  * Cancels a user's registration for an event and processes a refund if eligible.
  * - Only allows cancellation at least 2 weeks before the event start date.
@@ -931,4 +1241,296 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
   await event.save();
 
   return event;
+};
+
+export const getSalesReport = async (options = {}) => {
+  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+
+  const skip = (page - 1) * limit;
+
+  const eventFilter = {
+    deletedAt: null,
+    status: "approved",
+  };
+
+  if (eventType && String(eventType).trim() !== "") {
+    eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
+  }
+
+  if (startDate || endDate) {
+    eventFilter.startDate = {};
+    if (startDate) {
+      const s = new Date(startDate);
+      s.setHours(0, 0, 0, 0);
+      eventFilter.startDate.$gte = s;
+    }
+    if (endDate) {
+      const e = new Date(endDate);
+      e.setHours(23, 59, 59, 999);
+      eventFilter.startDate.$lte = e;
+    }
+  }
+
+  const allEvents = await Event.find(eventFilter)
+    .select("_id name eventType startDate endDate location price attendees")
+    .lean();
+
+  const eventIds = allEvents.map((e) => e._id);
+
+  // Convert eventIds to ObjectIds for proper matching
+  const eventObjectIds = eventIds.map((id) =>
+    mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
+  );
+
+  const transactionData = await Transaction.aggregate([
+    // 1️⃣ Match completed transactions (both Event and Application types)
+    {
+      $match: {
+        type: { $in: ["payment", "refund"] },
+        status: "completed",
+        $or: [
+          // Direct Event transactions
+          {
+            "relatedEntity.type": "Event",
+            "relatedEntity.id": { $in: eventObjectIds },
+          },
+          // Application transactions (we'll filter by event later)
+          {
+            "relatedEntity.type": "Application",
+          },
+        ],
+      },
+    },
+
+    // 2️⃣ Lookup Application to get event ID for Application transactions
+    {
+      $lookup: {
+        from: "applications",
+        localField: "relatedEntity.id",
+        foreignField: "_id",
+        as: "application",
+      },
+    },
+    {
+      $unwind: { path: "$application", preserveNullAndEmptyArrays: true },
+    },
+
+    // 3️⃣ Determine the actual event ID for each transaction
+    {
+      $addFields: {
+        eventId: {
+          $cond: [
+            { $eq: ["$relatedEntity.type", "Event"] },
+            "$relatedEntity.id",
+            "$application.event", // For Application transactions, use the application's event
+          ],
+        },
+      },
+    },
+
+    // 4️⃣ Filter to only include transactions for our events
+    {
+      $match: {
+        eventId: { $in: eventObjectIds },
+      },
+    },
+
+    // 5️⃣ Add netAmount: payments positive, refunds negative
+    {
+      $addFields: {
+        netAmount: {
+          $cond: [
+            { $eq: ["$type", "refund"] },
+            { $multiply: ["$amount", -1] },
+            "$amount",
+          ],
+        },
+      },
+    },
+
+    // 6️⃣ Group by event ID
+    {
+      $group: {
+        _id: "$eventId",
+        totalRevenue: { $sum: "$netAmount" },
+        grossRevenue: {
+          $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
+        },
+        totalRefunds: {
+          $sum: { $cond: [{ $eq: ["$type", "refund"] }, "$amount", 0] },
+        },
+        walletPayments: {
+          $sum: {
+            $cond: [{ $eq: ["$paymentMethod", "wallet"] }, "$netAmount", 0],
+          },
+        },
+        cardPayments: {
+          $sum: {
+            $cond: [
+              { $in: ["$paymentMethod", ["credit_card", "debit_card"]] },
+              "$netAmount",
+              0,
+            ],
+          },
+        },
+        transactionCount: { $sum: 1 },
+      },
+    },
+
+    // 4️⃣ Lookup event details if needed (optional)
+    {
+      $lookup: {
+        from: "events", // your events collection
+        localField: "_id",
+        foreignField: "_id",
+        as: "event",
+      },
+    },
+    { $unwind: { path: "$event", preserveNullAndEmptyArrays: true } },
+
+    // 5️⃣ Project final report fields
+    {
+      $project: {
+        _id: 1,
+        eventName: "$event.name",
+        eventType: "$event.type",
+        startDate: "$event.startDate",
+        endDate: "$event.endDate",
+        location: "$event.location",
+        totalRevenue: 1,
+        grossRevenue: 1,
+        totalRefunds: 1,
+        walletPayments: 1,
+        cardPayments: 1,
+        transactionCount: 1,
+      },
+    },
+
+    // 6️⃣ Optional: sort by totalRevenue descending
+    { $sort: { totalRevenue: -1 } },
+  ]);
+
+  const revenueMap = {};
+  transactionData.forEach((item) => {
+    // Convert ObjectId to string for consistent key matching
+    const eventIdKey = item._id ? item._id.toString() : null;
+    if (eventIdKey) {
+      revenueMap[eventIdKey] = {
+        totalRevenue: item.totalRevenue || 0,
+        grossRevenue: item.grossRevenue || 0,
+        totalRefunds: item.totalRefunds || 0,
+        walletPayments: item.walletPayments || 0,
+        cardPayments: item.cardPayments || 0,
+        transactionCount: item.transactionCount || 0,
+      };
+    }
+  });
+
+  // Get attendee counts from applications for bazaar events
+  const bazaarEventIds = allEvents
+    .filter((e) => e.eventType === "bazaar")
+    .map((e) => e._id);
+
+  const applicationAttendeesMap = {};
+  if (bazaarEventIds.length > 0) {
+    const applicationAttendeesData = await Application.aggregate([
+      {
+        $match: {
+          event: { $in: bazaarEventIds },
+          status: "approved", // Only count approved applications
+        },
+      },
+      {
+        $group: {
+          _id: "$event",
+          totalAttendees: {
+            $sum: { $size: { $ifNull: ["$attendees", []] } },
+          },
+        },
+      },
+    ]);
+
+    applicationAttendeesData.forEach((item) => {
+      const eventIdKey = item._id ? item._id.toString() : null;
+      if (eventIdKey) {
+        applicationAttendeesMap[eventIdKey] = item.totalAttendees || 0;
+      }
+    });
+  }
+
+  const eventsWithRevenue = allEvents.map((event) => {
+    const eventIdStr = event._id.toString();
+    const revenue = revenueMap[eventIdStr] || {
+      totalRevenue: 0,
+      grossRevenue: 0,
+      totalRefunds: 0,
+      walletPayments: 0,
+      cardPayments: 0,
+      transactionCount: 0,
+    };
+
+    // For bazaar events, count attendees from applications; for others, use event.attendees
+    let attendeesCount = 0;
+    if (event.eventType === "bazaar") {
+      attendeesCount = applicationAttendeesMap[eventIdStr] || 0;
+    } else {
+      attendeesCount = event.attendees ? event.attendees.length : 0;
+    }
+
+    // Price is only required for trip and workshop, others should be null/undefined
+    const price = event.price || null;
+
+    return {
+      _id: event._id,
+      name: event.name,
+      eventType: event.eventType,
+      startDate: event.startDate,
+      endDate: event.endDate,
+      location: event.location,
+      price: price,
+      attendeesCount: attendeesCount,
+      revenue: revenue.totalRevenue,
+      ...revenue,
+    };
+  });
+
+  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+
+  const totals = {
+    totalEvents: eventsWithRevenue.length,
+    totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    totalAttendees: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.attendeesCount,
+      0
+    ),
+    grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
+    totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
+    totalWalletPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.walletPayments,
+      0
+    ),
+    totalCardPayments: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.cardPayments,
+      0
+    ),
+  };
+
+  const paginatedEvents = eventsWithRevenue.slice(skip, skip + limit);
+
+  return {
+    totalEvents: totals.totalEvents,
+    totalRevenue: totals.totalRevenue,
+    totalAttendees: totals.totalAttendees,
+    grossRevenue: totals.grossRevenue,
+    totalRefunds: totals.totalRefunds,
+    netRevenue: totals.totalRevenue,
+    paymentBreakdown: {
+      wallet: totals.totalWalletPayments,
+      card: totals.totalCardPayments,
+    },
+    page,
+    limit,
+    totalPages: Math.ceil(totals.totalEvents / limit),
+    events: paginatedEvents,
+  };
 };

@@ -368,9 +368,9 @@ export default function WorkshopApprovals() {
                               }
                               className={
                                 workshop.status === "approved"
-                                  ? "bg-gradient-to-r from-green-500 to-green-700 hover:from-green-600 hover:to-green-700 text-white border-0"
+                                  ? "bg-green-600 hover:bg-green-700 text-white border-0"
                                   : workshop.status === "needs_revision"
-                                    ? "bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-700 text-white border-0"
+                                    ? "bg-blue-600 hover:bg-blue-700 text-white border-0"
                                     : ""
                               }
                             >
@@ -384,7 +384,7 @@ export default function WorkshopApprovals() {
                               <Button
                                 size="sm"
                                 variant="secondary"
-                                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
                                 onClick={() => handleViewDetails(workshop)}
                               >
                                 <Info className="h-4 w-4" />
@@ -393,7 +393,7 @@ export default function WorkshopApprovals() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                                    className="bg-green-600 hover:bg-green-700"
                                     onClick={() => handleApprove(workshop._id)}
                                   >
                                     <CheckCircle className="h-4 w-4" />
@@ -401,7 +401,6 @@ export default function WorkshopApprovals() {
                                   <Button
                                     size="sm"
                                     variant="destructive"
-                                    className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                                     onClick={() => handleReject(workshop._id)}
                                   >
                                     <XCircle className="h-4 w-4" />
@@ -409,7 +408,7 @@ export default function WorkshopApprovals() {
                                   <Button
                                     size="sm"
                                     variant="outline"
-                                    className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+                                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                                     onClick={() =>
                                       openEditRequestDialog(workshop)
                                     }
@@ -493,21 +492,20 @@ export default function WorkshopApprovals() {
           {selectedWorkshop?.status === "pending" && (
             <DialogFooter className="flex justify-end gap-3 mt-4">
               <Button
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
+                className="bg-green-600 hover:bg-green-700"
                 onClick={() => handleApprove(selectedWorkshop._id)}
               >
                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
               </Button>
               <Button
                 variant="destructive"
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800"
                 onClick={() => handleReject(selectedWorkshop._id)}
               >
                 <XCircle className="mr-2 h-4 w-4" /> Reject
               </Button>
               <Button
                 variant="outline"
-                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white border-0"
+                className="bg-blue-600 hover:bg-blue-700 text-white border-0"
                 onClick={() => {
                   setShowDetailsDialog(false);
                   setShowEditRequestDialog(true);

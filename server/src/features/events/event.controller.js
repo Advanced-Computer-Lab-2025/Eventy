@@ -12,8 +12,10 @@ import {
   updateWorkshopSchema,
   getAttendeesReportSchema,
   restrictAccessSchema,
+  getSalesReportSchema,
 } from "./event.validation.js";
 import { User } from "../users/user.model.js"; // adjust path if needed
+import NotificationService from "../notifications/notification.service.js";
 
 //Write your code in this class!!!
 
@@ -283,6 +285,30 @@ export class EventsController {
         req.body,
         req.user.id
       );
+
+      // Create notification for Events Office users
+      try {
+        const eventsOfficeUsers = await User.find({
+          role: "events_office",
+          status: "active",
+          deletedAt: null,
+        }).select("_id firstName lastName");
+
+        if (eventsOfficeUsers.length > 0) {
+          await NotificationService.createNotification({
+            recipients: eventsOfficeUsers.map((u) => u._id),
+            title: "New Workshop Submission",
+            message: `${req.user.firstName || "Professor"} submitted a workshop: ${req.body.name}`,
+            link: "/approvals/workshops",
+          });
+        }
+      } catch (notifErr) {
+        // Log but do not fail the main request
+        console.error(
+          "Failed to create notification for workshop submission",
+          notifErr
+        );
+      }
 
       return res
         .status(201)
@@ -563,7 +589,11 @@ export class EventsController {
   // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
-      const events = await eventService.getUpcomingEventsWithVendors(true);
+      const userRole = req.user?.role;
+      const events = await eventService.getUpcomingEventsWithVendors(
+        true,
+        userRole
+      );
       return res
         .status(200)
         .json(
@@ -584,8 +614,10 @@ export class EventsController {
         throw new ApiError(400, "Please provide a name or type to search.");
       }
 
+      const userRole = req.user?.role;
+
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type });
+      const events = await eventService.searchEvents({ name, type, userRole });
 
       return res
         .status(200)
@@ -620,7 +652,8 @@ export class EventsController {
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
-      const event = await eventService.getEventById(eventId);
+      const userRole = req.user?.role;
+      const event = await eventService.getEventById(eventId, userRole);
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event fetched successfully"));
@@ -713,6 +746,41 @@ export class EventsController {
       next(err);
     }
   }
+
+  // Get all registered users for an event (name and role only)
+  async getEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can view registered users lists
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can view event registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const registeredUsers =
+        await eventService.getEventRegisteredUsers(eventId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            registeredUsers,
+            "Event registered users fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Cancel event registration (for Student/Staff/TA/Professor)
   async cancelEventRegistration(req, res, next) {
     try {
@@ -749,6 +817,44 @@ export class EventsController {
       next(err);
     }
   }
+
+  // Export registered users for an event in various formats
+  async exportEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can export registered users
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can export registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const { format = "xlsx" } = req.query; // Default to xlsx if not specified
+
+      const { buffer, filename, mimeType } =
+        await eventService.exportEventRegisteredUsers(eventId, format);
+
+      // Set headers for file download
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", buffer.length);
+
+      // Send the file buffer
+      return res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async restrictAccess(req, res, next) {
     try {
       // Check authentication
@@ -775,6 +881,37 @@ export class EventsController {
             event,
             "Event access restrictions updated successfully"
           )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getSalesReport(req, res, next) {
+    try {
+      // ✅ Validate query params
+      const { error, value } = getSalesReportSchema.validate(req.query, {
+        abortEarly: false,
+      });
+
+      if (error)
+        return next(new ApiError(400, "Validation failed", error.details));
+
+      // ✅ Use the validated values
+      const { eventType, startDate, endDate, page, limit } = value;
+
+      const report = await eventService.getSalesReport({
+        eventType,
+        startDate,
+        endDate,
+        page: page || 1,
+        limit: limit || 10,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, report, "Sales report generated successfully")
         );
     } catch (err) {
       next(err);

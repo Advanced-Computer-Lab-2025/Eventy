@@ -89,6 +89,7 @@ export interface EventCardProps {
   showDetailedView?: boolean;
   isRegistered?: boolean;
   onRegister?: () => void;
+  status?: string;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
@@ -128,6 +129,7 @@ export default function EventCard({
   onArchive,
   isArchiving = false,
   canDelete = false,
+  status,
   className,
 }: EventCardProps) {
   const imageSrc = image || getEventImage(String(category), title);
@@ -181,7 +183,9 @@ export default function EventCard({
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || attendees < capacity;
-  const canRegister = isRegisterable && isBeforeDeadline && hasCapacity;
+  const isArchived = status === "archived";
+  const canRegister =
+    isRegisterable && isBeforeDeadline && hasCapacity && !isArchived;
 
   if (isDeleted) return null;
 

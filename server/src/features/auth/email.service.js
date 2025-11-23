@@ -1637,6 +1637,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
     );
   }
 };
+
 export const sendStudentEmailVerification = async (user) => {
   const displayName =
     (
@@ -1791,5 +1792,288 @@ export const sendStudentEmailVerification = async (user) => {
       error?.message || error
     );
     throw new Error("Failed to send student verification email");
+  }
+};
+/**
+ * Send payment receipt email to vendor with Stripe receipt URL
+ * @param {Object} vendor - Vendor user object with email and companyName
+ * @param {Object} transaction - Transaction object with payment details
+ * @param {Object} application - Application object with type and event details
+ * @param {string} stripeReceiptUrl - Stripe receipt URL from the payment intent
+ */
+export const sendVendorPaymentReceipt = async (
+  vendor,
+  transaction,
+  application,
+  stripeReceiptUrl
+) => {
+  // Get vendor display name (company name for vendors)
+  const displayName =
+    vendor?.companyName ||
+    vendor?.name ||
+    [vendor?.firstName, vendor?.lastName].filter(Boolean).join(" ") ||
+    "Vendor";
+
+  // Determine application type display name
+  const applicationType = application.type === "bazaar" ? "Bazaar" : "Booth";
+  const applicationTypeLower =
+    application.type === "bazaar" ? "bazaar" : "booth";
+
+  // Get event/bazaar name
+  const eventName = application.event?.name || "Platform Booth";
+
+  const formattedDate = format(
+    new Date(transaction.createdAt),
+    "MMMM d, yyyy h:mm a"
+  );
+  const formattedAmount = (transaction.amount || 0).toFixed(2);
+
+  // Path to logo image
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  // Build application details HTML
+  let applicationDetailsHtml = `
+    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #10b981; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+          Application Details
+        </h3>
+      </div>
+      <table style="width: 100%; border-collapse: collapse;">
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Application Type:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${applicationType}</td>
+        </tr>
+  `;
+
+  if (application.type === "bazaar") {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Bazaar Name:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventName}</td>
+        </tr>
+    `;
+  }
+
+  applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Booth Size:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
+            application.boothSize || "N/A"
+          }</td>
+        </tr>
+  `;
+
+  if (application.type === "booth" && application.durationWeeks) {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Duration:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
+            application.durationWeeks
+          } week${application.durationWeeks > 1 ? "s" : ""}</td>
+        </tr>
+    `;
+  }
+
+  if (application.type === "booth" && application.locationPreference) {
+    applicationDetailsHtml += `
+        <tr>
+          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+            Location:
+          </td>
+          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.locationPreference}</td>
+        </tr>
+    `;
+  }
+
+  applicationDetailsHtml += `
+      </table>
+    </div>
+  `;
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: vendor?.email,
+    subject: `Payment Receipt - ${applicationType} Application Payment`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Payment Receipt</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #065f46; line-height: 1.2;">
+                        Payment Confirmed ✓
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 28px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Thank you, ${displayName}! 🎉
+                    </h2>
+                    <p style="margin: 0 0 32px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Your payment for your ${applicationTypeLower} application has been successfully processed. Below are the details of your transaction.
+                    </p>
+                    
+                    <!-- Amount Box -->
+                    <div style="background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-radius: 12px; padding: 28px; margin: 32px 0; text-align: center; border-left: 4px solid #6366f1; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <p style="margin: 0 0 8px; font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: #4338ca;">
+                        Amount Paid
+                      </p>
+                      <div style="font-size: 48px; font-weight: 700; color: #4f46e5; line-height: 1.2;">
+                        $${formattedAmount}
+                      </div>
+                    </div>
+                    
+                    <!-- Stripe Receipt Section -->
+                    ${
+                      stripeReceiptUrl
+                        ? `
+                    <div style="background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #3b82f6; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 16px;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Stripe Receipt
+                        </h3>
+                        <p style="margin: 8px 0 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
+                          Your official payment receipt from Stripe is available below. Please save this for your records.
+                        </p>
+                      </div>
+                      <table role="presentation" style="width: 100%; margin: 20px 0 0;">
+                        <tr>
+                          <td align="center">
+                            <a href="${stripeReceiptUrl}" 
+                               style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 15px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                              View Stripe Receipt
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                    </div>
+                    `
+                        : ""
+                    }
+                    
+                    ${applicationDetailsHtml}
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <p style="margin: 24px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Your ${applicationTypeLower} application payment has been confirmed. Your participation is now fully processed. You can view all your application details through your vendor dashboard.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <table role="presentation" style="width: 100%; margin: 32px 0;">
+                      <tr>
+                        <td align="center">
+                          <!--[if mso]>
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                            <w:anchorlock/>
+                            <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Dashboard</center>
+                          </v:roundrect>
+                          <![endif]-->
+                          <!--[if !mso]><!-->
+                          <a href="http://localhost:5000/vendor/dashboard" 
+                             style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
+                            View Dashboard
+                          </a>
+                          <!--<![endif]-->
+                        </td>
+                      </tr>
+                    </table>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Info Notice -->
+                    <div style="margin-top: 32px; padding: 16px; background-color: #eff6ff; border-left: 4px solid #3b82f6; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #1e40af; line-height: 1.5;">
+                        <strong>Need Help?</strong> If you have any questions about this transaction, please contact our support team or visit your vendor dashboard.
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      This is an automated receipt for your records. Please keep this email for your reference.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © 2025 Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo", // Content ID for embedding in HTML
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Vendor payment receipt sent to ${vendor.email}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+      applicationType: application.type,
+      transactionId: transaction._id,
+      stripeReceiptUrl: stripeReceiptUrl ? "included" : "not available",
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+  } catch (error) {
+    console.error(
+      `❌ Error sending vendor payment receipt to ${vendor.email}:`,
+      error?.message || error
+    );
+    // Don't throw - log error but don't fail the payment confirmation
   }
 };
