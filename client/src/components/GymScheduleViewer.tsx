@@ -300,7 +300,7 @@ export default function GymScheduleViewer({
                   <TableHead>Time</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Instructor</TableHead>
-                  <TableHead>Capacity</TableHead>
+                  <TableHead>Availability</TableHead>
                   {canRegister && <TableHead>Registration</TableHead>}
                   {(canEditSession || canCancelSession) && (
                     <TableHead>Actions</TableHead>
@@ -311,6 +311,7 @@ export default function GymScheduleViewer({
                 {sessions.map((session) => {
                   const enrolled = session.attendees?.length || 0;
                   const capacity = session.maxParticipants;
+                  const seatsLeft = Math.max(capacity - enrolled, 0);
                   const isFull = enrolled >= capacity;
                   const isRegistered =
                     currentUserId && session.attendees?.includes(currentUserId);
@@ -325,26 +326,14 @@ export default function GymScheduleViewer({
                       <TableCell>{session.durationMinutes} min</TableCell>
                       <TableCell>{session.instructor || "TBA"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <span className="min-w-[3rem]">
-                            {enrolled}/{capacity}
-                          </span>
-                          {isFull ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
-                            >
-                              Full
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                            >
-                              Available
-                            </Badge>
-                          )}
-                        </div>
+                        <span
+                          className="text-muted-foreground font-medium text-sm whitespace-nowrap"
+                          style={{ letterSpacing: "0.01em" }}
+                        >
+                          {isFull
+                            ? "Full"
+                            : `${seatsLeft} seat${seatsLeft === 1 ? "" : "s"} left`}
+                        </span>
                       </TableCell>
                       {canRegister && (
                         <TableCell>
