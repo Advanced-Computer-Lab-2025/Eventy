@@ -52,6 +52,7 @@ router.post(
 router.post(
   "/gym/sessions/:sessionId/register",
   authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
   facilitiesController.registerForGymSession.bind(facilitiesController)
 );
 

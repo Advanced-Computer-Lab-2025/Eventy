@@ -209,13 +209,7 @@ export class FacilitiesController {
       }
 
       // Only allow specific roles to view gym schedules
-      const allowedRoles = [
-        "student",
-        "staff",
-        "events_office",
-        "ta",
-        "professor",
-      ];
+      const allowedRoles = ["student", "staff", "ta", "professor"];
       if (!allowedRoles.includes(req.user.role)) {
         throw new ApiError(
           403,
