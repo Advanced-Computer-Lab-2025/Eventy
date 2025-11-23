@@ -53,6 +53,49 @@ class PollServiceClass {
       );
     }
 
+    const now = new Date();
+    const ranges = applications.map((app) => {
+      const startDate = new Date(app.createdAt);
+      const endDate = new Date(app.createdAt);
+      const durationWeeks = app.durationWeeks || 1;
+      endDate.setDate(endDate.getDate() + durationWeeks * 7);
+      return { startDate, endDate };
+    });
+
+    const latestStart = ranges.reduce(
+      (max, r) => (r.startDate > max ? r.startDate : max),
+      ranges[0].startDate
+    );
+    const earliestEnd = ranges.reduce(
+      (min, r) => (r.endDate < min ? r.endDate : min),
+      ranges[0].endDate
+    );
+
+    if (latestStart >= earliestEnd) {
+      throw new ApiError(
+        400,
+        "The selected applications do not have overlapping durations for this booth"
+      );
+    }
+
+    // Prevent duplicate active polls for the exact same set of applications
+    const existingPoll = await Poll.findOne({
+      isActive: true,
+      "context.type": "booth_conflict",
+      relatedApplications: { $all: applications.map((app) => app._id) },
+    }).lean();
+
+    if (
+      existingPoll &&
+      Array.isArray(existingPoll.relatedApplications) &&
+      existingPoll.relatedApplications.length === applications.length
+    ) {
+      throw new ApiError(
+        400,
+        "An active poll already exists for these vendor requests. Please end the existing poll before creating a new one."
+      );
+    }
+
     const options = applications.map((app) => {
       const vendor = app.createdBy || {};
       const vendorName =

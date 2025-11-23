@@ -6,6 +6,7 @@ import {
   Dumbbell,
   Archive,
   FileText,
+  PieChart,
   Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -85,6 +86,16 @@ export default function EventsOfficeHeader() {
           >
             <ClipboardList className="h-4 w-4" />
             Vendor Requests
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/events-office/polls")}
+            data-testid="button-nav-polls"
+          >
+            <PieChart className="h-4 w-4" />
+            Polls
           </Button>
           <Button
             variant="ghost"
