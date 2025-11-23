@@ -291,7 +291,13 @@ export default function AdminDashboardPage() {
                                   )
                                 : "TBA"
                             }
-                            location={e.location || "Unknown location"}
+                            location={
+                              e.location ||
+                              (e.eventType === "platform_booth"
+                                ? e.locationPreference
+                                : null) ||
+                              "Unknown location"
+                            }
                             attendees={
                               Array.isArray(e.attendees)
                                 ? e.attendees.length
@@ -305,6 +311,7 @@ export default function AdminDashboardPage() {
                             description={e.description}
                             startDate={e.startDate}
                             endDate={e.endDate}
+                            durationWeeks={e.durationWeeks}
                             capacity={-1}
                             vendors={e.vendors || []}
                             showDetailedView={true}

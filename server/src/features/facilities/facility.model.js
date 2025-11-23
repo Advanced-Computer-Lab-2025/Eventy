@@ -48,6 +48,13 @@ const gymSessionSchema = new mongoose.Schema(
       enum: ["upcoming", "cancelled", "completed"],
       default: "upcoming",
     },
+    restrictedRoles: [
+      {
+        type: String,
+        enum: ["student", "staff", "ta", "professor", "vendor"],
+        default: [],
+      },
+    ],
     deletedAt: {
       type: Date,
       default: null,

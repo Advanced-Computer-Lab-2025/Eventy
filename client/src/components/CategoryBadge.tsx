@@ -9,6 +9,7 @@ export type EventCategory =
   // extend to support event types used across the app
   | "workshop"
   | "bazaar"
+  | "booth"
   | "trip"
   | "conference";
 
@@ -20,6 +21,7 @@ const categoryColors: Record<EventCategory, string> = {
   career: "bg-green-500/90 text-white hover:bg-green-500",
   workshop: "bg-indigo-500/90 text-white hover:bg-indigo-500",
   bazaar: "bg-violet-500/90 text-white hover:bg-violet-500",
+  booth: "bg-amber-500/90 text-white hover:bg-amber-500",
   trip: "bg-teal-500/90 text-white hover:bg-teal-500",
   conference: "bg-sky-500/90 text-white hover:bg-sky-500",
 };

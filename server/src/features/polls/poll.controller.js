@@ -1,4 +1,8 @@
 import { PollService } from "./poll.service.js";
+import {
+  createBoothConflictPollSchema,
+  endPollSchema,
+} from "./poll.validation.js";
 
 export class PollController {
   async listBoothConflictPolls(req, res, next) {
@@ -17,7 +21,22 @@ export class PollController {
 
   async createBoothConflictPoll(req, res, next) {
     try {
-      const { applicationIds, question } = req.body || {};
+      const { error, value } = createBoothConflictPollSchema.validate(
+        req.body,
+        { abortEarly: false }
+      );
+
+      if (error) {
+        const errorMessage = error.details
+          .map((detail) => detail.message)
+          .join(", ");
+        return res.status(400).json({
+          success: false,
+          message: errorMessage,
+        });
+      }
+
+      const { applicationIds, question } = value;
       const createdBy = req.user?._id;
 
       const poll = await PollService.createBoothConflictPoll({
@@ -38,7 +57,21 @@ export class PollController {
 
   async endPoll(req, res, next) {
     try {
-      const { pollId } = req.params;
+      const { error, value } = endPollSchema.validate(req.params, {
+        abortEarly: false,
+      });
+
+      if (error) {
+        const errorMessage = error.details
+          .map((detail) => detail.message)
+          .join(", ");
+        return res.status(400).json({
+          success: false,
+          message: errorMessage,
+        });
+      }
+
+      const { pollId } = value;
 
       const poll = await PollService.endPoll({ pollId });
 
@@ -52,4 +85,3 @@ export class PollController {
     }
   }
 }
-
