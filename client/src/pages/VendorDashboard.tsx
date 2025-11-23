@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Users,
   Target,
+  CreditCard,
 } from "lucide-react";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
@@ -39,6 +40,7 @@ import BazaarList from "@/components/BazaarList";
 import VendorApplicationDialog from "@/components/VendorApplicationDialog";
 import PlatformMap from "@/components/PlatformMap";
 import BoothApplicationDialog from "@/components/BoothApplicationDialog";
+import ApplicationPaymentDialog from "@/components/ApplicationPaymentDialog";
 import StatCard from "@/components/StatCard";
 import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
@@ -93,6 +95,11 @@ export default function VendorDashboard() {
   const [applicationToCancel, setApplicationToCancel] = useState<string | null>(
     null
   );
+
+  // Payment dialog state
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [selectedApplicationForPayment, setSelectedApplicationForPayment] =
+    useState<Application | null>(null);
 
   const { toast } = useToast();
 
@@ -503,16 +510,21 @@ export default function VendorDashboard() {
       />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Store className="h-8 w-8 text-primary" />
-            <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
-          </div>
-          <p className="text-muted-foreground">
-            Welcome, {companyName}! Manage your bazaar applications and platform
-            booth requests.
-          </p>
-        </div>
+        {activeTab !== "platform-booths" &&
+          activeTab !== "participating" &&
+          activeTab !== "pending" &&
+          activeTab !== "rejected" && (
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Store className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Vendor Dashboard</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Welcome, {companyName}! Manage your bazaar applications and
+                platform booth requests.
+              </p>
+            </div>
+          )}
 
         <Tabs
           value={activeTab}
@@ -791,6 +803,15 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="participating" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <CheckCircle className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">My Participations</h1>
+              </div>
+              <p className="text-muted-foreground">
+                View all your approved applications and platform booth requests.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredApprovedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
@@ -823,8 +844,8 @@ export default function VendorDashboard() {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2 text-sm">
+                    <CardContent className="flex flex-col flex-grow">
+                      <div className="space-y-2 text-sm mb-4 flex-grow">
                         {application.type === "bazaar" && application.event && (
                           <div className="flex items-center gap-2 text-muted-foreground">
                             <Calendar className="h-4 w-4 flex-shrink-0" />
@@ -871,6 +892,32 @@ export default function VendorDashboard() {
                           )}
                         </div>
                       </div>
+                      {application.paymentStatus === "paid" ? (
+                        <Button
+                          className="w-full mt-auto bg-blue-50 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 cursor-not-allowed"
+                          variant="outline"
+                          disabled
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Already Paid
+                        </Button>
+                      ) : application.paymentStatus === "overdue" ? (
+                        <Button className="w-full mt-auto" disabled>
+                          Payment Overdue
+                        </Button>
+                      ) : (
+                        <Button
+                          onClick={() => {
+                            setSelectedApplicationForPayment(application);
+                            setPaymentDialogOpen(true);
+                          }}
+                          className="w-full mt-auto"
+                          variant="default"
+                        >
+                          <CreditCard className="h-4 w-4 mr-2" />
+                          Pay Now
+                        </Button>
+                      )}
                     </CardContent>
                   </Card>
                 ))
@@ -879,6 +926,15 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="pending" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <Clock className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Pending Requests</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Applications and requests that are currently under review.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredPendingApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
@@ -975,6 +1031,16 @@ export default function VendorDashboard() {
           </TabsContent>
 
           <TabsContent value="rejected" className="space-y-4">
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-2">
+                <XCircle className="h-8 w-8 text-primary" />
+                <h1 className="text-4xl font-bold">Rejected Applications</h1>
+              </div>
+              <p className="text-muted-foreground">
+                Applications that were not approved. You can review and reapply
+                if needed.
+              </p>
+            </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {filteredRejectedApplications.length === 0 ? (
                 <div className="col-span-full text-center py-12">
@@ -1134,6 +1200,19 @@ export default function VendorDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Payment Dialog */}
+      {selectedApplicationForPayment && (
+        <ApplicationPaymentDialog
+          open={paymentDialogOpen}
+          onOpenChange={setPaymentDialogOpen}
+          application={selectedApplicationForPayment}
+          onPaymentSuccess={() => {
+            fetchApplicationsData();
+            setSelectedApplicationForPayment(null);
+          }}
+        />
+      )}
     </div>
   );
 }

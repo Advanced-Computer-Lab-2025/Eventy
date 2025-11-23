@@ -9,19 +9,12 @@ import {
   FolderOpen,
   Clock,
   CheckCircle2,
-  Home,
-  Search,
-  Bell,
-  User as UserIcon,
-  Heart,
-  MapPin,
   Store,
   GraduationCap,
   Route as RouteIcon,
   Megaphone,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Card,
   CardContent,
@@ -30,11 +23,8 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import ThemeToggle from "@/components/ThemeToggle";
-import Logo from "@/components/Logo";
-import ProfileMenu from "@/components/ProfileMenu";
-import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
+import StaffHeader from "@/components/StaffHeader";
+import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 interface RegisteredEvent {
@@ -60,7 +50,6 @@ export default function StaffTADashboard() {
   const [, setLocation] = useLocation();
   const [events, setEvents] = useState<RegisteredEvent[]>([]);
   const [registeredEvents, setRegisteredEvents] = useState<MyEvent[]>([]);
-  const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
@@ -250,54 +239,7 @@ export default function StaffTADashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Custom Header with Home and My Events only */}
-      <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
-        <div className="max-w-7xl mx-auto px-4 md:px-6">
-          <div className="flex h-16 items-center justify-between gap-4">
-            <div className="flex items-center gap-2 -ml-6">
-              <Logo size="xl" />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <ThemeToggle />
-              <ProfileMenu />
-            </div>
-          </div>
-
-          <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => setLocation("/staff-ta")}
-            >
-              <Home className="h-4 w-4" />
-              Home
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => setLocation("/my-events")}
-            >
-              <Calendar className="h-4 w-4" />
-              My Events
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="gap-2"
-              onClick={() => setLocation("/sports")}
-            >
-              <Dumbbell className="h-4 w-4" />
-              Sports Facilities
-            </Button>
-          </div>
-        </div>
-      </header>
+      <StaffHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Welcome Section */}

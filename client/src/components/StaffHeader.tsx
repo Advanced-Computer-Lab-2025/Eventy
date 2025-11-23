@@ -1,4 +1,4 @@
-import { Bell, User, Home, Calendar, Dumbbell } from "lucide-react";
+import { Bell, User, Home, Calendar, Dumbbell, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -44,7 +44,7 @@ export default function StaffHeader({
             data-testid="button-nav-home"
           >
             <Home className="h-4 w-4" />
-            Home
+            Dashboard
           </Button>
           <Button
             variant="ghost"
@@ -65,6 +65,16 @@ export default function StaffHeader({
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/favorites")}
+            data-testid="button-nav-favorites"
+          >
+            <Heart className="h-4 w-4" />
+            Favorites
           </Button>
         </div>
       </div>

@@ -1,8 +1,5 @@
 import {
-  Bell,
   Home,
-  CalendarDays,
-  Store,
   CheckCircle2,
   Plane,
   ClipboardList,
@@ -14,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
 
 export default function EventsOfficeHeader() {
@@ -30,13 +28,7 @@ export default function EventsOfficeHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
           </div>
@@ -52,26 +44,6 @@ export default function EventsOfficeHeader() {
           >
             <Home className="h-4 w-4" />
             Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/bazaar")}
-            data-testid="button-nav-bazaars"
-          >
-            <Store className="h-4 w-4" />
-            Bazaars
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/events-office/create/conference")}
-            data-testid="button-nav-conferences"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Conferences
           </Button>
           <Button
             variant="ghost"

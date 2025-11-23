@@ -59,6 +59,14 @@ router.get(
   eventsController.getMyWorkshops.bind(eventsController)
 );
 
+// Get participants and remaining spots for a workshop (professor only)
+router.get(
+  "/workshops/:workshopId/participants",
+  authMiddleware,
+  roleMiddleware(["professor"]),
+  eventsController.getWorkshopParticipants.bind(eventsController)
+);
+
 // Accept workshop
 router.patch(
   "/:id/accept",
@@ -231,6 +239,35 @@ router.post(
   authMiddleware,
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.registerForEvent.bind(eventsController)
+);
+
+// PATCH /events/:id/cancel
+router.patch(
+  "/:eventId/cancel",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.cancelEventRegistration.bind(eventsController)
+);
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
+
+router.patch(
+  "/:id/restrict-access",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.restrictAccess.bind(eventsController)
+);
+
+router.get(
+  "/reports/sales",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getSalesReport.bind(eventsController)
 );
 
 export default router;
