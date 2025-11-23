@@ -1244,7 +1244,14 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
 };
 
 export const getSalesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const {
+    eventType,
+    startDate,
+    endDate,
+    sortOrder = "desc",
+    page = 1,
+    limit = 10,
+  } = options;
 
   const skip = (page - 1) * limit;
 
@@ -1257,18 +1264,30 @@ export const getSalesReport = async (options = {}) => {
     eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
   }
 
-  if (startDate || endDate) {
-    eventFilter.startDate = {};
-    if (startDate) {
-      const s = new Date(startDate);
-      s.setHours(0, 0, 0, 0);
-      eventFilter.startDate.$gte = s;
-    }
-    if (endDate) {
-      const e = new Date(endDate);
-      e.setHours(23, 59, 59, 999);
-      eventFilter.startDate.$lte = e;
-    }
+  if (startDate && !endDate) {
+    // If only startDate is provided, get events starting on that exact date or after
+    const s = new Date(startDate);
+    const startOfDay = new Date(s);
+    startOfDay.setHours(0, 0, 0, 0);
+    eventFilter.startDate = { $gte: startOfDay };
+  } else if (startDate && endDate) {
+    // If both dates provided, get events starting on/after startDate AND ending on/before endDate (inclusive range)
+    const s = new Date(startDate);
+    const startOfStartDay = new Date(s);
+    startOfStartDay.setHours(0, 0, 0, 0);
+
+    const e = new Date(endDate);
+    const endOfEndDay = new Date(e);
+    endOfEndDay.setHours(23, 59, 59, 999);
+
+    eventFilter.startDate = { $gte: startOfStartDay };
+    eventFilter.endDate = { $lte: endOfEndDay };
+  } else if (!startDate && endDate) {
+    // If only endDate provided, get events ending on that exact date or before
+    const e = new Date(endDate);
+    const endOfDay = new Date(e);
+    endOfDay.setHours(23, 59, 59, 999);
+    eventFilter.endDate = { $lte: endOfDay };
   }
 
   const allEvents = await Event.find(eventFilter)
@@ -1490,11 +1509,23 @@ export const getSalesReport = async (options = {}) => {
       price: price,
       attendeesCount: attendeesCount,
       revenue: revenue.totalRevenue,
-      ...revenue,
+      totalRevenue: revenue.totalRevenue,
+      grossRevenue: revenue.grossRevenue,
+      totalRefunds: revenue.totalRefunds,
+      walletPayments: revenue.walletPayments,
+      cardPayments: revenue.cardPayments,
+      transactionCount: revenue.transactionCount,
     };
   });
 
-  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+  // Apply sorting based on sortOrder parameter
+  eventsWithRevenue.sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.totalRevenue - b.totalRevenue; // Least to Greatest
+    } else {
+      return b.totalRevenue - a.totalRevenue; // Greatest to Least (default)
+    }
+  });
 
   const totals = {
     totalEvents: eventsWithRevenue.length,
