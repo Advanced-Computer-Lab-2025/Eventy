@@ -18,7 +18,20 @@ import {
   Plane,
   Archive,
   FileText,
+  Users,
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,6 +102,12 @@ export default function EventsOfficeDashboard() {
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
   const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
   const [totalBooths, setTotalBooths] = useState<number | null>(null);
+
+  // Chart data states
+  const [allEvents, setAllEvents] = useState<any[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [applications, setApplications] = useState<any[]>([]);
+  const [loadingCharts, setLoadingCharts] = useState(true);
 
   const filteredPastEvents = pastEvents.filter((event: any) => {
     const q = pastEventSearch.trim().toLowerCase();
@@ -279,12 +298,160 @@ export default function EventsOfficeDashboard() {
     }
   };
 
+  const fetchAllEvents = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      // Use EventSearch component's approach - fetch all event types
+      const [bazaarsRes, conferencesRes, tripsRes, workshopsRes, boothsRes] =
+        await Promise.allSettled([
+          fetch(`${API_BASE_URL}/api/events/search?type=bazaar`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/events/admin/conferences`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/events/search?type=trip`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/events/allworkshops`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }),
+          fetch(`${API_BASE_URL}/api/events/search?type=platform_booth`, {
+            headers: {
+              "Content-Type": "application/json",
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            credentials: "include",
+          }),
+        ]);
+
+      const allEventsData: any[] = [];
+
+      // Process bazaars
+      if (bazaarsRes.status === "fulfilled" && bazaarsRes.value.ok) {
+        const data = await bazaarsRes.value.json();
+        if (Array.isArray(data.data)) {
+          allEventsData.push(...data.data);
+        }
+      }
+
+      // Process conferences
+      if (conferencesRes.status === "fulfilled" && conferencesRes.value.ok) {
+        const data = await conferencesRes.value.json();
+        const confs = Array.isArray(data.data) ? data.data : data;
+        allEventsData.push(...(Array.isArray(confs) ? confs : []));
+      }
+
+      // Process trips
+      if (tripsRes.status === "fulfilled" && tripsRes.value.ok) {
+        const data = await tripsRes.value.json();
+        if (Array.isArray(data.data)) {
+          allEventsData.push(...data.data);
+        }
+      }
+
+      // Process workshops
+      if (workshopsRes.status === "fulfilled" && workshopsRes.value.ok) {
+        const data = await workshopsRes.value.json();
+        const workshops = Array.isArray(data.data) ? data.data : data;
+        allEventsData.push(...(Array.isArray(workshops) ? workshops : []));
+      }
+
+      // Process platform booths
+      if (boothsRes.status === "fulfilled" && boothsRes.value.ok) {
+        const data = await boothsRes.value.json();
+        if (Array.isArray(data.data)) {
+          allEventsData.push(...data.data);
+        }
+      }
+
+      setAllEvents(allEventsData);
+    } catch (e) {
+      setAllEvents([]);
+    }
+  };
+
+  const fetchTransactions = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      // Try to fetch all transactions (for events office/admin)
+      // This endpoint should return all transactions when implemented
+      const res = await fetch(`${API_BASE_URL}/api/transactions`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Handle different response formats
+        const transactionsData = Array.isArray(data.data)
+          ? data.data
+          : Array.isArray(data.transactions)
+            ? data.transactions
+            : Array.isArray(data)
+              ? data
+              : [];
+        setTransactions(transactionsData);
+      } else {
+        // If endpoint doesn't exist yet (404) or access denied (403), set empty array
+        setTransactions([]);
+      }
+    } catch (e) {
+      // If endpoint doesn't exist, set empty array
+      setTransactions([]);
+    } finally {
+      setLoadingCharts(false);
+    }
+  };
+
+  const fetchApplications = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/applications/`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setApplications(Array.isArray(data.data) ? data.data : []);
+      } else {
+        setApplications([]);
+      }
+    } catch (e) {
+      setApplications([]);
+    }
+  };
+
   useEffect(() => {
     fetchBazaars();
     fetchPendingWorkshops();
     fetchPastEvents();
     fetchCountByType("trip");
     fetchCountByType("platform_booth");
+    fetchAllEvents();
+    fetchTransactions();
+    fetchApplications();
     const fetchConferences = async () => {
       try {
         setLoadingConfs(true);
@@ -347,6 +514,113 @@ export default function EventsOfficeDashboard() {
     createdBy: "",
   }));
 
+  // Calculate attendees by event type for pie chart
+  // For bazaars and platform booths, count attendees from applications
+  // For other event types, use attendees from the event itself
+  const attendeesByType = allEvents.reduce(
+    (acc, event) => {
+      const type = event.eventType || "other";
+      // For bazaars and booths, we'll calculate from applications separately
+      if (type === "bazaar" || type === "platform_booth") {
+        return acc; // Skip these here, we'll add them from applications
+      }
+      const attendeeCount = Array.isArray(event.attendees)
+        ? event.attendees.length
+        : event.attendeesCount || 0;
+      acc[type] = (acc[type] || 0) + attendeeCount;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  // Calculate attendees for bazaars and platform booths from applications
+  const bazaarAttendees = applications
+    .filter((app) => app.type === "bazaar" && app.status === "approved")
+    .reduce((total, app) => {
+      const attendeeCount = Array.isArray(app.attendees)
+        ? app.attendees.length
+        : 0;
+      return total + attendeeCount;
+    }, 0);
+
+  const boothAttendees = applications
+    .filter((app) => app.type === "booth" && app.status === "approved")
+    .reduce((total, app) => {
+      const attendeeCount = Array.isArray(app.attendees)
+        ? app.attendees.length
+        : 0;
+      return total + attendeeCount;
+    }, 0);
+
+  // Add bazaar and booth attendees to the totals
+  attendeesByType.bazaar = (attendeesByType.bazaar || 0) + bazaarAttendees;
+  attendeesByType.platform_booth =
+    (attendeesByType.platform_booth || 0) + boothAttendees;
+
+  const attendeesChartData = [
+    {
+      name: "Bazaar",
+      value: attendeesByType.bazaar || 0,
+      color: "#3b82f6", // blue
+    },
+    {
+      name: "Conference",
+      value: attendeesByType.conference || 0,
+      color: "#22c55e", // green
+    },
+    {
+      name: "Trip",
+      value: attendeesByType.trip || 0,
+      color: "#f97316", // orange
+    },
+    {
+      name: "Workshop",
+      value: attendeesByType.workshop || 0,
+      color: "#eab308", // yellow
+    },
+    {
+      name: "Platform Booth",
+      value: attendeesByType.platform_booth || 0,
+      color: "#8b5cf6", // purple
+    },
+  ].filter((item) => item.value > 0);
+
+  // Calculate revenue by month for bar chart
+  // Only use transactions from the transactions table (payment type, completed status)
+  const revenueByMonth = transactions
+    .filter(
+      (t) => t.type === "payment" && t.status === "completed" && t.createdAt
+    )
+    .reduce(
+      (acc, transaction) => {
+        const date = new Date(transaction.createdAt);
+        const monthKey = date.toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        });
+        acc[monthKey] = (acc[monthKey] || 0) + (transaction.amount || 0);
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+  // Get last 6 months
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const date = new Date();
+    date.setMonth(date.getMonth() - i);
+    const monthKey = date.toLocaleDateString("en-US", {
+      month: "short",
+      year: "numeric",
+    });
+    months.push({
+      name: monthKey,
+      revenue: revenueByMonth[monthKey] || 0,
+    });
+  }
+
+  const revenueChartData = months;
+
   return (
     <div className="min-h-screen bg-background">
       <EventsOfficeHeader />
@@ -359,51 +633,241 @@ export default function EventsOfficeDashboard() {
             approvals all in one place.
           </p>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mt-6">
-            {/* Left: Stats in two rows */}
+            {/* Left: Charts */}
             <div className="lg:col-span-2">
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <StatCard
-                  title="Total Bazaars"
-                  value={loadingBazaars ? "-" : bazaars.length}
-                  icon={CalendarDays}
-                  themed
-                />
-                <StatCard
-                  title="Total Events"
-                  value={
-                    loadingBazaars || loadingConfs
-                      ? "-"
-                      : bazaars.length + conferences.length
-                  }
-                  icon={Clock}
-                  themed
-                />
-                <StatCard
-                  title="Total Conferences"
-                  value={loadingConfs ? "-" : conferences.length}
-                  icon={CheckCircle2}
-                  themed
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4">
-                <StatCard
-                  title="Total Trips"
-                  value={totalTrips == null ? "-" : totalTrips}
-                  icon={Calendar}
-                  themed
-                />
-                <StatCard
-                  title="Total Workshops"
-                  value={totalWorkshops == null ? "-" : totalWorkshops}
-                  icon={ClipboardList}
-                  themed
-                />
-                <StatCard
-                  title="Total Booths"
-                  value={totalBooths == null ? "-" : totalBooths}
-                  icon={Archive}
-                  themed
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Attendees by Event Type Pie Chart */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold">
+                      Total Attendees by Event Type
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4">
+                    {loadingCharts ? (
+                      <div className="h-[280px] flex items-center justify-center">
+                        <p className="text-muted-foreground">Loading...</p>
+                      </div>
+                    ) : attendeesChartData.length === 0 ? (
+                      <div className="h-[280px] flex items-center justify-center">
+                        <p className="text-muted-foreground">
+                          No data available
+                        </p>
+                      </div>
+                    ) : (
+                      <>
+                        <ResponsiveContainer width="100%" height={280}>
+                          <PieChart>
+                            <Pie
+                              data={attendeesChartData}
+                              cx="45%"
+                              cy="50%"
+                              innerRadius={60}
+                              outerRadius={100}
+                              paddingAngle={5}
+                              dataKey="value"
+                              label={({
+                                name,
+                                value,
+                                cx,
+                                cy,
+                                midAngle,
+                                outerRadius,
+                              }) => {
+                                if (value === 0) return null;
+                                const RADIAN = Math.PI / 180;
+                                const radius = outerRadius + 25;
+                                const x =
+                                  cx + radius * Math.cos(-midAngle * RADIAN);
+                                const y =
+                                  cy + radius * Math.sin(-midAngle * RADIAN);
+                                const segmentData = attendeesChartData.find(
+                                  (item) => item.name === name
+                                );
+                                const labelColor = segmentData?.color || "#333";
+                                // Show "Booth" instead of "Platform Booth" on chart label
+                                const displayName =
+                                  name === "Platform Booth" ? "Booth" : name;
+                                return (
+                                  <text
+                                    x={x}
+                                    y={y}
+                                    fill={labelColor}
+                                    textAnchor={x > cx ? "start" : "end"}
+                                    dominantBaseline="central"
+                                    fontSize="11"
+                                  >
+                                    {`${displayName}: ${value}`}
+                                  </text>
+                                );
+                              }}
+                              labelLine={(props: any) => {
+                                if (props.value === 0) return null;
+                                const { points } = props;
+                                return (
+                                  <path
+                                    d={`M${points[0].x},${points[0].y}L${points[1].x},${points[1].y}`}
+                                    stroke="#666"
+                                    strokeWidth={1}
+                                    fill="none"
+                                  />
+                                );
+                              }}
+                            >
+                              {attendeesChartData.map((entry, index) => (
+                                <Cell
+                                  key={`cell-${index}`}
+                                  fill={entry.color}
+                                  stroke="none"
+                                />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              formatter={(value: number, name: string) => [
+                                Math.floor(value),
+                                name,
+                              ]}
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "8px",
+                                color: "hsl(var(--foreground))",
+                              }}
+                              itemStyle={{ color: "hsl(var(--foreground))" }}
+                              labelStyle={{ display: "none" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="mt-4 flex justify-center">
+                          <div className="flex flex-col gap-3 text-sm">
+                            {/* Row 1: Conference, Trip */}
+                            <div className="flex justify-center gap-6">
+                              {attendeesChartData
+                                .filter(
+                                  (item) =>
+                                    item.name === "Conference" ||
+                                    item.name === "Trip"
+                                )
+                                .sort((a, b) => {
+                                  const order = ["Conference", "Trip"];
+                                  return (
+                                    order.indexOf(a.name) -
+                                    order.indexOf(b.name)
+                                  );
+                                })
+                                .map((item) => (
+                                  <div
+                                    key={item.name}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div
+                                      className="w-3 h-3 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                    <span className="text-muted-foreground font-medium">
+                                      {item.name}
+                                    </span>
+                                  </div>
+                                ))}
+                            </div>
+                            {/* Row 2: Bazaar, Platform Booth, Workshop */}
+                            <div className="flex justify-center gap-6">
+                              {attendeesChartData
+                                .filter(
+                                  (item) =>
+                                    item.name === "Bazaar" ||
+                                    item.name === "Platform Booth" ||
+                                    item.name === "Workshop"
+                                )
+                                .sort((a, b) => {
+                                  const order = [
+                                    "Bazaar",
+                                    "Platform Booth",
+                                    "Workshop",
+                                  ];
+                                  return (
+                                    order.indexOf(a.name) -
+                                    order.indexOf(b.name)
+                                  );
+                                })
+                                .map((item) => (
+                                  <div
+                                    key={item.name}
+                                    className="flex items-center gap-2"
+                                  >
+                                    <div
+                                      className="w-3 h-3 rounded-full flex-shrink-0"
+                                      style={{ backgroundColor: item.color }}
+                                    />
+                                    <span className="text-muted-foreground font-medium">
+                                      {item.name}
+                                    </span>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Revenue by Month Bar Chart */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold">
+                      Revenue by Month
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0 px-4">
+                    {loadingCharts ? (
+                      <div className="h-[280px] flex items-center justify-center">
+                        <p className="text-muted-foreground">Loading...</p>
+                      </div>
+                    ) : revenueChartData.length === 0 ||
+                      revenueChartData.every((d) => d.revenue === 0) ? (
+                      <div className="h-[280px] flex items-center justify-center">
+                        <p className="text-muted-foreground">
+                          No data available
+                        </p>
+                      </div>
+                    ) : (
+                      <ResponsiveContainer width="100%" height={280}>
+                        <BarChart
+                          data={revenueChartData}
+                          margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                        >
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="name" />
+                          <YAxis
+                            allowDecimals={false}
+                            tickFormatter={(value) => `$${value}`}
+                          />
+                          <Tooltip
+                            formatter={(value: number) =>
+                              `$${value.toFixed(2)}`
+                            }
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--background))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              color: "hsl(var(--foreground))",
+                            }}
+                            labelStyle={{ color: "hsl(var(--foreground))" }}
+                          />
+                          <Bar dataKey="revenue" fill="#8b5cf6" barSize={60}>
+                            {revenueChartData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.revenue > 0 ? "#8b5cf6" : "#e5e7eb"}
+                              />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             </div>
             {/* Right: Quick Actions Card */}

@@ -241,6 +241,22 @@ router.post(
   eventsController.registerForEvent.bind(eventsController)
 );
 
+// Get registered users for a specific event (events_office only)
+router.get(
+  "/registered-users/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.getEventRegisteredUsers.bind(eventsController)
+);
+
+// Export registered users for a specific event (events_office only)
+// Supports query param ?format=xlsx|pdf|csv (default: xlsx)
+router.get(
+  "/export-registered/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.exportEventRegisteredUsers.bind(eventsController)
+);
 // PATCH /events/:id/cancel
 router.patch(
   "/:eventId/cancel",

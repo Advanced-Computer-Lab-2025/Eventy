@@ -2,9 +2,20 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
+import xlsx from "xlsx";
+import PDFDocument from "pdfkit";
+import { Parser } from "json2csv";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 import { TransactionService } from "../transactions/transaction.service.js";
 const transactionService = new TransactionService();
+import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
+import mongoose from "mongoose";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -843,6 +854,265 @@ export const archiveEvent = async (eventId, user) => {
   return updatedEvent;
 };
 
+export const getEventRegisteredUsers = async (eventId) => {
+  // Find event and populate attendees with firstName, lastName and role
+  const event = await Event.findById(eventId)
+    .select("attendees deletedAt")
+    .populate("attendees", "firstName lastName role");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view attendees of a deleted event");
+  }
+
+  // Check if attendees array is empty or doesn't exist
+  if (!event.attendees || event.attendees.length === 0) {
+    throw new ApiError(404, "No registered users for this event");
+  }
+
+  // Map to minimal shape with only required fields
+  const registeredUsers = event.attendees.map((user) => ({
+    _id: user._id,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    role: user.role,
+  }));
+
+  return registeredUsers;
+};
+
+export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
+  const validFormats = ["xlsx", "pdf", "csv"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  const registeredUsers = await getEventRegisteredUsers(eventId);
+  const event = await Event.findById(eventId).select("name");
+  const eventName = event?.name || "event";
+  const sanitizedEventName = eventName.replace(/[^a-z0-9]/gi, "_");
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  switch (format.toLowerCase()) {
+    case "xlsx":
+      const worksheetData = [
+        ["First Name", "Last Name", "Role"],
+        ...registeredUsers.map((user) => [
+          user.firstName,
+          user.lastName,
+          user.role,
+        ]),
+      ];
+      const worksheet = xlsx.utils.aoa_to_sheet(worksheetData);
+
+      const headerStyle = {
+        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
+        fill: { fgColor: { rgb: "210051" } },
+        alignment: { horizontal: "center", vertical: "center" },
+        border: {
+          top: { style: "thin", color: { rgb: "210051" } },
+          bottom: { style: "thin", color: { rgb: "210051" } },
+          left: { style: "thin", color: { rgb: "210051" } },
+          right: { style: "thin", color: { rgb: "210051" } },
+        },
+      };
+
+      worksheet["A1"].s = headerStyle;
+      worksheet["B1"].s = headerStyle;
+      worksheet["C1"].s = headerStyle;
+
+      for (let i = 2; i <= registeredUsers.length + 1; i++) {
+        const rowStyle = {
+          fill: { fgColor: { rgb: i % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
+          border: {
+            top: { style: "thin", color: { rgb: "E5E7EB" } },
+            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
+            left: { style: "thin", color: { rgb: "E5E7EB" } },
+            right: { style: "thin", color: { rgb: "E5E7EB" } },
+          },
+        };
+        ["A", "B", "C"].forEach((col) => {
+          if (worksheet[`${col}${i}`]) worksheet[`${col}${i}`].s = rowStyle;
+        });
+      }
+
+      worksheet["!cols"] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }];
+
+      const workbook = xlsx.utils.book_new();
+      xlsx.utils.book_append_sheet(workbook, worksheet, "Registered Users");
+      buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+      mimeType =
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
+      break;
+
+    case "pdf":
+      const doc = new PDFDocument({ margin: 50, size: "A4" });
+      const chunks = [];
+      doc.on("data", (chunk) => chunks.push(chunk));
+
+      const logoLightPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-light.png"
+      );
+      const logoDarkPath = path.join(
+        __dirname,
+        "../../../../client/public/images/logo-dark.png"
+      );
+
+      // Watermark
+      if (fs.existsSync(logoLightPath)) {
+        doc
+          .save()
+          .opacity(0.03)
+          .image(
+            logoLightPath,
+            doc.page.width / 2 - 150,
+            doc.page.height / 2 - 150,
+            { width: 300, height: 300 }
+          )
+          .restore();
+      }
+
+      // Header function for all pages
+      const drawHeader = () => {
+        if (fs.existsSync(logoLightPath)) {
+          doc.image(logoLightPath, 50, 40, { width: 70 });
+        }
+        doc
+          .fillColor("#1a202c")
+          .fontSize(22)
+          .font("Helvetica-Bold")
+          .text("Registered Users Report", 135, 45)
+          .fillColor("#4a5568")
+          .fontSize(15)
+          .font("Helvetica")
+          .text(`Event: ${eventName}`, 135, 70)
+          .fontSize(11)
+          .fillColor("#718096")
+          .text(
+            `Generated: ${new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}`,
+            135,
+            90
+          );
+        doc
+          .moveTo(50, 115)
+          .lineTo(doc.page.width - 50, 115)
+          .strokeColor("#E5E7EB")
+          .lineWidth(1)
+          .stroke();
+      };
+
+      drawHeader();
+
+      // Total users count below purple line
+      doc.y = 130;
+      doc
+        .fontSize(12)
+        .fillColor("#210051")
+        .font("Helvetica-Bold")
+        .text(`Total Registered Users: ${registeredUsers.length}`, 50, doc.y, {
+          align: "left",
+        });
+
+      doc.y += 10;
+
+      const col1X = 50,
+        col2X = 220,
+        col3X = 390,
+        rowHeight = 25;
+
+      // Table header
+      doc
+        .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+        .fillColor("#210051")
+        .fill();
+      const headerY = doc.y + 8;
+      doc
+        .fillColor("#FFFFFF")
+        .fontSize(12)
+        .font("Helvetica-Bold")
+        .text("First Name", col1X + 5, headerY, { width: 160 })
+        .text("Last Name", col2X + 5, headerY, { width: 160 })
+        .text("Role", col3X + 5, headerY, { width: 150 });
+      doc.y += rowHeight;
+
+      // Table rows
+      doc.font("Helvetica").fontSize(11);
+      registeredUsers.forEach((user, index) => {
+        if (doc.y > doc.page.height - 80) {
+          doc.addPage();
+          drawHeader();
+          doc.y = 130;
+
+          // Redraw table header on new page
+          doc
+            .rect(col1X, doc.y, doc.page.width - 100, rowHeight)
+            .fillColor("#210051")
+            .fill();
+          doc
+            .fillColor("#FFFFFF")
+            .fontSize(12)
+            .font("Helvetica-Bold")
+            .text("First Name", col1X + 5, doc.y + 8, { width: 160 })
+            .text("Last Name", col2X + 5, doc.y + 8, { width: 160 })
+            .text("Role", col3X + 5, doc.y + 8, { width: 150 });
+          doc.y += rowHeight;
+          doc.font("Helvetica").fontSize(11);
+        }
+
+        const currentY = doc.y;
+        // Alternating row colors
+        doc
+          .rect(col1X, currentY, doc.page.width - 100, rowHeight)
+          .fillColor(index % 2 === 0 ? "#F9FAFB" : "#FFFFFF")
+          .fill();
+
+        doc
+          .fillColor("#1F2937")
+          .text(user.firstName || "-", col1X + 5, currentY + 6, { width: 160 })
+          .text(user.lastName || "-", col2X + 5, currentY + 6, { width: 160 })
+          .text(user.role || "-", col3X + 5, currentY + 6, { width: 150 });
+        doc.y = currentY + rowHeight;
+      });
+
+      doc.end();
+      await new Promise((resolve) =>
+        doc.on("end", () => {
+          buffer = Buffer.concat(chunks);
+          resolve();
+        })
+      );
+      mimeType = "application/pdf";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.pdf`;
+      break;
+
+    case "csv":
+      const parser = new Parser({
+        fields: [
+          { label: "First Name", value: "firstName" },
+          { label: "Last Name", value: "lastName" },
+          { label: "Role", value: "role" },
+        ],
+        header: true,
+      });
+      buffer = Buffer.from(parser.parse(registeredUsers), "utf-8");
+      mimeType = "text/csv";
+      filename = `${sanitizedEventName}_registered_users_${timestamp}.csv`;
+      break;
+  }
+
+  return { buffer, filename, mimeType };
+};
+
 /**
  * Cancels a user's registration for an event and processes a refund if eligible.
  * - Only allows cancellation at least 2 weeks before the event start date.
@@ -984,22 +1254,70 @@ export const getSalesReport = async (options = {}) => {
   }
 
   const allEvents = await Event.find(eventFilter)
-    .select("_id name eventType startDate endDate location")
+    .select("_id name eventType startDate endDate location price attendees")
     .lean();
 
   const eventIds = allEvents.map((e) => e._id);
 
+  // Convert eventIds to ObjectIds for proper matching
+  const eventObjectIds = eventIds.map((id) =>
+    mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
+  );
+
   const transactionData = await Transaction.aggregate([
-    // 1️⃣ Match completed transactions that have a related entity ID
+    // 1️⃣ Match completed transactions (both Event and Application types)
     {
       $match: {
-        "relatedEntity.id": { $ne: null }, // ignore transactions without an ID
         type: { $in: ["payment", "refund"] },
         status: "completed",
+        $or: [
+          // Direct Event transactions
+          {
+            "relatedEntity.type": "Event",
+            "relatedEntity.id": { $in: eventObjectIds },
+          },
+          // Application transactions (we'll filter by event later)
+          {
+            "relatedEntity.type": "Application",
+          },
+        ],
       },
     },
 
-    // 2️⃣ Add netAmount: payments positive, refunds negative
+    // 2️⃣ Lookup Application to get event ID for Application transactions
+    {
+      $lookup: {
+        from: "applications",
+        localField: "relatedEntity.id",
+        foreignField: "_id",
+        as: "application",
+      },
+    },
+    {
+      $unwind: { path: "$application", preserveNullAndEmptyArrays: true },
+    },
+
+    // 3️⃣ Determine the actual event ID for each transaction
+    {
+      $addFields: {
+        eventId: {
+          $cond: [
+            { $eq: ["$relatedEntity.type", "Event"] },
+            "$relatedEntity.id",
+            "$application.event", // For Application transactions, use the application's event
+          ],
+        },
+      },
+    },
+
+    // 4️⃣ Filter to only include transactions for our events
+    {
+      $match: {
+        eventId: { $in: eventObjectIds },
+      },
+    },
+
+    // 5️⃣ Add netAmount: payments positive, refunds negative
     {
       $addFields: {
         netAmount: {
@@ -1012,10 +1330,10 @@ export const getSalesReport = async (options = {}) => {
       },
     },
 
-    // 3️⃣ Group by event ID
+    // 6️⃣ Group by event ID
     {
       $group: {
-        _id: "$relatedEntity.id",
+        _id: "$eventId",
         totalRevenue: { $sum: "$netAmount" },
         grossRevenue: {
           $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
@@ -1076,15 +1394,51 @@ export const getSalesReport = async (options = {}) => {
 
   const revenueMap = {};
   transactionData.forEach((item) => {
-    revenueMap[item._id.toString()] = {
-      totalRevenue: item.totalRevenue || 0,
-      grossRevenue: item.grossRevenue || 0,
-      totalRefunds: item.totalRefunds || 0,
-      walletPayments: item.walletPayments || 0,
-      cardPayments: item.cardPayments || 0,
-      transactionCount: item.transactionCount || 0,
-    };
+    // Convert ObjectId to string for consistent key matching
+    const eventIdKey = item._id ? item._id.toString() : null;
+    if (eventIdKey) {
+      revenueMap[eventIdKey] = {
+        totalRevenue: item.totalRevenue || 0,
+        grossRevenue: item.grossRevenue || 0,
+        totalRefunds: item.totalRefunds || 0,
+        walletPayments: item.walletPayments || 0,
+        cardPayments: item.cardPayments || 0,
+        transactionCount: item.transactionCount || 0,
+      };
+    }
   });
+
+  // Get attendee counts from applications for bazaar events
+  const bazaarEventIds = allEvents
+    .filter((e) => e.eventType === "bazaar")
+    .map((e) => e._id);
+
+  const applicationAttendeesMap = {};
+  if (bazaarEventIds.length > 0) {
+    const applicationAttendeesData = await Application.aggregate([
+      {
+        $match: {
+          event: { $in: bazaarEventIds },
+          status: "approved", // Only count approved applications
+        },
+      },
+      {
+        $group: {
+          _id: "$event",
+          totalAttendees: {
+            $sum: { $size: { $ifNull: ["$attendees", []] } },
+          },
+        },
+      },
+    ]);
+
+    applicationAttendeesData.forEach((item) => {
+      const eventIdKey = item._id ? item._id.toString() : null;
+      if (eventIdKey) {
+        applicationAttendeesMap[eventIdKey] = item.totalAttendees || 0;
+      }
+    });
+  }
 
   const eventsWithRevenue = allEvents.map((event) => {
     const eventIdStr = event._id.toString();
@@ -1097,13 +1451,27 @@ export const getSalesReport = async (options = {}) => {
       transactionCount: 0,
     };
 
+    // For bazaar events, count attendees from applications; for others, use event.attendees
+    let attendeesCount = 0;
+    if (event.eventType === "bazaar") {
+      attendeesCount = applicationAttendeesMap[eventIdStr] || 0;
+    } else {
+      attendeesCount = event.attendees ? event.attendees.length : 0;
+    }
+
+    // Price is only required for trip and workshop, others should be null/undefined
+    const price = event.price || null;
+
     return {
       _id: event._id,
-      eventName: event.name,
+      name: event.name,
       eventType: event.eventType,
       startDate: event.startDate,
       endDate: event.endDate,
       location: event.location,
+      price: price,
+      attendeesCount: attendeesCount,
+      revenue: revenue.totalRevenue,
       ...revenue,
     };
   });
@@ -1113,6 +1481,10 @@ export const getSalesReport = async (options = {}) => {
   const totals = {
     totalEvents: eventsWithRevenue.length,
     totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    totalAttendees: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.attendeesCount,
+      0
+    ),
     grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
     totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
     totalWalletPayments: eventsWithRevenue.reduce(
@@ -1130,6 +1502,7 @@ export const getSalesReport = async (options = {}) => {
   return {
     totalEvents: totals.totalEvents,
     totalRevenue: totals.totalRevenue,
+    totalAttendees: totals.totalAttendees,
     grossRevenue: totals.grossRevenue,
     totalRefunds: totals.totalRefunds,
     netRevenue: totals.totalRevenue,

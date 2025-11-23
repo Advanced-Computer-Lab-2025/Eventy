@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover"; // Import the NotificationsPopover
 import { useLocation } from "wouter";
 
 interface StaffHeaderProps {
@@ -30,14 +31,10 @@ export default function StaffHeader({
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-2 relative">
+            {/* Notifications Popover */}
+            <NotificationsPopover />
+
             <ThemeToggle />
             <ProfileMenu />
           </div>
