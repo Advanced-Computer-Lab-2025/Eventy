@@ -1,18 +1,20 @@
+import React from "react"; // No longer need useState here
+import { useLocation } from "wouter";
 import {
   Bell,
-  User,
   Home,
   Calendar,
   Dumbbell,
   Heart,
   Gift,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
-import { useLocation } from "wouter";
 import NotificationsPopover from "./NotificationsPopover";
+import WalletPopover from "./WalletPopover"; // Import the new WalletPopover
 
 interface StudentHeaderProps {
   homeHref?: string;
@@ -31,64 +33,57 @@ export default function StudentHeader({
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
+            {/* The WalletPopover now contains its own trigger button */}
+            <WalletPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
           </div>
         </div>
 
+        {/* Navigation Tabs */}
         <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
+          {/* ... all your navigation buttons ... */}
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation(homeHref)}
-            data-testid="button-nav-home"
           >
-            <Home className="h-4 w-4" />
-            Dashboard
+            <Home className="h-4 w-4" /> Dashboard
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/my-events")}
-            data-testid="button-nav-my-events"
           >
-            <Calendar className="h-4 w-4" />
-            My Events
+            <Calendar className="h-4 w-4" /> My Events
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/sports")}
-            data-testid="button-nav-sports"
           >
-            <Dumbbell className="h-4 w-4" />
-            Sports Facilities
+            <Dumbbell className="h-4 w-4" /> Sports Facilities
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/favorites")}
-            data-testid="button-nav-favorites"
           >
-            <Heart className="h-4 w-4" />
-            Favorites
+            <Heart className="h-4 w-4" /> Favorites
           </Button>
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={() => setLocation("/loyalty-partners")}
-            data-testid="button-nav-loyalty-partners"
           >
-            {console.log("Rendering Gift icon")}
-            <Gift className="h-4 w-4" /> {/* Added Gift icon */}
-            Loyalty Partners
+            <Gift className="h-4 w-4" /> Loyalty Partners
           </Button>
         </div>
       </div>
