@@ -1,5 +1,4 @@
 import {
-  Bell,
   Home,
   CheckCircle2,
   Plane,
@@ -12,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
 
 export default function EventsOfficeHeader() {
@@ -28,13 +28,7 @@ export default function EventsOfficeHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
           </div>

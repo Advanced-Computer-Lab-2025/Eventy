@@ -15,9 +15,26 @@ export const createTripSchema = Joi.object({
   description: Joi.string().trim().required(),
   startDate: Joi.date().required(),
   endDate: Joi.date().required(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "Start time is required",
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .required()
+    .messages({
+      "any.required": "End time is required",
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
   registrationDeadline: Joi.date().required(),
   price: Joi.number().positive().required(),
   capacity: Joi.number().integer().min(1).optional(),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
 });
 
 export const createConferenceSchema = Joi.object({
@@ -214,6 +231,16 @@ export const updateTripSchema = Joi.object({
   location: Joi.string(),
   startDate: Joi.date().greater("now"),
   endDate: Joi.date(),
+  startTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .messages({
+      "string.pattern.base": "Start time must be in HH:mm format",
+    }),
+  endTime: Joi.string()
+    .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .messages({
+      "string.pattern.base": "End time must be in HH:mm format",
+    }),
   registrationDeadline: Joi.date(),
   capacity: Joi.number(),
   price: Joi.number().positive(),
@@ -251,6 +278,9 @@ export const createBazaarSchema = Joi.object({
   capacity: Joi.number().integer().min(1).optional(),
   bannerImage: Joi.string().uri().optional(),
   extraResources: Joi.string().optional(),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
 }).unknown(false);
 
 export const updateBazaarSchema = Joi.object({
@@ -313,6 +343,9 @@ export const updateBazaarSchema = Joi.object({
       "string.pattern.base": "End time must be in HH:mm format",
     }),
 
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
   // Prevent fields that belong to other event types
   price: Joi.forbidden(),
   agenda: Joi.forbidden(),
@@ -356,3 +389,17 @@ export const getAttendeesReportSchema = Joi.object({
   page: Joi.number().integer().min(1).default(1),
   limit: Joi.number().integer().min(1).max(100).default(10),
 }).options({ stripUnknown: true });
+
+export const restrictAccessSchema = Joi.object({
+  roles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .required(),
+});
+
+export const getSalesReportSchema = Joi.object({
+  eventType: Joi.string().optional().allow(""),
+  startDate: Joi.date().iso().optional(),
+  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional(),
+  page: Joi.number().integer().min(1).optional(),
+  limit: Joi.number().integer().min(1).max(100).optional(),
+});

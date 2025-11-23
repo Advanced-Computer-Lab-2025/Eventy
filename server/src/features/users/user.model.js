@@ -39,6 +39,12 @@ const userSchema = new mongoose.Schema(
     taxCardUrl: {
       type: String,
     },
+    status: {
+      type: String,
+      enum: ["active", "blocked"],
+      default: "active",
+      index: true,
+    },
     role: {
       type: String,
       required: false,
@@ -75,6 +81,15 @@ const userSchema = new mongoose.Schema(
     verificationToken: { type: String },
 
     deletedAt: { type: Date, default: null },
+
+    // Store favorite events for students, staff, TAs, and professors
+    favoriteEvents: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Event",
+        default: [],
+      },
+    ],
   },
   { timestamps: true }
 );

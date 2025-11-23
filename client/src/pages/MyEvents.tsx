@@ -167,7 +167,7 @@ export default function MyEvents() {
       {userRole === "professor" ? (
         <ProfessorHeader homeHref="/professor" />
       ) : userRole === "staff" || userRole === "ta" ? (
-        <StaffHeader homeHref="/staff-ta" />
+        <StaffHeader />
       ) : (
         <StudentHeader />
       )}

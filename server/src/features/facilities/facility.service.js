@@ -155,7 +155,7 @@ class FacilitiesServiceClass {
    * @success 200 OK - Returns { success, message, data: [sessionObjects] }
    * @error   401 Unauthorized
    */
-  async getGymSessions(month, year) {
+  async getGymSessions(month, year, userRole = null) {
     if (!month || !year) {
       throw new Error("Month and year parameters are required");
     }
@@ -163,11 +163,21 @@ class FacilitiesServiceClass {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const sessions = await GymSession.find({
+    const filter = {
       date: { $gte: startOfMonth, $lte: endOfMonth },
       deletedAt: null,
       status: { $ne: "cancelled" }, // Exclude cancelled sessions
-    }).sort({ date: 1, startTime: 1 });
+    };
+
+    // Filter out sessions where the user's role is restricted
+    if (userRole && userRole !== "admin" && userRole !== "events_office") {
+      filter.restrictedRoles = { $ne: userRole };
+    }
+
+    const sessions = await GymSession.find(filter).sort({
+      date: 1,
+      startTime: 1,
+    });
 
     return sessions;
   }
@@ -178,7 +188,15 @@ class FacilitiesServiceClass {
    * @param {Object} user - Authenticated user
    */
   async createGymSession(data) {
-    const { date, time, duration, type, instructor, maxParticipants } = data;
+    const {
+      date,
+      time,
+      duration,
+      type,
+      instructor,
+      maxParticipants,
+      restrictedRoles,
+    } = data;
 
     const newSession = new GymSession({
       date,
@@ -187,6 +205,7 @@ class FacilitiesServiceClass {
       type,
       instructor: instructor,
       maxParticipants: maxParticipants,
+      restrictedRoles: restrictedRoles || [],
     });
 
     await newSession.save();
@@ -303,6 +322,9 @@ class FacilitiesServiceClass {
     }
     if (updates.durationMinutes !== undefined) {
       session.durationMinutes = updates.durationMinutes;
+    }
+    if (updates.restrictedRoles !== undefined) {
+      session.restrictedRoles = updates.restrictedRoles;
     }
 
     // Save the updated session
