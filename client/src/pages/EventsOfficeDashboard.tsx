@@ -390,8 +390,7 @@ export default function EventsOfficeDashboard() {
   const fetchTransactions = async () => {
     try {
       const token = localStorage.getItem("token");
-      // Try to fetch all transactions (for events office/admin)
-      // This endpoint should return all transactions when implemented
+      // Fetch all transactions (for events office/admin)
       const res = await fetch(`${API_BASE_URL}/api/transactions`, {
         headers: {
           "Content-Type": "application/json",
@@ -411,11 +410,12 @@ export default function EventsOfficeDashboard() {
               : [];
         setTransactions(transactionsData);
       } else {
-        // If endpoint doesn't exist yet (404) or access denied (403), set empty array
+        const errorData = await res.json().catch(() => ({}));
+        console.error("Failed to fetch transactions:", res.status, errorData);
         setTransactions([]);
       }
     } catch (e) {
-      // If endpoint doesn't exist, set empty array
+      console.error("Error fetching transactions:", e);
       setTransactions([]);
     } finally {
       setLoadingCharts(false);
@@ -588,17 +588,27 @@ export default function EventsOfficeDashboard() {
   // Calculate revenue by month for bar chart
   // Only use transactions from the transactions table (payment type, completed status)
   const revenueByMonth = transactions
-    .filter(
-      (t) => t.type === "payment" && t.status === "completed" && t.createdAt
-    )
+    .filter((t) => {
+      if (!t || t.type !== "payment" || t.status !== "completed") return false;
+      if (!t.createdAt) return false;
+      const date = new Date(t.createdAt);
+      return !isNaN(date.getTime()); // Validate date
+    })
     .reduce(
       (acc, transaction) => {
-        const date = new Date(transaction.createdAt);
-        const monthKey = date.toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        });
-        acc[monthKey] = (acc[monthKey] || 0) + (transaction.amount || 0);
+        try {
+          const date = new Date(transaction.createdAt);
+          if (isNaN(date.getTime())) return acc; // Skip invalid dates
+          const monthKey = date.toLocaleDateString("en-US", {
+            month: "short",
+            year: "numeric",
+          });
+          const amount = Number(transaction.amount) || 0;
+          acc[monthKey] = (acc[monthKey] || 0) + amount;
+        } catch (e) {
+          // Skip transactions with invalid dates
+          console.error("Error processing transaction date:", e);
+        }
         return acc;
       },
       {} as Record<string, number>
@@ -615,11 +625,14 @@ export default function EventsOfficeDashboard() {
     });
     months.push({
       name: monthKey,
-      revenue: revenueByMonth[monthKey] || 0,
+      revenue: Number(revenueByMonth[monthKey] || 0),
     });
   }
 
   const revenueChartData = months;
+
+  // Purple and pink colors like vendor dashboard
+  const barColors = ["#8b5cf6", "#ec4899"]; // purple-500, pink-500
 
   return (
     <div className="min-h-screen bg-background">
@@ -825,7 +838,7 @@ export default function EventsOfficeDashboard() {
                         <p className="text-muted-foreground">Loading...</p>
                       </div>
                     ) : revenueChartData.length === 0 ||
-                      revenueChartData.every((d) => d.revenue === 0) ? (
+                      revenueChartData.every((d) => Number(d.revenue) === 0) ? (
                       <div className="h-[280px] flex items-center justify-center">
                         <p className="text-muted-foreground">
                           No data available
@@ -835,18 +848,31 @@ export default function EventsOfficeDashboard() {
                       <ResponsiveContainer width="100%" height={280}>
                         <BarChart
                           data={revenueChartData}
-                          margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                          margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
-                          <XAxis dataKey="name" />
+                          <XAxis
+                            dataKey="name"
+                            tick={{ fontSize: 12 }}
+                            angle={-45}
+                            textAnchor="end"
+                            height={60}
+                          />
                           <YAxis
-                            allowDecimals={false}
-                            tickFormatter={(value) => `$${value}`}
+                            tickFormatter={(value) => {
+                              if (value >= 1000) {
+                                return `$${(value / 1000).toFixed(1)}k`;
+                              }
+                              return `$${value}`;
+                            }}
+                            tick={{ fontSize: 12 }}
+                            width={60}
                           />
                           <Tooltip
-                            formatter={(value: number) =>
-                              `$${value.toFixed(2)}`
-                            }
+                            formatter={(value: number) => {
+                              const numValue = Number(value);
+                              return `$${numValue.toFixed(2)}`;
+                            }}
                             contentStyle={{
                               backgroundColor: "hsl(var(--background))",
                               border: "1px solid hsl(var(--border))",
@@ -859,7 +885,11 @@ export default function EventsOfficeDashboard() {
                             {revenueChartData.map((entry, index) => (
                               <Cell
                                 key={`cell-${index}`}
-                                fill={entry.revenue > 0 ? "#8b5cf6" : "#e5e7eb"}
+                                fill={
+                                  Number(entry.revenue) > 0
+                                    ? barColors[index % barColors.length]
+                                    : "#e5e7eb"
+                                }
                               />
                             ))}
                           </Bar>

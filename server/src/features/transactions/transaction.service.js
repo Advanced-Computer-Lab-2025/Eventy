@@ -290,6 +290,14 @@ export class TransactionService {
   async getUserTransactions(userId) {
     return await Transaction.find({ userId }).sort({ createdAt: -1 });
   }
+
+  /**
+   * Get all transactions (for admin/events office)
+   * @returns {Promise<Transaction[]>}
+   */
+  async getAllTransactions() {
+    return await Transaction.find({}).sort({ createdAt: -1 });
+  }
   /**
    * Calculates the participation fee for a vendor application.
    * For booth: based on duration and location
