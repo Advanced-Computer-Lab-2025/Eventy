@@ -723,7 +723,18 @@ export default function EventsOfficeDashboard() {
                               ))}
                             </Pie>
                             <Tooltip
-                              formatter={(value: number) => Math.floor(value)}
+                              formatter={(value: number, name: string) => [
+                                Math.floor(value),
+                                name,
+                              ]}
+                              contentStyle={{
+                                backgroundColor: "hsl(var(--background))",
+                                border: "1px solid hsl(var(--border))",
+                                borderRadius: "8px",
+                                color: "hsl(var(--foreground))",
+                              }}
+                              itemStyle={{ color: "hsl(var(--foreground))" }}
+                              labelStyle={{ display: "none" }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
@@ -836,6 +847,13 @@ export default function EventsOfficeDashboard() {
                             formatter={(value: number) =>
                               `$${value.toFixed(2)}`
                             }
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--background))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              color: "hsl(var(--foreground))",
+                            }}
+                            labelStyle={{ color: "hsl(var(--foreground))" }}
                           />
                           <Bar dataKey="revenue" fill="#8b5cf6" barSize={60}>
                             {revenueChartData.map((entry, index) => (

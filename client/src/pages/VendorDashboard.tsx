@@ -711,7 +711,18 @@ export default function VendorDashboard() {
                             ))}
                           </Pie>
                           <Tooltip
-                            formatter={(value: number) => Math.floor(value)}
+                            formatter={(value: number, name: string) => [
+                              Math.floor(value),
+                              name,
+                            ]}
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--background))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              color: "hsl(var(--foreground))",
+                            }}
+                            itemStyle={{ color: "hsl(var(--foreground))" }}
+                            labelStyle={{ display: "none" }}
                           />
                         </PieChart>
                       </ResponsiveContainer>
@@ -783,6 +794,13 @@ export default function VendorDashboard() {
                                 : "Number of bazaars";
                             return [Math.floor(value), label];
                           }}
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            color: "hsl(var(--foreground))",
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))" }}
                         />
                         <Bar dataKey="value" fill="#8884d8" barSize={60}>
                           {applicationTypeData.map((entry, index) => (
