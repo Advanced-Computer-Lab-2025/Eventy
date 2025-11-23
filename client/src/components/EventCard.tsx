@@ -132,10 +132,15 @@ export default function EventCard({
   status,
   className,
 }: EventCardProps) {
-  const imageSrc = image || getEventImage(String(category), title);
+  // Detect platform booth from category
+  const isPlatformBooth = /booth|platform_booth/i.test(String(category));
+  // For platform_booth, use eventType to get the correct image
+  const eventTypeForImage = isPlatformBooth
+    ? "platform_booth"
+    : String(category);
+  const imageSrc = image || getEventImage(eventTypeForImage, title);
   const isRegisterable = /workshop|trip/i.test(String(category));
   const isBazaar = /bazaar/i.test(String(category));
-  const isPlatformBooth = /platform_booth/i.test(String(category));
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
@@ -449,10 +454,16 @@ export default function EventCard({
           {/* Compact View (Original Design) */}
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-2">
-              <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+              <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
               <div className="font-mono text-sm">
-                <div className="font-semibold text-foreground">{date}</div>
-                <div className="text-muted-foreground">{time}</div>
+                <div className="font-semibold text-foreground leading-tight">
+                  {date}
+                  {time && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      {time}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 

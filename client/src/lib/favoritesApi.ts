@@ -9,6 +9,10 @@ export interface FavoriteEvent {
   endDate: string;
   bannerImage?: string;
   status: string;
+  eventType?: string;
+  durationWeeks?: number;
+  locationPreference?: string;
+  attendeesCount?: number;
 }
 
 export const favoritesApi = {
