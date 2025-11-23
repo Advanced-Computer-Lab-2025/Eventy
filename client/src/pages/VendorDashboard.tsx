@@ -751,7 +751,17 @@ export default function VendorDashboard() {
                           allowDecimals={false}
                         />
                         <Tooltip
-                          formatter={(value: number) => Math.floor(value)}
+                          formatter={(
+                            value: number,
+                            name: string,
+                            props: any
+                          ) => {
+                            const label =
+                              props.payload.name === "Platform Booths"
+                                ? "Number of booths"
+                                : "Number of bazaars";
+                            return [Math.floor(value), label];
+                          }}
                         />
                         <Bar dataKey="value" fill="#8884d8" barSize={60}>
                           {applicationTypeData.map((entry, index) => (
