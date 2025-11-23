@@ -18,6 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Loader2, Download } from "lucide-react";
+import * as XLSX from "xlsx";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
@@ -59,6 +60,7 @@ interface SalesReportData {
 export default function SalesReport() {
   const [reportData, setReportData] = useState<SalesReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState("");
 
   // Filter states
@@ -132,46 +134,122 @@ export default function SalesReport() {
     setSortOrder("desc");
     setPage(1);
   };
-  const exportToCSV = () => {
-    if (!reportData?.events) return;
+  const exportToCSV = async () => {
+    if (!reportData) return;
 
-    const headers = [
-      "Event Name",
-      "Type",
-      "Start Date",
-      "End Date",
-      "Transactions",
-      "Gross Revenue",
-      "Refunds",
-      "Net Revenue",
-      "Wallet Payments",
-      "Card Payments",
-    ];
+    try {
+      setExporting(true);
+      const token = localStorage.getItem("token");
 
-    const rows = reportData.events.map((event) => [
-      event.name,
-      event.eventType,
-      new Date(event.startDate).toLocaleDateString(),
-      event.endDate ? new Date(event.endDate).toLocaleDateString() : "TBA",
-      event.transactionCount,
-      event.grossRevenue.toFixed(2),
-      event.totalRefunds.toFixed(2),
-      event.totalRevenue.toFixed(2),
-      event.walletPayments.toFixed(2),
-      event.cardPayments.toFixed(2),
-    ]);
+      // Build query params for fetching ALL data (no pagination)
+      const params = new URLSearchParams();
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.join(",")),
-    ].join("\n");
+      if (eventType && eventType !== "all") {
+        params.append("eventType", eventType);
+      }
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `sales-report-${new Date().toISOString().split("T")[0]}.csv`;
-    a.click();
+      if (startDate) {
+        params.append("startDate", startDate);
+      }
+
+      if (endDate) {
+        params.append("endDate", endDate);
+      }
+
+      params.append("sortOrder", sortOrder);
+      params.append("page", "1");
+      params.append("limit", "999999"); // Get all results
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/events/reports/sales?${params.toString()}`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch complete data for export");
+      }
+
+      const data = await response.json();
+      const allEvents = data.data.events;
+
+      if (!allEvents || allEvents.length === 0) {
+        throw new Error("No data to export");
+      }
+
+      const headers = [
+        "Event Name",
+        "Type",
+        "Start Date",
+        "End Date",
+        "Transactions",
+        "Gross Revenue",
+        "Refunds",
+        "Net Revenue",
+        "Wallet Payments",
+        "Card Payments",
+      ];
+
+      const formatDateForExcel = (dateString: string) => {
+        if (!dateString) return "TBA";
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return "TBA";
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
+        return `${year}-${month}-${day}`;
+      };
+
+      const rows = allEvents.map((event: EventSale) => ({
+        "Event Name": event.name,
+        Type: event.eventType,
+        "Start Date": formatDateForExcel(event.startDate),
+        "End Date": formatDateForExcel(event.endDate),
+        Transactions: event.transactionCount || 0,
+        "Gross Revenue": (event.grossRevenue || 0).toFixed(2),
+        Refunds: (event.totalRefunds || 0).toFixed(2),
+        "Net Revenue": (event.totalRevenue || 0).toFixed(2),
+        "Wallet Payments": (event.walletPayments || 0).toFixed(2),
+        "Card Payments": (event.cardPayments || 0).toFixed(2),
+      }));
+
+      // Create worksheet from data
+      const worksheet = XLSX.utils.json_to_sheet(rows);
+
+      // Set column widths
+      const columnWidths = [
+        { wch: 30 }, // Event Name
+        { wch: 15 }, // Type
+        { wch: 12 }, // Start Date
+        { wch: 12 }, // End Date
+        { wch: 12 }, // Transactions
+        { wch: 15 }, // Gross Revenue
+        { wch: 12 }, // Refunds
+        { wch: 15 }, // Net Revenue
+        { wch: 15 }, // Wallet Payments
+        { wch: 15 }, // Card Payments
+      ];
+      worksheet["!cols"] = columnWidths;
+
+      // Create workbook and add worksheet
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Sales Report");
+
+      // Generate Excel file and download
+      XLSX.writeFile(
+        workbook,
+        `sales-report-${new Date().toISOString().split("T")[0]}.xlsx`
+      );
+    } catch (err: any) {
+      console.error("Export failed:", err);
+      alert(`Export failed: ${err.message || "Please try again."}`);
+    } finally {
+      setExporting(false);
+    }
   };
 
   // Format currency
@@ -291,13 +369,18 @@ export default function SalesReport() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Filters</CardTitle>
           <Button
-            variant="outline"
+            variant="default"
             size="sm"
             onClick={exportToCSV}
             className="gap-2"
+            disabled={exporting || !reportData?.events?.length}
           >
-            <Download className="h-4 w-4" />
-            Export CSV
+            {exporting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Export Excel
           </Button>
         </CardHeader>
         <CardContent>
@@ -320,7 +403,9 @@ export default function SalesReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Event Start Date</label>
+              <label className="text-sm font-medium">
+                Events Starting From
+              </label>
               <Input
                 type="date"
                 value={startDate}
@@ -357,6 +442,7 @@ export default function SalesReport() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Revenue by Event</CardTitle>
           <div className="flex items-center gap-2">
+            <label className="text-sm font-medium">Sort by Revenue:</label>
             <Select
               value={sortOrder}
               onValueChange={(value: "asc" | "desc") => setSortOrder(value)}

@@ -409,5 +409,5 @@ export const getSalesReportSchema = Joi.object({
     .optional(),
   sortOrder: Joi.string().valid("asc", "desc").optional().default("desc"),
   page: Joi.number().integer().min(1).optional(),
-  limit: Joi.number().integer().min(1).max(100).optional(),
+  limit: Joi.number().integer().min(1).max(999999).optional(),
 });

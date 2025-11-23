@@ -1247,37 +1247,29 @@ export const getSalesReport = async (options = {}) => {
   }
 
   if (startDate && !endDate) {
-    // If only startDate is provided, get events starting on that exact date
+    // If only startDate is provided, get events starting on that exact date or after
     const s = new Date(startDate);
     const startOfDay = new Date(s);
     startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date(s);
-    endOfDay.setHours(23, 59, 59, 999);
-    eventFilter.startDate = { $gte: startOfDay, $lte: endOfDay };
+    eventFilter.startDate = { $gte: startOfDay };
   } else if (startDate && endDate) {
-    // If both dates provided, get events starting on startDate and ending on endDate exactly
+    // If both dates provided, get events starting on/after startDate AND ending on/before endDate (inclusive range)
     const s = new Date(startDate);
     const startOfStartDay = new Date(s);
     startOfStartDay.setHours(0, 0, 0, 0);
-    const endOfStartDay = new Date(s);
-    endOfStartDay.setHours(23, 59, 59, 999);
 
     const e = new Date(endDate);
-    const startOfEndDay = new Date(e);
-    startOfEndDay.setHours(0, 0, 0, 0);
     const endOfEndDay = new Date(e);
     endOfEndDay.setHours(23, 59, 59, 999);
 
-    eventFilter.startDate = { $gte: startOfStartDay, $lte: endOfStartDay };
-    eventFilter.endDate = { $gte: startOfEndDay, $lte: endOfEndDay };
+    eventFilter.startDate = { $gte: startOfStartDay };
+    eventFilter.endDate = { $lte: endOfEndDay };
   } else if (!startDate && endDate) {
-    // If only endDate provided, get events ending on that exact date
+    // If only endDate provided, get events ending on that exact date or before
     const e = new Date(endDate);
-    const startOfDay = new Date(e);
-    startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date(e);
     endOfDay.setHours(23, 59, 59, 999);
-    eventFilter.endDate = { $gte: startOfDay, $lte: endOfDay };
+    eventFilter.endDate = { $lte: endOfDay };
   }
 
   const allEvents = await Event.find(eventFilter)
