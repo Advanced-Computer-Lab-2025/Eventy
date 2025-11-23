@@ -399,7 +399,15 @@ export const restrictAccessSchema = Joi.object({
 export const getSalesReportSchema = Joi.object({
   eventType: Joi.string().optional().allow(""),
   startDate: Joi.date().iso().optional(),
-  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional(),
+  endDate: Joi.date()
+    .iso()
+    .when("startDate", {
+      is: Joi.exist(),
+      then: Joi.date().min(Joi.ref("startDate")),
+      otherwise: Joi.date().optional(),
+    })
+    .optional(),
+  sortOrder: Joi.string().valid("asc", "desc").optional().default("desc"),
   page: Joi.number().integer().min(1).optional(),
   limit: Joi.number().integer().min(1).max(100).optional(),
 });

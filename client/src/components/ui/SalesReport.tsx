@@ -9,10 +9,18 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Loader2, Download } from "lucide-react";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
 
 interface EventSale {
   _id: string;
@@ -23,12 +31,25 @@ interface EventSale {
   price: number | null;
   attendeesCount: number;
   revenue: number;
+  totalRevenue: number;
+  grossRevenue: number;
+  totalRefunds: number;
+  walletPayments: number;
+  cardPayments: number;
+  transactionCount: number;
 }
 
 interface SalesReportData {
   totalEvents: number;
   totalAttendees: number;
   totalRevenue: number;
+  grossRevenue: number;
+  totalRefunds: number;
+  netRevenue: number;
+  paymentBreakdown: {
+    wallet: number;
+    card: number;
+  };
   page: number;
   limit: number;
   totalPages: number;
@@ -39,6 +60,12 @@ export default function SalesReport() {
   const [reportData, setReportData] = useState<SalesReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Filter states
+  const [eventType, setEventType] = useState("all");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -51,6 +78,21 @@ export default function SalesReport() {
 
       // Build query params
       const params = new URLSearchParams();
+
+      // Only add eventType if it's not "all"
+      if (eventType && eventType !== "all") {
+        params.append("eventType", eventType);
+      }
+
+      if (startDate) {
+        params.append("startDate", startDate);
+      }
+
+      if (endDate) {
+        params.append("endDate", endDate);
+      }
+
+      params.append("sortOrder", sortOrder);
       params.append("page", page.toString());
       params.append("limit", limit.toString());
 
@@ -81,7 +123,56 @@ export default function SalesReport() {
 
   useEffect(() => {
     fetchReport();
-  }, [page]);
+  }, [page, eventType, startDate, endDate, sortOrder]);
+
+  const handleClearFilters = () => {
+    setEventType("all");
+    setStartDate("");
+    setEndDate("");
+    setSortOrder("desc");
+    setPage(1);
+  };
+  const exportToCSV = () => {
+    if (!reportData?.events) return;
+
+    const headers = [
+      "Event Name",
+      "Type",
+      "Start Date",
+      "End Date",
+      "Transactions",
+      "Gross Revenue",
+      "Refunds",
+      "Net Revenue",
+      "Wallet Payments",
+      "Card Payments",
+    ];
+
+    const rows = reportData.events.map((event) => [
+      event.name,
+      event.eventType,
+      new Date(event.startDate).toLocaleDateString(),
+      event.endDate ? new Date(event.endDate).toLocaleDateString() : "TBA",
+      event.transactionCount,
+      event.grossRevenue.toFixed(2),
+      event.totalRefunds.toFixed(2),
+      event.totalRevenue.toFixed(2),
+      event.walletPayments.toFixed(2),
+      event.cardPayments.toFixed(2),
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `sales-report-${new Date().toISOString().split("T")[0]}.csv`;
+    a.click();
+  };
 
   // Format currency
   const formatCurrency = (amount: number): string => {
@@ -100,62 +191,195 @@ export default function SalesReport() {
     );
   }
 
-  if (error) {
+  if (error && !reportData) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={fetchReport}>Retry</Button>
-      </div>
+      <Card className="mt-6">
+        <CardContent className="text-center py-8">
+          <p className="text-red-500 font-semibold mb-2">
+            Failed to Load Sales Report
+          </p>
+          <p className="text-sm text-muted-foreground mb-4">{error}</p>
+          <Button onClick={fetchReport} variant="outline">
+            Retry
+          </Button>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
         <Card>
-          <CardHeader>
-            <CardTitle>Total Revenue</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Events</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-primary">
-              {formatCurrency(reportData?.totalRevenue || 0)}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Total Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-4xl font-bold text-primary">
+            <p className="text-2xl font-bold text-primary">
               {reportData?.totalEvents || 0}
             </p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Total Attendees</CardTitle>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">
+              Total Attendees
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-primary">
+            <p className="text-2xl font-bold text-primary">
               {reportData?.totalAttendees || 0}
             </p>
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Gross Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-purple-600">
+              {formatCurrency(reportData?.grossRevenue || 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Total Refunds</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-red-600">
+              {formatCurrency(reportData?.totalRefunds || 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Net Revenue</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-green-600">
+              {formatCurrency(reportData?.netRevenue || 0)}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium">Payment Split</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">
+                Wallet:{" "}
+                {formatCurrency(reportData?.paymentBreakdown?.wallet || 0)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Card: {formatCurrency(reportData?.paymentBreakdown?.card || 0)}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Filters Section */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Filters</CardTitle>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={exportToCSV}
+            className="gap-2"
+          >
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event Type</label>
+              <Select value={eventType} onValueChange={setEventType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="All types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="workshop">Workshop</SelectItem>
+                  <SelectItem value="trip">Trip</SelectItem>
+                  <SelectItem value="conference">Conference</SelectItem>
+                  <SelectItem value="bazaar">Bazaar</SelectItem>
+                  <SelectItem value="platform_booth">Platform Booth</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event Start Date</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                max={endDate || undefined}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Event End Date</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                min={startDate || undefined}
+              />
+            </div>
+
+            <div className="flex items-end">
+              <Button
+                variant="outline"
+                onClick={handleClearFilters}
+                className="w-full"
+              >
+                Clear Filters
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Sales Table */}
       <Card>
-        <CardHeader>
-          <CardTitle>Sales Breakdown by Event</CardTitle>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Revenue by Event</CardTitle>
+          <div className="flex items-center gap-2">
+            <Select
+              value={sortOrder}
+              onValueChange={(value: "asc" | "desc") => setSortOrder(value)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="desc">Greatest to Least</SelectItem>
+                <SelectItem value="asc">Least to Greatest</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </CardHeader>
         <CardContent>
           {reportData?.events && reportData.events.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto relative">
+                {loading && (
+                  <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-10">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                )}
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -163,9 +387,14 @@ export default function SalesReport() {
                       <TableHead>Type</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>End Date</TableHead>
-                      <TableHead className="text-center ml-10">Price</TableHead>
-                      <TableHead className="text-right">Attendees</TableHead>
-                      <TableHead className="text-right">Revenue</TableHead>
+                      <TableHead className="text-center">
+                        Transactions
+                      </TableHead>
+                      <TableHead className="text-right">Gross</TableHead>
+                      <TableHead className="text-right">Refunds</TableHead>
+                      <TableHead className="text-right">Net Revenue</TableHead>
+                      <TableHead className="text-right">Wallet</TableHead>
+                      <TableHead className="text-right">Card</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -187,26 +416,25 @@ export default function SalesReport() {
                             ? new Date(event.endDate).toLocaleDateString()
                             : "TBA"}
                         </TableCell>
-                        <TableCell
-                          className={
-                            event.price != null && event.price !== undefined
-                              ? "text-right"
-                              : "text-center"
-                          }
-                        >
-                          {event.price != null && event.price !== undefined ? (
-                            formatCurrency(event.price)
-                          ) : (
-                            <span className="text-muted-foreground ml-8">
-                              -
-                            </span>
-                          )}
+                        <TableCell className="text-center">
+                          {event.transactionCount}
                         </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {event.attendeesCount}
+                        <TableCell className="text-right">
+                          {formatCurrency(event.grossRevenue || 0)}
+                        </TableCell>
+                        <TableCell className="text-right text-red-600">
+                          {event.totalRefunds > 0
+                            ? formatCurrency(event.totalRefunds)
+                            : "$0.00"}
                         </TableCell>
                         <TableCell className="text-right font-bold text-green-600">
-                          {formatCurrency(event.revenue)}
+                          {formatCurrency(event.totalRevenue || 0)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(event.walletPayments || 0)}
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground">
+                          {formatCurrency(event.cardPayments || 0)}
                         </TableCell>
                       </TableRow>
                     ))}
@@ -240,8 +468,21 @@ export default function SalesReport() {
               </div>
             </>
           ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              No sales data available.
+            <div className="text-center py-12">
+              <p className="text-muted-foreground text-lg mb-2">
+                {loading ? "Loading sales data..." : "No sales data found"}
+              </p>
+              {!loading && (eventType !== "all" || startDate || endDate) && (
+                <p className="text-sm text-muted-foreground mb-4">
+                  Try adjusting your filters or clearing them to see more
+                  results.
+                </p>
+              )}
+              {!loading && eventType === "all" && !startDate && !endDate && (
+                <p className="text-sm text-muted-foreground">
+                  No events with sales data available yet.
+                </p>
+              )}
             </div>
           )}
         </CardContent>
