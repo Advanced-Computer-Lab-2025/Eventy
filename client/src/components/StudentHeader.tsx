@@ -1,18 +1,9 @@
-import {
-  Bell,
-  User,
-  Home,
-  Calendar,
-  Dumbbell,
-  Heart,
-  Gift,
-} from "lucide-react";
+import { Bell, User, Home, Calendar, Dumbbell, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
-import NotificationsPopover from "./NotificationsPopover";
 
 interface StudentHeaderProps {
   homeHref?: string;
@@ -32,7 +23,13 @@ export default function StudentHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <NotificationsPopover />
+            <Button
+              variant="ghost"
+              size="icon"
+              data-testid="button-notifications"
+            >
+              <Bell className="h-5 w-5" />
+            </Button>
             <ThemeToggle />
             <ProfileMenu />
           </div>
@@ -78,17 +75,6 @@ export default function StudentHeader({
           >
             <Heart className="h-4 w-4" />
             Favorites
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/loyalty-partners")}
-            data-testid="button-nav-loyalty-partners"
-          >
-            {console.log("Rendering Gift icon")}
-            <Gift className="h-4 w-4" /> {/* Added Gift icon */}
-            Loyalty Partners
           </Button>
         </div>
       </div>

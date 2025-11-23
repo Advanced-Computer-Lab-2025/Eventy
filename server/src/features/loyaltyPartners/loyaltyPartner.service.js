@@ -102,11 +102,11 @@ export const LoyaltyPartnerService = {
 
   async getApprovedLoyaltyPartners() {
     try {
-      // Find all loyalty partners with active status
+      // Find all loyalty partners with verified status
       const verifiedPartners = await LoyaltyPartner.find({ status: "active" })
         .populate({
           path: "vendorId",
-          select: "companyName email", // Fetch companyName and email from User model
+          select: "name email",
         })
         .select(
           "vendorId discountRate promoCode termsAndConditions expiryDate createdAt"
@@ -116,7 +116,7 @@ export const LoyaltyPartnerService = {
       // Transform the data to include vendor name
       const partners = verifiedPartners.map((partner) => ({
         vendorId: partner.vendorId._id,
-        vendorName: partner.vendorId.companyName || "Unknown Vendor", // Use companyName or fallback
+        vendorName: partner.vendorId.name,
         vendorEmail: partner.vendorId.email,
         discountRate: partner.discountRate,
         promoCode: partner.promoCode,
