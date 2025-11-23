@@ -4,6 +4,7 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+import WalletPopover from "./WalletPopover"; // Import the WalletPopover
 import { useLocation } from "wouter";
 
 interface ProfessorHeaderProps {
@@ -23,7 +24,8 @@ export default function ProfessorHeader({
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
+            <WalletPopover /> {/* <-- Replaced dialog button with this */}
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
