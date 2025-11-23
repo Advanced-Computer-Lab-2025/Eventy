@@ -20,7 +20,7 @@ interface EventSale {
   eventType: string;
   startDate: string;
   endDate: string;
-  price: number;
+  price: number | null;
   attendeesCount: number;
   revenue: number;
 }
@@ -163,7 +163,7 @@ export default function SalesReport() {
                       <TableHead>Type</TableHead>
                       <TableHead>Start Date</TableHead>
                       <TableHead>End Date</TableHead>
-                      <TableHead className="text-right">Price</TableHead>
+                      <TableHead className="text-center ml-10">Price</TableHead>
                       <TableHead className="text-right">Attendees</TableHead>
                       <TableHead className="text-right">Revenue</TableHead>
                     </TableRow>
@@ -187,8 +187,20 @@ export default function SalesReport() {
                             ? new Date(event.endDate).toLocaleDateString()
                             : "TBA"}
                         </TableCell>
-                        <TableCell className="text-right">
-                          {formatCurrency(event.price)}
+                        <TableCell
+                          className={
+                            event.price != null && event.price !== undefined
+                              ? "text-right"
+                              : "text-center"
+                          }
+                        >
+                          {event.price != null && event.price !== undefined ? (
+                            formatCurrency(event.price)
+                          ) : (
+                            <span className="text-muted-foreground ml-8">
+                              -
+                            </span>
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-semibold">
                           {event.attendeesCount}

@@ -81,17 +81,6 @@ export default function AdminHeader() {
             <Users className="h-4 w-4" />
             Users
           </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            data-testid="button-nav-admin-dashboard"
-            onClick={() => setLocation("/admin")}
-          >
-            <Home className="h-4 w-4" />
-            Home
-          </Button>
         </div>
       </div>
     </header>
