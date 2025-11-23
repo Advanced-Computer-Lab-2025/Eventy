@@ -57,6 +57,17 @@ export default function GymScheduleViewer({
   navigateToDate,
 }: GymScheduleViewerProps) {
   const [sessions, setSessions] = useState<GymSession[]>([]);
+  // Get current user ID from localStorage
+  const currentUserId = (() => {
+    try {
+      const user = localStorage.getItem("user");
+      if (user) {
+        const parsed = JSON.parse(user);
+        return parsed._id || parsed.id;
+      }
+    } catch {}
+    return null;
+  })();
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -301,6 +312,8 @@ export default function GymScheduleViewer({
                   const enrolled = session.attendees?.length || 0;
                   const capacity = session.maxParticipants;
                   const isFull = enrolled >= capacity;
+                  const isRegistered =
+                    currentUserId && session.attendees?.includes(currentUserId);
 
                   return (
                     <TableRow key={session._id}>
@@ -337,10 +350,10 @@ export default function GymScheduleViewer({
                         <TableCell>
                           <Button
                             size="sm"
-                            disabled={isFull}
+                            disabled={isFull || isRegistered}
                             onClick={() => handleRegister(session._id)}
                           >
-                            Register
+                            {isRegistered ? "Registered" : "Register"}
                           </Button>
                         </TableCell>
                       )}

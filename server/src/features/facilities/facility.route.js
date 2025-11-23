@@ -1,6 +1,7 @@
 import express from "express";
 import { FacilitiesController } from "./facility.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
+import roleMiddleware from "../../middlewares/role.middleware.js";
 
 const router = express.Router();
 const facilitiesController = new FacilitiesController();
