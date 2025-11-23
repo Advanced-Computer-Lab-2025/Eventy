@@ -95,6 +95,7 @@ export default function ArchivedEvents() {
                     id={event._id}
                     title={event.name || "Untitled Event"}
                     category={event.eventType as any}
+                    status={event.status}
                     date={
                       event.startDate
                         ? new Date(event.startDate).toLocaleDateString(

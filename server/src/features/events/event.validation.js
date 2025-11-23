@@ -56,6 +56,9 @@ export const createConferenceSchema = Joi.object({
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required(),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
 });
 
 export const updateConferenceSchema = Joi.object({
@@ -73,6 +76,9 @@ export const updateConferenceSchema = Joi.object({
     .optional(),
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
     .optional(),
 }).min(1);
 
