@@ -345,8 +345,11 @@ export const getUpcomingEventsService = async (
 
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $or: [
+      { startDate: { $gte: now } }, // Regular events with future startDate
+      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -374,8 +377,11 @@ export const getUpcomingEventsWithVendors = async (
 
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $or: [
+      { startDate: { $gte: now } }, // Regular events with future startDate
+      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -453,11 +459,19 @@ export async function deleteEvent(eventId, user) {
 // 🔍 Search events service
 export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
+  // Include platform booths even if they don't have a startDate
   const now = new Date();
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $and: [
+      {
+        $or: [
+          { startDate: { $gte: now } }, // Regular events with future startDate
+          { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+        ],
+      },
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -497,12 +511,14 @@ export const searchEvents = async ({ name, type, userRole }) => {
     const matchingUsers = await User.find(userQuery).select("_id");
     const userIds = matchingUsers.map((user) => user._id);
 
-    filter.$or = [
-      { name: { $regex: name, $options: "i" } }, // Event name
-      { eventType: { $regex: type, $options: "i" } }, // Event type
-      { createdBy: { $in: userIds } }, // Created by matching users
-      { professors: { $in: userIds } }, // Workshop professors matching
-    ];
+    filter.$and.push({
+      $or: [
+        { name: { $regex: name, $options: "i" } }, // Event name
+        { eventType: { $regex: type, $options: "i" } }, // Event type
+        { createdBy: { $in: userIds } }, // Created by matching users
+        { professors: { $in: userIds } }, // Workshop professors matching
+      ],
+    });
   } else {
     // Traditional separate search
     // Filter by event type if given
@@ -543,11 +559,13 @@ export const searchEvents = async ({ name, type, userRole }) => {
       const matchingUsers = await User.find(userQuery).select("_id");
       const userIds = matchingUsers.map((user) => user._id);
 
-      filter.$or = [
-        { name: { $regex: name, $options: "i" } }, // Event name
-        { createdBy: { $in: userIds } }, // Created by matching users
-        { professors: { $in: userIds } }, // Workshop professors matching
-      ];
+      filter.$and.push({
+        $or: [
+          { name: { $regex: name, $options: "i" } }, // Event name
+          { createdBy: { $in: userIds } }, // Created by matching users
+          { professors: { $in: userIds } }, // Workshop professors matching
+        ],
+      });
     }
   }
 

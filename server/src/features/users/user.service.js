@@ -267,7 +267,7 @@ class UserService {
         .populate({
           path: "favoriteEvents",
           select:
-            "name description location startDate endDate bannerImage status eventType type category", // Added eventType
+            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application", // Added application for booth events
           match: { deletedAt: null },
         })
         .lean();
@@ -276,12 +276,42 @@ class UserService {
         throw new ApiError(404, "User not found");
       }
 
-      console.log(
-        "[getFavoriteEvents] favorites count:",
-        user.favoriteEvents.length
+      // Import Application model for booth attendee counting
+      const { default: Application } = await import(
+        "../applications/application.model.js"
       );
 
-      return { data: user.favoriteEvents };
+      // Calculate attendee counts for booth events
+      const eventsWithAttendees = await Promise.all(
+        user.favoriteEvents.map(async (event) => {
+          // For booth events, count attendees from the application
+          if (event.eventType === "platform_booth" && event.application) {
+            const application = await Application.findById(
+              event.application
+            ).lean();
+            if (application && application.attendees) {
+              event.attendeesCount = Array.isArray(application.attendees)
+                ? application.attendees.length
+                : 0;
+            } else {
+              event.attendeesCount = 0;
+            }
+          } else {
+            // For other events, use existing attendeesCount or calculate from attendees array
+            event.attendeesCount =
+              event.attendeesCount ||
+              (Array.isArray(event.attendees) ? event.attendees.length : 0);
+          }
+          return event;
+        })
+      );
+
+      console.log(
+        "[getFavoriteEvents] favorites count:",
+        eventsWithAttendees.length
+      );
+
+      return { data: eventsWithAttendees };
     } catch (err) {
       console.error("[getFavoriteEvents] Error:", err);
       if (err instanceof ApiError) throw err;
