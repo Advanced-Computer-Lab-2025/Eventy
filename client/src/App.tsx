@@ -35,6 +35,7 @@ import ArchivedEvents from "@/pages/ArchivedEvents";
 import FavoritesPage from "@/pages/FavoritesPage";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 function Router() {
   return (
     <Switch>
@@ -176,6 +177,20 @@ function Router() {
       <Route path="/reports/attendees">
         <ProtectedRoute allowedRoles={["events_office", "admin"]}>
           <EventsOfficeReportPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/loyalty-partners">
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "ta",
+            "professor",
+            "events_office",
+            "admin",
+          ]}
+        >
+          <ApprovedLoyaltyPartnersPage />
         </ProtectedRoute>
       </Route>
       <Route component={NotFound} />
