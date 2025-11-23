@@ -18,7 +18,10 @@ import {
   Plane,
   Archive,
   FileText,
+  SlidersHorizontal,
 } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -69,9 +72,6 @@ export default function EventsOfficeDashboard() {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [upcomingError, setUpcomingError] = useState("");
-  const [eventTypeFilter, setEventTypeFilter] = useState<
-    "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
-  >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
@@ -85,10 +85,65 @@ export default function EventsOfficeDashboard() {
   const [archivingId, setArchivingId] = useState<string | null>(null);
   const [pastEventSearch, setPastEventSearch] = useState("");
 
+  // Combined filter states
+  const [showUpcoming, setShowUpcoming] = useState(true);
+  const [showPast, setShowPast] = useState(true);
+  const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([
+    "bazaar",
+    "trip",
+    "workshop",
+    "conference",
+    "platform_booth",
+  ]);
+  const [eventSearch, setEventSearch] = useState("");
+  const [displayLimit, setDisplayLimit] = useState(12);
+
   // Extra totals
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
   const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
   const [totalBooths, setTotalBooths] = useState<number | null>(null);
+
+  // Combined filtered events
+  const allEvents = [...upcomingEvents, ...pastEvents];
+  const filteredEvents = allEvents.filter((event: any) => {
+    const q = eventSearch.trim().toLowerCase();
+    const matchesSearch =
+      !q ||
+      (event.name || "").toLowerCase().includes(q) ||
+      (event.eventType || "").toLowerCase().includes(q) ||
+      (event.location || "").toLowerCase().includes(q);
+
+    const matchesType = selectedEventTypes.includes(event.eventType);
+
+    const now = new Date();
+    const eventEndDate = new Date(event.endDate);
+    eventEndDate.setUTCHours(23, 59, 59, 999);
+    const isUpcoming = eventEndDate.getTime() >= now.getTime();
+    const isPast = eventEndDate.getTime() < now.getTime();
+
+    const matchesTimeFilter =
+      (showUpcoming && isUpcoming) || (showPast && isPast);
+
+    return matchesSearch && matchesType && matchesTimeFilter;
+  });
+
+  const toggleEventType = (type: string) => {
+    setSelectedEventTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
+  const handleClearFilters = () => {
+    setShowUpcoming(false);
+    setShowPast(false);
+    setSelectedEventTypes([]);
+    setEventSearch("");
+    setDisplayLimit(12);
+  };
+
+  const handleShowMore = () => {
+    setDisplayLimit((prev) => prev + 12);
+  };
 
   const filteredPastEvents = pastEvents.filter((event: any) => {
     const q = pastEventSearch.trim().toLowerCase();
@@ -279,10 +334,37 @@ export default function EventsOfficeDashboard() {
     }
   };
 
+  const fetchUpcomingEvents = async () => {
+    setUpcomingLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Failed to fetch upcoming events");
+      }
+      const data = await res.json();
+      setUpcomingEvents(Array.isArray(data.data) ? data.data : []);
+    } catch (err: any) {
+      setUpcomingError(err.message || "Failed to fetch upcoming events");
+      setUpcomingEvents([]);
+    } finally {
+      setUpcomingLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchBazaars();
     fetchPendingWorkshops();
     fetchPastEvents();
+    fetchUpcomingEvents();
     fetchCountByType("trip");
     fetchCountByType("platform_booth");
     const fetchConferences = async () => {
@@ -329,6 +411,11 @@ export default function EventsOfficeDashboard() {
     }
     setFilteredConfs(filtered);
   }, [conferences, confSearch]);
+
+  // Reset display limit when filters change
+  useEffect(() => {
+    setDisplayLimit(12);
+  }, [showUpcoming, showPast, selectedEventTypes, eventSearch]);
 
   // Prepare bazaars for BazaarList component (adds required fields and sane defaults)
   const formattedBazaars = bazaars.map((b) => ({
@@ -568,223 +655,238 @@ export default function EventsOfficeDashboard() {
         )}
 
         <div className="space-y-6" ref={existingRef as any}>
-          {/* Upcoming Events (same width as Existing Bazaars) */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Upcoming Events</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex flex-wrap gap-2">
-                {[
-                  { key: "all", label: "All" },
-                  { key: "bazaar", label: "Bazaars" },
-                  { key: "trip", label: "Trips" },
-                  { key: "workshop", label: "Workshops" },
-                  { key: "conference", label: "Conferences" },
-                  { key: "platform_booth", label: "Platform Booths" },
-                ].map((opt) => (
-                  <Button
-                    key={opt.key}
-                    size="sm"
-                    variant={
-                      eventTypeFilter === (opt.key as any)
-                        ? "default"
-                        : "outline"
-                    }
-                    onClick={() => setEventTypeFilter(opt.key as any)}
-                  >
-                    {opt.label}
-                  </Button>
-                ))}
-              </div>
-              <EventSearch
-                onSearchResults={(results) => {
-                  // Filter to show only upcoming events
-                  const now = new Date();
-                  const upcomingEvts = results.filter((event: any) => {
-                    const eventEndDate = new Date(event.endDate);
-                    eventEndDate.setUTCHours(23, 59, 59, 999);
-                    return eventEndDate.getTime() >= now.getTime();
-                  });
-                  setUpcomingEvents(upcomingEvts);
-                }}
-                onLoading={(isLoading) => setUpcomingLoading(isLoading)}
-                onError={(msg) => setUpcomingError(msg)}
-                placeholder="Search events by name, professor, or type..."
-              />
-              {upcomingLoading ? (
-                <p>Loading events...</p>
-              ) : upcomingError ? (
-                <p className="text-red-500">{upcomingError}</p>
-              ) : upcomingEvents.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">
-                    No upcoming events found
-                  </p>
-                  <p className="text-sm">
-                    Events will appear here as they are created
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {upcomingEvents
-                    .filter((event: any) =>
-                      eventTypeFilter === "all"
-                        ? true
-                        : event.eventType === eventTypeFilter
-                    )
-                    .filter((event: any) => !event?.deletedAt)
-                    .slice(0, 8)
-                    .map((event: any, index: number) => (
-                      <EventCard
-                        key={event._id || index}
-                        id={event._id || String(index)}
-                        title={event.name || "Untitled Event"}
-                        category={(event.eventType || "academic") as any}
-                        date={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  weekday: "short",
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : "TBA"
-                        }
-                        time={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )
-                            : "TBA"
-                        }
-                        location={event.location || "Unknown location"}
-                        attendees={
-                          Array.isArray(event.attendees)
-                            ? event.attendees.length
-                            : event.attendeesCount || 0
-                        }
-                        image={
-                          event.bannerImage ||
-                          event.image ||
-                          getEventImage(event.eventType, event.name)
-                        }
-                        description={event.description}
-                        startDate={event.startDate}
-                        endDate={event.endDate}
-                        capacity={-1}
-                        vendors={event.vendors || []}
-                        showDetailedView={true}
-                      />
-                    ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Past Events */}
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>Past Events</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Input
-                  placeholder="Search past events..."
-                  value={pastEventSearch}
-                  onChange={(e) => setPastEventSearch(e.target.value)}
-                  className="w-64"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => fetchPastEvents()}
-                >
-                  Refresh
-                </Button>
-              </div>
-              {pastEventsLoading ? (
-                <p>Loading past events...</p>
-              ) : pastEventsError ? (
-                <p className="text-red-500">{pastEventsError}</p>
-              ) : filteredPastEvents.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p className="text-lg font-medium mb-2">
-                    No past events found
-                  </p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                  {filteredPastEvents.slice(0, 8).map((event: any) => (
-                    <div key={event._id} className="relative">
-                      <EventCard
-                        id={event._id}
-                        title={event.name || "Untitled Event"}
-                        category={(event.eventType || "academic") as any}
-                        date={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  weekday: "short",
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : "TBA"
-                        }
-                        time={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )
-                            : "TBA"
-                        }
-                        location={event.location || "Unknown location"}
-                        attendees={
-                          Array.isArray(event.attendees)
-                            ? event.attendees.length
-                            : event.attendeesCount || 0
-                        }
-                        image={
-                          event.bannerImage ||
-                          event.image ||
-                          getEventImage(event.eventType, event.name)
-                        }
-                        description={event.description}
-                        startDate={event.startDate}
-                        endDate={event.endDate}
-                        capacity={-1}
-                        vendors={event.vendors || []}
-                        showDetailedView={true}
-                        canDelete={false}
-                        onArchive={() => handleArchiveEvent(event._id)}
-                        isArchiving={archivingId === event._id}
-                      />
+          {/* Combined Events with Sidebar Filters */}
+          <div className="flex flex-col lg:flex-row gap-6">
+            {/* Left Sidebar - Filters */}
+            <aside className="lg:w-72 flex-shrink-0">
+              <div className="sticky top-24">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <SlidersHorizontal className="h-5 w-5" />
+                      Filters
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Time Period Filter */}
+                    <div className="space-y-3">
+                      <div className="text-sm font-semibold">Time Period</div>
+                      <div className="space-y-2">
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="filter-upcoming"
+                            checked={showUpcoming}
+                            onCheckedChange={(checked) =>
+                              setShowUpcoming(checked as boolean)
+                            }
+                          />
+                          <Label
+                            htmlFor="filter-upcoming"
+                            className="cursor-pointer text-sm"
+                          >
+                            Upcoming Events
+                          </Label>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Checkbox
+                            id="filter-past"
+                            checked={showPast}
+                            onCheckedChange={(checked) =>
+                              setShowPast(checked as boolean)
+                            }
+                          />
+                          <Label
+                            htmlFor="filter-past"
+                            className="cursor-pointer text-sm"
+                          >
+                            Past Events
+                          </Label>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+
+                    {/* Event Type Filter */}
+                    <div className="space-y-3">
+                      <div className="text-sm font-semibold">Event Type</div>
+                      <div className="space-y-2">
+                        {[
+                          { value: "bazaar", label: "Bazaars" },
+                          { value: "trip", label: "Trips" },
+                          { value: "workshop", label: "Workshops" },
+                          { value: "conference", label: "Conferences" },
+                          { value: "platform_booth", label: "Platform Booths" },
+                        ].map((type) => (
+                          <div
+                            key={type.value}
+                            className="flex items-center gap-2"
+                          >
+                            <Checkbox
+                              id={`filter-${type.value}`}
+                              checked={selectedEventTypes.includes(type.value)}
+                              onCheckedChange={() =>
+                                toggleEventType(type.value)
+                              }
+                            />
+                            <Label
+                              htmlFor={`filter-${type.value}`}
+                              className="cursor-pointer text-sm"
+                            >
+                              {type.label}
+                            </Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleClearFilters();
+                      }}
+                    >
+                      Clear Filters
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
+            </aside>
+
+            {/* Right Content - Events */}
+            <div className="flex-1">
+              <Card>
+                <CardHeader>
+                  <CardTitle>All Events</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Search Bar */}
+                  <div className="flex items-center gap-2">
+                    <Input
+                      placeholder="Search events by name, type, or location..."
+                      value={eventSearch}
+                      onChange={(e) => setEventSearch(e.target.value)}
+                      className="flex-1"
+                    />
+                  </div>
+
+                  {/* Events Display */}
+                  {upcomingLoading || pastEventsLoading ? (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                      <p className="text-muted-foreground">Loading events...</p>
+                    </div>
+                  ) : upcomingError || pastEventsError ? (
+                    <p className="text-red-500 text-center py-8">
+                      {upcomingError || pastEventsError}
+                    </p>
+                  ) : filteredEvents.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p className="text-lg font-medium mb-2">
+                        No events found
+                      </p>
+                      <p className="text-sm">
+                        Try adjusting your filters or search criteria
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                      {filteredEvents
+                        .filter((event: any) => !event?.deletedAt)
+                        .slice(0, displayLimit)
+                        .map((event: any, index: number) => {
+                          const now = new Date();
+                          const eventEndDate = new Date(event.endDate);
+                          eventEndDate.setUTCHours(23, 59, 59, 999);
+                          const isPastEvent =
+                            eventEndDate.getTime() < now.getTime();
+
+                          return (
+                            <div key={event._id || index} className="h-full">
+                              <EventCard
+                                className="h-full flex flex-col"
+                                id={event._id || String(index)}
+                                title={event.name || "Untitled Event"}
+                                category={
+                                  (event.eventType || "academic") as any
+                                }
+                                date={
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : "TBA"
+                                }
+                                time={
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })
+                                    : "TBA"
+                                }
+                                location={event.location || "Unknown location"}
+                                attendees={
+                                  Array.isArray(event.attendees)
+                                    ? event.attendees.length
+                                    : event.attendeesCount || 0
+                                }
+                                image={
+                                  event.bannerImage ||
+                                  event.image ||
+                                  getEventImage(event.eventType, event.name)
+                                }
+                                description={event.description}
+                                startDate={event.startDate}
+                                endDate={event.endDate}
+                                capacity={-1}
+                                vendors={event.vendors || []}
+                                showDetailedView={true}
+                                canDelete={false}
+                                {...(isPastEvent && {
+                                  onArchive: () =>
+                                    handleArchiveEvent(event._id),
+                                  isArchiving: archivingId === event._id,
+                                })}
+                              />
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+
+                  {/* Show More Button */}
+                  {!upcomingLoading &&
+                    !pastEventsLoading &&
+                    filteredEvents.filter((event: any) => !event?.deletedAt)
+                      .length > displayLimit && (
+                      <div className="flex justify-center mt-6">
+                        <Button
+                          onClick={handleShowMore}
+                          variant="outline"
+                          size="lg"
+                        >
+                          Show More Events (
+                          {filteredEvents.filter(
+                            (event: any) => !event?.deletedAt
+                          ).length - displayLimit}{" "}
+                          remaining)
+                        </Button>
+                      </div>
+                    )}
+                </CardContent>
+              </Card>
+            </div>
+          </div>
 
           {/* Existing Bazaars */}
           <Card>
