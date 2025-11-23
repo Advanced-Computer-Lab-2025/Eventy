@@ -23,7 +23,8 @@ import {
 } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface PollOption {
   _id: string;
@@ -44,13 +45,28 @@ interface Poll {
   createdAt: string;
 }
 
+interface BoothRequest {
+  _id: string;
+  type: "bazaar" | "booth";
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  locationPreference?: string;
+  boothSize: "2x2" | "4x4";
+  durationWeeks?: number;
+  createdAt: string;
+  createdBy?: {
+    companyName?: string;
+    firstName?: string;
+    lastName?: string;
+  };
+}
+
 export default function EventsOfficePolls() {
   const { toast } = useToast();
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loadingPolls, setLoadingPolls] = useState(true);
   const [pollsError, setPollsError] = useState<string | null>(null);
 
-  const [requests, setRequests] = useState<any[]>([]);
+  const [requests, setRequests] = useState<BoothRequest[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(true);
   const [requestsError, setRequestsError] = useState<string | null>(null);
 
@@ -81,8 +97,8 @@ export default function EventsOfficePolls() {
           throw new Error(
             `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(
               0,
-              80,
-            )}...`,
+              80
+            )}...`
           );
         }
 
@@ -92,8 +108,10 @@ export default function EventsOfficePolls() {
         }
 
         setPolls(Array.isArray(body.data) ? body.data : []);
-      } catch (error: any) {
-        setPollsError(error.message || "Failed to load polls");
+      } catch (error: unknown) {
+        setPollsError(
+          error instanceof Error ? error.message : "Failed to load polls"
+        );
       } finally {
         setLoadingPolls(false);
       }
@@ -118,8 +136,8 @@ export default function EventsOfficePolls() {
           throw new Error(
             `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(
               0,
-              80,
-            )}...`,
+              80
+            )}...`
           );
         }
 
@@ -130,8 +148,10 @@ export default function EventsOfficePolls() {
 
         const apps = Array.isArray(body.data) ? body.data : [];
         setRequests(apps);
-      } catch (error: any) {
-        setRequestsError(error.message || "Failed to load applications");
+      } catch (error: unknown) {
+        setRequestsError(
+          error instanceof Error ? error.message : "Failed to load applications"
+        );
       } finally {
         setLoadingRequests(false);
       }
@@ -141,7 +161,10 @@ export default function EventsOfficePolls() {
     fetchApplications();
   }, []);
 
-  const toggleSelectForPoll = (requestId: string, checked: boolean | string) => {
+  const toggleSelectForPoll = (
+    requestId: string,
+    checked: boolean | string
+  ) => {
     const isChecked = checked === true || checked === "indeterminate";
     setSelectedForPoll((prev) => {
       if (isChecked) {
@@ -153,7 +176,7 @@ export default function EventsOfficePolls() {
 
   const openPollDialog = () => {
     const selectedRequests = requests.filter((r) =>
-      selectedForPoll.includes(r._id),
+      selectedForPoll.includes(r._id)
     );
 
     if (selectedRequests.length < 2) {
@@ -188,7 +211,7 @@ export default function EventsOfficePolls() {
 
     const firstLocation = selectedRequests[0]?.locationPreference;
     const sameLocation = selectedRequests.every(
-      (r) => r.locationPreference && r.locationPreference === firstLocation,
+      (r) => r.locationPreference && r.locationPreference === firstLocation
     );
 
     if (!firstLocation || !sameLocation) {
@@ -218,10 +241,9 @@ export default function EventsOfficePolls() {
 
       toast({
         title: "Poll created",
-        description:
-          pollLocation
-            ? `A poll has been created for ${pollLocation}.`
-            : "A booth conflict poll has been created.",
+        description: pollLocation
+          ? `A poll has been created for ${pollLocation}.`
+          : "A booth conflict poll has been created.",
       });
 
       setPollDialogOpen(false);
@@ -240,7 +262,7 @@ export default function EventsOfficePolls() {
       if (res.ok && Array.isArray(body.data)) {
         setPolls(body.data);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to create poll",
         description:
@@ -255,7 +277,7 @@ export default function EventsOfficePolls() {
   };
 
   const pendingBoothRequests = requests.filter(
-    (r) => r.type === "booth" && r.status === "pending",
+    (r) => r.type === "booth" && r.status === "pending"
   );
 
   const handleEndPoll = async (pollId: string) => {
@@ -277,8 +299,8 @@ export default function EventsOfficePolls() {
         throw new Error(
           `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(
             0,
-            80,
-          )}...`,
+            80
+          )}...`
         );
       }
 
@@ -289,14 +311,14 @@ export default function EventsOfficePolls() {
 
       const updated = body.data as Poll;
       setPolls((prev) =>
-        prev.map((p) => (p._id === updated._id ? { ...p, ...updated } : p)),
+        prev.map((p) => (p._id === updated._id ? { ...p, ...updated } : p))
       );
 
       toast({
         title: "Poll ended",
         description: "The poll has been marked as ended.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast({
         title: "Failed to end poll",
         description:
@@ -350,7 +372,9 @@ export default function EventsOfficePolls() {
                 <TableBody>
                   {polls.map((poll) => (
                     <TableRow key={poll._id}>
-                      <TableCell className="font-medium">{poll.question}</TableCell>
+                      <TableCell className="font-medium">
+                        {poll.question}
+                      </TableCell>
                       <TableCell>
                         {poll.context?.locationPreference || "-"}
                       </TableCell>
@@ -388,13 +412,13 @@ export default function EventsOfficePolls() {
                             return "-";
                           }
                           const maxVotes = Math.max(
-                            ...poll.options.map((o) => o.voteCount ?? 0),
+                            ...poll.options.map((o) => o.voteCount ?? 0)
                           );
                           if (maxVotes <= 0) {
                             return "No votes";
                           }
                           const winners = poll.options.filter(
-                            (o) => (o.voteCount ?? 0) === maxVotes,
+                            (o) => (o.voteCount ?? 0) === maxVotes
                           );
                           return winners.map((w) => w.optionText).join(", ");
                         })()}
@@ -407,7 +431,9 @@ export default function EventsOfficePolls() {
                             onClick={() => handleEndPoll(poll._id)}
                             className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-3 py-1 text-xs font-semibold rounded-md"
                           >
-                            {endingPollId === poll._id ? "Ending..." : "End Poll"}
+                            {endingPollId === poll._id
+                              ? "Ending..."
+                              : "End Poll"}
                           </Button>
                         )}
                       </TableCell>
@@ -425,7 +451,9 @@ export default function EventsOfficePolls() {
           </CardHeader>
           <CardContent className="space-y-4">
             {loadingRequests ? (
-              <p className="text-muted-foreground">Loading vendor requests...</p>
+              <p className="text-muted-foreground">
+                Loading vendor requests...
+              </p>
             ) : requestsError ? (
               <p className="text-red-600">{requestsError}</p>
             ) : pendingBoothRequests.length === 0 ? (
@@ -436,8 +464,8 @@ export default function EventsOfficePolls() {
               <>
                 <div className="flex items-center justify-between mb-2">
                   <p className="text-sm text-muted-foreground">
-                    Select at least two pending booth requests with the same location
-                    to create a poll.
+                    Select at least two pending booth requests with the same
+                    location to create a poll.
                   </p>
                   <Button
                     size="sm"
@@ -500,8 +528,8 @@ export default function EventsOfficePolls() {
                 Selected requests: <strong>{selectedForPoll.length}</strong>
               </p>
               <p>
-                This poll will help decide which vendor should get the booth. You can
-                end the poll manually later from the Events Office side.
+                This poll will help decide which vendor should get the booth.
+                You can end the poll manually later from the Events Office side.
               </p>
             </div>
             <DialogFooter>
