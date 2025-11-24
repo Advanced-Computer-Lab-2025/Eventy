@@ -91,16 +91,6 @@ export default function EventsOfficeHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
-            onClick={() => setLocation("/events-office/polls")}
-            data-testid="button-nav-polls"
-          >
-            <PieChart className="h-4 w-4" />
-            Polls
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
             onClick={() => setLocation("/events-office/archived")}
             data-testid="button-nav-archived"
           >
