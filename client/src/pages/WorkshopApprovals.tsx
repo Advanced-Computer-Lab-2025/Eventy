@@ -361,17 +361,15 @@ export default function WorkshopApprovals() {
                           </TableCell>
                           <TableCell>
                             <Badge
-                              variant={
-                                workshop.status === "rejected"
-                                  ? "destructive"
-                                  : "outline"
-                              }
+                              variant="outline"
                               className={
                                 workshop.status === "approved"
-                                  ? "bg-green-600 hover:bg-green-700 text-white border-0"
-                                  : workshop.status === "needs_revision"
-                                    ? "bg-blue-600 hover:bg-blue-700 text-white border-0"
-                                    : ""
+                                  ? "bg-green-100 text-green-700 border-green-200"
+                                  : workshop.status === "rejected"
+                                    ? "bg-red-100 text-red-700 border-red-200"
+                                    : workshop.status === "needs_revision"
+                                      ? "bg-blue-100 text-blue-700 border-blue-200"
+                                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
                               }
                             >
                               {workshop.status === "needs_revision"
@@ -383,8 +381,7 @@ export default function WorkshopApprovals() {
                             <div className="flex justify-end gap-2">
                               <Button
                                 size="sm"
-                                variant="secondary"
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                                variant="outline"
                                 onClick={() => handleViewDetails(workshop)}
                               >
                                 <Info className="h-4 w-4" />
@@ -393,7 +390,7 @@ export default function WorkshopApprovals() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-green-600 hover:bg-green-700"
+                                    className="bg-green-600 hover:bg-green-700 text-white"
                                     onClick={() => handleApprove(workshop._id)}
                                   >
                                     <CheckCircle className="h-4 w-4" />
