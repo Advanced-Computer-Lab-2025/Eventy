@@ -21,7 +21,15 @@ router.post(
 router.get(
   "/events/:eventId",
   authMiddleware,
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  // Allow admins and events_office to view all feedback for moderation/reporting
+  roleMiddleware([
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "admin",
+    "events_office",
+  ]),
   getEventFeedback
 );
 

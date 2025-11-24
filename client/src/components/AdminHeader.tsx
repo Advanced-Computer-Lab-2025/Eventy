@@ -1,4 +1,12 @@
-import { Bell, LayoutGrid, User, Home, Users, Star , FileText} from "lucide-react";
+import {
+  Bell,
+  LayoutGrid,
+  User,
+  Home,
+  Users,
+  Star,
+  FileText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";

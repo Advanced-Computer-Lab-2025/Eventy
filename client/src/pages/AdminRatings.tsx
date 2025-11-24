@@ -9,7 +9,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDistanceToNow } from "date-fns";
-import { eventStore, userStore, authStore } from "@/lib/mockData";
+import api from "@/lib/api";
+import { authStore } from "@/lib/mockData";
 import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 
@@ -32,93 +33,55 @@ interface RatingItem {
 
 const RATINGS_KEY = "mock_ratings_v1";
 
-function loadMockRatings(): RatingItem[] {
-  const raw = localStorage.getItem(RATINGS_KEY);
-  if (raw) return JSON.parse(raw);
-
-  // Default mock ratings tied to the default events in mockData
-  const defaults: RatingItem[] = [
-    {
-      id: "r1",
-      eventId: "1",
-      user: { firstName: "Lina", lastName: "Ahmed", email: "lina@example.com" },
-      rating: 5,
-      comment: "Great hands-on examples and super helpful instructor.",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 3).toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: "r2",
-      eventId: "1",
-      user: { firstName: "Omar", lastName: "Sami", email: "omar@example.com" },
-      rating: 4,
-      comment: "Good content but the room was noisy.",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 2).toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: "r3",
-      eventId: "2",
-      user: {
-        firstName: "Sara",
-        lastName: "Hassan",
-        email: "sara@example.com",
-      },
-      rating: 5,
-      comment: "Amazing atmosphere!",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 10).toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: "r4",
-      eventId: "3",
-      user: { firstName: "Ali", lastName: "Kamal", email: "ali@example.com" },
-      rating: 3,
-      comment: "Seats were uncomfortable but the game was exciting.",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 1).toISOString(),
-      deletedAt: null,
-    },
-    {
-      id: "r5",
-      eventId: "4",
-      user: {
-        firstName: "Mona",
-        lastName: "Youssef",
-        email: "mona@example.com",
-      },
-      rating: 4,
-      comment: "Good networking opportunities.",
-      createdAt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 7).toISOString(),
-      deletedAt: null,
-    },
-  ];
-
-  localStorage.setItem(RATINGS_KEY, JSON.stringify(defaults));
-  return defaults;
-}
-
 export default function AdminRatings() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [loadingRatings, setLoadingRatings] = useState(false);
 
   useEffect(() => {
-    // Load events from mock store (Event shape in mockData uses `id`)
-    const ev = eventStore.getAll().map((e) => ({
-      id: e.id || String((e as any)._id || e.id),
-      title:
-        e.title ||
-        (e as any).name ||
-        `Event ${(e as any).id || (e as any)._id || ""}`,
-    }));
-    setEvents(ev as EventItem[]);
+    // Fetch both upcoming and past events so we include any event
+    setLoadingEvents(true);
+    Promise.allSettled([api.get("/events/upcoming"), api.get("/events/past")])
+      .then((results) => {
+        const combined: any[] = [];
 
-    const loaded = loadMockRatings();
-    setAllRatings(loaded);
+        // helper to extract data array safely
+        const extract = (res: any) => (res?.data?.data ? res.data.data : []);
 
-    // Preselect first event for convenience
-    if (ev.length > 0) setSelectedEvent(ev[0].id);
+        const up =
+          results[0].status === "fulfilled"
+            ? extract((results[0] as any).value)
+            : [];
+        const past =
+          results[1].status === "fulfilled"
+            ? extract((results[1] as any).value)
+            : [];
+
+        combined.push(...up, ...past);
+
+        // Deduplicate by _id
+        const seen = new Set<string>();
+        const mapped = combined
+          .filter((e) => e)
+          .map((e: any) => ({
+            id: e._id || e.id,
+            title: e.title || e.name || `Event ${e._id || e.id}`,
+          }))
+          .filter((m: any) => {
+            if (!m.id) return false;
+            if (seen.has(m.id)) return false;
+            seen.add(m.id);
+            return true;
+          });
+
+        setEvents(mapped as EventItem[]);
+        if (mapped.length > 0) setSelectedEvent(mapped[0].id);
+      })
+      .catch(() => setEvents([]))
+      .finally(() => setLoadingEvents(false));
   }, []);
 
   useEffect(() => {
@@ -126,28 +89,53 @@ export default function AdminRatings() {
       setRatings([]);
       return;
     }
-    const list = allRatings
-      .filter((r) => r.eventId === selectedEvent)
-      .sort((a, b) => ((b.createdAt || "") > (a.createdAt || "") ? 1 : -1));
-    setRatings(list);
-  }, [selectedEvent, allRatings]);
+    // Fetch feedback for the selected event from the API
+    setLoadingRatings(true);
+    api
+      .get(`/feedback/events/${selectedEvent}`)
+      .then((resp) => {
+        const data = resp.data?.data || {};
+        const feedback = data.feedback || [];
+        const mapped = feedback.map((f: any) => ({
+          id: f._id,
+          eventId: f.eventId,
+          user: f.userId
+            ? {
+                firstName: f.userId.firstName,
+                lastName: f.userId.lastName,
+                email: f.userId.email,
+              }
+            : null,
+          rating: f.rating,
+          comment: f.comment,
+          createdAt: f.createdAt,
+          deletedAt: f.deletedAt || null,
+        }));
+        setAllRatings(mapped);
+        setRatings(mapped);
+      })
+      .catch(() => {
+        setRatings([]);
+        setAllRatings([]);
+      })
+      .finally(() => setLoadingRatings(false));
+  }, [selectedEvent]);
 
-  function persistRatings(r: RatingItem[]) {
-    localStorage.setItem(RATINGS_KEY, JSON.stringify(r));
-    setAllRatings(r);
-  }
-
-  function handleDeleteComment(ratingId: string) {
-    if (
-      !confirm("Delete this comment? This action is permanent in the mock UI.")
-    )
-      return;
-    const updated = allRatings.map((r) =>
-      r.id === ratingId
-        ? { ...r, comment: null, deletedAt: new Date().toISOString() }
-        : r
-    );
-    persistRatings(updated);
+  async function handleDeleteComment(ratingId: string) {
+    if (!confirm("Delete this comment? This action is permanent.")) return;
+    try {
+      await api.delete(`/feedback/events/${selectedEvent}/${ratingId}`);
+      // Optimistically remove from UI
+      const updated = allRatings.map((r) =>
+        r.id === ratingId
+          ? { ...r, comment: null, deletedAt: new Date().toISOString() }
+          : r
+      );
+      setAllRatings(updated);
+      setRatings(updated.filter((r) => r.eventId === selectedEvent));
+    } catch (err) {
+      alert("Failed to delete comment");
+    }
   }
 
   const currentUser = authStore.getCurrentUser();
@@ -196,6 +184,8 @@ export default function AdminRatings() {
                 <div className="text-muted-foreground">
                   Click an event card to view ratings.
                 </div>
+              ) : loadingRatings ? (
+                <div className="text-muted-foreground">Loading ratings…</div>
               ) : ratings.length === 0 ? (
                 <div className="text-muted-foreground">
                   No ratings/comments for the selected event.
