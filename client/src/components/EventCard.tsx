@@ -99,6 +99,7 @@ export interface EventCardProps {
   isArchiving?: boolean;
   canDelete?: boolean;
   className?: string;
+  hideRegisterButton?: boolean;
 }
 
 export default function EventCard({
@@ -131,6 +132,7 @@ export default function EventCard({
   canDelete = false,
   status,
   className,
+  hideRegisterButton = false,
 }: EventCardProps) {
   // Detect platform booth from category
   const isPlatformBooth = /booth|platform_booth/i.test(String(category));
@@ -360,7 +362,8 @@ export default function EventCard({
                   Give Feedback
                 </Button>
               ) : (
-                canRegister && (
+                canRegister &&
+                !hideRegisterButton && (
                   <Button
                     className="flex-1"
                     onClick={onRegister}
@@ -372,7 +375,9 @@ export default function EventCard({
               )}
               {onArchive && (
                 <Button
-                  className={canRegister ? "flex-1" : "w-full"}
+                  className={
+                    canRegister && !hideRegisterButton ? "flex-1" : "w-full"
+                  }
                   onClick={async (e) => {
                     if ((e as any).stopPropagation)
                       (e as any).stopPropagation();
@@ -399,7 +404,9 @@ export default function EventCard({
                 {" "}
                 {onViewDetails && (
                   <Button
-                    className={canRegister ? "flex-1" : "flex-1"}
+                    className={
+                      canRegister && !hideRegisterButton ? "flex-1" : "flex-1"
+                    }
                     variant="outline"
                     onClick={(e) => {
                       e.stopPropagation();
@@ -452,7 +459,7 @@ export default function EventCard({
       ) : (
         <>
           {/* Compact View (Original Design) */}
-          <CardContent className="p-4 space-y-3">
+          <CardContent className="p-4 space-y-3 flex flex-col flex-1">
             <div className="flex items-start gap-2">
               <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
               <div className="font-mono text-sm">
@@ -511,106 +518,116 @@ export default function EventCard({
             )}
 
             {showActions && (
-              <div className="flex flex-col gap-2 pt-2">
-                {isRegistered &&
-                startDate &&
-                new Date() > new Date(startDate) ? (
-                  <Button
-                    onClick={onFeedback}
-                    className="flex-1"
-                    data-testid={`button-feedback-${id}`}
-                  >
-                    Give Feedback
-                  </Button>
-                ) : (
-                  isRegisterable && (
+              <div className="flex flex-col gap-2 pt-2 mt-auto">
+                {/* Archive and Delete buttons above (if present) */}
+                {(onArchive || (canShowDelete && !hasRegistrations)) && (
+                  <div className="flex flex-col gap-2">
+                    {onArchive && (
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={async (e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          try {
+                            await onArchive();
+                          } catch (err) {
+                            // parent handles errors
+                          }
+                        }}
+                        disabled={isArchiving}
+                        data-testid={`button-archive-compact-${id}`}
+                        className="bg-primary text-primary-foreground"
+                      >
+                        <Archive className="h-4 w-4 mr-1" />
+                        Archive
+                      </Button>
+                    )}
+                    {canShowDelete && !hasRegistrations && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={async (e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          if (
+                            !confirm(
+                              "This will permanently delete the event. Proceed?"
+                            )
+                          )
+                            return;
+                          try {
+                            await deleteEvent(id);
+                            toast({
+                              title: "Event deleted",
+                              description:
+                                "The event was deleted successfully.",
+                            });
+                            setIsDeleted(true);
+                            onDelete?.(id);
+                          } catch (err: any) {
+                            toast({
+                              title: "Delete failed",
+                              description:
+                                err?.message || "Failed to delete event",
+                              variant: "destructive",
+                            });
+                          }
+                        }}
+                        data-testid={`button-delete-event-${id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-1" />
+                        Delete
+                      </Button>
+                    )}
+                  </div>
+                )}
+                {/* Bottom row: Give Feedback/Register button (if present) + Favorites + Share */}
+                <div className="flex items-center gap-2">
+                  {isRegistered &&
+                  startDate &&
+                  new Date() > new Date(startDate) ? (
                     <Button
-                      onClick={onRegister}
-                      className="w-full"
-                      data-testid={`button-register-${id}`}
+                      onClick={onFeedback}
+                      className="flex-1"
+                      data-testid={`button-feedback-${id}`}
                     >
-                      Register
+                      Give Feedback
                     </Button>
-                  )
-                )}
-                {onArchive && (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={async (e) => {
-                      if ((e as any).stopPropagation)
-                        (e as any).stopPropagation();
-                      try {
-                        await onArchive();
-                      } catch (err) {
-                        // parent handles errors
-                      }
-                    }}
-                    disabled={isArchiving}
-                    data-testid={`button-archive-compact-${id}`}
-                    className="bg-primary text-primary-foreground"
-                  >
-                    <Archive className="h-4 w-4 mr-1" />
-                    Archive
-                  </Button>
-                )}
-                <div className="flex items-center gap-2 ml-auto">
-                  {" "}
-                  {canShowFavorites && (
-                    <div
-                      className="relative"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <FavoriteButton eventId={id} />
-                    </div>
+                  ) : (
+                    isRegisterable &&
+                    !hideRegisterButton && (
+                      <Button
+                        onClick={onRegister}
+                        className="flex-1"
+                        data-testid={`button-register-${id}`}
+                      >
+                        Register
+                      </Button>
+                    )
                   )}
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onShare?.();
-                    }}
-                    data-testid={`button-share-${id}`}
-                  >
-                    <Share2 className="h-4 w-4" />
-                  </Button>
+                  <div className="flex items-center gap-2 ml-auto">
+                    {canShowFavorites && (
+                      <div
+                        className="relative"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FavoriteButton eventId={id} />
+                      </div>
+                    )}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onShare?.();
+                      }}
+                      data-testid={`button-share-${id}`}
+                    >
+                      <Share2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
-                {canShowDelete && !hasRegistrations && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={async (e) => {
-                      if ((e as any).stopPropagation)
-                        (e as any).stopPropagation();
-                      if (
-                        !confirm(
-                          "This will permanently delete the event. Proceed?"
-                        )
-                      )
-                        return;
-                      try {
-                        await deleteEvent(id);
-                        toast({
-                          title: "Event deleted",
-                          description: "The event was deleted successfully.",
-                        });
-                        setIsDeleted(true);
-                        onDelete?.(id);
-                      } catch (err: any) {
-                        toast({
-                          title: "Delete failed",
-                          description: err?.message || "Failed to delete event",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    data-testid={`button-delete-event-${id}`}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                )}
               </div>
             )}
           </CardContent>

@@ -213,6 +213,7 @@ export default function MyEvents() {
                   durationWeeks={event.durationWeeks}
                   showActions={true}
                   isRegistered={true}
+                  hideRegisterButton={userRole === "student"}
                   onViewDetails={() => handleCardClick(event._id)}
                   onSave={() => {}}
                   onShare={() => {}}
