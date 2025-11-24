@@ -13,7 +13,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { TransactionService } from "../transactions/transaction.service.js";
 const transactionService = new TransactionService();
+import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
+import mongoose from "mongoose";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -343,8 +345,11 @@ export const getUpcomingEventsService = async (
 
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $or: [
+      { startDate: { $gte: now } }, // Regular events with future startDate
+      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -372,8 +377,11 @@ export const getUpcomingEventsWithVendors = async (
 
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $or: [
+      { startDate: { $gte: now } }, // Regular events with future startDate
+      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -451,11 +459,19 @@ export async function deleteEvent(eventId, user) {
 // 🔍 Search events service
 export const searchEvents = async ({ name, type, userRole }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
+  // Include platform booths even if they don't have a startDate
   const now = new Date();
   const filter = {
     status: "approved",
-    startDate: { $gte: now },
     deletedAt: null,
+    $and: [
+      {
+        $or: [
+          { startDate: { $gte: now } }, // Regular events with future startDate
+          { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+        ],
+      },
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -495,12 +511,14 @@ export const searchEvents = async ({ name, type, userRole }) => {
     const matchingUsers = await User.find(userQuery).select("_id");
     const userIds = matchingUsers.map((user) => user._id);
 
-    filter.$or = [
-      { name: { $regex: name, $options: "i" } }, // Event name
-      { eventType: { $regex: type, $options: "i" } }, // Event type
-      { createdBy: { $in: userIds } }, // Created by matching users
-      { professors: { $in: userIds } }, // Workshop professors matching
-    ];
+    filter.$and.push({
+      $or: [
+        { name: { $regex: name, $options: "i" } }, // Event name
+        { eventType: { $regex: type, $options: "i" } }, // Event type
+        { createdBy: { $in: userIds } }, // Created by matching users
+        { professors: { $in: userIds } }, // Workshop professors matching
+      ],
+    });
   } else {
     // Traditional separate search
     // Filter by event type if given
@@ -541,11 +559,13 @@ export const searchEvents = async ({ name, type, userRole }) => {
       const matchingUsers = await User.find(userQuery).select("_id");
       const userIds = matchingUsers.map((user) => user._id);
 
-      filter.$or = [
-        { name: { $regex: name, $options: "i" } }, // Event name
-        { createdBy: { $in: userIds } }, // Created by matching users
-        { professors: { $in: userIds } }, // Workshop professors matching
-      ];
+      filter.$and.push({
+        $or: [
+          { name: { $regex: name, $options: "i" } }, // Event name
+          { createdBy: { $in: userIds } }, // Created by matching users
+          { professors: { $in: userIds } }, // Workshop professors matching
+        ],
+      });
     }
   }
 
@@ -1224,7 +1244,14 @@ export const restrictAccess = async (eventId, rolesToRestrict, user) => {
 };
 
 export const getSalesReport = async (options = {}) => {
-  const { eventType, startDate, endDate, page = 1, limit = 10 } = options;
+  const {
+    eventType,
+    startDate,
+    endDate,
+    sortOrder = "desc",
+    page = 1,
+    limit = 10,
+  } = options;
 
   const skip = (page - 1) * limit;
 
@@ -1237,37 +1264,97 @@ export const getSalesReport = async (options = {}) => {
     eventFilter.eventType = { $regex: eventType.trim(), $options: "i" };
   }
 
-  if (startDate || endDate) {
-    eventFilter.startDate = {};
-    if (startDate) {
-      const s = new Date(startDate);
-      s.setHours(0, 0, 0, 0);
-      eventFilter.startDate.$gte = s;
-    }
-    if (endDate) {
-      const e = new Date(endDate);
-      e.setHours(23, 59, 59, 999);
-      eventFilter.startDate.$lte = e;
-    }
+  if (startDate && !endDate) {
+    // If only startDate is provided, get events starting on that exact date or after
+    const s = new Date(startDate);
+    const startOfDay = new Date(s);
+    startOfDay.setHours(0, 0, 0, 0);
+    eventFilter.startDate = { $gte: startOfDay };
+  } else if (startDate && endDate) {
+    // If both dates provided, get events starting on/after startDate AND ending on/before endDate (inclusive range)
+    const s = new Date(startDate);
+    const startOfStartDay = new Date(s);
+    startOfStartDay.setHours(0, 0, 0, 0);
+
+    const e = new Date(endDate);
+    const endOfEndDay = new Date(e);
+    endOfEndDay.setHours(23, 59, 59, 999);
+
+    eventFilter.startDate = { $gte: startOfStartDay };
+    eventFilter.endDate = { $lte: endOfEndDay };
+  } else if (!startDate && endDate) {
+    // If only endDate provided, get events ending on that exact date or before
+    const e = new Date(endDate);
+    const endOfDay = new Date(e);
+    endOfDay.setHours(23, 59, 59, 999);
+    eventFilter.endDate = { $lte: endOfDay };
   }
 
   const allEvents = await Event.find(eventFilter)
-    .select("_id name eventType startDate endDate location")
+    .select("_id name eventType startDate endDate location price attendees")
     .lean();
 
   const eventIds = allEvents.map((e) => e._id);
 
+  // Convert eventIds to ObjectIds for proper matching
+  const eventObjectIds = eventIds.map((id) =>
+    mongoose.Types.ObjectId.isValid(id) ? new mongoose.Types.ObjectId(id) : id
+  );
+
   const transactionData = await Transaction.aggregate([
-    // 1️⃣ Match completed transactions that have a related entity ID
+    // 1️⃣ Match completed transactions (both Event and Application types)
     {
       $match: {
-        "relatedEntity.id": { $ne: null }, // ignore transactions without an ID
         type: { $in: ["payment", "refund"] },
         status: "completed",
+        $or: [
+          // Direct Event transactions
+          {
+            "relatedEntity.type": "Event",
+            "relatedEntity.id": { $in: eventObjectIds },
+          },
+          // Application transactions (we'll filter by event later)
+          {
+            "relatedEntity.type": "Application",
+          },
+        ],
       },
     },
 
-    // 2️⃣ Add netAmount: payments positive, refunds negative
+    // 2️⃣ Lookup Application to get event ID for Application transactions
+    {
+      $lookup: {
+        from: "applications",
+        localField: "relatedEntity.id",
+        foreignField: "_id",
+        as: "application",
+      },
+    },
+    {
+      $unwind: { path: "$application", preserveNullAndEmptyArrays: true },
+    },
+
+    // 3️⃣ Determine the actual event ID for each transaction
+    {
+      $addFields: {
+        eventId: {
+          $cond: [
+            { $eq: ["$relatedEntity.type", "Event"] },
+            "$relatedEntity.id",
+            "$application.event", // For Application transactions, use the application's event
+          ],
+        },
+      },
+    },
+
+    // 4️⃣ Filter to only include transactions for our events
+    {
+      $match: {
+        eventId: { $in: eventObjectIds },
+      },
+    },
+
+    // 5️⃣ Add netAmount: payments positive, refunds negative
     {
       $addFields: {
         netAmount: {
@@ -1280,10 +1367,10 @@ export const getSalesReport = async (options = {}) => {
       },
     },
 
-    // 3️⃣ Group by event ID
+    // 6️⃣ Group by event ID
     {
       $group: {
-        _id: "$relatedEntity.id",
+        _id: "$eventId",
         totalRevenue: { $sum: "$netAmount" },
         grossRevenue: {
           $sum: { $cond: [{ $eq: ["$type", "payment"] }, "$amount", 0] },
@@ -1344,15 +1431,51 @@ export const getSalesReport = async (options = {}) => {
 
   const revenueMap = {};
   transactionData.forEach((item) => {
-    revenueMap[item._id.toString()] = {
-      totalRevenue: item.totalRevenue || 0,
-      grossRevenue: item.grossRevenue || 0,
-      totalRefunds: item.totalRefunds || 0,
-      walletPayments: item.walletPayments || 0,
-      cardPayments: item.cardPayments || 0,
-      transactionCount: item.transactionCount || 0,
-    };
+    // Convert ObjectId to string for consistent key matching
+    const eventIdKey = item._id ? item._id.toString() : null;
+    if (eventIdKey) {
+      revenueMap[eventIdKey] = {
+        totalRevenue: item.totalRevenue || 0,
+        grossRevenue: item.grossRevenue || 0,
+        totalRefunds: item.totalRefunds || 0,
+        walletPayments: item.walletPayments || 0,
+        cardPayments: item.cardPayments || 0,
+        transactionCount: item.transactionCount || 0,
+      };
+    }
   });
+
+  // Get attendee counts from applications for bazaar events
+  const bazaarEventIds = allEvents
+    .filter((e) => e.eventType === "bazaar")
+    .map((e) => e._id);
+
+  const applicationAttendeesMap = {};
+  if (bazaarEventIds.length > 0) {
+    const applicationAttendeesData = await Application.aggregate([
+      {
+        $match: {
+          event: { $in: bazaarEventIds },
+          status: "approved", // Only count approved applications
+        },
+      },
+      {
+        $group: {
+          _id: "$event",
+          totalAttendees: {
+            $sum: { $size: { $ifNull: ["$attendees", []] } },
+          },
+        },
+      },
+    ]);
+
+    applicationAttendeesData.forEach((item) => {
+      const eventIdKey = item._id ? item._id.toString() : null;
+      if (eventIdKey) {
+        applicationAttendeesMap[eventIdKey] = item.totalAttendees || 0;
+      }
+    });
+  }
 
   const eventsWithRevenue = allEvents.map((event) => {
     const eventIdStr = event._id.toString();
@@ -1365,22 +1488,52 @@ export const getSalesReport = async (options = {}) => {
       transactionCount: 0,
     };
 
+    // For bazaar events, count attendees from applications; for others, use event.attendees
+    let attendeesCount = 0;
+    if (event.eventType === "bazaar") {
+      attendeesCount = applicationAttendeesMap[eventIdStr] || 0;
+    } else {
+      attendeesCount = event.attendees ? event.attendees.length : 0;
+    }
+
+    // Price is only required for trip and workshop, others should be null/undefined
+    const price = event.price || null;
+
     return {
       _id: event._id,
-      eventName: event.name,
+      name: event.name,
       eventType: event.eventType,
       startDate: event.startDate,
       endDate: event.endDate,
       location: event.location,
-      ...revenue,
+      price: price,
+      attendeesCount: attendeesCount,
+      revenue: revenue.totalRevenue,
+      totalRevenue: revenue.totalRevenue,
+      grossRevenue: revenue.grossRevenue,
+      totalRefunds: revenue.totalRefunds,
+      walletPayments: revenue.walletPayments,
+      cardPayments: revenue.cardPayments,
+      transactionCount: revenue.transactionCount,
     };
   });
 
-  eventsWithRevenue.sort((a, b) => b.totalRevenue - a.totalRevenue);
+  // Apply sorting based on sortOrder parameter
+  eventsWithRevenue.sort((a, b) => {
+    if (sortOrder === "asc") {
+      return a.totalRevenue - b.totalRevenue; // Least to Greatest
+    } else {
+      return b.totalRevenue - a.totalRevenue; // Greatest to Least (default)
+    }
+  });
 
   const totals = {
     totalEvents: eventsWithRevenue.length,
     totalRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.totalRevenue, 0),
+    totalAttendees: eventsWithRevenue.reduce(
+      (sum, e) => sum + e.attendeesCount,
+      0
+    ),
     grossRevenue: eventsWithRevenue.reduce((sum, e) => sum + e.grossRevenue, 0),
     totalRefunds: eventsWithRevenue.reduce((sum, e) => sum + e.totalRefunds, 0),
     totalWalletPayments: eventsWithRevenue.reduce(
@@ -1398,6 +1551,7 @@ export const getSalesReport = async (options = {}) => {
   return {
     totalEvents: totals.totalEvents,
     totalRevenue: totals.totalRevenue,
+    totalAttendees: totals.totalAttendees,
     grossRevenue: totals.grossRevenue,
     totalRefunds: totals.totalRefunds,
     netRevenue: totals.totalRevenue,

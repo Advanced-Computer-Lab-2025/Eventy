@@ -65,6 +65,18 @@ router.get(
 );
 
 /**
+ * @route   GET /api/transactions
+ * @desc    Get all transactions (for admin/events office)
+ * @access  Admin, Events Office
+ */
+router.get(
+  "/",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  transactionController.getAllTransactions.bind(transactionController)
+);
+
+/**
  * @route   POST /api/transactions/applications/:applicationId/pay
  * @desc    Pay for a vendor application (bazaar or booth)
  * @access  Vendor

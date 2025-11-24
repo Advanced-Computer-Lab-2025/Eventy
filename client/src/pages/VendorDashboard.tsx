@@ -14,6 +14,19 @@ import {
   Target,
   CreditCard,
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -65,6 +78,9 @@ export default function VendorDashboard() {
     Application[]
   >([]);
   const [approvedApplications, setApprovedApplications] = useState<
+    Application[]
+  >([]);
+  const [cancelledApplications, setCancelledApplications] = useState<
     Application[]
   >([]);
   const [loading, setLoading] = useState(true);
@@ -178,20 +194,82 @@ export default function VendorDashboard() {
     const totalApplications =
       pendingApplications.length +
       rejectedApplications.length +
-      approvedApplications.length;
+      approvedApplications.length +
+      cancelledApplications.length;
     const pendingCount = pendingApplications.length;
     const approvedCount = approvedApplications.length;
     const rejectedCount = rejectedApplications.length;
+    const cancelledCount = cancelledApplications.length;
 
     return {
       totalApplications,
       pendingCount,
       approvedCount,
       rejectedCount,
+      cancelledCount,
     };
   };
 
   const vendorStats = getVendorStats();
+
+  // Prepare chart data
+  const applicationStatusData = [
+    {
+      name: "Approved",
+      value: vendorStats.approvedCount,
+      color: "#22c55e", // green-500
+    },
+    {
+      name: "Pending",
+      value: vendorStats.pendingCount,
+      color: "#3b82f6", // blue-500
+    },
+    {
+      name: "Rejected",
+      value: vendorStats.rejectedCount,
+      color: "#f97316", // orange-500
+    },
+    {
+      name: "Cancelled",
+      value: vendorStats.cancelledCount,
+      color: "#6b7280", // gray-500
+    },
+  ];
+
+  // Calculate application type breakdown (Bazaar vs Booth)
+  const getApplicationTypeData = () => {
+    const allApplications = [
+      ...pendingApplications,
+      ...approvedApplications,
+      ...rejectedApplications,
+    ];
+
+    const bazaarCount = allApplications.filter(
+      (app) => app.type === "bazaar"
+    ).length;
+    const boothCount = allApplications.filter(
+      (app) => app.type === "booth"
+    ).length;
+
+    return [
+      { name: "Bazaars", value: bazaarCount, color: "#8b5cf6" }, // purple-500
+      { name: "Platform Booths", value: boothCount, color: "#ec4899" }, // pink-500
+    ];
+  };
+
+  const applicationTypeData = getApplicationTypeData();
+
+  // Check if vendor has active booths (approved applications)
+  const hasActiveBooths = approvedApplications.length > 0;
+  const activeBoothsCount = approvedApplications.length;
+
+  // Calculate success rate (approved / total * 100)
+  const successRate =
+    vendorStats.totalApplications > 0
+      ? Math.round(
+          (vendorStats.approvedCount / vendorStats.totalApplications) * 100
+        )
+      : 0;
 
   // Fetch company name from localStorage
   const fetchCompanyName = () => {
@@ -231,18 +309,28 @@ export default function VendorDashboard() {
       console.log("=== Starting application fetch ===");
 
       console.log("Fetching applications by status...");
-      const [pending, rejected, approved] = await Promise.all([
+      const results = await Promise.allSettled([
         bazaarApiService.getPendingApplications(),
         bazaarApiService.getRejectedApplications(),
         bazaarApiService.getApprovedApplications(),
+        bazaarApiService.getApplicationsByStatus("cancelled"),
       ]);
+
+      const pending = results[0].status === "fulfilled" ? results[0].value : [];
+      const rejected =
+        results[1].status === "fulfilled" ? results[1].value : [];
+      const approved =
+        results[2].status === "fulfilled" ? results[2].value : [];
+      const cancelled =
+        results[3].status === "fulfilled" ? results[3].value : [];
 
       console.log("Pending applications:", pending);
       console.log("Rejected applications:", rejected);
       console.log("Approved applications:", approved);
+      console.log("Cancelled applications:", cancelled);
 
       const totalApplications =
-        pending.length + rejected.length + approved.length;
+        pending.length + rejected.length + approved.length + cancelled.length;
       console.log("Total applications found:", totalApplications);
 
       if (totalApplications === 0) {
@@ -252,6 +340,7 @@ export default function VendorDashboard() {
       setPendingApplications(pending);
       setRejectedApplications(rejected);
       setApprovedApplications(approved);
+      setCancelledApplications(cancelled);
 
       console.log("=== Application fetch completed ===");
     } catch (err) {
@@ -503,11 +592,7 @@ export default function VendorDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <VendorHeader
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        onSearch={handleSearch}
-      />
+      <VendorHeader activeTab={activeTab} onTabChange={handleTabChange} />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {activeTab !== "platform-booths" &&
@@ -532,44 +617,270 @@ export default function VendorDashboard() {
           className="space-y-6"
         >
           <TabsContent value="upcoming" className="space-y-4">
-            {/* Statistics Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-              <StatCard
-                title="Total Applications"
-                value={vendorStats.totalApplications}
-                description="All applications submitted"
-                icon={FolderOpen}
-                valueColor="text-foreground"
-                iconColor="text-muted-foreground"
-                titleColor="text-gray-900 dark:text-gray-100"
-              />
-              <StatCard
-                title="Pending Approval"
-                value={vendorStats.pendingCount}
-                description="Awaiting review"
-                icon={Clock}
-                valueColor="text-blue-600 dark:text-blue-400"
-                iconColor="text-blue-600 dark:text-blue-400"
-                titleColor="text-gray-900 dark:text-gray-100"
-              />
-              <StatCard
-                title="Approved"
-                value={vendorStats.approvedCount}
-                description="Successfully approved"
-                icon={CheckCircle}
-                valueColor="text-green-600 dark:text-green-400"
-                iconColor="text-green-600 dark:text-green-400"
-                titleColor="text-gray-900 dark:text-gray-100"
-              />
-              <StatCard
-                title="Rejected"
-                value={vendorStats.rejectedCount}
-                description="Requires updates"
-                icon={XCircle}
-                valueColor="text-orange-600 dark:text-orange-400"
-                iconColor="text-orange-600 dark:text-orange-400"
-                titleColor="text-gray-900 dark:text-gray-100"
-              />
+            {/* Charts Section */}
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+              {/* Application Status Doughnut Chart */}
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg font-semibold">
+                    Application Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0 px-4">
+                  {applicationStatusData.length === 0 ||
+                  applicationStatusData.every((item) => item.value === 0) ? (
+                    <div className="h-[280px] flex flex-col items-center justify-center">
+                      <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground text-sm">
+                        No applications yet
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Start by applying to a bazaar or booth
+                      </p>
+                    </div>
+                  ) : (
+                    <>
+                      <ResponsiveContainer width="100%" height={280}>
+                        <PieChart>
+                          <Pie
+                            data={applicationStatusData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={5}
+                            dataKey="value"
+                            label={({
+                              name,
+                              value,
+                              cx,
+                              cy,
+                              midAngle,
+                              outerRadius,
+                            }) => {
+                              if (value === 0) return null;
+                              const RADIAN = Math.PI / 180;
+                              const radius = outerRadius + 25; // Add distance from chart for spacing
+                              const x =
+                                cx + radius * Math.cos(-midAngle * RADIAN);
+                              const y =
+                                cy + radius * Math.sin(-midAngle * RADIAN);
+                              // Find the color for this segment
+                              const segmentData = applicationStatusData.find(
+                                (item) => item.name === name
+                              );
+                              const labelColor = segmentData?.color || "#333";
+                              return (
+                                <text
+                                  x={x}
+                                  y={y}
+                                  fill={labelColor}
+                                  textAnchor={x > cx ? "start" : "end"}
+                                  dominantBaseline="central"
+                                  fontSize="11"
+                                >
+                                  {`${name}: ${value}`}
+                                </text>
+                              );
+                            }}
+                            labelLine={(props: any) => {
+                              if (props.value === 0) return null;
+                              return (
+                                <path
+                                  d={props.points?.reduce(
+                                    (acc: string, point: any, i: number) => {
+                                      return i === 0
+                                        ? `M${point.x},${point.y}`
+                                        : `${acc}L${point.x},${point.y}`;
+                                    },
+                                    ""
+                                  )}
+                                  stroke="#666"
+                                  strokeWidth={1}
+                                  fill="none"
+                                />
+                              );
+                            }}
+                          >
+                            {applicationStatusData.map((entry, index) => (
+                              <Cell
+                                key={`cell-${index}`}
+                                fill={entry.color}
+                                stroke="none"
+                              />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            formatter={(value: number, name: string) => [
+                              Math.floor(value),
+                              name,
+                            ]}
+                            contentStyle={{
+                              backgroundColor: "hsl(var(--background))",
+                              border: "1px solid hsl(var(--border))",
+                              borderRadius: "8px",
+                              color: "hsl(var(--foreground))",
+                            }}
+                            itemStyle={{ color: "hsl(var(--foreground))" }}
+                            labelStyle={{ display: "none" }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="mt-4 flex justify-center">
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          {applicationStatusData.map((item) => (
+                            <div
+                              key={item.name}
+                              className="flex items-center gap-2"
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: item.color }}
+                              />
+                              <span className="text-muted-foreground font-medium">
+                                {item.name}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Application Type Bar Chart */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold">
+                    Applications by Type
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {applicationTypeData.length === 0 ||
+                  applicationTypeData.every((item) => item.value === 0) ? (
+                    <div className="h-[280px] flex flex-col items-center justify-center">
+                      <FolderOpen className="h-12 w-12 text-muted-foreground mb-3" />
+                      <p className="text-muted-foreground text-sm">
+                        No applications yet
+                      </p>
+                      <p className="text-muted-foreground text-xs mt-1">
+                        Start by applying to a bazaar or booth
+                      </p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart
+                        data={applicationTypeData}
+                        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" />
+                        <XAxis dataKey="name" />
+                        <YAxis
+                          tickFormatter={(value) =>
+                            Math.floor(value).toString()
+                          }
+                          allowDecimals={false}
+                        />
+                        <Tooltip
+                          formatter={(
+                            value: number,
+                            name: string,
+                            props: any
+                          ) => {
+                            const label =
+                              props.payload.name === "Platform Booths"
+                                ? "Number of booths"
+                                : "Number of bazaars";
+                            return [Math.floor(value), label];
+                          }}
+                          contentStyle={{
+                            backgroundColor: "hsl(var(--background))",
+                            border: "1px solid hsl(var(--border))",
+                            borderRadius: "8px",
+                            color: "hsl(var(--foreground))",
+                          }}
+                          labelStyle={{ color: "hsl(var(--foreground))" }}
+                        />
+                        <Bar dataKey="value" fill="#8884d8" barSize={60}>
+                          {applicationTypeData.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Active Booths & Success Rate Card */}
+              <Card className="flex flex-col">
+                <CardHeader>
+                  <CardTitle className="text-lg font-semibold text-center">
+                    Performance Overview
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="flex-1 flex flex-col justify-center space-y-6">
+                  {/* Active Booths Status */}
+                  <div className="text-center">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Store
+                        className={`h-5 w-5 ${
+                          hasActiveBooths
+                            ? "text-green-600 dark:text-green-400"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                      <span className="text-sm font-medium">Active Booths</span>
+                    </div>
+                    <div
+                      className={`text-3xl font-bold ${
+                        hasActiveBooths
+                          ? "text-green-600 dark:text-green-400"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      {activeBoothsCount}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {hasActiveBooths
+                        ? "You have active booths"
+                        : "No active booths"}
+                    </p>
+                  </div>
+
+                  {/* Success Rate */}
+                  <div className="text-center border-t pt-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <Target className="h-5 w-5 text-primary" />
+                      <span className="text-sm font-medium">Success Rate</span>
+                    </div>
+                    <div className="text-3xl font-bold text-primary">
+                      {successRate}%
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendorStats.approvedCount} of{" "}
+                      {vendorStats.totalApplications} approved
+                    </p>
+                  </div>
+
+                  {/* Total Applications */}
+                  <div className="text-center border-t pt-6">
+                    <div className="flex items-center justify-center gap-2 mb-2">
+                      <FolderOpen className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium">
+                        Total Applications
+                      </span>
+                    </div>
+                    <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                      {vendorStats.totalApplications}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {vendorStats.pendingCount} pending review
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
 
             <div className="mb-6">

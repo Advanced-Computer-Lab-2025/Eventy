@@ -6,6 +6,8 @@ import {
   Dumbbell,
   Archive,
   FileText,
+  PieChart,
+  Gift,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -89,6 +91,16 @@ export default function EventsOfficeHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
+            onClick={() => setLocation("/events-office/polls")}
+            data-testid="button-nav-polls"
+          >
+            <PieChart className="h-4 w-4" />
+            Polls
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
             onClick={() => setLocation("/events-office/archived")}
             data-testid="button-nav-archived"
           >
@@ -104,6 +116,26 @@ export default function EventsOfficeHeader() {
           >
             <FileText className="h-4 w-4" />
             Attendees Report
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/reports/sales")}
+            data-testid="button-nav-sales-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Sales Report
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
+          >
+            <Gift className="h-4 w-4" />
+            Loyalty Partners
           </Button>
         </div>
       </div>

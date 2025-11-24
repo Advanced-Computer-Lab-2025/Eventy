@@ -8,7 +8,7 @@ import {
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
 
-const stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 export class TransactionService {
   async payForEvent({ userId, eventId, paymentMethod }) {
@@ -288,7 +288,17 @@ export class TransactionService {
    * @returns {Promise<Transaction[]>}
    */
   async getUserTransactions(userId) {
-    return await Transaction.find({ userId }).sort({ createdAt: -1 });
+    return await Transaction.find({ userId, status: "completed" }).sort({
+      createdAt: -1,
+    });
+  }
+
+  /**
+   * Get all transactions (for admin/events office)
+   * @returns {Promise<Transaction[]>}
+   */
+  async getAllTransactions() {
+    return await Transaction.find({}).sort({ createdAt: -1 });
   }
   /**
    * Calculates the participation fee for a vendor application.

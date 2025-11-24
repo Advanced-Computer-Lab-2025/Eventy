@@ -33,9 +33,12 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import EventListPage from "@/pages/EventListPage";
 import StaffUpcomingEvents from "@/pages/StaffUpcomingEvents";
 import ArchivedEvents from "@/pages/ArchivedEvents";
+import SalesReport from "@/components/SalesReportPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import EventsOfficePolls from "@/pages/EventsOfficePolls";
+import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 function Router() {
   return (
     <Switch>
@@ -126,6 +129,12 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/events-office/polls">
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <EventsOfficePolls />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/events-office/archived">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <ArchivedEvents />
@@ -184,6 +193,26 @@ function Router() {
           <EventsOfficeReportPage />
         </ProtectedRoute>
       </Route>
+      <Route path="/loyalty-partners">
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "ta",
+            "professor",
+            "events_office",
+            "admin",
+          ]}
+        >
+          <ApprovedLoyaltyPartnersPage />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/reports/sales">
+        <ProtectedRoute allowedRoles={["events_office", "admin"]}>
+          <SalesReport />
+        </ProtectedRoute>
+      </Route>
+
       <Route component={NotFound} />
     </Switch>
   );

@@ -227,15 +227,7 @@ export default function EditConference() {
       <EventsOfficeHeader />
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-bold">Edit Conference</h1>
-            <Button
-              variant="outline"
-              onClick={() => setLocation("/events-office/dashboard")}
-            >
-              Back to Events Office
-            </Button>
-          </div>
+          <h1 className="text-4xl font-bold mb-2">Edit Conference</h1>
           <p className="text-muted-foreground">
             Update conference details. The conference website will contain all
             the conference's details.

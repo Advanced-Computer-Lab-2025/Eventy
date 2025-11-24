@@ -95,6 +95,7 @@ export default function ArchivedEvents() {
                     id={event._id}
                     title={event.name || "Untitled Event"}
                     category={event.eventType as any}
+                    status={event.status}
                     date={
                       event.startDate
                         ? new Date(event.startDate).toLocaleDateString(
@@ -120,7 +121,13 @@ export default function ArchivedEvents() {
                           )
                         : "TBA"
                     }
-                    location={event.location || "Unknown location"}
+                    location={
+                      event.location ||
+                      (event.eventType === "platform_booth"
+                        ? event.locationPreference
+                        : null) ||
+                      "Unknown location"
+                    }
                     attendees={
                       Array.isArray(event.attendees)
                         ? event.attendees.length
@@ -134,6 +141,7 @@ export default function ArchivedEvents() {
                     description={event.description}
                     startDate={event.startDate}
                     endDate={event.endDate}
+                    durationWeeks={event.durationWeeks}
                     capacity={event.capacity || -1}
                     vendors={event.vendors || []}
                     showDetailedView={true}
