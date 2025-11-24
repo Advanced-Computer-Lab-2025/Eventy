@@ -1,8 +1,9 @@
-import { Bell, Home, Users, FileText, Gift } from "lucide-react";
+import { Home, Users, FileText, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
 
 export default function AdminHeader() {
@@ -17,13 +18,7 @@ export default function AdminHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
           </div>
