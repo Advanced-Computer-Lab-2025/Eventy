@@ -7,16 +7,45 @@ import {
   Archive,
   FileText,
   Gift,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 
 export default function EventsOfficeHeader() {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+  } | null>(null);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   const goHome = () => setLocation("/events-office/dashboard");
 
@@ -28,10 +57,17 @@ export default function EventsOfficeHeader() {
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.firstName && user?.role && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName} / {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -66,26 +102,41 @@ export default function EventsOfficeHeader() {
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/approvals/workshops")}
-            data-testid="button-nav-approvals"
+          <DropdownMenu
+            open={isApprovalsOpen}
+            onOpenChange={setIsApprovalsOpen}
           >
-            <CheckCircle2 className="h-4 w-4" />
-            Approvals
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/vendor-requests")}
-            data-testid="button-nav-vendor-requests"
-          >
-            <ClipboardList className="h-4 w-4" />
-            Vendor Requests
-          </Button>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                data-testid="button-nav-approvals"
+                onMouseEnter={() => setIsApprovalsOpen(true)}
+                onMouseLeave={() => setIsApprovalsOpen(false)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Approvals
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onMouseEnter={() => setIsApprovalsOpen(true)}
+              onMouseLeave={() => setIsApprovalsOpen(false)}
+            >
+              <DropdownMenuItem
+                onClick={() => setLocation("/approvals/workshops")}
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Workshop Approvals
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocation("/vendor-requests")}>
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Vendor Requests
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"
@@ -96,26 +147,38 @@ export default function EventsOfficeHeader() {
             <Archive className="h-4 w-4" />
             Archived
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/reports/attendees")}
-            data-testid="button-nav-reports"
-          >
-            <FileText className="h-4 w-4" />
-            Attendees Report
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/reports/sales")}
-            data-testid="button-nav-sales-reports"
-          >
-            <FileText className="h-4 w-4" />
-            Sales Report
-          </Button>
+          <DropdownMenu open={isReportsOpen} onOpenChange={setIsReportsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2"
+                data-testid="button-nav-reports"
+                onMouseEnter={() => setIsReportsOpen(true)}
+                onMouseLeave={() => setIsReportsOpen(false)}
+              >
+                <FileText className="h-4 w-4" />
+                Reports
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onMouseEnter={() => setIsReportsOpen(true)}
+              onMouseLeave={() => setIsReportsOpen(false)}
+            >
+              <DropdownMenuItem
+                onClick={() => setLocation("/reports/attendees")}
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Attendees Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setLocation("/reports/sales")}>
+                <FileText className="mr-2 h-4 w-4" />
+                Sales Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"

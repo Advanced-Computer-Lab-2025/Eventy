@@ -13,6 +13,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import { useLocation } from "wouter";
 import NotificationsPopover from "./NotificationsPopover";
+import { useEffect, useState } from "react";
 
 interface StudentHeaderProps {
   homeHref?: string;
@@ -22,6 +23,24 @@ export default function StudentHeader({
   homeHref = "/home",
 }: StudentHeaderProps) {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
@@ -35,6 +54,13 @@ export default function StudentHeader({
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.firstName && user?.role && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName} / {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -86,7 +112,6 @@ export default function StudentHeader({
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >
-            {console.log("Rendering Gift icon")}
             <Gift className="h-4 w-4" /> {/* Added Gift icon */}
             Loyalty Partners
           </Button>
