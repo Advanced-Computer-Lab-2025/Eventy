@@ -7,6 +7,7 @@ import {
   Trash2,
   Archive,
   Clock,
+  DollarSign,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -85,6 +86,7 @@ export interface EventCardProps {
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
+  price?: number;
   showActions?: boolean;
   showDetailedView?: boolean;
   isRegistered?: boolean;
@@ -117,6 +119,7 @@ export default function EventCard({
   capacity,
   registrationDeadline,
   vendors = [],
+  price,
   showActions = true,
   showDetailedView = false,
   onRegister,
@@ -261,6 +264,14 @@ export default function EventCard({
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>{location}</span>
+                  </div>
+                )}
+
+                {/* Price */}
+                {price !== undefined && price !== null && (
+                  <div className="flex items-center text-muted-foreground">
+                    <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span>{price} EGP</span>
                   </div>
                 )}
 
@@ -483,6 +494,12 @@ export default function EventCard({
                 <Users className="h-4 w-4" />
                 <span>{attendees}</span>
               </div>
+              {price !== undefined && price !== null && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span>{price} EGP</span>
+                </div>
+              )}
             </div>
 
             {/* Vendors section - compact view (bazaar only, not platform booths) */}

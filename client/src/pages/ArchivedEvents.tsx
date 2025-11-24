@@ -144,6 +144,7 @@ export default function ArchivedEvents() {
                     durationWeeks={event.durationWeeks}
                     capacity={event.capacity || -1}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
                     onViewDetails={() => handleCardClick(event._id)}
                     // Archived events must not be deletable from the UI
