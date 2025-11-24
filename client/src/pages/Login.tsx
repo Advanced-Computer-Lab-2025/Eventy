@@ -45,10 +45,16 @@ export default function Login() {
       const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
 
       // Use companyName for vendors, firstName for other users
-      const displayName =
-        role === "vendor"
-          ? data.user.companyName || "Vendor"
-          : data.user.firstName || "user";
+      let displayName = "user";
+      if (role === "vendor") {
+        displayName = data.user.companyName || "Vendor";
+      } else if (data.user.firstName) {
+        displayName = data.user.firstName;
+      } else if (data.user.email) {
+        // Extract name from email (part before @) for events_office, admin, etc.
+        const emailName = data.user.email.split("@")[0];
+        displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      }
 
       toast({
         title: "Login successful 🎉",
