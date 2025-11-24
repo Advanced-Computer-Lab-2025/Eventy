@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/select";
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
-import { authStore } from "@/lib/mockData";
 import EventCard from "@/components/EventCard";
 import { Button } from "@/components/ui/button";
 
@@ -30,8 +29,6 @@ interface RatingItem {
   createdAt?: string;
   deletedAt?: string | null;
 }
-
-const RATINGS_KEY = "mock_ratings_v1";
 
 export default function AdminRatings() {
   const [events, setEvents] = useState<EventItem[]>([]);
@@ -138,7 +135,16 @@ export default function AdminRatings() {
     }
   }
 
-  const currentUser = authStore.getCurrentUser();
+  const getCurrentUser = () => {
+    try {
+      const userStr = localStorage.getItem("user");
+      return userStr ? JSON.parse(userStr) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const currentUser = getCurrentUser();
 
   return (
     <div className="min-h-screen bg-background">
@@ -146,13 +152,10 @@ export default function AdminRatings() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">
-            Event Ratings & Comments (Mock)
-          </h1>
+          <h1 className="text-3xl font-bold">Event Ratings & Comments</h1>
           <p className="text-muted-foreground">
-            This view uses frontend mock data. Click an event card to view its
-            ratings and comments. Admins can remove inappropriate comments
-            (client-side).
+            Click an event card to view its ratings and comments. Admins can
+            remove inappropriate comments.
           </p>
         </div>
 
