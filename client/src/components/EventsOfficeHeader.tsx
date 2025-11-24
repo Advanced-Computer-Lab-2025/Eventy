@@ -110,7 +110,7 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                className="gap-2 cursor-pointer"
                 data-testid="button-nav-approvals"
                 onMouseEnter={() => setIsApprovalsOpen(true)}
                 onMouseLeave={() => setIsApprovalsOpen(false)}
@@ -127,11 +127,15 @@ export default function EventsOfficeHeader() {
             >
               <DropdownMenuItem
                 onClick={() => setLocation("/approvals/workshops")}
+                className="cursor-pointer"
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Workshop Approvals
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocation("/vendor-requests")}>
+              <DropdownMenuItem
+                onClick={() => setLocation("/vendor-requests")}
+                className="cursor-pointer"
+              >
                 <ClipboardList className="mr-2 h-4 w-4" />
                 Vendor Requests
               </DropdownMenuItem>
@@ -152,7 +156,7 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                className="gap-2 cursor-pointer"
                 data-testid="button-nav-reports"
                 onMouseEnter={() => setIsReportsOpen(true)}
                 onMouseLeave={() => setIsReportsOpen(false)}
@@ -169,11 +173,15 @@ export default function EventsOfficeHeader() {
             >
               <DropdownMenuItem
                 onClick={() => setLocation("/reports/attendees")}
+                className="cursor-pointer"
               >
                 <FileText className="mr-2 h-4 w-4" />
                 Attendees Report
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setLocation("/reports/sales")}>
+              <DropdownMenuItem
+                onClick={() => setLocation("/reports/sales")}
+                className="cursor-pointer"
+              >
                 <FileText className="mr-2 h-4 w-4" />
                 Sales Report
               </DropdownMenuItem>
