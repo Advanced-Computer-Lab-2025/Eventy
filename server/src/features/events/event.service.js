@@ -16,6 +16,10 @@ const transactionService = new TransactionService();
 import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import mongoose from "mongoose";
+import { differenceInHours } from "date-fns";
+
+// Store the interval ID for the reminder scheduler
+let reminderInterval;
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -40,6 +44,15 @@ export async function createBazaar(data, user) {
 
   // Save to database
   const bazaar = await Event.create(bazaarData);
+
+  // Send notification about new bazaar
+  try {
+    await notifyNewEvent(bazaar, "bazaar");
+  } catch (error) {
+    console.error("Error sending bazaar notification:", error);
+    // Don't fail the request if notification fails
+  }
+
   return bazaar;
 }
 
@@ -103,6 +116,14 @@ export const createTrip = async (tripData, createdBy) => {
     restrictedRoles: tripData.restrictedRoles || [],
   });
 
+  // Send notification about new trip
+  try {
+    await notifyNewEvent(newTrip, "trip");
+  } catch (error) {
+    console.error("Error sending trip notification:", error);
+    // Don't fail the request if notification fails
+  }
+
   return newTrip;
 };
 
@@ -150,6 +171,14 @@ export const createConference = async (data, userId) => {
     createdBy: userId,
     restrictedRoles: data.restrictedRoles || [],
   });
+
+  // Send notification about new conference
+  try {
+    await notifyNewEvent(event, "conference");
+  } catch (error) {
+    console.error("Error sending conference notification:", error);
+    // Don't fail the request if notification fails
+  }
 
   return event;
 };
@@ -209,6 +238,14 @@ export const createWorkshop = async (workshopData, professorId) => {
     status: "pending",
     restrictedRoles: workshopData.restrictedRoles || [],
   });
+
+  // Send notification about new workshop
+  try {
+    await notifyNewEvent(workshop, "workshop");
+  } catch (error) {
+    console.error("Error sending workshop notification:", error);
+    // Don't fail the request if notification fails
+  }
 
   return workshop;
 };
@@ -294,6 +331,7 @@ export const updateTripService = async (tripId, updateData, user) => {
   const savedTrip = await trip.save();
   return savedTrip;
 };
+
 /**
  * Register an authenticated user (Student, Staff, TA, or Professor)
  * to a workshop or trip event.
@@ -1565,3 +1603,153 @@ export const getSalesReport = async (options = {}) => {
     events: paginatedEvents,
   };
 };
+
+/**
+ * Sends notifications to all users about a new event
+ * @param {Object} event - The newly created event
+ * @param {string} eventType - The type of event (e.g., 'bazaar', 'workshop', 'trip', 'conference')
+ */
+async function notifyNewEvent(event, eventType) {
+  try {
+    // Get all users who should be notified
+    const users = await User.find({
+      role: { $in: ["student", "staff", "ta", "professor", "events_office"] },
+      status: "active",
+      notificationPreferences: { $ne: false }, // Only users who haven't opted out
+    }).select("_id");
+
+    if (!users.length) return;
+
+    // Map event type to a user-friendly name
+    const eventTypeNames = {
+      bazaar: "Bazaar",
+      workshop: "Workshop",
+      trip: "Trip",
+      conference: "Conference",
+      platform_booth: "Platform Booth",
+    };
+
+    // Create notification data
+    const notificationData = {
+      title: `New ${eventTypeNames[eventType] || "Event"} Added`,
+      message: `A new ${eventTypeNames[eventType] || "event"} "${event.name}" has been added.`,
+      link: `/events/${event._id}`,
+      recipients: users.map((user) => user._id),
+      event: event._id,
+      notificationType: "new_event",
+    };
+
+    // Create notification
+    await NotificationService.createNotification(notificationData);
+
+    console.log(
+      `Notification sent to ${users.length} users about new ${eventType}`
+    );
+  } catch (error) {
+    console.error("Error sending event notification:", error);
+    // Don't throw error to not block event creation
+  }
+}
+
+/**
+ * Sends reminder notifications for upcoming events
+ * @param {Object} event - The event to send reminders for
+ * @param {Date} reminderTime - When the reminder should be sent
+ */
+async function sendEventReminder(event, reminderTime) {
+  try {
+    // Get all users registered for this event
+    const eventWithAttendees = await Event.findById(event._id).populate(
+      "attendees",
+      "email notificationPreferences"
+    );
+
+    if (!eventWithAttendees?.attendees?.length) return;
+
+    // Filter out users who have disabled notifications
+    const usersToNotify = eventWithAttendees.attendees.filter(
+      (user) => user.notificationPreferences !== false
+    );
+
+    if (!usersToNotify.length) return;
+
+    // Calculate time until event
+    const eventStart = new Date(event.startDate);
+    const timeUntilEvent = differenceInHours(eventStart, reminderTime);
+    const timeString = timeUntilEvent < 24 ? "1 hour" : "1 day";
+
+    // Send notifications
+    await NotificationService.createNotification({
+      title: `⏰ Event Reminder: ${event.name}`,
+      message: `The event \"${event.name}\" is starting in ${timeString}.`,
+      link: `/events/${event._id}`,
+      recipients: usersToNotify.map((user) => user._id),
+      event: event._id,
+      notificationType: "event_reminder",
+    });
+
+    console.log(
+      `Sent ${timeString} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
+    );
+  } catch (error) {
+    console.error(`Error sending reminder for event ${event._id}:`, error);
+  }
+}
+
+/**
+ * Schedules reminders for all upcoming events
+ */
+export async function scheduleEventReminders() {
+  try {
+    const now = new Date();
+
+    // Find all upcoming events starting within the next 25 hours
+    const upcomingEvents = await Event.find({
+      startDate: {
+        $gt: now,
+        $lte: new Date(now.getTime() + 25 * 60 * 60 * 1000), // 25 hours from now
+      },
+      status: "approved",
+      deletedAt: null,
+    });
+
+    for (const event of upcomingEvents) {
+      const eventStart = new Date(event.startDate);
+      const timeUntilEvent = differenceInHours(eventStart, now);
+
+      // Schedule 1-day reminder if event is between 24-25 hours away
+      if (timeUntilEvent > 24 && timeUntilEvent <= 25) {
+        await sendEventReminder(event, now);
+      }
+      // Schedule 1-hour reminder if event is between 1-2 hours away
+      else if (timeUntilEvent > 1 && timeUntilEvent <= 2) {
+        await sendEventReminder(event, now);
+      }
+    }
+  } catch (error) {
+    console.error("Error scheduling event reminders:", error);
+  }
+}
+
+/**
+ * Starts the reminder scheduler to run every 30 minutes
+ */
+export function startReminderScheduler() {
+  // Run immediately on start
+  scheduleEventReminders();
+
+  // Then run every 30 minutes
+  reminderInterval = setInterval(scheduleEventReminders, 30 * 60 * 1000);
+
+  console.log("Event reminder scheduler started");
+}
+
+/**
+ * Stops the reminder scheduler
+ */
+export function stopReminderScheduler() {
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+    console.log("Event reminder scheduler stopped");
+  }
+}
