@@ -40,6 +40,15 @@ export async function createBazaar(data, user) {
 
   // Save to database
   const bazaar = await Event.create(bazaarData);
+
+  // Send notification about new bazaar
+  try {
+    await NotificationService.notifyNewEvent(bazaar, "bazaar");
+  } catch (error) {
+    console.error("Error sending bazaar notification:", error);
+    // Don't fail the request if notification fails
+  }
+
   return bazaar;
 }
 
@@ -103,6 +112,14 @@ export const createTrip = async (tripData, createdBy) => {
     restrictedRoles: tripData.restrictedRoles || [],
   });
 
+  // Send notification about new trip
+  try {
+    await NotificationService.notifyNewEvent(newTrip, "trip");
+  } catch (error) {
+    console.error("Error sending trip notification:", error);
+    // Don't fail the request if notification fails
+  }
+
   return newTrip;
 };
 
@@ -150,6 +167,14 @@ export const createConference = async (data, userId) => {
     createdBy: userId,
     restrictedRoles: data.restrictedRoles || [],
   });
+
+  // Send notification about new conference
+  try {
+    await NotificationService.notifyNewEvent(event, "conference");
+  } catch (error) {
+    console.error("Error sending conference notification:", error);
+    // Don't fail the request if notification fails
+  }
 
   return event;
 };
@@ -209,6 +234,14 @@ export const createWorkshop = async (workshopData, professorId) => {
     status: "pending",
     restrictedRoles: workshopData.restrictedRoles || [],
   });
+
+  // Send notification about new workshop
+  try {
+    await NotificationService.notifyNewEvent(workshop, "workshop");
+  } catch (error) {
+    console.error("Error sending workshop notification:", error);
+    // Don't fail the request if notification fails
+  }
 
   return workshop;
 };

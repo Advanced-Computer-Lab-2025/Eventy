@@ -8,6 +8,8 @@ import {
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
 
+const stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
+
 export class TransactionService {
   // We use a "getter" instead of a constructor.
   // This ensures we only access process.env.STRIPE_SECRET_KEY
