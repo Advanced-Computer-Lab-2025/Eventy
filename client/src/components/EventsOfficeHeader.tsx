@@ -6,6 +6,7 @@ import {
   Dumbbell,
   Archive,
   FileText,
+  PieChart,
   Gift,
   ChevronDown,
 } from "lucide-react";

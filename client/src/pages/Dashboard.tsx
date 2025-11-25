@@ -171,7 +171,13 @@ export default function Dashboard() {
                               )
                             : "TBA"
                         }
-                        location={event.location || "Unknown location"}
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
                         attendees={
                           Array.isArray(event.attendees)
                             ? event.attendees.length

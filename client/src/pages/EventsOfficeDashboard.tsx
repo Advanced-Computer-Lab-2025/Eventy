@@ -20,6 +20,7 @@ import {
   FileText,
   SlidersHorizontal,
   Users,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -124,15 +125,31 @@ export default function EventsOfficeDashboard() {
       !q ||
       (event.name || "").toLowerCase().includes(q) ||
       (event.eventType || "").toLowerCase().includes(q) ||
-      (event.location || "").toLowerCase().includes(q);
+      (event.location || "").toLowerCase().includes(q) ||
+      (event.locationPreference || "").toLowerCase().includes(q);
 
     const matchesType = selectedEventTypes.includes(event.eventType);
 
     const now = new Date();
-    const eventEndDate = new Date(event.endDate);
-    eventEndDate.setUTCHours(23, 59, 59, 999);
-    const isUpcoming = eventEndDate.getTime() >= now.getTime();
-    const isPast = eventEndDate.getTime() < now.getTime();
+    const isBoothEvent = event.eventType === "platform_booth";
+    // Booth events don't have endDate, so they're always considered "upcoming"
+    let isUpcoming = false;
+    let isPast = false;
+
+    if (isBoothEvent) {
+      // Booth events are always considered upcoming
+      isUpcoming = true;
+      isPast = false;
+    } else if (event.endDate) {
+      const eventEndDate = new Date(event.endDate);
+      eventEndDate.setUTCHours(23, 59, 59, 999);
+      isUpcoming = eventEndDate.getTime() >= now.getTime();
+      isPast = eventEndDate.getTime() < now.getTime();
+    } else {
+      // Events without endDate are considered upcoming
+      isUpcoming = true;
+      isPast = false;
+    }
 
     const matchesTimeFilter =
       (showUpcoming && isUpcoming) || (showPast && isPast);
@@ -1097,6 +1114,16 @@ export default function EventsOfficeDashboard() {
                         Vendor Requests
                       </span>
                     </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/events-office/polls")}
+                      data-testid="button-quick-polls"
+                    >
+                      <PieChartIcon className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Polls
+                      </span>
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -1304,9 +1331,18 @@ export default function EventsOfficeDashboard() {
                         .slice(0, displayLimit)
                         .map((event: any, index: number) => {
                           const now = new Date();
-                          const eventEndDate = new Date(event.endDate);
-                          eventEndDate.setUTCHours(23, 59, 59, 999);
+                          // For booth events, they don't have endDate, so they're always "upcoming"
+                          const isBoothEvent =
+                            event.eventType === "platform_booth";
+                          const eventEndDate = event.endDate
+                            ? new Date(event.endDate)
+                            : null;
+                          if (eventEndDate) {
+                            eventEndDate.setUTCHours(23, 59, 59, 999);
+                          }
                           const isPastEvent =
+                            !isBoothEvent &&
+                            eventEndDate &&
                             eventEndDate.getTime() < now.getTime();
 
                           return (
@@ -1316,32 +1352,48 @@ export default function EventsOfficeDashboard() {
                                 id={event._id || String(index)}
                                 title={event.name || "Untitled Event"}
                                 category={
-                                  (event.eventType || "academic") as any
+                                  event.eventType === "platform_booth"
+                                    ? "booth"
+                                    : event.eventType || "academic"
                                 }
                                 date={
-                                  event.startDate
-                                    ? new Date(
-                                        event.startDate
-                                      ).toLocaleDateString("en-US", {
-                                        weekday: "short",
-                                        month: "long",
-                                        day: "numeric",
-                                        year: "numeric",
-                                      })
-                                    : "TBA"
+                                  event.eventType === "platform_booth" &&
+                                  event.durationWeeks
+                                    ? `Active for ${event.durationWeeks} week${
+                                        event.durationWeeks > 1 ? "s" : ""
+                                      }`
+                                    : event.startDate
+                                      ? new Date(
+                                          event.startDate
+                                        ).toLocaleDateString("en-US", {
+                                          weekday: "short",
+                                          month: "long",
+                                          day: "numeric",
+                                          year: "numeric",
+                                        })
+                                      : "TBA"
                                 }
                                 time={
-                                  event.startDate
-                                    ? new Date(
-                                        event.startDate
-                                      ).toLocaleTimeString("en-US", {
-                                        hour: "2-digit",
-                                        minute: "2-digit",
-                                        hour12: true,
-                                      })
-                                    : "TBA"
+                                  event.eventType === "platform_booth" &&
+                                  event.durationWeeks
+                                    ? ""
+                                    : event.startDate
+                                      ? new Date(
+                                          event.startDate
+                                        ).toLocaleTimeString("en-US", {
+                                          hour: "2-digit",
+                                          minute: "2-digit",
+                                          hour12: true,
+                                        })
+                                      : "TBA"
                                 }
-                                location={event.location || "Unknown location"}
+                                location={
+                                  event.location ||
+                                  (event.eventType === "platform_booth"
+                                    ? event.locationPreference
+                                    : null) ||
+                                  "Unknown location"
+                                }
                                 attendees={
                                   Array.isArray(event.attendees)
                                     ? event.attendees.length
@@ -1355,6 +1407,7 @@ export default function EventsOfficeDashboard() {
                                 description={event.description}
                                 startDate={event.startDate}
                                 endDate={event.endDate}
+                                durationWeeks={event.durationWeeks}
                                 capacity={-1}
                                 vendors={event.vendors || []}
                                 showDetailedView={true}

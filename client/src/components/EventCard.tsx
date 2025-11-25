@@ -82,6 +82,7 @@ export interface EventCardProps {
   description?: string;
   startDate?: string;
   endDate?: string;
+  durationWeeks?: number;
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
@@ -115,6 +116,7 @@ export default function EventCard({
   description,
   startDate,
   endDate,
+  durationWeeks,
   capacity,
   registrationDeadline,
   vendors = [],
@@ -135,9 +137,15 @@ export default function EventCard({
   status,
   className,
 }: EventCardProps) {
-  const imageSrc = image || getEventImage(String(category), title);
+  // Detect platform booth from category
+  const isPlatformBooth = /booth|platform_booth/i.test(String(category));
+  // For platform_booth, use eventType to get the correct image
+  const eventTypeForImage = isPlatformBooth
+    ? "platform_booth"
+    : String(category);
+  const imageSrc = image || getEventImage(eventTypeForImage, title);
   const isRegisterable = /workshop|trip/i.test(String(category));
-  const isBazaarOrBooth = /bazaar|booth/i.test(String(category));
+  const isBazaar = /bazaar/i.test(String(category));
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
@@ -235,7 +243,12 @@ export default function EventCard({
                 <div className="flex items-start text-muted-foreground">
                   <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    {startDate && endDate ? (
+                    {isPlatformBooth && durationWeeks ? (
+                      <div>
+                        Active for {durationWeeks} week
+                        {durationWeeks > 1 ? "s" : ""}
+                      </div>
+                    ) : startDate && endDate ? (
                       <div>
                         {formatDate(startDate)}, {formatTime(startDate)} →{" "}
                         {formatDate(endDate)}, {formatTime(endDate)}
@@ -281,8 +294,8 @@ export default function EventCard({
                 </div>
               </div>
 
-              {/* Vendors Section for Bazaar/Booth */}
-              {isBazaarOrBooth && vendors.length > 0 && (
+              {/* Vendors Section for Bazaar only (not platform booths) */}
+              {isBazaar && vendors.length > 0 && (
                 <div className="pt-3 border-t">
                   <div className="flex items-center gap-2 text-foreground font-medium mb-2">
                     <Store className="h-4 w-4 text-primary" />
@@ -468,10 +481,16 @@ export default function EventCard({
           {/* Compact View (Original Design) */}
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-2">
-              <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+              <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
               <div className="font-mono text-sm">
-                <div className="font-semibold text-foreground">{date}</div>
-                <div className="text-muted-foreground">{time}</div>
+                <div className="font-semibold text-foreground leading-tight">
+                  {date}
+                  {time && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      {time}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -493,8 +512,8 @@ export default function EventCard({
               </div>
             </div>
 
-            {/* Vendors section - compact view */}
-            {isBazaarOrBooth && vendors.length > 0 && (
+            {/* Vendors section - compact view (bazaar only, not platform booths) */}
+            {isBazaar && vendors.length > 0 && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 text-foreground font-medium">
                   <Store className="h-4 w-4 text-primary" />

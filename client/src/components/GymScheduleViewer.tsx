@@ -57,6 +57,17 @@ export default function GymScheduleViewer({
   navigateToDate,
 }: GymScheduleViewerProps) {
   const [sessions, setSessions] = useState<GymSession[]>([]);
+  // Get current user ID from localStorage
+  const currentUserId = (() => {
+    try {
+      const user = localStorage.getItem("user");
+      if (user) {
+        const parsed = JSON.parse(user);
+        return parsed._id || parsed.id;
+      }
+    } catch {}
+    return null;
+  })();
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -129,10 +140,31 @@ export default function GymScheduleViewer({
   };
 
   const handleRegister = async (sessionId: string) => {
-    // TODO: Implement registration logic
+    //gym session registration logic
+    const response = await fetch(
+      `http://localhost:4000/api/facilities/gym/sessions/${sessionId}/register`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      toast({
+        title: "Error",
+        description:
+          errorData.message || "Failed to register for the gym session.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({
-      title: "Registration",
-      description: "Registration functionality will be implemented soon.",
+      title: "Success",
+      description: "Successfully registered for the gym session.",
     });
   };
 
@@ -268,7 +300,7 @@ export default function GymScheduleViewer({
                   <TableHead>Time</TableHead>
                   <TableHead>Duration</TableHead>
                   <TableHead>Instructor</TableHead>
-                  <TableHead>Capacity</TableHead>
+                  <TableHead>Availability</TableHead>
                   {canRegister && <TableHead>Registration</TableHead>}
                   {(canEditSession || canCancelSession) && (
                     <TableHead>Actions</TableHead>
@@ -279,7 +311,10 @@ export default function GymScheduleViewer({
                 {sessions.map((session) => {
                   const enrolled = session.attendees?.length || 0;
                   const capacity = session.maxParticipants;
+                  const seatsLeft = Math.max(capacity - enrolled, 0);
                   const isFull = enrolled >= capacity;
+                  const isRegistered =
+                    currentUserId && session.attendees?.includes(currentUserId);
 
                   return (
                     <TableRow key={session._id}>
@@ -291,35 +326,24 @@ export default function GymScheduleViewer({
                       <TableCell>{session.durationMinutes} min</TableCell>
                       <TableCell>{session.instructor || "TBA"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-3">
-                          <span className="min-w-[3rem]">
-                            {enrolled}/{capacity}
+                        {isFull ? (
+                          <span className="font-bold text-red-500 text-sm whitespace-nowrap">
+                            Full
                           </span>
-                          {isFull ? (
-                            <Badge
-                              variant="outline"
-                              className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800"
-                            >
-                              Full
-                            </Badge>
-                          ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                            >
-                              Available
-                            </Badge>
-                          )}
-                        </div>
+                        ) : (
+                          <span className="font-bold text-emerald-500 text-sm whitespace-nowrap">
+                            {seatsLeft} seat{seatsLeft === 1 ? "" : "s"} left
+                          </span>
+                        )}
                       </TableCell>
                       {canRegister && (
                         <TableCell>
                           <Button
                             size="sm"
-                            disabled={isFull}
+                            disabled={isFull || isRegistered}
                             onClick={() => handleRegister(session._id)}
                           >
-                            Register
+                            {isRegistered ? "Registered" : "Register"}
                           </Button>
                         </TableCell>
                       )}
