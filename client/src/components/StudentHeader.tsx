@@ -14,6 +14,7 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+import { useEffect, useState } from "react";
 import WalletPopover from "./WalletPopover"; // Import the new WalletPopover
 
 interface StudentHeaderProps {
@@ -24,6 +25,25 @@ export default function StudentHeader({
   homeHref = "/home",
 }: StudentHeaderProps) {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    companyName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
@@ -39,6 +59,16 @@ export default function StudentHeader({
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.role &&
+              ((user.role === "vendor" && user?.companyName) ||
+                (user.role !== "vendor" && user?.firstName)) && (
+                <div className="hidden md:flex items-center gap-2 ml-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {user.role === "vendor" ? user.companyName : user.firstName}{" "}
+                    / {user.role.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
           </div>
         </div>
 

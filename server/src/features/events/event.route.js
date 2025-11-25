@@ -99,6 +99,14 @@ router.patch(
   eventsController.archiveEvent.bind(eventsController)
 );
 
+// Unarchive event (only Events Office)
+router.patch(
+  "/:id/unarchive",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.unarchiveEvent.bind(eventsController)
+);
+
 // Edit a workshop that needs revision
 router.patch(
   "/workshops/:workshopId",
