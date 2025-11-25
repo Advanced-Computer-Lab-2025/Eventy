@@ -81,6 +81,9 @@ const eventSchema = new Schema(
       { type: Schema.Types.ObjectId, ref: "User" }, // Students/Staff who registered
     ],
 
+    // Track which attendees have received workshop attendance certificates
+    certificatesSent: [{ type: Schema.Types.ObjectId, ref: "User" }],
+
     capacity: { type: Number },
 
     bannerImage: { type: String }, // URL to the banner image
