@@ -111,14 +111,13 @@ export async function getUserEventFeedbackService(userId, eventId) {
   return feedback;
 }
 
-export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
+export async function deleteCommentByAdmin(adminId, feedbackId) {
   // Validate IDs
   if (
     !mongoose.Types.ObjectId.isValid(adminId) ||
-    !mongoose.Types.ObjectId.isValid(feedbackId) ||
-    !mongoose.Types.ObjectId.isValid(commentId)
+    !mongoose.Types.ObjectId.isValid(feedbackId)
   ) {
-    throw new ApiError(400, "Invalid adminId, feedbackId, or commentId.");
+    throw new ApiError(400, "Invalid adminId or feedbackId.");
   }
 
   // Ensure caller is an admin
@@ -130,44 +129,60 @@ export async function deleteCommentByAdmin(adminId, feedbackId, commentId) {
     throw new ApiError(403, "Access denied. Admins only.");
   }
 
-  // Load feedback document
-  const feedback = await Feedback.findById(feedbackId);
+  // Load feedback with user data
+  const feedback = await Feedback.findById(feedbackId).populate(
+    "userId",
+    "firstName lastName email role"
+  );
+
   if (!feedback) {
     throw new ApiError(404, "Feedback not found.");
   }
 
-  // Ensure comments array exists
-  const comments = Array.isArray(feedback.comments) ? feedback.comments : [];
-  if (comments.length === 0) {
-    throw new ApiError(404, "No comments found for this feedback.");
+  // Check if comment exists and not already deleted
+  if (!feedback.comment || !feedback.comment.trim()) {
+    throw new ApiError(404, "No comment found for this feedback.");
   }
 
-  // Find comment using mongoose subdocument helper if available
-  let comment =
-    typeof feedback.comments.id === "function"
-      ? feedback.comments.id(commentId)
-      : comments.find((c) => c._id && c._id.toString() === commentId);
-
-  if (!comment) {
-    throw new ApiError(404, "Comment not found on this feedback.");
+  // Get event details
+  const event = await Event.findById(feedback.eventId).select("name");
+  if (!event) {
+    throw new ApiError(404, "Event not found.");
   }
 
-  // Prevent double-deletion
-  if (comment.deletedAt) {
-    throw new ApiError(400, "Comment already deleted.");
+  // Store comment before deletion
+  const commentBody = feedback.comment;
+  const commentAuthor = feedback.userId;
+
+  // Delete the comment (clear the field)
+  feedback.comment = "";
+
+  // If feedback has no rating, soft-delete entire feedback
+  if (!feedback.rating) {
+    feedback.deletedAt = new Date();
   }
 
-  // Soft-delete only the comment (do not remove whole feedback)
-  comment.deletedAt = new Date();
-  if ("status" in comment) comment.status = "deleted";
-
-  // Persist changes
   await feedback.save();
 
-  // Return minimal sanitized info about deleted comment
+  // Send warning email
+  const allowedRoles = ["student", "staff", "ta", "professor", "events_office"];
+  if (commentAuthor && allowedRoles.includes(commentAuthor.role)) {
+    try {
+      await sendCommentDeletionWarning({
+        userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
+        userEmail: commentAuthor.email,
+        eventName: event.name,
+        commentBody: commentBody,
+        deletionReason: "inappropriate content", // Default reason
+      });
+    } catch (emailError) {
+      console.error("Failed to send comment deletion warning:", emailError);
+    }
+  }
+
   return {
-    _id: comment._id,
-    deletedAt: comment.deletedAt,
-    status: comment.status ?? "deleted",
+    _id: feedback._id,
+    commentDeleted: true,
+    message: "Comment successfully deleted",
   };
 }

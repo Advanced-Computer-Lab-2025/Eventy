@@ -97,14 +97,16 @@ export const deleteFeedbackCommentByAdmin = async (req, res) => {
         .json({ success: false, message: "Authentication required." });
     }
 
-    const { feedbackId, commentId } = req.params;
-    const deletedComment = await deleteCommentByAdmin(
+    const { feedbackId } = req.params; // No commentId needed
+    const { deletionReason } = req.body; // Optional reason
+
+    const result = await deleteCommentByAdmin(
       adminId,
       feedbackId,
-      commentId
+      deletionReason
     );
 
-    return res.status(200).json({ success: true, data: deletedComment });
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode || 500).json({

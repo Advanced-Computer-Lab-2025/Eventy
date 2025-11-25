@@ -2,7 +2,6 @@ import {
   Calendar,
   MapPin,
   Users,
-  Bookmark,
   Share2,
   Store,
   Trash2,
@@ -10,6 +9,7 @@ import {
   Clock,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { FavoriteButton } from "./FavoriteButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
@@ -81,6 +81,7 @@ export interface EventCardProps {
   description?: string;
   startDate?: string;
   endDate?: string;
+  durationWeeks?: number;
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
@@ -88,6 +89,7 @@ export interface EventCardProps {
   showDetailedView?: boolean;
   isRegistered?: boolean;
   onRegister?: () => void;
+  status?: string;
   onSave?: () => void;
   onShare?: () => void;
   onDelete?: (id: string) => void;
@@ -111,6 +113,7 @@ export default function EventCard({
   description,
   startDate,
   endDate,
+  durationWeeks,
   capacity,
   registrationDeadline,
   vendors = [],
@@ -126,26 +129,41 @@ export default function EventCard({
   onArchive,
   isArchiving = false,
   canDelete = false,
+  status,
   className,
 }: EventCardProps) {
-  const imageSrc = image || getEventImage(String(category), title);
+  // Detect platform booth from category
+  const isPlatformBooth = /booth|platform_booth/i.test(String(category));
+  // For platform_booth, use eventType to get the correct image
+  const eventTypeForImage = isPlatformBooth
+    ? "platform_booth"
+    : String(category);
+  const imageSrc = image || getEventImage(eventTypeForImage, title);
   const isRegisterable = /workshop|trip/i.test(String(category));
-  const isBazaarOrBooth = /bazaar|booth/i.test(String(category));
+  const isBazaar = /bazaar/i.test(String(category));
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
-  // Determine user role for delete permission
+
+  // Determine user role for delete permission and favorite button visibility
   let roleAllowsDelete = false;
+  let roleAllowsFavorites = false;
   try {
     const token = localStorage.getItem("token");
     if (token) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       const role = payload?.role;
       roleAllowsDelete = role === "admin" || role === "events_office";
+      roleAllowsFavorites = ["student", "staff", "ta", "professor"].includes(
+        role
+      );
     }
-  } catch {}
+  } catch {
+    // Ignore token parsing errors
+  }
   // Respect parent component's `canDelete` prop in addition to role
   const canShowDelete = roleAllowsDelete && canDelete;
+  const canShowFavorites = roleAllowsFavorites;
   const hasRegistrations = typeof attendees === "number" && attendees > 0;
 
   // Helper functions for date/time formatting
@@ -170,7 +188,9 @@ export default function EventCard({
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || attendees < capacity;
-  const canRegister = isRegisterable && isBeforeDeadline && hasCapacity;
+  const isArchived = status === "archived";
+  const canRegister =
+    isRegisterable && isBeforeDeadline && hasCapacity && !isArchived;
 
   if (isDeleted) return null;
 
@@ -218,7 +238,12 @@ export default function EventCard({
                 <div className="flex items-start text-muted-foreground">
                   <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                   <div className="flex-1">
-                    {startDate && endDate ? (
+                    {isPlatformBooth && durationWeeks ? (
+                      <div>
+                        Active for {durationWeeks} week
+                        {durationWeeks > 1 ? "s" : ""}
+                      </div>
+                    ) : startDate && endDate ? (
                       <div>
                         {formatDate(startDate)}, {formatTime(startDate)} →{" "}
                         {formatDate(endDate)}, {formatTime(endDate)}
@@ -264,8 +289,8 @@ export default function EventCard({
                 </div>
               </div>
 
-              {/* Vendors Section for Bazaar/Booth */}
-              {isBazaarOrBooth && vendors.length > 0 && (
+              {/* Vendors Section for Bazaar only (not platform booths) */}
+              {isBazaar && vendors.length > 0 && (
                 <div className="pt-3 border-t">
                   <div className="flex items-center gap-2 text-foreground font-medium mb-2">
                     <Store className="h-4 w-4 text-primary" />
@@ -370,15 +395,22 @@ export default function EventCard({
                   )}
                 </Button>
               )}
-              {onViewDetails && (
-                <Button
-                  className={canRegister ? "flex-1" : "w-full"}
-                  variant="outline"
-                  onClick={onViewDetails}
-                >
-                  View Details
-                </Button>
-              )}
+              <div className="flex gap-2 ml-auto">
+                {" "}
+                {onViewDetails && (
+                  <Button
+                    className={canRegister ? "flex-1" : "flex-1"}
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewDetails();
+                    }}
+                  >
+                    View Details
+                  </Button>
+                )}
+                {canShowFavorites && <FavoriteButton eventId={id} />}
+              </div>
               {canShowDelete && !hasRegistrations && (
                 <Button
                   variant="destructive"
@@ -422,10 +454,16 @@ export default function EventCard({
           {/* Compact View (Original Design) */}
           <CardContent className="p-4 space-y-3">
             <div className="flex items-start gap-2">
-              <Calendar className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
+              <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
               <div className="font-mono text-sm">
-                <div className="font-semibold text-foreground">{date}</div>
-                <div className="text-muted-foreground">{time}</div>
+                <div className="font-semibold text-foreground leading-tight">
+                  {date}
+                  {time && (
+                    <span className="text-muted-foreground font-normal ml-2">
+                      {time}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -447,8 +485,8 @@ export default function EventCard({
               </div>
             </div>
 
-            {/* Vendors section - compact view */}
-            {isBazaarOrBooth && vendors.length > 0 && (
+            {/* Vendors section - compact view (bazaar only, not platform booths) */}
+            {isBazaar && vendors.length > 0 && (
               <div className="mt-2">
                 <div className="flex items-center gap-2 text-foreground font-medium">
                   <Store className="h-4 w-4 text-primary" />
@@ -473,7 +511,7 @@ export default function EventCard({
             )}
 
             {showActions && (
-              <div className="flex gap-2 pt-2">
+              <div className="flex flex-col gap-2 pt-2">
                 {isRegistered &&
                 startDate &&
                 new Date() > new Date(startDate) ? (
@@ -488,7 +526,7 @@ export default function EventCard({
                   isRegisterable && (
                     <Button
                       onClick={onRegister}
-                      className="flex-1"
+                      className="w-full"
                       data-testid={`button-register-${id}`}
                     >
                       Register
@@ -516,22 +554,28 @@ export default function EventCard({
                     Archive
                   </Button>
                 )}
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onSave}
-                  data-testid={`button-save-${id}`}
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={onShare}
-                  data-testid={`button-share-${id}`}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-2 ml-auto">
+                  {" "}
+                  {canShowFavorites && (
+                    <div
+                      className="relative"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <FavoriteButton eventId={id} />
+                    </div>
+                  )}
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onShare?.();
+                    }}
+                    data-testid={`button-share-${id}`}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+                </div>
                 {canShowDelete && !hasRegistrations && (
                   <Button
                     variant="destructive"

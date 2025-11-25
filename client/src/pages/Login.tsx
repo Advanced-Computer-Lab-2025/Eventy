@@ -42,12 +42,18 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
+
+      // Use companyName for vendors, firstName for other users
+      const displayName =
+        role === "vendor"
+          ? data.user.companyName || "Vendor"
+          : data.user.firstName || "user";
+
       toast({
         title: "Login successful 🎉",
-        description: `Welcome back, ${data.user.firstName || "user"}!`,
+        description: `Welcome back, ${displayName}!`,
       });
-
-      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
 
       setTimeout(() => {
         // Prefer the normalized `role` variable for comparisons

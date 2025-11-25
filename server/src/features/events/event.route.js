@@ -241,4 +241,49 @@ router.post(
   eventsController.registerForEvent.bind(eventsController)
 );
 
+// Get registered users for a specific event (events_office only)
+router.get(
+  "/registered-users/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.getEventRegisteredUsers.bind(eventsController)
+);
+
+// Export registered users for a specific event (events_office only)
+// Supports query param ?format=xlsx|pdf|csv (default: xlsx)
+router.get(
+  "/export-registered/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.exportEventRegisteredUsers.bind(eventsController)
+);
+// PATCH /events/:id/cancel
+router.patch(
+  "/:eventId/cancel",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.cancelEventRegistration.bind(eventsController)
+);
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
+
+router.patch(
+  "/:id/restrict-access",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.restrictAccess.bind(eventsController)
+);
+
+router.get(
+  "/reports/sales",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getSalesReport.bind(eventsController)
+);
+
 export default router;
