@@ -920,7 +920,7 @@ export const unarchiveEvent = async (eventId, user) => {
 export const getEventRegisteredUsers = async (eventId) => {
   // Find event and populate attendees with firstName, lastName and role
   const event = await Event.findById(eventId)
-    .select("attendees deletedAt")
+    .select("attendees deletedAt eventType application")
     .populate("attendees", "firstName lastName role");
 
   if (!event) {
@@ -931,6 +931,76 @@ export const getEventRegisteredUsers = async (eventId) => {
     throw new ApiError(400, "Cannot view attendees of a deleted event");
   }
 
+  // For bazaar and platform_booth events, get attendees from approved applications
+  if (event.eventType === "bazaar" || event.eventType === "platform_booth") {
+    // Build query for applications
+    const applicationQuery = {
+      status: "approved",
+    };
+
+    if (event.eventType === "bazaar") {
+      // For bazaar, applications have event field pointing to the bazaar
+      applicationQuery.event = eventId;
+      applicationQuery.type = "bazaar";
+    } else if (event.eventType === "platform_booth") {
+      // For platform_booth, we can use the event's application field or query by event
+      if (event.application) {
+        // Use the application field from the event
+        const application = await Application.findById(
+          event.application
+        ).select("attendees");
+        if (
+          application &&
+          application.attendees &&
+          application.attendees.length > 0
+        ) {
+          return application.attendees.map((attendee) => {
+            const nameParts = (attendee.name || "").trim().split(/\s+/);
+            return {
+              _id: null,
+              firstName: nameParts[0] || "",
+              lastName: nameParts.slice(1).join(" ") || "",
+              role: "vendor_attendee",
+            };
+          });
+        }
+      }
+      // Fallback: query by event field
+      applicationQuery.event = eventId;
+      applicationQuery.type = "booth";
+    }
+
+    const applications =
+      await Application.find(applicationQuery).select("attendees");
+
+    if (!applications || applications.length === 0) {
+      throw new ApiError(404, "No registered users for this event");
+    }
+
+    // Extract all attendees from all approved applications
+    const registeredUsers = [];
+    applications.forEach((application) => {
+      if (application.attendees && Array.isArray(application.attendees)) {
+        application.attendees.forEach((attendee) => {
+          const nameParts = (attendee.name || "").trim().split(/\s+/);
+          registeredUsers.push({
+            _id: null,
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            role: "vendor_attendee",
+          });
+        });
+      }
+    });
+
+    if (registeredUsers.length === 0) {
+      throw new ApiError(404, "No registered users for this event");
+    }
+
+    return registeredUsers;
+  }
+
+  // For other event types, use the regular attendees from the event
   // Check if attendees array is empty or doesn't exist
   if (!event.attendees || event.attendees.length === 0) {
     throw new ApiError(404, "No registered users for this event");
