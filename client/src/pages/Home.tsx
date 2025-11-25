@@ -16,13 +16,16 @@ interface Event {
   startDate?: string;
   endDate?: string;
   location?: string;
+  locationPreference?: string;
   attendeesCount?: number;
-  attendees?: string[];
+  attendees?: any[]; // This contains the list of user IDs/objects
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
   bannerImage?: string;
   description?: string;
+  price?: number;
+  durationWeeks?: number;
   vendors?: Array<{
     vendorId?: string;
     vendorName?: string;
@@ -38,55 +41,9 @@ export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
-  const [loading, setLoading] = useState(true); // Initial loading state
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const { toast } = useToast();
-
-  const handleRegisterEvent = async (eventId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please login to register for events",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You have been successfully registered for the event.",
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Registration Failed",
-          description: errorData.message || "Failed to register for event",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering for the event",
-        variant: "destructive",
-      });
-    }
-  };
 
   const handleSearchResults = (results: any[]) => {
     // Sort events to prioritize bazaars first, then by startDate
@@ -196,23 +153,28 @@ export default function Home() {
                           : null) ||
                         "Unknown location"
                       }
+                      // Pass count for display
                       attendees={
-                        Array.isArray(event.attendees)
-                          ? event.attendees.length
-                          : event.attendeesCount || 0
+                        typeof event.attendeesCount === "number"
+                          ? event.attendeesCount
+                          : Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : 0
                       }
+                      // Pass ACTUAL array for logic checks
+                      attendeesList={event.attendees}
                       image={
                         event.bannerImage ||
                         event.image ||
                         getEventImage(event.eventType, event.name)
                       }
+                      price={typeof event.price === "number" ? event.price : 0}
                       description={event.description}
                       startDate={event.startDate}
                       endDate={event.endDate}
                       durationWeeks={event.durationWeeks}
                       capacity={event.capacity}
                       registrationDeadline={event.registrationDeadline}
-                      onRegister={() => handleRegisterEvent(event._id)}
                       showDetailedView={true}
                       onSave={() => console.log("Save:", event.name)}
                       onShare={() => console.log("Share:", event.name)}
