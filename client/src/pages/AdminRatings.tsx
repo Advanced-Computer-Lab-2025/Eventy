@@ -29,7 +29,7 @@ export default function AdminRatings() {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
-  const [setLoadingEvents] = useState(false);
+  const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingRatings, setLoadingRatings] = useState(false);
 
   useEffect(() => {
@@ -68,8 +68,28 @@ export default function AdminRatings() {
             return true;
           });
 
-        setEvents(mapped as EventItem[]);
-        if (mapped.length > 0) setSelectedEvent(mapped[0].id);
+        // For each mapped event, check whether it has any feedback and
+        // only keep events that have at least one feedback item.
+        Promise.allSettled(
+          mapped.map((m: any) => api.get(`/feedback/events/${m.id}`))
+        )
+          .then((fbResults) => {
+            const eventsWithFeedback = mapped.filter((m: any, idx: number) => {
+              const res = fbResults[idx];
+              if (res.status !== "fulfilled") return false;
+              const data = (res as any).value?.data?.data;
+              const feedback = data?.feedback || [];
+              return Array.isArray(feedback) && feedback.length > 0;
+            });
+
+            setEvents(eventsWithFeedback as EventItem[]);
+            if (eventsWithFeedback.length > 0)
+              setSelectedEvent(eventsWithFeedback[0].id);
+          })
+          .catch(() => {
+            setEvents([]);
+          })
+          .finally(() => setLoadingEvents(false));
       })
       .catch(() => setEvents([]))
       .finally(() => setLoadingEvents(false));
