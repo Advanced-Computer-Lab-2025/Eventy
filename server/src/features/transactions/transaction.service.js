@@ -1,16 +1,19 @@
 import Stripe from "stripe";
 import { Transaction } from "./transaction.model.js";
-import { User } from "../users/user.model.js"; // Import User model
-import { Event } from "../events/event.model.js"; // Import your Event model
-import Application from "../applications/application.model.js"; // Import Application model
+import { User } from "../users/user.model.js";
+import { Event } from "../events/event.model.js";
+import Application from "../applications/application.model.js";
 import {
   sendPaymentReceipt,
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
-
 export class TransactionService {
+  constructor() {
+    // Initialize Stripe inside the constructor to ensure env vars are loaded
+    this.stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+  }
+
   async payForEvent({ userId, eventId, paymentMethod }) {
     // Check if user already paid for this event
     const existingTransaction = await Transaction.findOne({
@@ -77,7 +80,8 @@ export class TransactionService {
 
     // --- STRIPE PAYMENT ---
     if (paymentMethod === "credit_card" || paymentMethod === "debit_card") {
-      const paymentIntent = await stripe.paymentIntents.create({
+      // Use this.stripe instead of stripe
+      const paymentIntent = await this.stripe.paymentIntents.create({
         amount: amount * 100,
         currency: "usd",
         automatic_payment_methods: {
@@ -121,7 +125,9 @@ export class TransactionService {
   async confirmStripePayment(paymentIntentId) {
     // For Stripe Elements, payment is confirmed on the frontend using Stripe.js
     // This endpoint verifies the payment status and updates the transaction
-    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+    // Use this.stripe
+    const paymentIntent =
+      await this.stripe.paymentIntents.retrieve(paymentIntentId);
 
     const transaction = await Transaction.findOne({
       stripePaymentIntentId: paymentIntentId,
@@ -187,7 +193,8 @@ export class TransactionService {
         try {
           // Get the latest charge from the payment intent
           if (paymentIntent.latest_charge) {
-            const charge = await stripe.charges.retrieve(
+            // Use this.stripe
+            const charge = await this.stripe.charges.retrieve(
               paymentIntent.latest_charge
             );
             stripeReceiptUrl = charge.receipt_url || null;
@@ -250,7 +257,8 @@ export class TransactionService {
    */
   async topUpWallet({ userId, amount, paymentMethod }) {
     if (paymentMethod === "credit_card" || paymentMethod === "debit_card") {
-      const paymentIntent = await stripe.paymentIntents.create({
+      // Use this.stripe
+      const paymentIntent = await this.stripe.paymentIntents.create({
         amount: amount * 100, // cents
         currency: "usd",
         automatic_payment_methods: {
@@ -448,7 +456,8 @@ export class TransactionService {
         ? `Payment for bazaar participation: ${application.event?.name || "Bazaar"}`
         : `Payment for platform booth: ${application.locationPreference || "Booth"}`;
 
-    const paymentIntent = await stripe.paymentIntents.create({
+    // Use this.stripe
+    const paymentIntent = await this.stripe.paymentIntents.create({
       amount: amount * 100, // cents
       currency: "usd",
       automatic_payment_methods: {
