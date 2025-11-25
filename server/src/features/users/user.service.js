@@ -14,7 +14,8 @@ class UserService {
       );
     }
 
-    const existingUser = await User.findOne({ email });
+    // Check for existing user that is not deleted
+    const existingUser = await User.findOne({ email, deletedAt: null });
     if (existingUser) {
       throw new ApiError(409, "Email already exists.");
     }
@@ -55,12 +56,10 @@ class UserService {
       );
     }
 
-    if (!targetUser.deletedAt) {
-      targetUser.status = "blocked";
-      await targetUser.save();
-      targetUser.status = "deleted";
-      await targetUser.save();
-    }
+    // Set deletedAt timestamp to allow account recreation
+    targetUser.deletedAt = new Date();
+    targetUser.status = "deleted";
+    await targetUser.save();
 
     return targetUser;
   }
