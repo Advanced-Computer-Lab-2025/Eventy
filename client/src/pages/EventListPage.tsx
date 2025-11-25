@@ -1,6 +1,7 @@
 // client/src/pages/EventListPage.tsx
 import { useState, useEffect } from "react";
 import EventListItem from "@/components/EventListItem";
+import { getEventImage } from "@/lib/eventImages";
 
 export default function EventListPage() {
   const [events, setEvents] = useState<any[]>([]);
@@ -58,8 +59,19 @@ export default function EventListPage() {
           category={event.eventType}
           date={new Date(event.startDate).toLocaleDateString()}
           time={`${new Date(event.startDate).toLocaleTimeString()} - ${new Date(event.endDate).toLocaleTimeString()}`}
-          location={event.location}
-          image={event.bannerImage || "/placeholder.png"}
+          location={
+            event.location ||
+            (event.eventType === "platform_booth"
+              ? event.locationPreference
+              : null) ||
+            "Unknown location"
+          }
+          image={
+            event.bannerImage ||
+            event.image ||
+            getEventImage(event.eventType, event.name) ||
+            "/placeholder.png"
+          }
           canDelete={true} // show delete button for admins/events office
           onDelete={handleDelete} // pass the delete handler
         />

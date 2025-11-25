@@ -224,12 +224,23 @@ class ApplicationServiceClass {
         vendor.firstName || vendor.companyName || "Vendor"
       }'s platform booth`;
 
+      // Calculate start and end dates based on approval time and duration
+      // Start date is when the application is accepted/approved
+      const startDate = new Date(); // Current timestamp when approved
+
+      // End date is start date plus the duration in weeks
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + application.durationWeeks * 7);
+
       const eventData = {
         name: eventName,
         eventType: "platform_booth",
         boothSize: application.boothSize,
         durationWeeks: application.durationWeeks,
         locationPreference: application.locationPreference,
+        location: application.locationPreference, // Set location from locationPreference
+        startDate: startDate, // Set start date
+        endDate: endDate, // Set end date
         attendees: application.attendees,
         createdBy: vendor._id,
         application: application._id,

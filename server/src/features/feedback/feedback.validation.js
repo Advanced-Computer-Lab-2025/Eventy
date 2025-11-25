@@ -19,9 +19,8 @@ export const deleteFeedbackCommentSchema = Joi.object({
     "string.length": "Feedback ID must be 24 characters long.",
     "any.required": "Feedback ID is required.",
   }),
-  commentId: Joi.string().hex().length(24).required().messages({
-    "string.hex": "Comment ID must be a valid MongoDB ID.",
-    "string.length": "Comment ID must be 24 characters long.",
-    "any.required": "Comment ID is required.",
-  }),
+});
+
+export const deleteFeedbackCommentBodySchema = Joi.object({
+  deletionReason: Joi.string().max(500).optional(),
 });

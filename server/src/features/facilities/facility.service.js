@@ -155,7 +155,7 @@ class FacilitiesServiceClass {
    * @success 200 OK - Returns { success, message, data: [sessionObjects] }
    * @error   401 Unauthorized
    */
-  async getGymSessions(month, year) {
+  async getGymSessions(month, year, userRole = null) {
     if (!month || !year) {
       throw new Error("Month and year parameters are required");
     }
@@ -163,11 +163,21 @@ class FacilitiesServiceClass {
     const startOfMonth = new Date(year, month - 1, 1);
     const endOfMonth = new Date(year, month, 0, 23, 59, 59, 999);
 
-    const sessions = await GymSession.find({
+    const filter = {
       date: { $gte: startOfMonth, $lte: endOfMonth },
       deletedAt: null,
       status: { $ne: "cancelled" }, // Exclude cancelled sessions
-    }).sort({ date: 1, startTime: 1 });
+    };
+
+    // Filter out sessions where the user's role is restricted
+    if (userRole && userRole !== "admin" && userRole !== "events_office") {
+      filter.restrictedRoles = { $ne: userRole };
+    }
+
+    const sessions = await GymSession.find(filter).sort({
+      date: 1,
+      startTime: 1,
+    });
 
     return sessions;
   }
@@ -178,7 +188,15 @@ class FacilitiesServiceClass {
    * @param {Object} user - Authenticated user
    */
   async createGymSession(data) {
-    const { date, time, duration, type, instructor, maxParticipants } = data;
+    const {
+      date,
+      time,
+      duration,
+      type,
+      instructor,
+      maxParticipants,
+      restrictedRoles,
+    } = data;
 
     const newSession = new GymSession({
       date,
@@ -187,6 +205,7 @@ class FacilitiesServiceClass {
       type,
       instructor: instructor,
       maxParticipants: maxParticipants,
+      restrictedRoles: restrictedRoles || [],
     });
 
     await newSession.save();
@@ -257,6 +276,50 @@ class FacilitiesServiceClass {
       notificationsSent: session.attendees ? session.attendees.length : 0,
     };
   }
+  /**
+   * registeres for a gym session
+   * @param {string} sessionId - The ID of the gym session to register for
+   * @param {string} userId - The ID of the user registering
+   * @returns {Object} The updated session
+   * @throws {Error} If session not found, is full, or user already registered
+   */
+  async registerForGymSession(sessionId, userId) {
+    const session = await GymSession.findById(sessionId);
+    if (!session) {
+      const error = new Error("Gym session not found");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (session.deletedAt != null) {
+      const error = new Error("Gym session deleted");
+      error.statusCode = 404;
+      throw error;
+    }
+
+    // Only allow registration if status is strictly 'upcoming'
+    if (session.status !== "upcoming") {
+      const error = new Error("You can only register for upcoming sessions.");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (session.attendees.includes(userId)) {
+      const error = new Error("You have already registered for this session");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    if (session.attendees.length >= session.maxParticipants) {
+      const error = new Error("Gym session is full");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    session.attendees.push(userId);
+    await session.save();
+    return session;
+  }
 
   /**
    * Edits a gym session and notifies all registered participants.
@@ -304,6 +367,9 @@ class FacilitiesServiceClass {
     if (updates.durationMinutes !== undefined) {
       session.durationMinutes = updates.durationMinutes;
     }
+    if (updates.restrictedRoles !== undefined) {
+      session.restrictedRoles = updates.restrictedRoles;
+    }
 
     // Save the updated session
     await session.save();
@@ -345,4 +411,5 @@ class FacilitiesServiceClass {
     };
   }
 }
+
 export const FacilitiesService = new FacilitiesServiceClass();

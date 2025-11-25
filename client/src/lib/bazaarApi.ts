@@ -35,6 +35,7 @@ export interface Application {
   durationWeeks?: number;
   locationPreference?: string;
   status: "pending" | "approved" | "rejected" | "cancelled";
+  paymentStatus?: "pending" | "paid" | "overdue";
   vendorId: string;
   createdAt: string;
   updatedAt: string;
@@ -374,6 +375,118 @@ class BazaarApiService {
       return apiResponse.data;
     } catch (error) {
       console.error("Error cancelling application:", error);
+      throw error;
+    }
+  }
+
+  async createBoothConflictPoll(params: {
+    applicationIds: string[];
+    question?: string;
+  }): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/polls/booth-conflict`, {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify(params),
+      });
+
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(
+          `Server Error: Expected JSON, got non-JSON (Status: ${response.status}). Preview: ${text.substring(0, 80)}...`
+        );
+      }
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to create booth conflict poll");
+      }
+
+      return data.data;
+    } catch (error) {
+      console.error("Error creating booth conflict poll:", error);
+      throw error;
+    }
+  }
+
+  async payForApplication(
+    applicationId: string,
+    paymentMethod: "credit_card" | "debit_card"
+  ): Promise<{ clientSecret: string; transaction: any; message: string }> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/transactions/applications/${applicationId}/pay`,
+        {
+          method: "POST",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+          body: JSON.stringify({ paymentMethod }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorMessage =
+          errorResponse.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error initiating payment:", error);
+      throw error;
+    }
+  }
+
+  async confirmPayment(paymentIntentId: string): Promise<any> {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/transactions/confirm`, {
+        method: "POST",
+        headers: this.getAuthHeaders(),
+        credentials: "include",
+        body: JSON.stringify({ paymentIntentId }),
+      });
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorMessage =
+          errorResponse.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result;
+    } catch (error) {
+      console.error("Error confirming payment:", error);
+      throw error;
+    }
+  }
+
+  async getStripePublishableKey(): Promise<string> {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/transactions/stripe-key`,
+        {
+          method: "GET",
+          headers: this.getAuthHeaders(),
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorResponse = await response.json();
+        const errorMessage =
+          errorResponse.error || `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      return result.publishableKey;
+    } catch (error) {
+      console.error("Error getting Stripe publishable key:", error);
       throw error;
     }
   }

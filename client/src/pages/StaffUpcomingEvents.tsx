@@ -147,7 +147,13 @@ export default function StaffUpcomingEvents() {
                       })
                     : "TBA"
                 }
-                location={event.location || "Unknown location"}
+                location={
+                  event.location ||
+                  (event.eventType === "platform_booth"
+                    ? event.locationPreference
+                    : null) ||
+                  "Unknown location"
+                }
                 attendees={
                   Array.isArray(event.attendees)
                     ? event.attendees.length
@@ -157,12 +163,12 @@ export default function StaffUpcomingEvents() {
                 description={event.description}
                 startDate={event.startDate}
                 endDate={event.endDate}
+                durationWeeks={event.durationWeeks}
                 capacity={event.capacity}
                 registrationDeadline={event.registrationDeadline}
                 vendors={event.vendors || []}
                 showDetailedView={true}
                 onRegister={() => handleRegisterEvent(event._id)}
-                onSave={() => console.log("Save:", event.name)}
                 onShare={() => console.log("Share:", event.name)}
                 onViewDetails={() => console.log("View details:", event.name)}
               />

@@ -37,12 +37,12 @@ router.get(
   getUserEventFeedback
 );
 
-// DELETE /api/admin/feedback/:feedbackId/comments/:commentId
+// DELETE /api/feedback/:feedbackId/comment
 router.delete(
-  "/feedback/:feedbackId/comments/:commentId",
+  "/:feedbackId/comment",
   authMiddleware,
   roleMiddleware(["admin"]),
-  validate(deleteFeedbackCommentSchema, "params"),
+  validate(deleteFeedbackCommentSchema, "params"), // ADD THIS LINE
   deleteFeedbackCommentByAdmin
 );
 

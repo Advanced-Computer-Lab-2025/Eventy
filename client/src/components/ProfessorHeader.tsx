@@ -1,9 +1,10 @@
-import { Home, BookOpen, Dumbbell, Calendar } from "lucide-react";
+import { Home, BookOpen, Dumbbell, Calendar, Heart, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+import WalletPopover from "./WalletPopover"; // Import the WalletPopover
 import { useLocation } from "wouter";
 
 interface ProfessorHeaderProps {
@@ -23,7 +24,8 @@ export default function ProfessorHeader({
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
+            <WalletPopover /> {/* <-- Replaced dialog button with this */}
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
@@ -49,7 +51,7 @@ export default function ProfessorHeader({
             data-testid="button-nav-workshops"
           >
             <BookOpen className="h-4 w-4" />
-            Workshops
+            My Workshops
           </Button>
           <Button
             variant="ghost"
@@ -70,6 +72,26 @@ export default function ProfessorHeader({
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/favorites")}
+            data-testid="button-nav-favorites"
+          >
+            <Heart className="h-4 w-4" />
+            Favorites
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
+          >
+            <Gift className="h-4 w-4" />
+            Loyalty Partners
           </Button>
         </div>
       </div>

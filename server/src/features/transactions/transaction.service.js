@@ -3,9 +3,14 @@ import { Transaction } from "./transaction.model.js";
 import { User } from "../users/user.model.js"; // Import User model
 import { Event } from "../events/event.model.js"; // Import your Event model
 import Application from "../applications/application.model.js"; // Import Application model
-import { sendPaymentReceipt } from "../auth/email.service.js";
+import {
+  sendPaymentReceipt,
+  sendVendorPaymentReceipt,
+} from "../auth/email.service.js";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
+const stripe = new Stripe({
+  apiKey: process.env.STRIPE_SECRET_KEY,
+});
 
 export class TransactionService {
   async payForEvent({ userId, eventId, paymentMethod }) {
@@ -116,37 +121,9 @@ export class TransactionService {
    * @throws {Error} If payment not completed or transaction not found
    */
   async confirmStripePayment(paymentIntentId) {
+    // For Stripe Elements, payment is confirmed on the frontend using Stripe.js
+    // This endpoint verifies the payment status and updates the transaction
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
-
-    if (paymentIntent.status === "succeeded") {
-      // Payment was already confirmed earlier
-      const transaction = await Transaction.findOne({
-        stripePaymentIntentId: paymentIntentId,
-      });
-
-      // If this is an application payment, ensure paymentStatus is set to "paid"
-      if (transaction && transaction.relatedEntity?.type === "Application") {
-        const applicationId = transaction.relatedEntity.id;
-        await Application.findByIdAndUpdate(applicationId, {
-          paymentStatus: "paid",
-        });
-      }
-
-      return { message: "Payment already confirmed", transaction };
-    }
-
-    const confirmedIntent = await stripe.paymentIntents.confirm(
-      paymentIntentId,
-      {
-        payment_method: "pm_card_visa",
-      }
-    );
-
-    if (confirmedIntent.status !== "succeeded") {
-      throw new Error(
-        `Payment not completed yet. Status: ${confirmedIntent.status}`
-      );
-    }
 
     const transaction = await Transaction.findOne({
       stripePaymentIntentId: paymentIntentId,
@@ -156,13 +133,30 @@ export class TransactionService {
       throw new Error("Transaction not found for this payment intent");
     }
 
-    // Prevent updating if already completed
-    if (transaction.status === "completed") {
-      return { message: "Transaction already completed", transaction };
-    }
+    // If payment already succeeded, update transaction and return
+    if (paymentIntent.status === "succeeded") {
+      // Prevent updating if already completed
+      if (transaction.status === "completed") {
+        // Ensure application paymentStatus is set to "paid" if needed
+        if (transaction.relatedEntity?.type === "Application") {
+          const applicationId = transaction.relatedEntity.id;
+          await Application.findByIdAndUpdate(applicationId, {
+            paymentStatus: "paid",
+          });
+        }
+        return { message: "Payment already confirmed", transaction };
+      }
 
-    transaction.status = "completed";
-    await transaction.save();
+      transaction.status = "completed";
+      await transaction.save();
+    } else {
+      // Payment not yet succeeded - return current status
+      return {
+        message: `Payment status: ${paymentIntent.status}`,
+        status: paymentIntent.status,
+        transaction,
+      };
+    }
 
     if (transaction.type === "wallet_top_up") {
       const user = await User.findByIdAndUpdate(
@@ -189,6 +183,42 @@ export class TransactionService {
         await Application.findByIdAndUpdate(applicationId, {
           paymentStatus: "paid",
         });
+
+        // Get Stripe receipt URL from the payment intent
+        let stripeReceiptUrl = null;
+        try {
+          // Get the latest charge from the payment intent
+          if (paymentIntent.latest_charge) {
+            const charge = await stripe.charges.retrieve(
+              paymentIntent.latest_charge
+            );
+            stripeReceiptUrl = charge.receipt_url || null;
+          }
+        } catch (error) {
+          console.error(
+            "Error retrieving Stripe receipt URL:",
+            error?.message || error
+          );
+          // Continue without receipt URL - email will still be sent
+        }
+
+        // Get vendor and application details for email
+        const vendor = await User.findById(transaction.userId).select(
+          "email firstName lastName name companyName role"
+        );
+        const application = await Application.findById(applicationId)
+          .populate("event", "name location")
+          .populate("createdBy", "companyName");
+
+        // Send vendor payment receipt email (don't await to avoid blocking the response)
+        if (vendor && application) {
+          sendVendorPaymentReceipt(
+            vendor.toObject(),
+            transaction,
+            application.toObject(),
+            stripeReceiptUrl
+          ).catch(console.error);
+        }
 
         return {
           message: "Application payment confirmed successfully",
@@ -260,7 +290,17 @@ export class TransactionService {
    * @returns {Promise<Transaction[]>}
    */
   async getUserTransactions(userId) {
-    return await Transaction.find({ userId }).sort({ createdAt: -1 });
+    return await Transaction.find({ userId, status: "completed" }).sort({
+      createdAt: -1,
+    });
+  }
+
+  /**
+   * Get all transactions (for admin/events office)
+   * @returns {Promise<Transaction[]>}
+   */
+  async getAllTransactions() {
+    return await Transaction.find({}).sort({ createdAt: -1 });
   }
   /**
    * Calculates the participation fee for a vendor application.
@@ -347,7 +387,9 @@ export class TransactionService {
     }
 
     // Verify the application belongs to the vendor
-    if (application.createdBy.toString() !== userId.toString()) {
+    // Handle both populated and non-populated createdBy
+    const createdById = application.createdBy._id || application.createdBy;
+    if (createdById.toString() !== userId.toString()) {
       throw new Error("You can only pay for your own applications");
     }
 

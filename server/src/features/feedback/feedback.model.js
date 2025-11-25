@@ -36,18 +36,22 @@ const feedbackSchema = new mongoose.Schema(
     },
     rating: {
       type: Number,
-      required: true,
       min: 1,
       max: 5,
     },
 
-    // store comments as subdocuments so individual comments can be removed/soft-deleted
-    comments: {
-      type: [feedbackCommentSchema],
-      default: [],
+    comment: {
+      type: String,
+      required: false,
+      maxlength: 1000,
     },
 
-    // Keep feedback-level deletedAt (soft delete of the whole feedback)
+    type: {
+      type: String,
+      enum: ["rating", "comment", "rating_and_comment"],
+      required: true,
+    },
+
     deletedAt: {
       type: Date,
       default: null, // null means not deleted

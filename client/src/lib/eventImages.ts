@@ -25,6 +25,13 @@ export function getEventImage(type?: string, name?: string): string {
     return "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=1200&auto=format&fit=crop&q=80"; // travel alt
   if (t.includes("bazaar") || n.includes("bazaar") || n.includes("market"))
     return "https://images.unsplash.com/photo-1519681393784-d120267933ba?w=1200&auto=format&fit=crop"; // market
+  if (
+    t.includes("platform_booth") ||
+    t.includes("booth") ||
+    n.includes("booth") ||
+    n.includes("platform")
+  )
+    return "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=1200&auto=format&fit=crop"; // platform booth/store
   if (t.includes("academic") || n.includes("lecture") || n.includes("seminar"))
     return "https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?w=1200&auto=format&fit=crop"; // lecture hall
   return "https://images.unsplash.com/photo-1520975922071-a5705a1b69c8?w=1200&auto=format&fit=crop"; // campus generic
