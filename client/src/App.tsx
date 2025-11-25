@@ -61,7 +61,17 @@ function Router() {
         </ProtectedRoute>
       </Route>
       <Route path="/admin/ratings">
-        <ProtectedRoute allowedRoles={["admin"]}>
+        <ProtectedRoute
+          allowedRoles={[
+            "admin",
+            "events_office",
+            "student",
+            "staff",
+            "ta",
+            "professor",
+            "vendor",
+          ]}
+        >
           <AdminRatings />
         </ProtectedRoute>
       </Route>

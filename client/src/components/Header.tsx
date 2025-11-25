@@ -1,6 +1,14 @@
 "use client";
 
-import { Search, Bell, LayoutGrid, User, Home, LogOut } from "lucide-react";
+import {
+  Search,
+  Bell,
+  LayoutGrid,
+  User,
+  Home,
+  LogOut,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
@@ -131,6 +139,16 @@ export default function Header({
                 >
                   <LayoutGrid className="h-4 w-4" />
                   All Events
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-2"
+                  onClick={() => setLocation("/admin/ratings")}
+                  data-testid="button-nav-ratings"
+                >
+                  <Star className="h-4 w-4" />
+                  Ratings
                 </Button>
                 <Button
                   variant="ghost"

@@ -1,4 +1,12 @@
-import { Home, BookOpen, Dumbbell, Calendar, Heart, Gift } from "lucide-react";
+import {
+  Home,
+  BookOpen,
+  Dumbbell,
+  Calendar,
+  Heart,
+  Gift,
+  Star,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -82,6 +90,16 @@ export default function ProfessorHeader({
           >
             <Heart className="h-4 w-4" />
             Favorites
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
           </Button>
           <Button
             variant="ghost"
