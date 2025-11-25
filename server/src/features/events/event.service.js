@@ -16,7 +16,6 @@ const transactionService = new TransactionService();
 import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import mongoose from "mongoose";
-import { notifyNewEvent } from "./event.notifications.js";
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -44,7 +43,7 @@ export async function createBazaar(data, user) {
 
   // Send notification about new bazaar
   try {
-    await notifyNewEvent(bazaar, "bazaar");
+    await NotificationService.notifyNewEvent(bazaar, "bazaar");
   } catch (error) {
     console.error("Error sending bazaar notification:", error);
     // Don't fail the request if notification fails
@@ -115,7 +114,7 @@ export const createTrip = async (tripData, createdBy) => {
 
   // Send notification about new trip
   try {
-    await notifyNewEvent(newTrip, "trip");
+    await NotificationService.notifyNewEvent(newTrip, "trip");
   } catch (error) {
     console.error("Error sending trip notification:", error);
     // Don't fail the request if notification fails
@@ -171,7 +170,7 @@ export const createConference = async (data, userId) => {
 
   // Send notification about new conference
   try {
-    await notifyNewEvent(event, "conference");
+    await NotificationService.notifyNewEvent(event, "conference");
   } catch (error) {
     console.error("Error sending conference notification:", error);
     // Don't fail the request if notification fails
@@ -238,7 +237,7 @@ export const createWorkshop = async (workshopData, professorId) => {
 
   // Send notification about new workshop
   try {
-    await notifyNewEvent(workshop, "workshop");
+    await NotificationService.notifyNewEvent(workshop, "workshop");
   } catch (error) {
     console.error("Error sending workshop notification:", error);
     // Don't fail the request if notification fails
