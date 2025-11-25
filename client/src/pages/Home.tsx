@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import EventCard from "@/components/EventCard";
-import EventFilters from "@/components/EventFilters";
-import EventSearch from "@/components/EventSearch";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
+import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
@@ -16,6 +16,7 @@ interface Event {
   startDate?: string;
   endDate?: string;
   location?: string;
+  locationPreference?: string;
   attendeesCount?: number;
   attendees?: string[];
   capacity?: number;
@@ -32,6 +33,7 @@ interface Event {
     boothSize?: string;
     attendees?: number;
   }>;
+  durationWeeks?: number;
 }
 
 export default function Home() {
@@ -40,6 +42,12 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true); // Initial loading state
   const [error, setError] = useState("");
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+  });
   const { toast } = useToast();
 
   const handleRegisterEvent = async (eventId: string) => {
@@ -120,6 +128,34 @@ export default function Home() {
     setError(errorMessage);
   };
 
+  const locationOptions = useMemo(() => {
+    const uniqueLocations = new Set<string>();
+    events.forEach((event) => {
+      const loc =
+        event.location ||
+        (event.eventType === "platform_booth"
+          ? (event as any).locationPreference
+          : "");
+      if (loc) uniqueLocations.add(loc);
+    });
+    return Array.from(uniqueLocations);
+  }, [events]);
+
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (filters.eventType !== "all") {
+      next.type = filters.eventType;
+    }
+    if (filters.location !== "all") {
+      next.location = filters.location;
+    }
+    if (filters.startDate && filters.endDate) {
+      next.startDate = filters.startDate;
+      next.endDate = filters.endDate;
+    }
+    return next;
+  }, [filters]);
+
   return (
     <div className="min-h-screen bg-background">
       <StudentHeader />
@@ -129,7 +165,11 @@ export default function Home() {
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-72 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
-                <EventFilters />
+                <EventFilters
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  locations={locationOptions}
+                />
               </div>
             </aside>
 
@@ -148,6 +188,7 @@ export default function Home() {
                 onError={handleError}
                 placeholder="Search events by name, professor, or type..."
                 className="mb-6"
+                filters={appliedFilters}
               />
 
               {loading ? (

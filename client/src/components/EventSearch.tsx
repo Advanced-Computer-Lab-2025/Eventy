@@ -1,6 +1,13 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+export interface EventSearchFilters {
+  type?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+}
 
 interface EventSearchProps {
   onSearchResults: (events: any[]) => void;
@@ -9,15 +16,17 @@ interface EventSearchProps {
   placeholder?: string;
   debounceMs?: number;
   className?: string;
+  filters?: EventSearchFilters;
 }
 
 export default function EventSearch({
   onSearchResults,
   onLoading,
   onError,
-  placeholder = "Search by event name, professor name, or event type...",
+  placeholder = "Search by event name, professor, location, or type...",
   debounceMs = 500,
   className = "",
+  filters = {},
 }: EventSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -63,7 +72,13 @@ export default function EventSearch({
     fetchInitialEvents();
   }, []); // Only run once on mount
 
-  // Search effect with debouncing (only when user types)
+  const hasSearchQuery = useMemo(() => !!searchQuery.trim(), [searchQuery]);
+  const hasFilterParams = useMemo(() => {
+    const hasDateRange = Boolean(filters.startDate && filters.endDate);
+    return Boolean(filters.type || filters.location || hasDateRange);
+  }, [filters]);
+
+  // Search effect with debouncing (only when user interacts with filters)
   useEffect(() => {
     // Skip if we haven't done the initial fetch yet
     if (!hasInitiallyFetched.current) return;
@@ -77,8 +92,8 @@ export default function EventSearch({
         // Don't trigger the loading overlay for searches after initial load
         onError?.("");
 
-        // If search query is empty, fetch all upcoming events
-        if (!searchQuery.trim()) {
+        // If no filters are active and no search query, fetch all upcoming events
+        if (!hasSearchQuery && !hasFilterParams) {
           const response = await fetch(API_URL, {
             headers: {
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -89,10 +104,29 @@ export default function EventSearch({
           const data = await response.json();
           onSearchResults(data.data || []);
         } else {
-          // Search with the query
+          // Search with the applied filters
           const searchParams = new URLSearchParams();
-          searchParams.append("name", searchQuery);
-          searchParams.append("type", searchQuery);
+
+          if (searchQuery.trim()) {
+            searchParams.append("name", searchQuery.trim());
+            if (!filters.type) {
+              // Allow searching by type keyword when dropdown is unset
+              searchParams.append("type", searchQuery.trim());
+            }
+          }
+
+          if (filters.type) {
+            searchParams.set("type", filters.type);
+          }
+
+          if (filters.location) {
+            searchParams.append("location", filters.location);
+          }
+
+          if (filters.startDate && filters.endDate) {
+            searchParams.append("startDate", filters.startDate);
+            searchParams.append("endDate", filters.endDate);
+          }
 
           const response = await fetch(
             `${SEARCH_URL}?${searchParams.toString()}`,
@@ -128,21 +162,24 @@ export default function EventSearch({
       }
     };
 
-    // Debounce: wait after user stops typing
+    // Debounce: wait after user stops typing/changing filters
     const debounceTimer = setTimeout(() => {
       fetchEvents();
     }, debounceMs);
 
-    // Cleanup: cancel the timer if searchQuery changes before timeout
+    // Cleanup: cancel the timer if filters change before timeout
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery, debounceMs]);
-
-  const handleClear = () => {
-    setSearchQuery("");
-  };
+  }, [
+    searchQuery,
+    filters,
+    hasSearchQuery,
+    hasFilterParams,
+    debounceMs,
+    token,
+  ]);
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -157,7 +194,7 @@ export default function EventSearch({
           </div>
         ) : searchQuery ? (
           <button
-            onClick={handleClear}
+            onClick={() => setSearchQuery("")}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Clear search"
           >
@@ -165,14 +202,6 @@ export default function EventSearch({
           </button>
         ) : null}
       </div>
-      {searchQuery && (
-        <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <span>
-            Searching for: <span className="font-medium">"{searchQuery}"</span>
-          </span>
-          {isSearching && <span className="text-xs">(searching...)</span>}
-        </div>
-      )}
     </div>
   );
 }
