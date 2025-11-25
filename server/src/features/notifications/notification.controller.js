@@ -45,13 +45,39 @@ class NotificationController {
 
   static async updateNotification(req, res) {
     try {
-      const { error, value } = updateNotificationSchema.validate(req.body);
+      const userId = req.user && (req.user.id || req.user._id);
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized: user id not found" });
+      }
+
+      const notificationId = req.params.id;
+
+      // If the update is specifically to mark as read, use the per-user method
+      if (req.body.isRead === true) {
+        const updated = await NotificationService.markAsReadForUser(
+          notificationId,
+          userId
+        );
+        if (!updated) {
+          return res
+            .status(404)
+            .json({ success: false, message: "Notification not found" });
+        }
+        return res.json({ success: true, data: updated });
+      }
+
+      // For other updates, use the regular update method
+      // Remove isRead from updateData since it's now handled separately
+      const { isRead, ...updateData } = req.body;
+      const { error, value } = updateNotificationSchema.validate(updateData);
       if (error) {
         return res
           .status(400)
           .json({ success: false, message: error.details[0].message });
       }
-      const notificationId = req.params.id;
+
       const updated = await NotificationService.updateNotification(
         notificationId,
         value
@@ -61,7 +87,15 @@ class NotificationController {
           .status(404)
           .json({ success: false, message: "Notification not found" });
       }
-      res.json({ success: true, data: updated });
+
+      // Add computed isRead field for the current user
+      const notificationObj = updated.toObject();
+      notificationObj.isRead =
+        updated.readBy?.some(
+          (readUserId) => readUserId.toString() === userId.toString()
+        ) || false;
+
+      res.json({ success: true, data: notificationObj });
     } catch (err) {
       res
         .status(500)
