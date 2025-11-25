@@ -32,6 +32,7 @@ export default function EventsOfficeHeader() {
     lastName?: string;
     email?: string;
     role?: string;
+    companyName?: string;
   } | null>(null);
   const [isReportsOpen, setIsReportsOpen] = useState(false);
   const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
@@ -62,10 +63,11 @@ export default function EventsOfficeHeader() {
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
-            {user?.firstName && user?.role && (
+            {user?.role && (user?.firstName || user?.email) && (
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <span className="text-sm font-medium text-foreground">
-                  {user.firstName} / {user.role.replace(/_/g, " ")}
+                  {user.firstName || user.email?.split("@")[0] || "User"} /{" "}
+                  {user.role.replace(/_/g, " ")}
                 </span>
               </div>
             )}

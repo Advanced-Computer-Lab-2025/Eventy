@@ -29,6 +29,7 @@ export default function StaffHeader({
     lastName?: string;
     email?: string;
     role?: string;
+    companyName?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -56,7 +57,7 @@ export default function StaffHeader({
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
-            {user?.firstName && user?.role && (
+            {user?.role && user?.firstName && (
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <span className="text-sm font-medium text-foreground">
                   {user.firstName} / {user.role.replace(/_/g, " ")}

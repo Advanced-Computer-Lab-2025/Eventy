@@ -30,6 +30,7 @@ export default function StudentHeader({
     lastName?: string;
     email?: string;
     role?: string;
+    companyName?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -58,13 +59,16 @@ export default function StudentHeader({
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
-            {user?.firstName && user?.role && (
-              <div className="hidden md:flex items-center gap-2 ml-2">
-                <span className="text-sm font-medium text-foreground">
-                  {user.firstName} / {user.role.replace(/_/g, " ")}
-                </span>
-              </div>
-            )}
+            {user?.role &&
+              ((user.role === "vendor" && user?.companyName) ||
+                (user.role !== "vendor" && user?.firstName)) && (
+                <div className="hidden md:flex items-center gap-2 ml-2">
+                  <span className="text-sm font-medium text-foreground">
+                    {user.role === "vendor" ? user.companyName : user.firstName}{" "}
+                    / {user.role.replace(/_/g, " ")}
+                  </span>
+                </div>
+              )}
           </div>
         </div>
 
