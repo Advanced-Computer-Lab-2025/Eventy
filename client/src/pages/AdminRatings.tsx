@@ -1,13 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminHeader from "@/components/AdminHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
 import EventCard from "@/components/EventCard";
@@ -35,7 +29,7 @@ export default function AdminRatings() {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
-  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [setLoadingEvents] = useState(false);
   const [loadingRatings, setLoadingRatings] = useState(false);
 
   useEffect(() => {
