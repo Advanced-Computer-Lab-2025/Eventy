@@ -5,6 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
 import EventCard from "@/components/EventCard";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 
 interface EventItem {
@@ -27,6 +34,7 @@ interface RatingItem {
 export default function AdminRatings() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [ratings, setRatings] = useState<RatingItem[]>([]);
   const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
@@ -175,7 +183,13 @@ export default function AdminRatings() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {events.map((ev) => (
-            <div key={ev.id} onClick={() => setSelectedEvent(ev.id)}>
+            <div
+              key={ev.id}
+              onClick={() => {
+                setSelectedEvent(ev.id);
+                setDialogOpen(true);
+              }}
+            >
               <EventCard
                 id={ev.id}
                 title={ev.title || `Event ${ev.id}`}
@@ -190,13 +204,17 @@ export default function AdminRatings() {
             </div>
           ))}
         </div>
+        {/* Dialog overlay to show ratings/comments for selected event */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Ratings & Comments</DialogTitle>
+              <DialogDescription>
+                {events.find((e) => e.id === selectedEvent)?.title || ""}
+              </DialogDescription>
+            </DialogHeader>
 
-        <div className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Ratings & Comments</CardTitle>
-            </CardHeader>
-            <CardContent>
+            <div className="mt-4">
               {!selectedEvent ? (
                 <div className="text-muted-foreground">
                   Click an event card to view ratings.
@@ -215,9 +233,7 @@ export default function AdminRatings() {
                         <div>
                           <div className="font-medium text-foreground">
                             {r.user
-                              ? `${r.user.firstName || ""} ${
-                                  r.user.lastName || ""
-                                }`.trim()
+                              ? `${r.user.firstName || ""} ${r.user.lastName || ""}`.trim()
                               : "Unknown user"}
                           </div>
                           <div className="text-sm text-muted-foreground">
@@ -264,9 +280,9 @@ export default function AdminRatings() {
                   ))}
                 </div>
               )}
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </DialogContent>
+        </Dialog>
       </main>
     </div>
   );
