@@ -113,10 +113,9 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 cursor-pointer"
+                className="gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent"
                 data-testid="button-nav-approvals"
                 onMouseEnter={() => setIsApprovalsOpen(true)}
-                onMouseLeave={() => setIsApprovalsOpen(false)}
               >
                 <CheckCircle2 className="h-4 w-4" />
                 Approvals
@@ -125,7 +124,6 @@ export default function EventsOfficeHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              onMouseEnter={() => setIsApprovalsOpen(true)}
               onMouseLeave={() => setIsApprovalsOpen(false)}
             >
               <DropdownMenuItem
@@ -159,10 +157,9 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 cursor-pointer"
+                className="gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent"
                 data-testid="button-nav-reports"
                 onMouseEnter={() => setIsReportsOpen(true)}
-                onMouseLeave={() => setIsReportsOpen(false)}
               >
                 <FileText className="h-4 w-4" />
                 Reports
@@ -171,7 +168,6 @@ export default function EventsOfficeHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="start"
-              onMouseEnter={() => setIsReportsOpen(true)}
               onMouseLeave={() => setIsReportsOpen(false)}
             >
               <DropdownMenuItem
