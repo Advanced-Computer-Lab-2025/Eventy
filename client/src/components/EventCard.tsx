@@ -375,7 +375,7 @@ export default function EventCard({
             </div>
 
             <div className="flex gap-2 mt-auto">
-              {isRegistered && startDate && new Date() > new Date(startDate) ? (
+              {isRegistered && endDate && new Date() > new Date(endDate) ? (
                 <Button
                   className="flex-1"
                   onClick={onFeedback}
@@ -634,9 +634,7 @@ export default function EventCard({
                 )}
                 {/* Bottom row: Give Feedback/Register button (if present) + Favorites + Share */}
                 <div className="flex items-center gap-2">
-                  {isRegistered &&
-                  startDate &&
-                  new Date() > new Date(startDate) ? (
+                  {isRegistered && endDate && new Date() > new Date(endDate) ? (
                     <Button
                       onClick={onFeedback}
                       className="flex-1"
