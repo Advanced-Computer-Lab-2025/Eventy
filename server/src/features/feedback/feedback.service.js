@@ -3,6 +3,7 @@ import ApiError from "../../utils/ApiError.js";
 import { Event } from "../events/event.model.js";
 import mongoose from "mongoose";
 import * as UserModule from "../users/user.model.js";
+import { sendCommentDeletionWarning } from "../auth/email.service.js";
 const User = UserModule.default ?? UserModule.User ?? UserModule;
 
 export async function submitFeedbackService(
@@ -157,8 +158,12 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
   // Delete the comment (clear the field)
   feedback.comment = "";
 
-  // If feedback has no rating, soft-delete entire feedback
-  if (!feedback.rating) {
+  // Update the type field based on what remains
+  if (feedback.rating) {
+    // If rating exists, change type to "rating"
+    feedback.type = "rating";
+  } else {
+    // If no rating, soft-delete entire feedback
     feedback.deletedAt = new Date();
   }
 
