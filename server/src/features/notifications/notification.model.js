@@ -25,9 +25,20 @@ const notificationSchema = new Schema(
       type: String,
       default: null,
     },
-    isRead: {
-      type: Boolean,
-      default: false,
+    readBy: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    event: {
+      type: Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
+    notificationType: {
+      type: String,
+      default: null,
     },
     deletedAt: {
       type: Date,
