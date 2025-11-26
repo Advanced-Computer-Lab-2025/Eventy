@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import EventCard from "@/components/EventCard";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
@@ -48,6 +49,7 @@ export default function Home() {
     startDate: "",
     endDate: "",
   });
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
 
   const handleRegisterEvent = async (eventId: string) => {
@@ -162,6 +164,15 @@ export default function Home() {
 
       <main className="pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+          {/* Header Section - Full Width */}
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
+            <p className="text-muted-foreground">
+              Discover exciting events happening at your university
+            </p>
+          </div>
+
+          {/* Filters and Content Section */}
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-72 flex-shrink-0">
               <div className="sticky top-24 space-y-4">
@@ -174,22 +185,19 @@ export default function Home() {
             </aside>
 
             <div className="flex-1">
-              <div className="mb-6">
-                <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
-                <p className="text-muted-foreground">
-                  Discover exciting events happening at your university
-                </p>
+              {/* Event Search + Sort */}
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex-1">
+                  <EventSearch
+                    onSearchResults={handleSearchResults}
+                    onLoading={handleLoading}
+                    onError={handleError}
+                    placeholder="Search events by name, professor, or type..."
+                    filters={appliedFilters}
+                  />
+                </div>
+                <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />
               </div>
-
-              {/* Event Search */}
-              <EventSearch
-                onSearchResults={handleSearchResults}
-                onLoading={handleLoading}
-                onError={handleError}
-                placeholder="Search events by name, professor, or type..."
-                className="mb-6"
-                filters={appliedFilters}
-              />
 
               {loading ? (
                 <p>Loading events...</p>
@@ -199,69 +207,81 @@ export default function Home() {
                 <p>No upcoming events found.</p>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {events.map((event, index) => (
-                    <EventCard
-                      key={event._id || index}
-                      id={event._id || String(index)}
-                      title={event.name || "Untitled Event"}
-                      category={(event.eventType || "academic") as any}
-                      date={
-                        event.startDate
-                          ? new Date(event.startDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                weekday: "short",
-                                month: "long",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )
-                          : "TBA"
-                      }
-                      time={
-                        event.startDate
-                          ? new Date(event.startDate).toLocaleTimeString(
-                              "en-US",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              }
-                            )
-                          : "TBA"
-                      }
-                      location={
-                        event.location ||
-                        (event.eventType === "platform_booth"
-                          ? event.locationPreference
-                          : null) ||
-                        "Unknown location"
-                      }
-                      attendees={
-                        Array.isArray(event.attendees)
-                          ? event.attendees.length
-                          : event.attendeesCount || 0
-                      }
-                      image={
-                        event.bannerImage ||
-                        event.image ||
-                        getEventImage(event.eventType, event.name)
-                      }
-                      description={event.description}
-                      startDate={event.startDate}
-                      endDate={event.endDate}
-                      durationWeeks={event.durationWeeks}
-                      capacity={event.capacity}
-                      registrationDeadline={event.registrationDeadline}
-                      onRegister={() => handleRegisterEvent(event._id)}
-                      showDetailedView={true}
-                      onSave={() => console.log("Save:", event.name)}
-                      onShare={() => console.log("Share:", event.name)}
-                      onViewDetails={() =>
-                        console.log("View details:", event.name)
-                      }
-                    />
-                  ))}
+                  {[...events]
+                    .sort((a, b) => {
+                      const aDate = a.startDate
+                        ? new Date(a.startDate).getTime()
+                        : 0;
+                      const bDate = b.startDate
+                        ? new Date(b.startDate).getTime()
+                        : 0;
+                      return sortOrder === "asc"
+                        ? aDate - bDate
+                        : bDate - aDate;
+                    })
+                    .map((event, index) => (
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={
+                          event.bannerImage ||
+                          event.image ||
+                          getEventImage(event.eventType, event.name)
+                        }
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        durationWeeks={event.durationWeeks}
+                        capacity={event.capacity}
+                        registrationDeadline={event.registrationDeadline}
+                        onRegister={() => handleRegisterEvent(event._id)}
+                        showDetailedView={true}
+                        onSave={() => console.log("Save:", event.name)}
+                        onShare={() => console.log("Share:", event.name)}
+                        onViewDetails={() =>
+                          console.log("View details:", event.name)
+                        }
+                      />
+                    ))}
                 </div>
               )}
             </div>

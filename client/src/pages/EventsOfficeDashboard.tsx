@@ -21,6 +21,7 @@ import {
   SlidersHorizontal,
   Users,
   PieChart as PieChartIcon,
+  MapPin,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -47,9 +48,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
@@ -111,6 +120,11 @@ export default function EventsOfficeDashboard() {
   ]);
   const [eventSearch, setEventSearch] = useState("");
   const [displayLimit, setDisplayLimit] = useState(12);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [selectedType, setSelectedType] = useState("all");
+  const [selectedLocation, setSelectedLocation] = useState("all");
+  const [selectedStartDate, setSelectedStartDate] = useState("");
+  const [selectedEndDate, setSelectedEndDate] = useState("");
 
   // Extra totals
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
@@ -118,7 +132,9 @@ export default function EventsOfficeDashboard() {
   const [totalBooths, setTotalBooths] = useState<number | null>(null);
 
   // Combined filtered events
-  const combinedEvents = [...upcomingEvents, ...pastEvents];
+  const combinedEvents = [...upcomingEvents, ...pastEvents].filter(
+    (event) => event
+  );
   const filteredEvents = combinedEvents.filter((event: any) => {
     const q = eventSearch.trim().toLowerCase();
     const matchesSearch =
@@ -128,7 +144,9 @@ export default function EventsOfficeDashboard() {
       (event.location || "").toLowerCase().includes(q) ||
       (event.locationPreference || "").toLowerCase().includes(q);
 
-    const matchesType = selectedEventTypes.includes(event.eventType);
+    const matchesType =
+      selectedEventTypes.includes(event.eventType) &&
+      (selectedType === "all" || event.eventType === selectedType);
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
@@ -154,7 +172,24 @@ export default function EventsOfficeDashboard() {
     const matchesTimeFilter =
       (showUpcoming && isUpcoming) || (showPast && isPast);
 
-    return matchesSearch && matchesType && matchesTimeFilter;
+    const matchesLocation =
+      selectedLocation === "all" || event.location === selectedLocation;
+
+    const eventStart = event.startDate ? new Date(event.startDate) : null;
+    const eventEnd = event.endDate ? new Date(event.endDate) : null;
+    const matchesDateRange =
+      (!selectedStartDate ||
+        !eventStart ||
+        eventStart >= new Date(selectedStartDate)) &&
+      (!selectedEndDate || !eventEnd || eventEnd <= new Date(selectedEndDate));
+
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesTimeFilter &&
+      matchesLocation &&
+      matchesDateRange
+    );
   });
 
   const toggleEventType = (type: string) => {
@@ -174,6 +209,10 @@ export default function EventsOfficeDashboard() {
       "platform_booth",
     ]);
     setEventSearch("");
+    setSelectedType("all");
+    setSelectedLocation("all");
+    setSelectedStartDate("");
+    setSelectedEndDate("");
     setDisplayLimit(12);
   };
 
@@ -1185,7 +1224,7 @@ export default function EventsOfficeDashboard() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Sidebar - Filters */}
             <aside className="lg:w-72 flex-shrink-0">
-              <div className="sticky top-24">
+              <div className="sticky top-32">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-lg">
@@ -1241,34 +1280,85 @@ export default function EventsOfficeDashboard() {
 
                     {/* Event Type Filter */}
                     <div className="space-y-3">
-                      <div className="text-sm font-semibold">Event Type</div>
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <SlidersHorizontal className="h-4 w-4" />
+                        Event Type
+                      </div>
+                      <Select
+                        value={selectedType}
+                        onValueChange={setSelectedType}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select event type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="bazaar">Bazaars</SelectItem>
+                          <SelectItem value="conference">
+                            Conferences
+                          </SelectItem>
+                          <SelectItem value="trip">Trips</SelectItem>
+                          <SelectItem value="workshop">Workshops</SelectItem>
+                          <SelectItem value="platform_booth">
+                            Platform Booths
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Location Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <MapPin className="h-4 w-4" />
+                        Location
+                      </div>
+                      <Select
+                        value={selectedLocation}
+                        onValueChange={setSelectedLocation}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Locations</SelectItem>
+                          {Array.from(
+                            new Set(
+                              combinedEvents
+                                .filter((event) => event)
+                                .map(
+                                  (event) =>
+                                    event.location || event.locationPreference
+                                )
+                                .filter((loc) => !!loc)
+                            )
+                          ).map((location) => (
+                            <SelectItem key={location} value={location}>
+                              {location}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {/* Date Range Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <Calendar className="h-4 w-4" />
+                        Date Range
+                      </div>
                       <div className="space-y-2">
-                        {[
-                          { value: "bazaar", label: "Bazaars" },
-                          { value: "trip", label: "Trips" },
-                          { value: "workshop", label: "Workshops" },
-                          { value: "conference", label: "Conferences" },
-                          { value: "platform_booth", label: "Platform Booths" },
-                        ].map((type) => (
-                          <div
-                            key={type.value}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox
-                              id={`filter-${type.value}`}
-                              checked={selectedEventTypes.includes(type.value)}
-                              onCheckedChange={() =>
-                                toggleEventType(type.value)
-                              }
-                            />
-                            <Label
-                              htmlFor={`filter-${type.value}`}
-                              className="cursor-pointer text-sm"
-                            >
-                              {type.label}
-                            </Label>
-                          </div>
-                        ))}
+                        <Input
+                          type="date"
+                          value={selectedStartDate}
+                          onChange={(e) => setSelectedStartDate(e.target.value)}
+                          placeholder="Start date"
+                        />
+                        <Input
+                          type="date"
+                          value={selectedEndDate}
+                          onChange={(e) => setSelectedEndDate(e.target.value)}
+                          placeholder="End date"
+                        />
                       </div>
                     </div>
 
@@ -1295,12 +1385,19 @@ export default function EventsOfficeDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Search Bar */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Search events by name, type, or location..."
-                      value={eventSearch}
-                      onChange={(e) => setEventSearch(e.target.value)}
-                      className="flex-1"
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Search events by name, type, or location..."
+                        value={eventSearch}
+                        onChange={(e) => setEventSearch(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <EventSort
+                      sortOrder={sortOrder}
+                      onSortChange={setSortOrder}
                     />
                   </div>
 
@@ -1326,7 +1423,18 @@ export default function EventsOfficeDashboard() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {filteredEvents
+                      {[...filteredEvents]
+                        .sort((a, b) => {
+                          const aDate = a.startDate
+                            ? new Date(a.startDate).getTime()
+                            : 0;
+                          const bDate = b.startDate
+                            ? new Date(b.startDate).getTime()
+                            : 0;
+                          return sortOrder === "asc"
+                            ? aDate - bDate
+                            : bDate - aDate;
+                        })
                         .filter((event: any) => !event?.deletedAt)
                         .slice(0, displayLimit)
                         .map((event: any, index: number) => {

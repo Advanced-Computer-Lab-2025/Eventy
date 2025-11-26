@@ -8,6 +8,7 @@ import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import { getEventImage } from "@/lib/eventImages";
+import EventSort from "@/components/EventSort";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -40,6 +41,7 @@ export default function AdminDashboardPage() {
   const [eventTypeFilter, setEventTypeFilter] = useState<
     "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
   >("all");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -231,12 +233,21 @@ export default function AdminDashboardPage() {
                   ))}
                 </div>
 
-                <EventSearch
-                  onSearchResults={(results) => setUpcomingEvents(results)}
-                  onLoading={(isLoading) => setEventsLoading(isLoading)}
-                  onError={(msg) => setEventsError(msg)}
-                  placeholder="Search events by name, professor, or type..."
-                />
+                <div className="flex items-center gap-4">
+                  <div className="flex-1">
+                    <EventSearch
+                      onSearchResults={(results) => setUpcomingEvents(results)}
+                      onLoading={(isLoading) => setEventsLoading(isLoading)}
+                      onError={(msg) => setEventsError(msg)}
+                      placeholder="Search events by name, professor, or type..."
+                      className="w-full"
+                    />
+                  </div>
+                  <EventSort
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                  />
+                </div>
 
                 {eventsLoading ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -252,7 +263,18 @@ export default function AdminDashboardPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
-                    {upcomingEvents
+                    {[...upcomingEvents]
+                      .sort((a, b) => {
+                        const aDate = a.startDate
+                          ? new Date(a.startDate).getTime()
+                          : 0;
+                        const bDate = b.startDate
+                          ? new Date(b.startDate).getTime()
+                          : 0;
+                        return sortOrder === "asc"
+                          ? aDate - bDate
+                          : bDate - aDate;
+                      })
                       .filter((e: any) =>
                         eventTypeFilter === "all"
                           ? true

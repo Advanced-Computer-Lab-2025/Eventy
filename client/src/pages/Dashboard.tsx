@@ -6,6 +6,7 @@ import EventListItem from "@/components/EventListItem";
 import QuickActions from "@/components/QuickActions";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import EventSearch from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true); // Initial loading state
   const [error, setError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const handleSearchResults = (results: any[]) => {
     setEvents(results);
@@ -117,12 +119,21 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 {/* Search Section */}
-                <EventSearch
-                  onSearchResults={handleSearchResults}
-                  onLoading={handleLoading}
-                  onError={handleError}
-                  className="mb-6"
-                />
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex-1">
+                    <EventSearch
+                      onSearchResults={handleSearchResults}
+                      onLoading={handleLoading}
+                      onError={handleError}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <EventSort
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                  />
+                </div>
 
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">
@@ -140,55 +151,67 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {events.map((event: any, index: number) => (
-                      <EventCard
-                        key={event._id || index}
-                        id={event._id || String(index)}
-                        title={event.name || "Untitled Event"}
-                        category={(event.eventType || "academic") as any}
-                        date={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleDateString(
-                                "en-US",
-                                {
-                                  weekday: "short",
-                                  month: "long",
-                                  day: "numeric",
-                                  year: "numeric",
-                                }
-                              )
-                            : "TBA"
-                        }
-                        time={
-                          event.startDate
-                            ? new Date(event.startDate).toLocaleTimeString(
-                                "en-US",
-                                {
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                  hour12: true,
-                                }
-                              )
-                            : "TBA"
-                        }
-                        location={
-                          event.location ||
-                          (event.eventType === "platform_booth"
-                            ? event.locationPreference
-                            : null) ||
-                          "Unknown location"
-                        }
-                        attendees={
-                          Array.isArray(event.attendees)
-                            ? event.attendees.length
-                            : event.attendeesCount || 0
-                        }
-                        vendors={event.vendors || []}
-                        onRegister={() => console.log("hakoona batata")}
-                        onSave={() => console.log("Save:", event.name)}
-                        onShare={() => console.log("Share:", event.name)}
-                      />
-                    ))}
+                    {[...events]
+                      .sort((a, b) => {
+                        const aDate = a.startDate
+                          ? new Date(a.startDate).getTime()
+                          : 0;
+                        const bDate = b.startDate
+                          ? new Date(b.startDate).getTime()
+                          : 0;
+                        return sortOrder === "asc"
+                          ? aDate - bDate
+                          : bDate - aDate;
+                      })
+                      .map((event: any, index: number) => (
+                        <EventCard
+                          key={event._id || index}
+                          id={event._id || String(index)}
+                          title={event.name || "Untitled Event"}
+                          category={(event.eventType || "academic") as any}
+                          date={
+                            event.startDate
+                              ? new Date(event.startDate).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "short",
+                                    month: "long",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "TBA"
+                          }
+                          time={
+                            event.startDate
+                              ? new Date(event.startDate).toLocaleTimeString(
+                                  "en-US",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  }
+                                )
+                              : "TBA"
+                          }
+                          location={
+                            event.location ||
+                            (event.eventType === "platform_booth"
+                              ? event.locationPreference
+                              : null) ||
+                            "Unknown location"
+                          }
+                          attendees={
+                            Array.isArray(event.attendees)
+                              ? event.attendees.length
+                              : event.attendeesCount || 0
+                          }
+                          vendors={event.vendors || []}
+                          onRegister={() => console.log("hakoona batata")}
+                          onSave={() => console.log("Save:", event.name)}
+                          onShare={() => console.log("Share:", event.name)}
+                        />
+                      ))}
                   </div>
                 )}
               </CardContent>
