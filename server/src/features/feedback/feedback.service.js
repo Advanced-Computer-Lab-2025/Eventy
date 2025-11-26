@@ -178,7 +178,7 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
         userEmail: commentAuthor.email,
         eventName: event.name,
         commentBody: commentBody,
-        deletionReason: "inappropriate content", // Default reason
+        deletionReason: "inappropriate content", // Default reason for deletion
       });
     } catch (emailError) {
       console.error("Failed to send comment deletion warning:", emailError);
