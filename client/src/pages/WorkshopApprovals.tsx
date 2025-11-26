@@ -368,13 +368,23 @@ export default function WorkshopApprovals() {
                                   : workshop.status === "rejected"
                                     ? "bg-red-100 text-red-700 border-red-200"
                                     : workshop.status === "needs_revision"
-                                      ? "bg-blue-100 text-blue-700 border-blue-200"
-                                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                      ? "bg-orange-100 text-orange-700 border-orange-200"
+                                      : workshop.status === "archived"
+                                        ? "bg-blue-100 text-blue-700 border-blue-200"
+                                        : "bg-yellow-100 text-yellow-800 border-yellow-200"
                               }
                             >
-                              {workshop.status === "needs_revision"
-                                ? "edits requested"
-                                : workshop.status}
+                              {workshop.status === "approved"
+                                ? "Approved"
+                                : workshop.status === "rejected"
+                                  ? "Rejected"
+                                  : workshop.status === "needs_revision"
+                                    ? "Needs Revision"
+                                    : workshop.status === "archived"
+                                      ? "Archived"
+                                      : workshop.status === "pending"
+                                        ? "Pending"
+                                        : workshop.status}
                             </Badge>
                           </TableCell>
                           <TableCell>
