@@ -214,6 +214,12 @@ export default function MyEvents() {
                   price={event.price}
                   showActions={true}
                   isRegistered={true}
+                  hideRegisterButton={
+                    userRole === "student" ||
+                    userRole === "professor" ||
+                    userRole === "staff" ||
+                    userRole === "ta"
+                  }
                   onViewDetails={() => handleCardClick(event._id)}
                   onSave={() => {}}
                   onShare={() => {}}
