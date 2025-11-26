@@ -31,6 +31,15 @@ const notificationSchema = new Schema(
         ref: "User",
       },
     ],
+    event: {
+      type: Schema.Types.ObjectId,
+      ref: "Event",
+      default: null,
+    },
+    notificationType: {
+      type: String,
+      default: null,
+    },
     deletedAt: {
       type: Date,
       default: null,
