@@ -167,6 +167,7 @@ export default function StaffUpcomingEvents() {
                 capacity={event.capacity}
                 registrationDeadline={event.registrationDeadline}
                 vendors={event.vendors || []}
+                price={event.price}
                 showDetailedView={true}
                 onRegister={() => handleRegisterEvent(event._id)}
                 onShare={() => console.log("Share:", event.name)}

@@ -317,6 +317,7 @@ export default function AdminDashboardPage() {
                             durationWeeks={e.durationWeeks}
                             capacity={-1}
                             vendors={e.vendors || []}
+                            price={e.price}
                             showDetailedView={true}
                           />
                         </div>

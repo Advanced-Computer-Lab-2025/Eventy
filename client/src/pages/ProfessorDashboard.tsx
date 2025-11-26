@@ -353,6 +353,7 @@ export default function ProfessorDashboard() {
                     capacity={event.capacity}
                     registrationDeadline={event.registrationDeadline}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
                     onRegister={() =>
                       console.log(handleRegisterEvent(event._id))

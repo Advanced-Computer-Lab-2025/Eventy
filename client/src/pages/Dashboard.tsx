@@ -184,6 +184,7 @@ export default function Dashboard() {
                             : event.attendeesCount || 0
                         }
                         vendors={event.vendors || []}
+                        price={event.price}
                         onRegister={() => console.log("hakoona batata")}
                         onSave={() => console.log("Save:", event.name)}
                         onShare={() => console.log("Share:", event.name)}
