@@ -7,6 +7,7 @@ export interface EventSearchFilters {
   location?: string;
   startDate?: string;
   endDate?: string;
+  professor?: string;
 }
 
 interface EventSearchProps {
@@ -75,23 +76,29 @@ export default function EventSearch({
   const hasSearchQuery = useMemo(() => !!searchQuery.trim(), [searchQuery]);
   const hasFilterParams = useMemo(() => {
     const hasDateRange = Boolean(filters.startDate && filters.endDate);
-    return Boolean(filters.type || filters.location || hasDateRange);
+    const prof = (filters as any).professor;
+    const hasValidProfessor = Boolean(
+      prof && /^[0-9a-fA-F]{24}$/.test(String(prof))
+    );
+
+    return Boolean(
+      (filters as any).type ||
+        (filters as any).location ||
+        hasValidProfessor ||
+        hasDateRange
+    );
   }, [filters]);
 
   // Search effect with debouncing (only when user interacts with filters)
   useEffect(() => {
-    // Skip if we haven't done the initial fetch yet
     if (!hasInitiallyFetched.current) return;
 
+    let lastResults: any[] = [];
+
     const fetchEvents = async () => {
-      // Always save scroll position after initial load (for any search interaction)
       scrollPositionRef.current = window.scrollY;
-
       try {
-        // Don't trigger the loading overlay for searches after initial load
         onError?.("");
-
-        // If no filters are active and no search query, fetch all upcoming events
         if (!hasSearchQuery && !hasFilterParams) {
           const response = await fetch(API_URL, {
             headers: {
@@ -101,33 +108,32 @@ export default function EventSearch({
           });
           if (!response.ok) throw new Error("Failed to fetch events");
           const data = await response.json();
-          onSearchResults(data.data || []);
+          lastResults = data.data || [];
+          onSearchResults(lastResults);
         } else {
-          // Search with the applied filters
           setIsSearching(true);
           const searchParams = new URLSearchParams();
-
           if (searchQuery.trim()) {
             searchParams.append("name", searchQuery.trim());
             if (!filters.type) {
-              // Allow searching by type keyword when dropdown is unset
               searchParams.append("type", searchQuery.trim());
             }
           }
-
           if (filters.type) {
             searchParams.set("type", filters.type);
           }
-
           if (filters.location) {
             searchParams.append("location", filters.location);
           }
-
           if (filters.startDate && filters.endDate) {
             searchParams.append("startDate", filters.startDate);
             searchParams.append("endDate", filters.endDate);
           }
-
+          if ((filters as any).professor) {
+            const p = (filters as any).professor;
+            const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(p));
+            if (isObjectId) searchParams.append("professor", String(p));
+          }
           const response = await fetch(
             `${SEARCH_URL}?${searchParams.toString()}`,
             {
@@ -137,29 +143,31 @@ export default function EventSearch({
               },
             }
           );
-
-          if (!response.ok) throw new Error("Search failed");
+          if (!response.ok) {
+            // Only show error if it's a real server/network error
+            console.error("Error fetching events:", response.statusText);
+            onError?.("Unable to load events. Please try again later.");
+            // Do NOT clear previous results
+            return;
+          }
           const data = await response.json();
-          onSearchResults(data.data || []);
-
-          if (data.data?.length === 0) {
+          lastResults = data.data || [];
+          onSearchResults(lastResults);
+          if (lastResults.length === 0) {
             onError?.("No events found matching your search criteria.");
           }
         }
       } catch (err) {
         console.error("Error fetching events:", err);
         onError?.("Unable to load events. Please try again later.");
+        // Do NOT clear previous results
       } finally {
         setIsSearching(false);
       }
     };
-
-    // Debounce: wait after user stops typing/changing filters
     const debounceTimer = setTimeout(() => {
       fetchEvents();
     }, debounceMs);
-
-    // Cleanup: cancel the timer if filters change before timeout
     return () => clearTimeout(debounceTimer);
   }, [
     searchQuery,

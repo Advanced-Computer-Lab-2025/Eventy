@@ -9,7 +9,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar, MapPin, SlidersHorizontal, ArrowUpDown } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  SlidersHorizontal,
+  ArrowUpDown,
+  User,
+} from "lucide-react";
 
 const eventTypes = [
   { value: "all", label: "All event types" },
@@ -24,6 +30,7 @@ export interface EventFilterState {
   eventType: string;
   location: string;
   startDate: string;
+  professor?: string;
   endDate: string;
 }
 
@@ -31,6 +38,7 @@ interface EventFiltersProps {
   filters: EventFilterState;
   onFilterChange: (filters: EventFilterState) => void;
   locations: string[];
+  professors?: { id: string; name: string }[];
   sortOrder?: "asc" | "desc";
   onSortChange?: (order: "asc" | "desc") => void;
 }
@@ -39,6 +47,7 @@ export default function EventFilters({
   filters,
   onFilterChange,
   locations,
+  professors = [],
   sortOrder,
   onSortChange,
 }: EventFiltersProps) {
@@ -63,6 +72,7 @@ export default function EventFilters({
       location: "all",
       startDate: "",
       endDate: "",
+      professor: "",
     });
   };
 
@@ -96,6 +106,33 @@ export default function EventFilters({
             </SelectContent>
           </Select>
         </div>
+
+        {professors && professors.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <User className="h-4 w-4" />
+              Professor
+            </div>
+            <Select
+              value={filters.professor || "all"}
+              onValueChange={(value) =>
+                updateFilters({ professor: value === "all" ? "" : value })
+              }
+            >
+              <SelectTrigger className="w-full" data-testid="filter-professor">
+                <SelectValue placeholder="Select professor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All professors</SelectItem>
+                {professors.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">

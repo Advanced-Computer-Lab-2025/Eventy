@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
-import EventFilters from "@/components/EventFilters";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import { useToast } from "@/hooks/use-toast";
@@ -36,15 +36,19 @@ interface Event {
 
 export default function StaffUpcomingEvents() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [eventFilters, setEventFilters] = useState({
+  const [eventFilters, setEventFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
     startDate: "",
     endDate: "",
+    professor: "",
   });
   const { toast } = useToast();
 
@@ -138,6 +142,14 @@ export default function StaffUpcomingEvents() {
           : "";
         if (eventDate > eventFilters.endDate) return false;
       }
+      // Professor filter: only apply to workshops and conferences
+      if (eventFilters.professor) {
+        if (event.eventType !== "workshop" && event.eventType !== "conference")
+          return false;
+        const profs = (event as any).professors || [];
+        const ids = profs.map((p: any) => String(p._id || p.id || p));
+        if (!ids.includes(String(eventFilters.professor))) return false;
+      }
       return true;
     });
   };
@@ -165,6 +177,52 @@ export default function StaffUpcomingEvents() {
     return Array.from(new Set(locations));
   }, [events]);
 
+  const computedProfessorOptions = useMemo(() => {
+    const map = new Map<string, string>();
+    events.forEach((ev) => {
+      if (ev.eventType === "workshop" || ev.eventType === "conference") {
+        const profs = (ev as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          const name =
+            p.firstName && p.lastName
+              ? `${p.firstName} ${p.lastName}`
+              : p.name || `${p.firstName || ""} ${p.lastName || ""}`.trim();
+          if (id) map.set(String(id), name || String(id));
+        });
+      }
+    });
+    return Array.from(map.entries()).map(([id, name]) => ({ id, name }));
+  }, [events]);
+
+  useEffect(() => {
+    const baseUrl =
+      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+    const token = localStorage.getItem("token");
+    const fetchProfessors = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    };
+    fetchProfessors();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <StaffHeader homeHref="/staff-ta" />
@@ -185,6 +243,11 @@ export default function StaffUpcomingEvents() {
                   filters={eventFilters}
                   onFilterChange={setEventFilters}
                   locations={availableLocations}
+                  professors={
+                    professorOptions.length > 0
+                      ? professorOptions
+                      : computedProfessorOptions
+                  }
                 />
               </div>
             </aside>
@@ -199,6 +262,7 @@ export default function StaffUpcomingEvents() {
                     onError={handleError}
                     placeholder="Search events by name, professor, or type..."
                     className="w-full"
+                    filters={eventFilters}
                   />
                 </div>
 

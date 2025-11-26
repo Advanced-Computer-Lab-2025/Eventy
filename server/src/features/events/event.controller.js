@@ -643,13 +643,13 @@ export class EventsController {
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
     try {
-      const { name, type, location, startDate, endDate } = req.query;
+      const { name, type, location, startDate, endDate, professor } = req.query;
 
-      // Ensure at least one search parameter is provided
-      if (!name && !type && !location && !startDate && !endDate) {
+      // Ensure at least one search parameter is provided (allow professor only searches too)
+      if (!name && !type && !location && !startDate && !endDate && !professor) {
         throw new ApiError(
           400,
-          "Please provide at least one search criteria (name, type, location, or date range)."
+          "Please provide at least one search criteria (name, type, location, professor, or date range)."
         );
       }
 
@@ -695,6 +695,7 @@ export class EventsController {
         startDate: parsedStartDate,
         endDate: parsedEndDate,
         userRole,
+        professor,
       });
 
       return res

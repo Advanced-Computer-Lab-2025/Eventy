@@ -39,6 +39,9 @@ interface Event {
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true); // Initial loading state
@@ -48,6 +51,7 @@ export default function Home() {
     location: "all",
     startDate: "",
     endDate: "",
+    professor: "",
   });
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
@@ -155,8 +159,60 @@ export default function Home() {
       next.startDate = filters.startDate;
       next.endDate = filters.endDate;
     }
+    if (filters.professor) {
+      (next as any).professor = filters.professor;
+    }
     return next;
   }, [filters]);
+
+  // compute professorOptions from events as a fallback
+  const computedProfessorOptions = useMemo(() => {
+    const seen = new Map<string, string>();
+    events.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        (profs || []).forEach((p: any) => {
+          const id = p._id || p.id || p;
+          const name =
+            p.firstName && p.lastName
+              ? `${p.firstName} ${p.lastName}`
+              : p.name ||
+                p.companyName ||
+                `${p.firstName || ""} ${p.lastName || ""}`.trim();
+          if (id) seen.set(String(id), name || String(id));
+        });
+      }
+    });
+    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
+  }, [events]);
+
+  useEffect(() => {
+    const baseUrl =
+      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+    const token = localStorage.getItem("token");
+    const fetchProfessors = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    };
+    fetchProfessors();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -180,6 +236,11 @@ export default function Home() {
                   filters={filters}
                   onFilterChange={setFilters}
                   locations={locationOptions}
+                  professors={
+                    professorOptions.length > 0
+                      ? professorOptions
+                      : computedProfessorOptions
+                  }
                 />
               </div>
             </aside>

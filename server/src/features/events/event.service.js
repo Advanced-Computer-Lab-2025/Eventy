@@ -428,7 +428,9 @@ export const getUpcomingEventsWithVendors = async (
   }
 
   // Get all approved upcoming events
-  const events = await Event.find(filter).lean();
+  const events = await Event.find(filter)
+    .populate("professors", "firstName lastName role")
+    .lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -502,6 +504,7 @@ export const searchEvents = async ({
   startDate,
   endDate,
   userRole,
+  professor,
 }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
   // Platform booths have startDate and endDate assigned when approved in updateApplicationStatus
@@ -621,6 +624,22 @@ export const searchEvents = async ({
         { locationPreference: { $regex: location, $options: "i" } },
       ],
     });
+  }
+
+  if (professor) {
+    // Accept professor as ID (string), convert to ObjectId if valid
+    const profStr = String(professor).trim();
+    if (profStr && profStr.toLowerCase() !== "all") {
+      if (!mongoose.Types.ObjectId.isValid(profStr)) {
+        // Invalid professor id format - return an empty result rather than throwing
+        // to avoid crashing consumer code; simply return an empty list
+        return [];
+      }
+      const profValue = mongoose.Types.ObjectId(profStr);
+      // Only filter for workshops and conferences when using professor filter
+      filter.$and.push({ eventType: { $in: ["workshop", "conference"] } });
+      filter.$and.push({ professors: { $in: [profValue] } });
+    }
   }
 
   // Date filtering: enforce strict bounds

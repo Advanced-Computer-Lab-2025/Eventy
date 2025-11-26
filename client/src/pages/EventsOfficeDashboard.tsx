@@ -22,6 +22,7 @@ import {
   Users,
   PieChart as PieChartIcon,
   MapPin,
+  User,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -125,6 +126,10 @@ export default function EventsOfficeDashboard() {
   const [selectedLocation, setSelectedLocation] = useState("all");
   const [selectedStartDate, setSelectedStartDate] = useState("");
   const [selectedEndDate, setSelectedEndDate] = useState("");
+  const [selectedProfessor, setSelectedProfessor] = useState("all");
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
 
   // Extra totals
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
@@ -183,6 +188,15 @@ export default function EventsOfficeDashboard() {
         eventStart >= new Date(selectedStartDate)) &&
       (!selectedEndDate || !eventEnd || eventEnd <= new Date(selectedEndDate));
 
+    // Professor filter: if a specific professor is selected, only include workshops/conferences with that professor
+    if (selectedProfessor && selectedProfessor !== "all") {
+      if (event.eventType !== "workshop" && event.eventType !== "conference")
+        return false;
+      const profs = (event as any).professors || [];
+      const profIds = profs.map((p: any) => String(p._id || p.id || p));
+      if (!profIds.includes(String(selectedProfessor))) return false;
+    }
+
     return (
       matchesSearch &&
       matchesType &&
@@ -213,6 +227,7 @@ export default function EventsOfficeDashboard() {
     setSelectedLocation("all");
     setSelectedStartDate("");
     setSelectedEndDate("");
+    setSelectedProfessor("all");
     setDisplayLimit(12);
   };
 
@@ -624,6 +639,35 @@ export default function EventsOfficeDashboard() {
     return () => {
       if (reminderTime) clearTimeout(reminderTime);
     };
+  }, []);
+
+  // Fetch professors for dropdown
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const baseUrl =
+      (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:4000";
+    const fetchProfessors = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    };
+    fetchProfessors();
   }, []);
 
   // Filter conferences when search changes
@@ -1359,6 +1403,32 @@ export default function EventsOfficeDashboard() {
                           onChange={(e) => setSelectedEndDate(e.target.value)}
                           placeholder="End date"
                         />
+                      </div>
+                    </div>
+
+                    {/* Professor Filter */}
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-semibold">
+                        <User className="h-4 w-4" />
+                        Professor
+                      </div>
+                      <div>
+                        <Select
+                          value={selectedProfessor}
+                          onValueChange={(value) => setSelectedProfessor(value)}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="All professors" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="all">All professors</SelectItem>
+                            {professorOptions.map((p) => (
+                              <SelectItem key={p.id} value={p.id}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
                     </div>
 
