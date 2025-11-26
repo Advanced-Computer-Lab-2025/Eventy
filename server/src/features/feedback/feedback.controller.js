@@ -2,6 +2,7 @@ import {
   submitFeedbackService,
   getEventFeedbackService,
   getUserEventFeedbackService,
+  deleteCommentByAdmin,
 } from "./feedback.service.js";
 import ApiError from "../../utils/ApiError.js";
 import { submitFeedbackSchema } from "./feedback.validation.js";
@@ -75,6 +76,37 @@ export const getUserEventFeedback = async (req, res) => {
     const feedback = await getUserEventFeedbackService(userId, eventId);
 
     return res.status(200).json({ success: true, data: feedback });
+  } catch (error) {
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const deleteFeedbackCommentByAdmin = async (req, res) => {
+  try {
+    const adminId = req.user && (req.user._id || req.user.id);
+    if (!adminId) {
+      return res
+        .status(401)
+        .json({ success: false, message: "Authentication required." });
+    }
+
+    const { feedbackId } = req.params; // No commentId needed
+    const { deletionReason } = req.body; // Optional reason
+
+    const result = await deleteCommentByAdmin(
+      adminId,
+      feedbackId,
+      deletionReason
+    );
+
+    return res.status(200).json({ success: true, data: result });
   } catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode || 500).json({

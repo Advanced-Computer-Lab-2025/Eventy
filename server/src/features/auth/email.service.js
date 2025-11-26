@@ -615,7 +615,7 @@ export const sendGymSessionUpdateEmail = async (
                         `
                             : `
                         <tr>
-                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                          <td style="padding: 10px 0; font-size: 14px, color: #718096; font-weight: 600;">
                             Time:
                           </td>
                           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${newSession.startTime}</td>
@@ -832,7 +832,6 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
             application.durationWeeks
           } week${application.durationWeeks > 1 ? "s" : ""}</td>
-          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}</td>
         </tr>
     `;
   }
@@ -982,7 +981,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
 };
 
 /**
- * Send QR codes for all registered visitors to the vendor
+ * Send QR codes for all registered visitors(attendees) to the vendor
  * @param {Object} application - Application object (populated with createdBy and event)
  * @param {Object} vendor - Vendor user object
  * @param {Object|null} event - Event object or null for platform booth
@@ -2075,5 +2074,183 @@ export const sendVendorPaymentReceipt = async (
       error?.message || error
     );
     // Don't throw - log error but don't fail the payment confirmation
+  }
+};
+
+/**
+ * Send comment deletion warning email to user
+ * @param {Object} params - Email parameters
+ * @param {string} params.userName - Full name of the user
+ * @param {string} params.userEmail - User's email address
+ * @param {string} params.eventName - Name of the event
+ * @param {string} params.commentBody - The deleted comment text
+ */
+export const sendCommentDeletionWarning = async ({
+  userName,
+  userEmail,
+  eventName,
+  commentBody,
+}) => {
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: userEmail,
+    subject: "⚠️ Comment Removed - Content Policy Violation",
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Comment Removed</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Warning Badge -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #991b1b; line-height: 1.2;">
+                        ⚠️ Comment Removed
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Dear ${userName},
+                    </h2>
+                    
+                    <!-- Warning Box -->
+                    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 24px 0; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 15px; color: #991b1b; line-height: 1.6; font-weight: 600;">
+                        ⚠️ Warning: One of your comments has been removed by our admin team for violating our community guidelines.
+                      </p>
+                    </div>
+                    
+                    <!-- Event Info -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 20px; margin: 32px 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <p style="margin: 0 0 8px; font-size: 14px; color: #718096; font-weight: 600;">
+                        Event:
+                      </p>
+                      <p style="margin: 0; font-size: 16px; color: #1a202c; font-weight: 700;">
+                        ${eventName}
+                      </p>
+                    </div>
+                    
+                    <!-- Deleted Comment Box -->
+                    <div style="background-color: #ffffff; border: 2px solid #fca5a5; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px; font-size: 13px; color: #991b1b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Your Comment:
+                      </p>
+                      <p style="margin: 0; font-size: 15px; color: #6b7280; font-style: italic; line-height: 1.6; padding: 12px; background-color: #f9fafb; border-radius: 4px;">
+                        "${commentBody}"
+                      </p>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Guidelines -->
+                    <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 700; color: #1a202c;">
+                      Community Guidelines
+                    </h3>
+                    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      Please ensure your future comments comply with our community standards:
+                    </p>
+                    <ul style="margin: 0 0 24px; padding-left: 24px; font-size: 15px; line-height: 1.8; color: #4a5568;">
+                      <li style="margin-bottom: 8px;">Be respectful and courteous to others</li>
+                      <li style="margin-bottom: 8px;">Avoid offensive or inappropriate language</li>
+                      <li style="margin-bottom: 8px;">Stay on topic and provide constructive feedback</li>
+                      <li style="margin-bottom: 8px;">Do not spam or post promotional content</li>
+                    </ul>
+                    
+                    <!-- Important Notice -->
+                    <div style="background-color: #fff5f5; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #991b1b; line-height: 1.5;">
+                        <strong>Important:</strong> Repeated violations may result in account restrictions or suspension.
+                      </p>
+                    </div>
+                    
+                   
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <p style="margin: 24px 0 0; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      If you believe this was a mistake, please contact our support team at <a href="mailto:${process.env.EMAIL_USER}" style="color: #667eea; text-decoration: underline; font-weight: 600;">${process.env.EMAIL_USER}</a>.
+                    </p>
+                    
+                    <p style="margin: 20px 0 0; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      Best regards,<br>
+                      <strong>The Eventy Team</strong>
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      This is an automated message. Please do not reply to this email.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © ${new Date().getFullYear()} Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Comment deletion warning email sent to ${userEmail}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      `❌ Error sending comment deletion warning email to ${userEmail}:`,
+      error?.message || error
+    );
+    return false;
   }
 };
