@@ -74,6 +74,16 @@ export default function SportsFacilities() {
   const [reservingKeys, setReservingKeys] = useState<string[]>([]);
   const { toast } = useToast();
 
+  const ymdLocal = (d: string | Date | undefined | null) => {
+    if (!d) return undefined;
+    const dateObj = typeof d === "string" ? new Date(d) : d;
+    if (Number.isNaN(dateObj.getTime())) return undefined;
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
   const fetchCourtSchedules = async () => {
     const token = localStorage.getItem("token");
     try {
@@ -83,12 +93,27 @@ export default function SportsFacilities() {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
+      console.warn("Reserve response:", res.status, data);
       if (data.success && data.data) {
-        setCourtSchedules({
-          basketball: data.data.basketball || [],
-          tennis: data.data.tennis || [],
-          football: data.data.football || [],
-        });
+        // Normalize schedule dates to local YYYY-MM-DD (use local date parts)
+        const normalize = (arr: unknown[]) =>
+          (arr || []).map((s: unknown) => {
+            const sc = s as any;
+            return {
+              ...sc,
+              // produce local Y-M-D string regardless of incoming format
+              date: ymdLocal(sc?.date),
+            };
+          });
+
+        const normalized = {
+          basketball: normalize(data.data.basketball),
+          tennis: normalize(data.data.tennis),
+          football: normalize(data.data.football),
+        };
+        setCourtSchedules(normalized);
+        // warn with sample so devs can inspect if needed
+        console.warn("Fetched court schedules (normalized):", normalized);
       }
     } catch (err) {
       console.error("Fetch error:", err);
@@ -199,12 +224,10 @@ export default function SportsFacilities() {
     targetDate.setDate(today.getDate() + dayIndex);
     targetDate.setHours(0, 0, 0, 0);
 
-    const formattedDate = targetDate.toISOString().split("T")[0];
+    const formattedDate = ymdLocal(targetDate) || "";
     return Object.fromEntries(
       Object.entries(courtSchedules).map(([type, schedules]) => {
-        const match = schedules.find(
-          (s) => s.date && s.date.startsWith(formattedDate)
-        );
+        const match = schedules.find((s) => s.date === formattedDate);
         return [type, match ? match.slots : []];
       })
     ) as Record<CourtType, Slot[]>;
@@ -224,98 +247,111 @@ export default function SportsFacilities() {
 
   const canViewCourts = userRole === "student";
 
-  const renderCourtContent = () => (
-    <div className="space-y-6">
-      {/* Centered Date Navigation — for courts only */}
-      <div className="flex items-center justify-center gap-4 my-6">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
-          disabled={currentDayIndex === 0}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-        </Button>
-        <div className="text-lg font-semibold min-w-[250px] text-center">
-          {formattedDate}
+  const renderCourtContent = () => {
+    const bodyDate = getBodyDateFromIndex(currentDayIndex);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center gap-4 my-6">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
+            disabled={currentDayIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <div className="text-lg font-semibold min-w-[250px] text-center">
+            {formattedDate}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
+            disabled={currentDayIndex === 6}
+          >
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
-          disabled={currentDayIndex === 6}
-        >
-          Next <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
 
-      {loading ? (
-        <div className="text-center text-muted-foreground">
-          Loading court schedules...
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {Object.entries(COURT_NAMES).map(([type, label]) => (
-            <Card key={type} className="flex flex-col justify-between">
-              <CardHeader>
-                <CardTitle className="text-xl text-center">{label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2">
-                  {currentSchedules[type as CourtType]?.length > 0 ? (
-                    currentSchedules[type as CourtType].map((slot, sidx) => {
-                      const bodyDate = getBodyDateFromIndex(currentDayIndex);
-                      const slotKey = makeKey(
-                        type as CourtType,
-                        bodyDate,
-                        slot.startTime
-                      );
-                      const isReserving = reservingKeys.includes(slotKey);
-
-                      return (
-                        <Button
-                          key={slotKey}
-                          variant="outline"
-                          className="w-full justify-start gap-2"
-                          disabled={slot.status !== "available" || isReserving}
-                          onClick={() =>
-                            handleReserveCourt(
-                              type as CourtType,
-                              formattedDate,
-                              slot
-                            )
+        {loading ? (
+          <div className="text-center text-muted-foreground">
+            Loading court schedules...
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-3">
+            {Object.entries(COURT_NAMES).map(([type, label]) => {
+              const slots = currentSchedules[type as CourtType] || [];
+              return (
+                <Card key={type} className="flex flex-col justify-between">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-center">
+                      {label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-2">
+                      {slots.length > 0 ? (
+                        slots.map((slot) => {
+                          const slotKey = makeKey(
+                            type as CourtType,
+                            bodyDate,
+                            slot.startTime
+                          );
+                          const isReserving = reservingKeys.includes(slotKey);
+                          if (slot.status !== "available") {
+                            return (
+                              <div
+                                key={slotKey}
+                                className="w-full h-12 flex items-center justify-center bg-muted rounded"
+                              />
+                            );
                           }
-                        >
-                          <div className="flex w-full items-center justify-between">
-                            <div className="text-left">
-                              <div className="font-medium">
-                                {slot.startTime} - {slot.endTime}
+                          return (
+                            <Button
+                              key={slotKey}
+                              variant="outline"
+                              className="w-full justify-start gap-2"
+                              disabled={isReserving}
+                              onClick={() =>
+                                handleReserveCourt(
+                                  type as CourtType,
+                                  formattedDate,
+                                  slot
+                                )
+                              }
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <div className="text-left">
+                                  <div className="font-medium">
+                                    {slot.startTime} - {slot.endTime}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Available
+                                  </div>
+                                </div>
+                                <div>
+                                  <Badge>Available</Badge>
+                                </div>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                {slot.status}
-                              </div>
-                            </div>
-                            <div>
-                              <Badge>{slot.status}</Badge>
-                            </div>
-                          </div>
-                        </Button>
-                      );
-                    })
-                  ) : (
-                    <div className="text-muted-foreground">
-                      No slots available
+                            </Button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-muted-foreground">
+                          No slots available
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-                <p className="text-muted-foreground">
-                  Book courts and join gym sessions
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+                    <p className="text-muted-foreground">
+                      Book courts and join gym sessions
+                    </p>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
