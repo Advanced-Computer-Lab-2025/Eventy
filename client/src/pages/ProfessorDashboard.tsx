@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   GraduationCap,
@@ -22,6 +22,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import {
@@ -48,11 +49,23 @@ export default function ProfessorDashboard() {
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+  });
   const { toast } = useToast();
 
   useEffect(() => {
     fetchUserData();
     fetchWorkshopStats();
+    fetchProfessors();
   }, []);
 
   const fetchUserData = () => {
@@ -86,6 +99,41 @@ export default function ProfessorDashboard() {
       setLoading(false);
     }
   };
+
+  const fetchProfessors = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await fetch("http://localhost:4000/api/users/professors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const payload = await res.json();
+      const list = payload?.data || payload || [];
+      setProfessorOptions(
+        (list || []).map((u: any) => ({
+          id: u._id,
+          name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to fetch professors", err);
+    }
+  };
+
+  // Compute unique locations from events
+  const computedLocationOptions = useMemo(() => {
+    const locations = events
+      .map(
+        (event) =>
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? event.locationPreference
+            : null)
+      )
+      .filter(Boolean) as string[];
+    return Array.from(new Set(locations));
+  }, [events]);
 
   const getWorkshopStats = () => {
     const total = workshops.length;
@@ -286,17 +334,37 @@ export default function ProfessorDashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-12 lg:grid-cols-3">
-          {/* Left Column - Upcoming Events */}
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Event Filters */}
+          <aside className="lg:w-72 flex-shrink-0">
+            <div className="sticky top-32 space-y-4">
+              <EventFilters
+                filters={filters}
+                onFilterChange={setFilters}
+                locations={computedLocationOptions}
+                professors={professorOptions.length > 0 ? professorOptions : []}
+              />
+            </div>
+          </aside>{" "}
+          {/* Center and Right Columns */}
+          <div className="flex-1">
+            {/* Center Column - Upcoming Events */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
 
-            {/* Sort Dropdown */}
-            <Card className="mb-4">
-              <CardContent className="pt-4">
+              {/* Event Search and Sort */}
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex-1">
+                  <EventSearch
+                    onSearchResults={handleSearchResults}
+                    onLoading={handleLoading}
+                    onError={handleError}
+                    filters={filters}
+                  />
+                </div>
                 <div className="flex items-center gap-2">
                   <ArrowUpDown className="h-4 w-4" />
-                  <span className="text-sm font-semibold">Sort by Date:</span>
+                  <span className="text-sm font-semibold">Sort:</span>
                   <Select
                     value={sortOrder}
                     onValueChange={(value: "asc" | "desc") =>
@@ -312,184 +380,107 @@ export default function ProfessorDashboard() {
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
-
-            <EventSearch
-              onSearchResults={handleSearchResults}
-              onLoading={handleLoading}
-              onError={handleError}
-              className="mb-6"
-            />
-
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-muted-foreground">Loading events...</div>
               </div>
-            ) : error && events.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground text-center">{error}</p>
-                </CardContent>
-              </Card>
-            ) : events.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {[...events]
-                  .sort((a, b) => {
-                    const aDate = a.startDate
-                      ? new Date(a.startDate).getTime()
-                      : 0;
-                    const bDate = b.startDate
-                      ? new Date(b.startDate).getTime()
-                      : 0;
-                    return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
-                  })
-                  .map((event: any, index: number) => (
-                    <EventCard
-                      key={event._id || index}
-                      id={event._id || String(index)}
-                      title={event.name || "Untitled Event"}
-                      category={(event.eventType || "academic") as any}
-                      date={
-                        event.startDate
-                          ? new Date(event.startDate).toLocaleDateString(
-                              "en-US",
-                              {
-                                weekday: "short",
-                                month: "long",
-                                day: "numeric",
-                                year: "numeric",
-                              }
-                            )
-                          : "TBA"
-                      }
-                      time={
-                        event.startDate
-                          ? new Date(event.startDate).toLocaleTimeString(
-                              "en-US",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                                hour12: true,
-                              }
-                            )
-                          : "TBA"
-                      }
-                      location={
-                        event.location ||
-                        (event.eventType === "platform_booth"
-                          ? event.locationPreference
-                          : null) ||
-                        "Unknown location"
-                      }
-                      attendees={
-                        Array.isArray(event.attendees)
-                          ? event.attendees.length
-                          : event.attendeesCount || 0
-                      }
-                      image={event.bannerImage || event.image}
-                      description={event.description}
-                      startDate={event.startDate}
-                      endDate={event.endDate}
-                      durationWeeks={event.durationWeeks}
-                      capacity={event.capacity}
-                      registrationDeadline={event.registrationDeadline}
-                      vendors={event.vendors || []}
-                      showDetailedView={true}
-                      onRegister={() =>
-                        console.log(handleRegisterEvent(event._id))
-                      }
-                      onViewDetails={() =>
-                        console.log("View details:", event.name)
-                      }
-                    />
-                  ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">
-                    No Events Found
-                  </h3>
-                  <p className="text-muted-foreground text-center">
-                    There are no upcoming events at the moment.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
 
-          {/* Right Column - Quick Access */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="sticky top-24">
-              <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
-              <div className="space-y-6">
-                {quickActions.map((action) => (
-                  <Card
-                    key={action.title}
-                    className="hover:shadow-lg transition-shadow flex flex-col"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`${action.color} p-3 rounded-lg`}>
-                            <action.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-xl">
-                              {action.title}
-                            </CardTitle>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col">
-                      <div className="flex-1">
-                        {action.features && (
-                          <ul className="space-y-1.5 mb-3">
-                            {action.features.map((feature, idx) => (
-                              <li
-                                key={idx}
-                                className="flex items-center text-xs text-muted-foreground"
-                              >
-                                <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                                {feature}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {action.activities && (
-                          <div className="mb-4">
-                            <p className="text-xs font-medium mb-2 text-muted-foreground">
-                              Available Sessions:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {action.activities.map((activity, idx) => (
-                                <Badge
-                                  key={idx}
-                                  variant="secondary"
-                                  className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                                >
-                                  {activity}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        className="w-full mt-auto"
-                        onClick={() => setLocation(action.path)}
-                      >
-                        Access {action.title}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-muted-foreground">Loading events...</div>
+                </div>
+              ) : error && events.length === 0 ? (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground text-center">{error}</p>
+                  </CardContent>
+                </Card>
+              ) : events.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {[...events]
+                    .sort((a, b) => {
+                      const aDate = a.startDate
+                        ? new Date(a.startDate).getTime()
+                        : 0;
+                      const bDate = b.startDate
+                        ? new Date(b.startDate).getTime()
+                        : 0;
+                      return sortOrder === "asc"
+                        ? aDate - bDate
+                        : bDate - aDate;
+                    })
+                    .map((event: any, index: number) => (
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        image={event.bannerImage || event.image}
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        durationWeeks={event.durationWeeks}
+                        capacity={event.capacity}
+                        registrationDeadline={event.registrationDeadline}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                        onRegister={() =>
+                          console.log(handleRegisterEvent(event._id))
+                        }
+                        onViewDetails={() =>
+                          console.log("View details:", event.name)
+                        }
+                      />
+                    ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="flex flex-col items-center justify-center py-12">
+                    <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
+                    <h3 className="text-xl font-semibold mb-2">
+                      No Events Found
+                    </h3>
+                    <p className="text-muted-foreground text-center">
+                      There are no upcoming events at the moment.
+                    </p>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>
