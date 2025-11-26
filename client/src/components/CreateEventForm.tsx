@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -23,15 +23,20 @@ export interface CreateEventFormValues {
 }
 
 interface CreateEventFormProps {
-  onSubmit: (values: CreateEventFormValues) => Promise<void> | void;
+  onSubmit: (
+    values: CreateEventFormValues,
+    professors?: string[]
+  ) => Promise<void> | void;
   submitting?: boolean;
   includeWebsiteUrl?: boolean;
   includeBudgetAndFunding?: boolean;
   includeAgenda?: boolean;
   includeRestrictAccess?: boolean;
+  includeProfessors?: boolean;
   submitLabel?: string;
   title?: string;
   initialValues?: Partial<CreateEventFormValues>;
+  initialProfessors?: string[];
 }
 
 export default function CreateEventForm({
@@ -41,9 +46,11 @@ export default function CreateEventForm({
   includeBudgetAndFunding = true,
   includeAgenda = true,
   includeRestrictAccess = true,
+  includeProfessors = false,
   submitLabel = "Create",
   title = "Event Information",
   initialValues = {},
+  initialProfessors = [],
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
@@ -61,6 +68,11 @@ export default function CreateEventForm({
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const { toast } = useToast();
+  const [professorsOptions, setProfessorsOptions] = useState<
+    { id: string; name: string; email: string }[]
+  >([]);
+  const [selectedProfessors, setSelectedProfessors] =
+    useState<string[]>(initialProfessors);
 
   const availableRoles = [
     { value: "student", label: "Students" },
@@ -68,6 +80,39 @@ export default function CreateEventForm({
     { value: "ta", label: "Teaching Assistants" },
     { value: "professor", label: "Professors" },
   ];
+
+  // Fetch professors if includeProfessors is true
+  useEffect(() => {
+    if (!includeProfessors) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    (async () => {
+      try {
+        const baseUrl =
+          (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          console.error("Failed to fetch professors: ", res.status);
+          return;
+        }
+        const payload = await res.json();
+        const list = payload?.data || payload;
+        setProfessorsOptions(
+          list.map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName} ${u.lastName}`,
+            email: u.email,
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    })();
+  }, [includeProfessors]);
 
   // Helper: today's date in local timezone as YYYY-MM-DD
   const todayLocal = () => {
@@ -87,6 +132,15 @@ export default function CreateEventForm({
     if (!values.endTime) nextErrors.endTime = "End time is required";
     if (!values.description.trim())
       nextErrors.description = "Description is required";
+
+    if (includeProfessors && selectedProfessors.length === 0) {
+      toast({
+        title: "Professors required",
+        description: "Please select at least one professor.",
+        variant: "destructive",
+      });
+      return false;
+    }
 
     if (includeWebsiteUrl && values.websiteUrl) {
       try {
@@ -150,7 +204,7 @@ export default function CreateEventForm({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    await onSubmit(values);
+    await onSubmit(values, includeProfessors ? selectedProfessors : undefined);
   };
 
   return (
@@ -342,6 +396,49 @@ export default function CreateEventForm({
                 </select>
                 {errors.fundingSource && (
                   <p className="text-sm text-red-500">{errors.fundingSource}</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {includeProfessors && (
+            <div className="space-y-2">
+              <Label>
+                Professor(s) Participating{" "}
+                <span className="text-red-500">*</span>
+              </Label>
+              <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                {professorsOptions.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    No professors found
+                  </p>
+                ) : (
+                  professorsOptions.map((p) => (
+                    <div key={p.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`professor-${p.id}`}
+                        checked={selectedProfessors.includes(p.id)}
+                        onCheckedChange={(checked) => {
+                          if (checked) {
+                            setSelectedProfessors((prev) => [...prev, p.id]);
+                          } else {
+                            setSelectedProfessors((prev) =>
+                              prev.filter((id) => id !== p.id)
+                            );
+                          }
+                        }}
+                      />
+                      <Label
+                        htmlFor={`professor-${p.id}`}
+                        className="text-sm cursor-pointer"
+                      >
+                        {p.name}{" "}
+                        <span className="text-muted-foreground text-xs">
+                          ({p.email})
+                        </span>
+                      </Label>
+                    </div>
+                  ))
                 )}
               </div>
             </div>

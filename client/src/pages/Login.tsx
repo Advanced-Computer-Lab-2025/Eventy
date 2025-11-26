@@ -164,7 +164,7 @@ export default function Login() {
                 className="w-full"
                 data-testid="button-login"
               >
-                LogIn
+                Login
               </Button>
             </form>
 

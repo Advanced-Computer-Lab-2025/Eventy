@@ -91,7 +91,13 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    setEvents(searchResults);
+    // Sort events to show workshops first
+    const sortedResults = searchResults.sort((a, b) => {
+      if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
+      if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
+      return 0;
+    });
+    setEvents(sortedResults);
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
@@ -158,20 +164,13 @@ export default function ProfessorDashboard() {
   const quickActions = [
     {
       title: "Workshop Management",
-      description: "Create, edit, and view all your workshops",
       icon: BookOpen,
       color: "bg-blue-500",
       path: "/professor/workshops",
-      features: [
-        "Create new workshops",
-        "Edit workshop details",
-        "View all your workshops",
-        "Track approval status",
-      ],
+      features: ["Create & edit workshops", "Track approval status"],
     },
     {
       title: "Sports Facilities",
-      description: "View gym schedule and fitness sessions",
       icon: Dumbbell,
       color: "bg-green-500",
       path: "/sports",
@@ -381,8 +380,8 @@ export default function ProfessorDashboard() {
           </div>
 
           {/* Right Column - Quick Access */}
-          <div className="space-y-6">
-            <div>
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="sticky top-24">
               <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
               <div className="space-y-6">
                 {quickActions.map((action) => (
@@ -400,9 +399,6 @@ export default function ProfessorDashboard() {
                             <CardTitle className="text-xl">
                               {action.title}
                             </CardTitle>
-                            <CardDescription className="mt-1">
-                              {action.description}
-                            </CardDescription>
                           </div>
                         </div>
                       </div>
@@ -410,11 +406,11 @@ export default function ProfessorDashboard() {
                     <CardContent className="flex-1 flex flex-col">
                       <div className="flex-1">
                         {action.features && (
-                          <ul className="space-y-2 mb-4">
+                          <ul className="space-y-1.5 mb-3">
                             {action.features.map((feature, idx) => (
                               <li
                                 key={idx}
-                                className="flex items-center text-sm text-muted-foreground"
+                                className="flex items-center text-xs text-muted-foreground"
                               >
                                 <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
                                 {feature}
@@ -424,11 +420,7 @@ export default function ProfessorDashboard() {
                         )}
                         {action.activities && (
                           <div className="mb-4">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Access the gym schedule to view monthly fitness
-                              sessions and book your preferred time slots.
-                            </p>
-                            <p className="text-sm font-medium mb-3">
+                            <p className="text-xs font-medium mb-2 text-muted-foreground">
                               Available Sessions:
                             </p>
                             <div className="flex flex-wrap gap-2">

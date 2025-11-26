@@ -20,6 +20,7 @@ import {
   FileText,
   SlidersHorizontal,
   Users,
+  PieChart as PieChartIcon,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -1111,6 +1112,16 @@ export default function EventsOfficeDashboard() {
                       <ClipboardList className="h-4 w-4" />
                       <span className="text-xs sm:text-sm leading-tight">
                         Vendor Requests
+                      </span>
+                    </Button>
+                    <Button
+                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white whitespace-normal px-3 py-2 w-44 sm:w-48 flex items-center justify-center gap-2"
+                      onClick={() => setLocation("/events-office/polls")}
+                      data-testid="button-quick-polls"
+                    >
+                      <PieChartIcon className="h-4 w-4" />
+                      <span className="text-xs sm:text-sm leading-tight">
+                        Polls
                       </span>
                     </Button>
                   </div>
