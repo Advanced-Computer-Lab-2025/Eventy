@@ -52,13 +52,13 @@ export default function ProfileMenu() {
 
       <DropdownMenuContent
         align="end"
-        className="w-64 p-2 rounded-xl shadow-lg bg-background border border-border"
+        className="w-80 p-2 rounded-xl shadow-lg bg-background border border-border"
       >
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
             <User className="h-5 w-5 text-primary" />
           </div>
-          <div>
+          <div className="min-w-0 flex-1">
             <DropdownMenuLabel className="text-sm font-semibold">
               {(() => {
                 if (!user) return "Guest";
