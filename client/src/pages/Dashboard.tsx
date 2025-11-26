@@ -171,13 +171,20 @@ export default function Dashboard() {
                               )
                             : "TBA"
                         }
-                        location={event.location || "Unknown location"}
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
                         attendees={
                           Array.isArray(event.attendees)
                             ? event.attendees.length
                             : event.attendeesCount || 0
                         }
                         vendors={event.vendors || []}
+                        price={event.price}
                         onRegister={() => console.log("hakoona batata")}
                         onSave={() => console.log("Save:", event.name)}
                         onShare={() => console.log("Share:", event.name)}

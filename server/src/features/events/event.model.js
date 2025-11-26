@@ -155,7 +155,7 @@ const eventSchema = new Schema(
         },
       ],
       required: function () {
-        return this.eventType === "workshop";
+        return this.eventType === "workshop" || this.eventType === "conference";
       },
       validate: {
         validator: function (value) {

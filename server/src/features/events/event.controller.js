@@ -121,6 +121,23 @@ export class EventsController {
       const { error } = createConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
 
+      // Check professors are active
+      const professorIds = req.body.professors;
+      const activeProfessors = await User.find({
+        _id: { $in: professorIds },
+        role: "professor",
+        status: "active", // Only active professors
+        deletedAt: null, // Not soft deleted
+      }).select("_id");
+
+      if (activeProfessors.length !== professorIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "All professors must be active and not pending, blocked, or deleted.",
+        });
+      }
+
       const userId = req.user.id;
       const newConference = await eventService.createConference(
         req.body,
@@ -174,6 +191,25 @@ export class EventsController {
     try {
       const { error } = updateConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
+
+      // Check professors are active if professors are being updated
+      if (req.body.professors) {
+        const professorIds = req.body.professors;
+        const activeProfessors = await User.find({
+          _id: { $in: professorIds },
+          role: "professor",
+          status: "active", // Only active professors
+          deletedAt: null, // Not soft deleted
+        }).select("_id");
+
+        if (activeProfessors.length !== professorIds.length) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "All professors must be active and not pending, blocked, or deleted.",
+          });
+        }
+      }
 
       const { conferenceId } = req.params;
       const updatedConference = await eventService.updateConferenceService(
@@ -607,17 +643,59 @@ export class EventsController {
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
     try {
-      const { name, type } = req.query;
+      const { name, type, location, startDate, endDate } = req.query;
 
       // Ensure at least one search parameter is provided
-      if (!name && !type) {
-        throw new ApiError(400, "Please provide a name or type to search.");
+      if (!name && !type && !location && !startDate && !endDate) {
+        throw new ApiError(
+          400,
+          "Please provide at least one search criteria (name, type, location, or date range)."
+        );
+      }
+
+      let parsedStartDate = null;
+      let parsedEndDate = null;
+
+      if (startDate || endDate) {
+        if (!startDate || !endDate) {
+          throw new ApiError(
+            400,
+            "Please provide both startDate and endDate when filtering by date."
+          );
+        }
+
+        const maybeStart = new Date(startDate);
+        const maybeEnd = new Date(endDate);
+
+        if (
+          Number.isNaN(maybeStart.getTime()) ||
+          Number.isNaN(maybeEnd.getTime())
+        ) {
+          throw new ApiError(400, "Invalid date format.");
+        }
+
+        if (maybeStart > maybeEnd) {
+          throw new ApiError(
+            400,
+            "startDate cannot be later than endDate for date range filtering."
+          );
+        }
+
+        parsedStartDate = maybeStart;
+        parsedEndDate = maybeEnd;
       }
 
       const userRole = req.user?.role;
 
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type, userRole });
+      const events = await eventService.searchEvents({
+        name,
+        type,
+        location,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        userRole,
+      });
 
       return res
         .status(200)
@@ -742,6 +820,30 @@ export class EventsController {
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event archived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Unarchive an event (restore to approved status)
+  async unarchiveEvent(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can unarchive events"
+        );
+      }
+
+      const event = await eventService.unarchiveEvent(req.params.id, req.user);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event unarchived successfully"));
     } catch (err) {
       next(err);
     }
@@ -898,12 +1000,13 @@ export class EventsController {
         return next(new ApiError(400, "Validation failed", error.details));
 
       // ✅ Use the validated values
-      const { eventType, startDate, endDate, page, limit } = value;
+      const { eventType, startDate, endDate, sortOrder, page, limit } = value;
 
       const report = await eventService.getSalesReport({
         eventType,
         startDate,
         endDate,
+        sortOrder: sortOrder || "desc",
         page: page || 1,
         limit: limit || 10,
       });

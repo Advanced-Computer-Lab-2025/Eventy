@@ -3,7 +3,6 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import CreateEventForm, {
   CreateEventFormValues,
 } from "@/components/CreateEventForm";
-import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +14,10 @@ export default function CreateConference() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (values: CreateEventFormValues) => {
+  const handleSubmit = async (
+    values: CreateEventFormValues,
+    professors?: string[]
+  ) => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
@@ -43,6 +45,7 @@ export default function CreateConference() {
           : 1000,
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
+        professors: professors || [],
       };
 
       // Add restricted roles if provided
@@ -89,15 +92,7 @@ export default function CreateConference() {
       <EventsOfficeHeader />
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-bold">Create Conference</h1>
-            <Button
-              variant="outline"
-              onClick={() => setLocation("/events-office/dashboard")}
-            >
-              Back to Events Office
-            </Button>
-          </div>
+          <h1 className="text-4xl font-bold mb-2">Create Conference</h1>
           <p className="text-muted-foreground">
             Create a new conference. The conference website will contain all the
             conference's details.
@@ -110,6 +105,7 @@ export default function CreateConference() {
           includeWebsiteUrl
           includeBudgetAndFunding
           includeAgenda
+          includeProfessors
           submitLabel="Create Conference"
           title="Conference Information"
         />

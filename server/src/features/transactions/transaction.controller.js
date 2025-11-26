@@ -119,6 +119,31 @@ export class TransactionController {
       res.status(400).json({ error: error.message });
     }
   }
+
+  /**
+   * Get all transactions (for admin/events office)
+   * @param {import("express").Request} req
+   * @param {import("express").Response} res
+   */
+  async getAllTransactions(req, res) {
+    try {
+      const userRole = req.user.role;
+      const allowedRoles = ["admin", "events_office"];
+      if (!allowedRoles.includes(userRole)) {
+        return res.status(403).json({
+          error: `Access denied. Only ${allowedRoles.join(
+            ", "
+          )} can perform this action.`,
+        });
+      }
+      const transactions = await this.transactionService.getAllTransactions();
+
+      res.status(200).json({ data: transactions });
+    } catch (error) {
+      console.error("Get all transactions error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
   /**
    * Handles payment for a vendor application (bazaar or booth).
    * @param {import("express").Request} req - Express request object

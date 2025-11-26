@@ -99,6 +99,16 @@ export const editGymSessionSchema = Joi.object({
       "At least one field (date, time, or duration) must be provided",
   });
 
+export const registerForGymSessionSchema = Joi.object({
+  sessionId: Joi.string()
+    .regex(/^[0-9a-fA-F]{24}$/)
+    .required()
+    .messages({
+      "any.required": "Session ID is required",
+      "string.pattern.base": "Session ID must be a valid MongoDB ObjectId",
+    }),
+});
+
 export const reserveCourtSchema = Joi.object({
   date: Joi.date().required().messages({
     "any.required": "data is required",

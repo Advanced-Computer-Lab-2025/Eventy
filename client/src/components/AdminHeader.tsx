@@ -1,12 +1,33 @@
-import { Bell, Home, Users, FileText } from "lucide-react";
+import { Home, Users, FileText, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 
 export default function AdminHeader() {
   const [, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    companyName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
@@ -17,15 +38,17 @@ export default function AdminHeader() {
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+            <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.role && (user?.firstName || user?.email) && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName || user.email?.split("@")[0] || "User"} /{" "}
+                  {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -59,6 +82,37 @@ export default function AdminHeader() {
           >
             <FileText className="h-4 w-4" />
             Attendees Report
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/reports/sales")}
+            data-testid="button-nav-sales-reports"
+          >
+            <FileText className="h-4 w-4" />
+            Sales Report
+          </Button>
+          {/* ✅ New Users Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-users"
+            onClick={() => setLocation("/admin/users")}
+          >
+            <Users className="h-4 w-4" />
+            Users
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
+          >
+            <Gift className="h-4 w-4" />
+            Loyalty Partners
           </Button>
         </div>
       </div>

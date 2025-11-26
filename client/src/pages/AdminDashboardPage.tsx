@@ -173,6 +173,7 @@ export default function AdminDashboardPage() {
               .reduce((sum, c) => sum + (c.requiredBudget || 0), 0)
               .toLocaleString()}
             icon={TrendingUp}
+            themed={true}
           />
           <StatCard
             title="Upcoming Events"
@@ -180,11 +181,13 @@ export default function AdminDashboardPage() {
               totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()
             }
             icon={Calendar}
+            themed={true}
           />
           <StatCard
             title="Approved Events"
             value={approvedLoading ? "-" : approvedEventsCount.toString()}
             icon={TrendingUp}
+            themed={true}
           />
         </div>
 
@@ -291,7 +294,13 @@ export default function AdminDashboardPage() {
                                   )
                                 : "TBA"
                             }
-                            location={e.location || "Unknown location"}
+                            location={
+                              e.location ||
+                              (e.eventType === "platform_booth"
+                                ? e.locationPreference
+                                : null) ||
+                              "Unknown location"
+                            }
                             attendees={
                               Array.isArray(e.attendees)
                                 ? e.attendees.length
@@ -305,8 +314,10 @@ export default function AdminDashboardPage() {
                             description={e.description}
                             startDate={e.startDate}
                             endDate={e.endDate}
+                            durationWeeks={e.durationWeeks}
                             capacity={-1}
                             vendors={e.vendors || []}
+                            price={e.price}
                             showDetailedView={true}
                           />
                         </div>

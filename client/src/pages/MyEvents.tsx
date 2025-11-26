@@ -199,13 +199,27 @@ export default function MyEvents() {
                     hour: "2-digit",
                     minute: "2-digit",
                   })}
-                  location={event.location}
+                  location={
+                    event.location ||
+                    (event.eventType === "platform_booth"
+                      ? event.locationPreference
+                      : null) ||
+                    "Unknown location"
+                  }
                   attendees={0}
                   image={event.bannerImage}
                   startDate={event.startDate}
                   endDate={event.endDate}
+                  durationWeeks={event.durationWeeks}
+                  price={event.price}
                   showActions={true}
                   isRegistered={true}
+                  hideRegisterButton={
+                    userRole === "student" ||
+                    userRole === "professor" ||
+                    userRole === "staff" ||
+                    userRole === "ta"
+                  }
                   onViewDetails={() => handleCardClick(event._id)}
                   onSave={() => {}}
                   onShare={() => {}}

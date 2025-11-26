@@ -60,6 +60,10 @@ export default function FavoritesPage() {
     });
   };
 
+  const formatBoothDate = (durationWeeks: number) => {
+    return `Active for ${durationWeeks} week${durationWeeks > 1 ? "s" : ""}`;
+  };
+
   const getCategoryFromEvent = (event: any): EventCategory => {
     // Get the event type from multiple possible fields
     const rawCategory =
@@ -67,8 +71,10 @@ export default function FavoritesPage() {
     const categoryLower = rawCategory.toLowerCase();
 
     // Map to valid EventCategory values
+    // platform_booth maps to booth (not bazaar - they are different)
     const categoryMap: Record<string, EventCategory> = {
       bazaar: "bazaar",
+      platform_booth: "booth", // Map platform_booth to booth (not bazaar)
       workshop: "workshop",
       trip: "trip",
       conference: "conference",
@@ -88,7 +94,7 @@ export default function FavoritesPage() {
     return (
       <div className="min-h-screen bg-background">
         {renderHeader()}
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <div className="flex items-center justify-center min-h-[60vh]">
             <div className="text-center">
               <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
@@ -105,7 +111,7 @@ export default function FavoritesPage() {
     return (
       <div className="min-h-screen bg-background">
         {renderHeader()}
-        <div className="container mx-auto px-4 py-8">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
           <Alert variant="destructive" className="max-w-2xl mx-auto mt-12">
             <AlertCircle className="h-4 w-4" />
             <AlertDescription className="ml-2">{error}</AlertDescription>
@@ -121,7 +127,7 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-background">
       {renderHeader()}
-      <div className="container mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
@@ -158,25 +164,44 @@ export default function FavoritesPage() {
         ) : (
           /* Events Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {favorites.map((event) => (
-              <EventCard
-                key={event._id}
-                id={event._id}
-                title={event.name}
-                category={getCategoryFromEvent(event)}
-                date={formatEventDate(event.startDate)}
-                time={formatEventTime(event.startDate)}
-                location={event.location}
-                attendees={0}
-                image={event.bannerImage}
-                description={event.description}
-                startDate={event.startDate}
-                endDate={event.endDate}
-                showActions={true}
-                showDetailedView={false}
-                onViewDetails={() => setLocation(`/events/${event._id}`)}
-              />
-            ))}
+            {favorites.map((event) => {
+              const isBoothEvent = event.eventType === "platform_booth";
+              return (
+                <EventCard
+                  key={event._id}
+                  id={event._id}
+                  title={event.name}
+                  category={getCategoryFromEvent(event)}
+                  date={
+                    isBoothEvent && event.durationWeeks
+                      ? formatBoothDate(event.durationWeeks)
+                      : formatEventDate(event.startDate)
+                  }
+                  time={
+                    isBoothEvent && event.durationWeeks
+                      ? ""
+                      : formatEventTime(event.startDate)
+                  }
+                  location={
+                    event.location ||
+                    (event.eventType === "platform_booth"
+                      ? event.locationPreference
+                      : null) ||
+                    "Unknown location"
+                  }
+                  attendees={event.attendeesCount || 0}
+                  image={event.bannerImage}
+                  description={event.description}
+                  startDate={event.startDate}
+                  endDate={event.endDate}
+                  durationWeeks={event.durationWeeks}
+                  price={event.price}
+                  showActions={true}
+                  showDetailedView={false}
+                  onViewDetails={() => setLocation(`/events/${event._id}`)}
+                />
+              );
+            })}
           </div>
         )}
       </div>

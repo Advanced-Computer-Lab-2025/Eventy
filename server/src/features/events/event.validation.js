@@ -56,6 +56,18 @@ export const createConferenceSchema = Joi.object({
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
     .required(),
+  professors: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .min(1)
+    .required()
+    .messages({
+      "any.required": "At least one professor is required",
+      "array.min": "Professors list must contain at least one ID",
+      "string.hex": "Professor IDs must be valid ObjectIds",
+    }),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
+    .optional(),
 });
 
 export const updateConferenceSchema = Joi.object({
@@ -73,6 +85,17 @@ export const updateConferenceSchema = Joi.object({
     .optional(),
   endTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
+    .optional(),
+  professors: Joi.array()
+    .items(Joi.string().hex().length(24))
+    .min(1)
+    .optional()
+    .messages({
+      "array.min": "Professors list must contain at least one ID",
+      "string.hex": "Professor IDs must be valid ObjectIds",
+    }),
+  restrictedRoles: Joi.array()
+    .items(Joi.string().valid("student", "staff", "ta", "professor", "vendor"))
     .optional(),
 }).min(1);
 
@@ -399,7 +422,15 @@ export const restrictAccessSchema = Joi.object({
 export const getSalesReportSchema = Joi.object({
   eventType: Joi.string().optional().allow(""),
   startDate: Joi.date().iso().optional(),
-  endDate: Joi.date().iso().min(Joi.ref("startDate")).optional(),
+  endDate: Joi.date()
+    .iso()
+    .when("startDate", {
+      is: Joi.exist(),
+      then: Joi.date().min(Joi.ref("startDate")),
+      otherwise: Joi.date().optional(),
+    })
+    .optional(),
+  sortOrder: Joi.string().valid("asc", "desc").optional().default("desc"),
   page: Joi.number().integer().min(1).optional(),
-  limit: Joi.number().integer().min(1).max(100).optional(),
+  limit: Joi.number().integer().min(1).max(999999).optional(),
 });

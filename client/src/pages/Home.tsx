@@ -6,6 +6,7 @@ import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import { useToast } from "@/hooks/use-toast";
+import { getEventImage } from "@/lib/eventImages";
 
 // Define Event type for type safety
 interface Event {
@@ -188,18 +189,30 @@ export default function Home() {
                             )
                           : "TBA"
                       }
-                      location={event.location || "Unknown location"}
+                      location={
+                        event.location ||
+                        (event.eventType === "platform_booth"
+                          ? event.locationPreference
+                          : null) ||
+                        "Unknown location"
+                      }
                       attendees={
                         Array.isArray(event.attendees)
                           ? event.attendees.length
                           : event.attendeesCount || 0
                       }
-                      image={event.bannerImage || event.image}
+                      image={
+                        event.bannerImage ||
+                        event.image ||
+                        getEventImage(event.eventType, event.name)
+                      }
                       description={event.description}
                       startDate={event.startDate}
                       endDate={event.endDate}
+                      durationWeeks={event.durationWeeks}
                       capacity={event.capacity}
                       registrationDeadline={event.registrationDeadline}
+                      price={event.price}
                       onRegister={() => handleRegisterEvent(event._id)}
                       showDetailedView={true}
                       onSave={() => console.log("Save:", event.name)}
