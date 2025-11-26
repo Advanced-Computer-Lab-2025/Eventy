@@ -211,6 +211,7 @@ export default function MyEvents() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
+                  price={event.price}
                   showActions={true}
                   isRegistered={true}
                   hideRegisterButton={

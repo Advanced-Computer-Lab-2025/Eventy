@@ -212,6 +212,7 @@ export default function Home() {
                       durationWeeks={event.durationWeeks}
                       capacity={event.capacity}
                       registrationDeadline={event.registrationDeadline}
+                      price={event.price}
                       onRegister={() => handleRegisterEvent(event._id)}
                       showDetailedView={true}
                       onSave={() => console.log("Save:", event.name)}

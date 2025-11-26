@@ -7,6 +7,8 @@ import {
   Trash2,
   Archive,
   Clock,
+  DollarSign,
+  ArchiveRestore,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -85,6 +87,7 @@ export interface EventCardProps {
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
+  price?: number;
   showActions?: boolean;
   showDetailedView?: boolean;
   isRegistered?: boolean;
@@ -97,6 +100,8 @@ export interface EventCardProps {
   onFeedback?: () => void;
   onArchive?: () => void;
   isArchiving?: boolean;
+  onUnarchive?: () => void;
+  isUnarchiving?: boolean;
   canDelete?: boolean;
   className?: string;
   hideRegisterButton?: boolean;
@@ -118,6 +123,7 @@ export default function EventCard({
   capacity,
   registrationDeadline,
   vendors = [],
+  price,
   showActions = true,
   showDetailedView = false,
   onRegister,
@@ -129,6 +135,8 @@ export default function EventCard({
   isRegistered = false,
   onArchive,
   isArchiving = false,
+  onUnarchive,
+  isUnarchiving = false,
   canDelete = false,
   status,
   className,
@@ -140,6 +148,12 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
+  // Display category name (human readable)
+  const displayCategory = isPlatformBooth
+    ? "Platform Booth"
+    : String(category)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
   const imageSrc = image || getEventImage(eventTypeForImage, title);
   const isRegisterable = /workshop|trip/i.test(String(category));
   const isBazaar = /bazaar/i.test(String(category));
@@ -211,7 +225,7 @@ export default function EventCard({
         />
         {!showDetailedView && (
           <div className="absolute top-3 left-3">
-            <CategoryBadge category={category} />
+            <CategoryBadge category={displayCategory} />
           </div>
         )}
       </div>
@@ -223,7 +237,7 @@ export default function EventCard({
               <CardTitle className="text-xl break-words whitespace-normal">
                 {title}
               </CardTitle>
-              <CategoryBadge category={category} />
+              <CategoryBadge category={displayCategory} />
             </div>
           </CardHeader>
 
@@ -263,6 +277,14 @@ export default function EventCard({
                   <div className="flex items-center text-muted-foreground">
                     <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                     <span>{location}</span>
+                  </div>
+                )}
+
+                {/* Price */}
+                {price !== undefined && price !== null && (
+                  <div className="flex items-center text-muted-foreground">
+                    <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
+                    <span>{price} EGP</span>
                   </div>
                 )}
 
@@ -400,8 +422,7 @@ export default function EventCard({
                   )}
                 </Button>
               )}
-              <div className="flex gap-2 ml-auto">
-                {" "}
+              <div className="flex gap-2 justify-center w-full">
                 {onViewDetails && (
                   <Button
                     className={
@@ -414,6 +435,29 @@ export default function EventCard({
                     }}
                   >
                     View Details
+                  </Button>
+                )}
+                {onUnarchive && (
+                  <Button
+                    className="flex-1"
+                    variant="outline"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUnarchive();
+                    }}
+                    disabled={isUnarchiving}
+                  >
+                    {isUnarchiving ? (
+                      <>
+                        <Clock className="h-4 w-4 mr-2 animate-spin" />
+                        Unarchiving...
+                      </>
+                    ) : (
+                      <>
+                        <ArchiveRestore className="h-4 w-4 mr-2" />
+                        Unarchive
+                      </>
+                    )}
                   </Button>
                 )}
                 {canShowFavorites && <FavoriteButton eventId={id} />}
@@ -490,6 +534,12 @@ export default function EventCard({
                 <Users className="h-4 w-4" />
                 <span>{attendees}</span>
               </div>
+              {price !== undefined && price !== null && (
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-4 w-4" />
+                  <span>{price} EGP</span>
+                </div>
+              )}
             </div>
 
             {/* Vendors section - compact view (bazaar only, not platform booths) */}

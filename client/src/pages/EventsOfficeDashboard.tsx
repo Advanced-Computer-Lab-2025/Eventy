@@ -1410,6 +1410,7 @@ export default function EventsOfficeDashboard() {
                                 durationWeeks={event.durationWeeks}
                                 capacity={-1}
                                 vendors={event.vendors || []}
+                                price={event.price}
                                 showDetailedView={true}
                                 canDelete={false}
                                 {...(isPastEvent && {
