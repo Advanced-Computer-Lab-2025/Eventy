@@ -147,7 +147,27 @@ export default function SportsFacilities() {
     const today = new Date();
     const d = new Date(today);
     d.setDate(today.getDate() + index);
-    return d.toISOString().split("T")[0];
+    return ymdLocal(d) || "";
+  };
+
+  // Generate the canonical day slots (matches server: startHour=10, endHour=17)
+  const generateDaySlots = () => {
+    const startHour = 10;
+    const endHour = 17;
+    const slots: Slot[] = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      const next = hour + 1;
+      const startAMPM = hour >= 12 ? "PM" : "AM";
+      const endAMPM = next >= 12 ? "PM" : "AM";
+      const startHour12 = hour % 12 === 0 ? 12 : hour % 12;
+      const endHour12 = next % 12 === 0 ? 12 : next % 12;
+      slots.push({
+        startTime: `${startHour12}:00 ${startAMPM}`,
+        endTime: `${endHour12}:00 ${endAMPM}`,
+        status: "booked",
+      });
+    }
+    return slots;
   };
 
   const makeKey = (courtType: string, dateYMD: string, startTime: string) =>
@@ -278,7 +298,16 @@ export default function SportsFacilities() {
         ) : (
           <div className="grid gap-6 md:grid-cols-3">
             {Object.entries(COURT_NAMES).map(([type, label]) => {
-              const slots = currentSchedules[type as CourtType] || [];
+              const serverSlots = currentSchedules[type as CourtType] || [];
+              const fullSlots = generateDaySlots();
+              // mark availability by checking serverSlots presence
+              const slots = fullSlots.map((s) => {
+                const found = serverSlots.find(
+                  (ss) =>
+                    ss.startTime === s.startTime && ss.endTime === s.endTime
+                );
+                return { ...s, status: found ? "available" : "booked" } as Slot;
+              });
               return (
                 <Card key={type} className="flex flex-col justify-between">
                   <CardHeader>
