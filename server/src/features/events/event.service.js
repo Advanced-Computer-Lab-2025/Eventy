@@ -136,6 +136,7 @@ export const createConference = async (data, userId) => {
     agenda,
     startTime,
     endTime,
+    professors,
   } = data;
 
   // Validate required fields
@@ -147,6 +148,9 @@ export const createConference = async (data, userId) => {
       400,
       "Conference must include requiredBudget and fundingSource"
     );
+
+  if (!professors || professors.length === 0)
+    throw new ApiError(400, "Conference must include at least one professor");
 
   const event = await Event.create({
     name,
@@ -164,6 +168,7 @@ export const createConference = async (data, userId) => {
     websiteUrl,
     startTime,
     endTime,
+    professors,
     createdBy: userId,
     restrictedRoles: data.restrictedRoles || [],
   });
@@ -490,9 +495,16 @@ export async function deleteEvent(eventId, user) {
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type, userRole }) => {
+export const searchEvents = async ({
+  name,
+  type,
+  location,
+  startDate,
+  endDate,
+  userRole,
+}) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Include platform booths even if they don't have a startDate
+  // Platform booths have startDate and endDate assigned when approved in updateApplicationStatus
   const now = new Date();
   const filter = {
     status: "approved",
@@ -501,7 +513,7 @@ export const searchEvents = async ({ name, type, userRole }) => {
       {
         $or: [
           { startDate: { $gte: now } }, // Regular events with future startDate
-          { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+          { eventType: "platform_booth" }, // Platform booths (kept for backwards compatibility)
         ],
       },
     ],
@@ -600,6 +612,37 @@ export const searchEvents = async ({ name, type, userRole }) => {
         ],
       });
     }
+  }
+
+  if (location) {
+    filter.$and.push({
+      $or: [
+        { location: { $regex: location, $options: "i" } },
+        { locationPreference: { $regex: location, $options: "i" } },
+      ],
+    });
+  }
+
+  // Date filtering: enforce strict bounds
+  // If startDate filter is set: event.startDate >= filter.startDate (no event can start before)
+  // If endDate filter is set: event.endDate <= filter.endDate (no event can end after)
+  // Platform booths have startDate and endDate assigned in updateApplicationStatus, so they can be filtered normally
+  if (startDate instanceof Date && !Number.isNaN(startDate.getTime())) {
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    // Event startDate must be >= filter startDate
+    filter.$and.push({
+      startDate: { $gte: startOfDay },
+    });
+  }
+
+  if (endDate instanceof Date && !Number.isNaN(endDate.getTime())) {
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    // Event endDate must be <= filter endDate
+    filter.$and.push({
+      endDate: { $lte: endOfDay },
+    });
   }
 
   return await Event.find(filter)
