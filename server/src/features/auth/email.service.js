@@ -2164,6 +2164,14 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
                   <!-- Certificate Content -->
                   <tr>
                     <td style="padding: 50px 40px;">
+                      
+                      <!-- Congratulatory Message at Top -->
+                      <div style="margin-bottom: 32px; padding: 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 8px; border-left: 4px solid #10b981;">
+                        <p style="margin: 0; font-size: 15px; color: #065f46; line-height: 1.6; text-align: center;">
+                          <strong>Congratulations!</strong> Your commitment to professional development is commendable. We hope this workshop has enriched your knowledge and skills.
+                        </p>
+                      </div>
+                      
                       <!-- Decorative Border -->
                       <div style="border: 4px solid #6366f1; border-radius: 12px; padding: 40px 30px; background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);">
                         
@@ -2252,13 +2260,6 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
                           </p>
                         </div>
                         
-                      </div>
-                      
-                      <!-- Congratulatory Message -->
-                      <div style="margin-top: 32px; padding: 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 8px; border-left: 4px solid #10b981;">
-                        <p style="margin: 0; font-size: 15px; color: #065f46; line-height: 1.6; text-align: center;">
-                          <strong>Congratulations!</strong> Your commitment to professional development is commendable. We hope this workshop has enriched your knowledge and skills.
-                        </p>
                       </div>
                       
                       <!-- Action Button -->
