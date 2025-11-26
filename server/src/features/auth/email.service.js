@@ -981,7 +981,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
 };
 
 /**
- * Send QR codes for all registered visitors to the vendor
+ * Send QR codes for all registered visitors(attendees) to the vendor
  * @param {Object} application - Application object (populated with createdBy and event)
  * @param {Object} vendor - Vendor user object
  * @param {Object|null} event - Event object or null for platform booth
