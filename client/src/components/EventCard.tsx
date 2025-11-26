@@ -141,6 +141,12 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
+  // Display category name (human readable)
+  const displayCategory = isPlatformBooth
+    ? "Platform Booth"
+    : String(category)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
   const imageSrc = image || getEventImage(eventTypeForImage, title);
   const isRegisterable = /workshop|trip/i.test(String(category));
   const isBazaar = /bazaar/i.test(String(category));
@@ -212,7 +218,7 @@ export default function EventCard({
         />
         {!showDetailedView && (
           <div className="absolute top-3 left-3">
-            <CategoryBadge category={category} />
+            <CategoryBadge category={displayCategory} />
           </div>
         )}
       </div>
@@ -224,7 +230,7 @@ export default function EventCard({
               <CardTitle className="text-xl break-words whitespace-normal">
                 {title}
               </CardTitle>
-              <CategoryBadge category={category} />
+              <CategoryBadge category={displayCategory} />
             </div>
           </CardHeader>
 
