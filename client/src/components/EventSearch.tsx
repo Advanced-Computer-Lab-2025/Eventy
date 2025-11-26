@@ -24,7 +24,7 @@ export default function EventSearch({
   onLoading,
   onError,
   placeholder = "Search by event name, professor, location, or type...",
-  debounceMs = 500,
+  debounceMs = 1000,
   className = "",
   filters = {},
 }: EventSearchProps) {
@@ -88,7 +88,6 @@ export default function EventSearch({
       scrollPositionRef.current = window.scrollY;
 
       try {
-        setIsSearching(true);
         // Don't trigger the loading overlay for searches after initial load
         onError?.("");
 
@@ -105,6 +104,7 @@ export default function EventSearch({
           onSearchResults(data.data || []);
         } else {
           // Search with the applied filters
+          setIsSearching(true);
           const searchParams = new URLSearchParams();
 
           if (searchQuery.trim()) {
@@ -151,14 +151,6 @@ export default function EventSearch({
         onError?.("Unable to load events. Please try again later.");
       } finally {
         setIsSearching(false);
-
-        // Always restore scroll position after initial load (prevents jumping)
-        requestAnimationFrame(() => {
-          window.scrollTo({
-            top: scrollPositionRef.current,
-            behavior: "instant" as ScrollBehavior,
-          });
-        });
       }
     };
 

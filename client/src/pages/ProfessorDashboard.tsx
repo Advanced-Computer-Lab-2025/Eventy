@@ -10,6 +10,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  ArrowUpDown,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
@@ -23,6 +24,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 interface Workshop {
@@ -39,6 +47,7 @@ export default function ProfessorDashboard() {
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -283,6 +292,30 @@ export default function ProfessorDashboard() {
           <div className="lg:col-span-2">
             <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
 
+            {/* Sort Dropdown */}
+            <Card className="mb-4">
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-2">
+                  <ArrowUpDown className="h-4 w-4" />
+                  <span className="text-sm font-semibold">Sort by Date:</span>
+                  <Select
+                    value={sortOrder}
+                    onValueChange={(value: "asc" | "desc") =>
+                      setSortOrder(value)
+                    }
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="asc">Earliest First</SelectItem>
+                      <SelectItem value="desc">Latest First</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+
             <EventSearch
               onSearchResults={handleSearchResults}
               onLoading={handleLoading}
@@ -303,66 +336,76 @@ export default function ProfessorDashboard() {
               </Card>
             ) : events.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {events.map((event: any, index: number) => (
-                  <EventCard
-                    key={event._id || index}
-                    id={event._id || String(index)}
-                    title={event.name || "Untitled Event"}
-                    category={(event.eventType || "academic") as any}
-                    date={
-                      event.startDate
-                        ? new Date(event.startDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "short",
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )
-                        : "TBA"
-                    }
-                    time={
-                      event.startDate
-                        ? new Date(event.startDate).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            }
-                          )
-                        : "TBA"
-                    }
-                    location={
-                      event.location ||
-                      (event.eventType === "platform_booth"
-                        ? event.locationPreference
-                        : null) ||
-                      "Unknown location"
-                    }
-                    attendees={
-                      Array.isArray(event.attendees)
-                        ? event.attendees.length
-                        : event.attendeesCount || 0
-                    }
-                    image={event.bannerImage || event.image}
-                    description={event.description}
-                    startDate={event.startDate}
-                    endDate={event.endDate}
-                    durationWeeks={event.durationWeeks}
-                    capacity={event.capacity}
-                    registrationDeadline={event.registrationDeadline}
-                    vendors={event.vendors || []}
-                    showDetailedView={true}
-                    onRegister={() =>
-                      console.log(handleRegisterEvent(event._id))
-                    }
-                    onViewDetails={() =>
-                      console.log("View details:", event.name)
-                    }
-                  />
-                ))}
+                {[...events]
+                  .sort((a, b) => {
+                    const aDate = a.startDate
+                      ? new Date(a.startDate).getTime()
+                      : 0;
+                    const bDate = b.startDate
+                      ? new Date(b.startDate).getTime()
+                      : 0;
+                    return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+                  })
+                  .map((event: any, index: number) => (
+                    <EventCard
+                      key={event._id || index}
+                      id={event._id || String(index)}
+                      title={event.name || "Untitled Event"}
+                      category={(event.eventType || "academic") as any}
+                      date={
+                        event.startDate
+                          ? new Date(event.startDate).toLocaleDateString(
+                              "en-US",
+                              {
+                                weekday: "short",
+                                month: "long",
+                                day: "numeric",
+                                year: "numeric",
+                              }
+                            )
+                          : "TBA"
+                      }
+                      time={
+                        event.startDate
+                          ? new Date(event.startDate).toLocaleTimeString(
+                              "en-US",
+                              {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )
+                          : "TBA"
+                      }
+                      location={
+                        event.location ||
+                        (event.eventType === "platform_booth"
+                          ? event.locationPreference
+                          : null) ||
+                        "Unknown location"
+                      }
+                      attendees={
+                        Array.isArray(event.attendees)
+                          ? event.attendees.length
+                          : event.attendeesCount || 0
+                      }
+                      image={event.bannerImage || event.image}
+                      description={event.description}
+                      startDate={event.startDate}
+                      endDate={event.endDate}
+                      durationWeeks={event.durationWeeks}
+                      capacity={event.capacity}
+                      registrationDeadline={event.registrationDeadline}
+                      vendors={event.vendors || []}
+                      showDetailedView={true}
+                      onRegister={() =>
+                        console.log(handleRegisterEvent(event._id))
+                      }
+                      onViewDetails={() =>
+                        console.log("View details:", event.name)
+                      }
+                    />
+                  ))}
               </div>
             ) : (
               <Card>
