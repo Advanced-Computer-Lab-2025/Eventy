@@ -1900,3 +1900,204 @@ export const getSalesReport = async (options = {}) => {
     events: paginatedEvents,
   };
 };
+
+/**
+ * Send workshop attendance certificates to all attendees who haven't received them yet
+ * Only sends if the workshop has ended
+ * @param {string} workshopId - Workshop event ID
+ * @returns {Object} - Result with counts of sent/failed certificates
+ */
+export const sendWorkshopCertificates = async (workshopId) => {
+  const { sendWorkshopCertificateEmail } = await import(
+    "../auth/email.service.js"
+  );
+
+  // Find the workshop and populate attendees and professors
+  const workshop = await Event.findById(workshopId)
+    .populate("attendees", "email firstName lastName name role")
+    .populate("professors", "email firstName lastName name");
+
+  if (!workshop) {
+    throw new ApiError(404, "Workshop not found");
+  }
+
+  if (workshop.eventType !== "workshop") {
+    throw new ApiError(400, "This event is not a workshop");
+  }
+
+  // Check if workshop has ended
+  const now = new Date();
+  const workshopEndDate = new Date(workshop.endDate);
+  if (workshopEndDate > now) {
+    throw new ApiError(
+      400,
+      "Cannot send certificates for a workshop that hasn't ended yet"
+    );
+  }
+
+  // Get attendees who haven't received certificates yet
+  const certificatesSentIds = (workshop.certificatesSent || []).map((id) =>
+    id.toString()
+  );
+  // Build recipient list: attendees + professors (all roles should receive)
+  const recipientMap = new Map();
+  for (const u of workshop.attendees || []) {
+    recipientMap.set(u._id.toString(), u);
+  }
+  for (const p of workshop.professors || []) {
+    // Professors may not have `role` populated in some queries; still include
+    recipientMap.set(p._id.toString(), p);
+  }
+  const recipientsToSend = Array.from(recipientMap.values()).filter(
+    (user) => !certificatesSentIds.includes(user._id.toString())
+  );
+
+  if (recipientsToSend.length === 0) {
+    return {
+      message: "All eligible recipients have already received certificates",
+      sent: 0,
+      failed: 0,
+      alreadySent: certificatesSentIds.length,
+    };
+  }
+
+  // Send certificates to each attendee
+  const results = {
+    sent: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const attendee of recipientsToSend) {
+    try {
+      const success = await sendWorkshopCertificateEmail(attendee, workshop);
+      if (success) {
+        // Add to certificatesSent array
+        await Event.findByIdAndUpdate(workshopId, {
+          $addToSet: { certificatesSent: attendee._id },
+        });
+        results.sent++;
+      } else {
+        results.failed++;
+        results.errors.push({
+          attendeeId: attendee._id,
+          email: attendee.email,
+          error: "Email sending failed",
+        });
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push({
+        attendeeId: attendee._id,
+        email: attendee.email,
+        error: error.message,
+      });
+    }
+  }
+
+  return {
+    message: `Certificates sent to ${results.sent} attendees, ${results.failed} failed`,
+    sent: results.sent,
+    failed: results.failed,
+    alreadySent: certificatesSentIds.length,
+    errors: results.errors.length > 0 ? results.errors : undefined,
+  };
+};
+
+/**
+ * Check all completed workshops and send certificates to attendees who haven't received them
+ * This can be called periodically or manually
+ * @returns {Object} - Summary of all workshops processed
+ */
+export const sendCertificatesForCompletedWorkshops = async () => {
+  const { sendWorkshopCertificateEmail } = await import(
+    "../auth/email.service.js"
+  );
+
+  const now = new Date();
+
+  // Find all workshops that have ended and are approved
+  const completedWorkshops = await Event.find({
+    eventType: "workshop",
+    status: "approved",
+    endDate: { $lt: now },
+    deletedAt: null,
+  })
+    .populate("attendees", "email firstName lastName name role")
+    .populate("professors", "email firstName lastName name role");
+
+  if (completedWorkshops.length === 0) {
+    return {
+      message: "No completed workshops found",
+      workshopsProcessed: 0,
+      totalSent: 0,
+      totalFailed: 0,
+    };
+  }
+
+  const summary = {
+    workshopsProcessed: 0,
+    totalSent: 0,
+    totalFailed: 0,
+    workshops: [],
+  };
+
+  for (const workshop of completedWorkshops) {
+    const certificatesSentIds = (workshop.certificatesSent || []).map((id) =>
+      id.toString()
+    );
+    // Build recipients: attendees + professors, dedupe by id, exclude already sent
+    const batchRecipientMap = new Map();
+    for (const u of workshop.attendees || []) {
+      batchRecipientMap.set(u._id.toString(), u);
+    }
+    for (const p of workshop.professors || []) {
+      batchRecipientMap.set(p._id.toString(), p);
+    }
+    const attendeesToSend = Array.from(batchRecipientMap.values()).filter(
+      (user) => !certificatesSentIds.includes(user._id.toString())
+    );
+
+    if (attendeesToSend.length === 0) {
+      continue; // Skip workshops where all certificates are already sent
+    }
+
+    summary.workshopsProcessed++;
+    let workshopSent = 0;
+    let workshopFailed = 0;
+
+    for (const attendee of attendeesToSend) {
+      try {
+        const success = await sendWorkshopCertificateEmail(attendee, workshop);
+        if (success) {
+          await Event.findByIdAndUpdate(workshop._id, {
+            $addToSet: { certificatesSent: attendee._id },
+          });
+          workshopSent++;
+        } else {
+          workshopFailed++;
+        }
+      } catch (error) {
+        console.error(
+          `Error sending certificate to ${attendee.email}:`,
+          error.message
+        );
+        workshopFailed++;
+      }
+    }
+
+    summary.totalSent += workshopSent;
+    summary.totalFailed += workshopFailed;
+    summary.workshops.push({
+      workshopId: workshop._id,
+      workshopName: workshop.name,
+      sent: workshopSent,
+      failed: workshopFailed,
+    });
+  }
+
+  return {
+    message: `Processed ${summary.workshopsProcessed} workshops, sent ${summary.totalSent} certificates, ${summary.totalFailed} failed`,
+    ...summary,
+  };
+};

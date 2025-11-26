@@ -1020,4 +1020,108 @@ export class EventsController {
       next(err);
     }
   }
+
+  /**
+   * Send workshop attendance certificates to attendees
+   * Only works for workshops that have ended
+   * POST /api/events/:workshopId/send-certificates
+   */
+  async sendWorkshopCertificates(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const user = req.user;
+
+      // Check user role - only professors and events office can send certificates
+      if (!["professor", "events_office"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors and events office can send certificates"
+        );
+      }
+
+      // If professor, verify they created this workshop
+      if (user.role === "professor") {
+        const workshop = await eventService.getWorkshopById(workshopId);
+        if (!workshop) {
+          throw new ApiError(404, "Workshop not found");
+        }
+        if (String(workshop.createdBy) !== String(user._id)) {
+          throw new ApiError(
+            403,
+            "Forbidden: You can only send certificates for workshops you created"
+          );
+        }
+      }
+
+      const result = await eventService.sendWorkshopCertificates(workshopId);
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Send certificates for all completed workshops
+   * Only accessible by events office
+   * POST /api/events/send-all-certificates
+   */
+  async sendAllCompletedWorkshopCertificates(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office can trigger batch certificate sending
+      if (user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can send certificates for all workshops"
+        );
+      }
+
+      const result = await eventService.sendCertificatesForCompletedWorkshops();
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Manually trigger the certificate scheduler job
+   * Only accessible by events office or admin
+   * POST /api/events/trigger-certificate-job
+   */
+  async triggerCertificateScheduler(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office and admin can manually trigger the job
+      if (!["events_office", "admin"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office and admin can trigger the certificate scheduler"
+        );
+      }
+
+      // Import the scheduler function
+      const { triggerCertificateJobManually } = await import(
+        "../../utils/certificate-scheduler.js"
+      );
+
+      // Trigger the job manually
+      await triggerCertificateJobManually();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { triggered: true },
+            "Certificate scheduler job triggered successfully. Check server logs for results."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
 }
