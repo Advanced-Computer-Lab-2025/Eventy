@@ -88,6 +88,8 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  showAttendees?: boolean;
+  showRegisterButton?: boolean; // ✅ Add new prop to control register button specifically
   isRegistered?: boolean;
   onRegister?: () => void;
   status?: string;
@@ -122,6 +124,8 @@ export default function EventCard({
   vendors = [],
   showActions = true,
   showDetailedView = false,
+  showAttendees = true,
+  showRegisterButton = true, // ✅ Default to true
   onRegister,
   onSave,
   onShare,
@@ -365,7 +369,8 @@ export default function EventCard({
                   Give Feedback
                 </Button>
               ) : (
-                canRegister && (
+                canRegister &&
+                showRegisterButton && (
                   <Button
                     className="flex-1"
                     onClick={onRegister}
@@ -506,10 +511,12 @@ export default function EventCard({
                 <MapPin className="h-4 w-4" />
                 <span className="line-clamp-1">{location}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>{attendees}</span>
-              </div>
+              {showAttendees && ( // ✅ Conditionally show attendees
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span>{attendees}</span>
+                </div>
+              )}
             </div>
 
             {/* Vendors section - compact view (bazaar only, not platform booths) */}
@@ -550,7 +557,8 @@ export default function EventCard({
                     Give Feedback
                   </Button>
                 ) : (
-                  isRegisterable && (
+                  isRegisterable &&
+                  showRegisterButton && (
                     <Button
                       onClick={onRegister}
                       className="w-full"

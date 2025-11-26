@@ -28,6 +28,21 @@ export default function FavoritesPage() {
     }
   }, []);
 
+  // Get dashboard route based on user role
+  const getDashboardRoute = () => {
+    switch (userRole?.toLowerCase()) {
+      case "professor":
+        return "/professor";
+      case "staff":
+      case "ta":
+        return "/staff-ta";
+      case "student":
+        return "/home";
+      default:
+        return "/home";
+    }
+  };
+
   const renderHeader = () => {
     switch (userRole) {
       case "professor":
@@ -157,7 +172,7 @@ export default function FavoritesPage() {
                 Start exploring events and save your favorites to see them here.
               </p>
               <Button size="lg" className="w-full" asChild>
-                <Link to="/events">Browse Events</Link>
+                <Link to={getDashboardRoute()}>Browse Events</Link>
               </Button>
             </CardContent>
           </Card>
@@ -197,6 +212,8 @@ export default function FavoritesPage() {
                   durationWeeks={event.durationWeeks}
                   showActions={true}
                   showDetailedView={false}
+                  showAttendees={false}
+                  showRegisterButton={false}
                   onViewDetails={() => setLocation(`/events/${event._id}`)}
                 />
               );
