@@ -170,6 +170,65 @@ export default function EventCard({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 
+  // Share handler - similar to VendorDashboard
+  const handleShare = async () => {
+    // If a custom onShare handler is provided, use it
+    if (onShare) {
+      onShare();
+      return;
+    }
+
+    // Otherwise, use native share API with clipboard fallback
+    const shareText = `Check out this event: ${title}${location ? ` at ${location}` : ""}${date ? ` on ${date}` : ""}`;
+    const shareUrl = `${window.location.origin}/events/${id}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: title,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or error occurred - silently fail
+        if ((err as Error).name !== "AbortError") {
+          console.error("Error sharing:", err);
+        }
+      }
+    } else {
+      // Fallback: copy to clipboard
+      try {
+        await navigator.clipboard.writeText(shareUrl);
+        toast({
+          title: "Link copied",
+          description: "Event link copied to clipboard!",
+        });
+      } catch (err) {
+        // Fallback for older browsers
+        const textArea = document.createElement("textarea");
+        textArea.value = shareUrl;
+        textArea.style.position = "fixed";
+        textArea.style.opacity = "0";
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+          document.execCommand("copy");
+          toast({
+            title: "Link copied",
+            description: "Event link copied to clipboard!",
+          });
+        } catch (fallbackErr) {
+          toast({
+            title: "Share failed",
+            description: "Unable to copy link. Please try again.",
+            variant: "destructive",
+          });
+        }
+        document.body.removeChild(textArea);
+      }
+    }
+  };
+
   // --- STATE FOR ATTENDEE COUNT ---
   const [localAttendeeCount, setLocalAttendeeCount] = useState(attendees);
 
@@ -835,7 +894,7 @@ export default function EventCard({
                       size="icon"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onShare?.();
+                        handleShare();
                       }}
                       data-testid={`button-share-${id}`}
                     >
