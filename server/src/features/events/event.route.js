@@ -185,7 +185,14 @@ router.get(
 router.get(
   "/past",
   authMiddleware,
-  roleMiddleware(["events_office", "admin"]),
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getPastEvents.bind(eventsController)
 );
 

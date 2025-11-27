@@ -1,4 +1,4 @@
-import { Home, Users, FileText, Gift } from "lucide-react";
+import { Users, Star, FileText, Gift, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -57,7 +57,7 @@ export default function AdminHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
-            data-testid="button-nav-admin-dashboard"
+            data-testid="button-nav-dashboard"
             onClick={() => setLocation("/admin")}
           >
             <Home className="h-4 w-4" />
@@ -77,8 +77,18 @@ export default function AdminHeader() {
             variant="ghost"
             size="sm"
             className="gap-2"
+            data-testid="button-nav-ratings"
+            onClick={() => setLocation("/admin/ratings")}
+          >
+            <Star className="h-4 w-4" />
+            Ratings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            data-testid="button-nav-attendees-report"
             onClick={() => setLocation("/reports/attendees")}
-            data-testid="button-nav-reports"
           >
             <FileText className="h-4 w-4" />
             Attendees Report
@@ -92,17 +102,6 @@ export default function AdminHeader() {
           >
             <FileText className="h-4 w-4" />
             Sales Report
-          </Button>
-          {/* ✅ New Users Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            data-testid="button-nav-users"
-            onClick={() => setLocation("/admin/users")}
-          >
-            <Users className="h-4 w-4" />
-            Users
           </Button>
           <Button
             variant="ghost"

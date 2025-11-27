@@ -16,6 +16,7 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import StaffHeader from "@/components/StaffHeader";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -70,6 +71,61 @@ export default function SportsFacilities() {
   const [navigateToDate, setNavigateToDate] = useState<Date | undefined>(
     undefined
   );
+  const [reservingKeys, setReservingKeys] = useState<string[]>([]);
+  const { toast } = useToast();
+
+  const ymdLocal = (d: string | Date | undefined | null) => {
+    if (!d) return undefined;
+    const dateObj = typeof d === "string" ? new Date(d) : d;
+    if (Number.isNaN(dateObj.getTime())) return undefined;
+    const y = dateObj.getFullYear();
+    const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+    const day = String(dateObj.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const fetchCourtSchedules = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      setLoading(true);
+      const res = await fetch("http://localhost:4000/api/facilities/courts", {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const data = await res.json();
+      console.warn("Reserve response:", res.status, data);
+      if (data.success && data.data) {
+        // Normalize schedule dates to local YYYY-MM-DD (use local date parts)
+        const normalize = (arr: unknown[]) =>
+          (arr || []).map((s: unknown) => {
+            const sc = s as any;
+            return {
+              ...sc,
+              // produce local Y-M-D string regardless of incoming format
+              date: ymdLocal(sc?.date),
+            };
+          });
+
+        const normalized = {
+          basketball: normalize(data.data.basketball),
+          tennis: normalize(data.data.tennis),
+          football: normalize(data.data.football),
+        };
+        setCourtSchedules(normalized);
+        // warn with sample so devs can inspect if needed
+        console.warn("Fetched court schedules (normalized):", normalized);
+      }
+    } catch (err) {
+      console.error("Fetch error:", err);
+      toast({
+        title: "Error",
+        description: "Failed to load court schedules",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     // Fetch user role from token
@@ -84,35 +140,95 @@ export default function SportsFacilities() {
     }
 
     // Fetch court schedules
-    setLoading(true);
-    fetch("http://localhost:4000/api/facilities/courts", {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((data) => {
-        if (data.success && data.data) {
-          setCourtSchedules({
-            basketball: data.data.basketball || [],
-            tennis: data.data.tennis || [],
-            football: data.data.football || [],
-          });
-        }
-      })
-      .catch((err) => console.error("Fetch error:", err))
-      .finally(() => setLoading(false));
+    fetchCourtSchedules();
   }, []);
 
-  const handleReserveCourt = (
+  const getBodyDateFromIndex = (index: number) => {
+    const today = new Date();
+    const d = new Date(today);
+    d.setDate(today.getDate() + index);
+    return ymdLocal(d) || "";
+  };
+
+  // Generate the canonical day slots (matches server: startHour=10, endHour=17)
+  const generateDaySlots = () => {
+    const startHour = 10;
+    const endHour = 17;
+    const slots: Slot[] = [];
+    for (let hour = startHour; hour < endHour; hour++) {
+      const next = hour + 1;
+      const startAMPM = hour >= 12 ? "PM" : "AM";
+      const endAMPM = next >= 12 ? "PM" : "AM";
+      const startHour12 = hour % 12 === 0 ? 12 : hour % 12;
+      const endHour12 = next % 12 === 0 ? 12 : next % 12;
+      slots.push({
+        startTime: `${startHour12}:00 ${startAMPM}`,
+        endTime: `${endHour12}:00 ${endAMPM}`,
+        status: "booked",
+      });
+    }
+    return slots;
+  };
+
+  const makeKey = (courtType: string, dateYMD: string, startTime: string) =>
+    `${courtType}-${dateYMD}-${startTime}`;
+
+  const handleReserveCourt = async (
     courtType: CourtType,
-    date: string,
+    _dateLabel: string,
     slot: Slot
   ) => {
-    alert(
-      `${COURT_NAMES[courtType]} reserved for ${date} ${slot.startTime}-${slot.endTime}`
-    );
+    const bodyDate = getBodyDateFromIndex(currentDayIndex);
+    const startTime = slot.startTime;
+    const endTime = slot.endTime;
+    const key = makeKey(courtType, bodyDate, startTime);
+
+    if (reservingKeys.includes(key)) return;
+    setReservingKeys((prev) => [...prev, key]);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        "http://localhost:4000/api/facilities/courts/reserve",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({
+            date: bodyDate,
+            courtType,
+            startTime,
+            endTime,
+          }),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        const message = data?.message || "Failed to reserve court";
+        toast({ title: "Error", description: message, variant: "destructive" });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: `${COURT_NAMES[courtType]} reserved for ${bodyDate} ${startTime} - ${endTime}`,
+      });
+
+      // Refresh schedules so the slot becomes booked
+      await fetchCourtSchedules();
+    } catch (err) {
+      console.error("Reserve error:", err);
+      const message =
+        (err && (err as any).message) || "Failed to reserve court";
+      toast({ title: "Error", description: message, variant: "destructive" });
+    } finally {
+      setReservingKeys((prev) => prev.filter((k) => k !== key));
+    }
   };
 
   const handleCreateSuccess = (createdDate: Date) => {
@@ -128,12 +244,10 @@ export default function SportsFacilities() {
     targetDate.setDate(today.getDate() + dayIndex);
     targetDate.setHours(0, 0, 0, 0);
 
-    const formattedDate = targetDate.toISOString().split("T")[0];
+    const formattedDate = ymdLocal(targetDate) || "";
     return Object.fromEntries(
       Object.entries(courtSchedules).map(([type, schedules]) => {
-        const match = schedules.find(
-          (s) => s.date && s.date.startsWith(formattedDate)
-        );
+        const match = schedules.find((s) => s.date === formattedDate);
         return [type, match ? match.slots : []];
       })
     ) as Record<CourtType, Slot[]>;
@@ -153,102 +267,125 @@ export default function SportsFacilities() {
 
   const canViewCourts = userRole === "student";
 
-  const renderCourtContent = () => (
-    <div className="space-y-6">
-      {/* Centered Date Navigation — for courts only */}
-      <div className="flex items-center justify-center gap-4 my-6">
-        <Button
-          variant="outline"
-          onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
-          disabled={currentDayIndex === 0}
-        >
-          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-        </Button>
-        <div className="text-lg font-semibold min-w-[250px] text-center">
-          {formattedDate}
+  const renderCourtContent = () => {
+    const bodyDate = getBodyDateFromIndex(currentDayIndex);
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center gap-4 my-6">
+          <Button
+            variant="outline"
+            onClick={() => setCurrentDayIndex((prev) => Math.max(0, prev - 1))}
+            disabled={currentDayIndex === 0}
+          >
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <div className="text-lg font-semibold min-w-[250px] text-center">
+            {formattedDate}
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
+            disabled={currentDayIndex === 6}
+          >
+            Next <ChevronRight className="h-4 w-4 ml-1" />
+          </Button>
         </div>
-        <Button
-          variant="outline"
-          onClick={() => setCurrentDayIndex((prev) => Math.min(6, prev + 1))}
-          disabled={currentDayIndex === 6}
-        >
-          Next <ChevronRight className="h-4 w-4 ml-1" />
-        </Button>
-      </div>
 
-      {loading ? (
-        <div className="text-center text-muted-foreground">
-          Loading court schedules...
-        </div>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-3">
-          {Object.entries(COURT_NAMES).map(([type, label]) => (
-            <Card key={type} className="flex flex-col justify-between">
-              <CardHeader>
-                <CardTitle className="text-xl text-center">{label}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-col gap-2">
-                  {currentSchedules[type as CourtType]?.length > 0 ? (
-                    currentSchedules[type as CourtType].map((slot, sidx) => (
-                      <Button
-                        key={sidx}
-                        variant="outline"
-                        className="w-full justify-start gap-2"
-                        disabled={slot.status !== "available"}
-                        onClick={() =>
-                          handleReserveCourt(
+        {loading ? (
+          <div className="text-center text-muted-foreground">
+            Loading court schedules...
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-3">
+            {Object.entries(COURT_NAMES).map(([type, label]) => {
+              const serverSlots = currentSchedules[type as CourtType] || [];
+              const fullSlots = generateDaySlots();
+              // mark availability by checking serverSlots presence
+              const slots = fullSlots.map((s) => {
+                const found = serverSlots.find(
+                  (ss) =>
+                    ss.startTime === s.startTime && ss.endTime === s.endTime
+                );
+                return { ...s, status: found ? "available" : "booked" } as Slot;
+              });
+              return (
+                <Card key={type} className="flex flex-col justify-between">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-center">
+                      {label}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-2">
+                      {slots.length > 0 ? (
+                        slots.map((slot) => {
+                          const slotKey = makeKey(
                             type as CourtType,
-                            formattedDate,
-                            slot
-                          )
-                        }
-                      >
-                        <Clock className="h-4 w-4" />
-                        {formatTimeToAMPM(slot.startTime)} –{" "}
-                        {formatTimeToAMPM(slot.endTime)}
-                        {slot.status !== "available" && (
-                          <Badge variant="destructive" className="ml-2">
-                            Booked
-                          </Badge>
-                        )}
-                      </Button>
-                    ))
-                  ) : (
-                    <p className="text-muted-foreground text-sm text-center">
-                      No slots available for this day.
+                            bodyDate,
+                            slot.startTime
+                          );
+                          const isReserving = reservingKeys.includes(slotKey);
+                          if (slot.status !== "available") {
+                            return (
+                              <div
+                                key={slotKey}
+                                className="w-full h-12 flex items-center justify-center bg-muted rounded"
+                              />
+                            );
+                          }
+                          return (
+                            <Button
+                              key={slotKey}
+                              variant="outline"
+                              className="w-full justify-start gap-2"
+                              disabled={isReserving}
+                              onClick={() =>
+                                handleReserveCourt(
+                                  type as CourtType,
+                                  formattedDate,
+                                  slot
+                                )
+                              }
+                            >
+                              <div className="flex w-full items-center justify-between">
+                                <div className="text-left">
+                                  <div className="font-medium">
+                                    {slot.startTime} - {slot.endTime}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Available
+                                  </div>
+                                </div>
+                                <div>
+                                  <Badge>Available</Badge>
+                                </div>
+                              </div>
+                            </Button>
+                          );
+                        })
+                      ) : (
+                        <div className="text-muted-foreground">
+                          No slots available
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-muted-foreground">
+                      Book courts and join gym sessions
                     </p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-background">
-      {userRole === "professor" ? (
-        <ProfessorHeader />
-      ) : userRole === "events_office" ? (
-        <EventsOfficeHeader />
-      ) : userRole === "staff" || userRole === "ta" ? (
-        <StaffHeader />
-      ) : (
-        <StudentHeader />
-      )}
-
+      <StudentHeader />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        {/* Left-aligned title */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Sports Facilities</h1>
-          <p className="text-muted-foreground">
-            Book courts and join gym sessions
-          </p>
-        </div>
-
         {canViewCourts ? (
           <Tabs defaultValue="courts" className="space-y-6">
             <TabsList>

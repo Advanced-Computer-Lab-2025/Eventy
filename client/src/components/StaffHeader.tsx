@@ -6,6 +6,7 @@ import {
   Dumbbell,
   Heart,
   Gift,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -107,6 +108,16 @@ export default function StaffHeader({
           >
             <Heart className="h-4 w-4" />
             Favorites
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
           </Button>
           <Button
             variant="ghost"
