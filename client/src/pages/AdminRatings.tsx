@@ -10,6 +10,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminHeader from "@/components/AdminHeader";
 import StudentHeader from "@/components/StudentHeader";
@@ -34,6 +35,7 @@ interface RatingItem {
   user?: { firstName?: string; lastName?: string; email?: string } | null;
   rating: number;
   comment?: string | null;
+  commentRemoved?: boolean;
   createdAt?: string;
   deletedAt?: string | null;
 }
@@ -134,21 +136,30 @@ export default function AdminRatings() {
       .then((resp) => {
         const data = resp.data?.data || {};
         const feedback = data.feedback || [];
-        const mapped = feedback.map((f: any) => ({
-          id: f._id,
-          eventId: f.eventId,
-          user: f.userId
-            ? {
-                firstName: f.userId.firstName,
-                lastName: f.userId.lastName,
-                email: f.userId.email,
-              }
-            : null,
-          rating: f.rating,
-          comment: f.comment,
-          createdAt: f.createdAt,
-          deletedAt: f.deletedAt || null,
-        }));
+        const mapped = feedback.map((f: any) => {
+          const commentEntries = Array.isArray(f.comments) ? f.comments : [];
+          const activeComment = commentEntries.find(
+            (c: any) => !c?.deletedAt && c?.body?.trim()
+          );
+          const hasAnyComment = commentEntries.length > 0;
+
+          return {
+            id: f._id,
+            eventId: f.eventId,
+            user: f.userId
+              ? {
+                  firstName: f.userId.firstName,
+                  lastName: f.userId.lastName,
+                  email: f.userId.email,
+                }
+              : null,
+            rating: f.rating,
+            comment: activeComment?.body || null,
+            commentRemoved: !activeComment && hasAnyComment,
+            createdAt: f.createdAt,
+            deletedAt: f.deletedAt || null,
+          };
+        });
         setAllRatings(mapped);
         setRatings(mapped);
       })
@@ -164,11 +175,15 @@ export default function AdminRatings() {
     try {
       await api.delete(`/feedback/events/${selectedEvent}/${ratingId}`);
       // Optimistically remove from UI
-      const updated = allRatings.map((r) =>
-        r.id === ratingId
-          ? { ...r, comment: null, deletedAt: new Date().toISOString() }
-          : r
-      );
+      const updated = allRatings.map((r) => {
+        if (r.id !== ratingId) return r;
+        return {
+          ...r,
+          comment: null,
+          commentRemoved: true,
+          deletedAt: new Date().toISOString(),
+        };
+      });
       setAllRatings(updated);
       setRatings(updated.filter((r) => r.eventId === selectedEvent));
     } catch (err) {
@@ -296,8 +311,9 @@ export default function AdminRatings() {
                         </div>
 
                         <div className="text-right">
-                          <div className="font-semibold text-foreground">
+                          <div className="font-semibold text-foreground flex items-center justify-end gap-1">
                             {r.rating} / 5
+                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                           </div>
                           <div className="text-xs text-muted-foreground">
                             {r.createdAt
@@ -313,9 +329,13 @@ export default function AdminRatings() {
                         <div className="mt-2 text-sm text-foreground">
                           {r.comment}
                         </div>
-                      ) : (
+                      ) : r.commentRemoved ? (
                         <div className="mt-2 text-sm text-muted-foreground italic">
                           Comment removed by admin
+                        </div>
+                      ) : (
+                        <div className="mt-2 text-sm text-muted-foreground italic">
+                          No comment provided
                         </div>
                       )}
 

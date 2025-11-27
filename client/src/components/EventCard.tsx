@@ -446,30 +446,33 @@ export default function EventCard({
                     </div>
                   )}
 
-                  {/* Attendees */}
-                  <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
-                    <div className="flex items-center">
-                      <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>
-                        {localAttendeeCount} attendee
-                        {localAttendeeCount !== 1 ? "s" : ""}
-                      </span>
-                    </div>
+                  {(showAttendees || registrationDeadline) && (
+                    <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
+                      {showAttendees && (
+                        <div className="flex items-center">
+                          <Users className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span>
+                            {localAttendeeCount} attendee
+                            {localAttendeeCount !== 1 ? "s" : ""}
+                          </span>
+                        </div>
+                      )}
 
-                    {registrationDeadline && (
-                      <div className="flex items-center">
-                        <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                        <span>
-                          Deadline: {formatDate(registrationDeadline)}
-                          {new Date() > new Date(registrationDeadline) && (
-                            <span className="text-red-500 font-semibold ml-2">
-                              (Closed)
-                            </span>
-                          )}
-                        </span>
-                      </div>
-                    )}
-                  </div>
+                      {registrationDeadline && (
+                        <div className="flex items-center">
+                          <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                          <span>
+                            Deadline: {formatDate(registrationDeadline)}
+                            {new Date() > new Date(registrationDeadline) && (
+                              <span className="text-red-500 font-semibold ml-2">
+                                (Closed)
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Vendors Section */}
@@ -669,7 +672,7 @@ export default function EventCard({
                       </div>
                     )}
                   </div>
-                  {showAttendeeCount && (
+                  {showAttendees && showAttendeeCount && (
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
                       <span>{localAttendeeCount}</span>
