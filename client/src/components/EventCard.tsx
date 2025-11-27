@@ -345,6 +345,14 @@ export default function EventCard({
   const canRegister =
     isRegisterable && isBeforeDeadline && hasCapacity && !isArchived;
 
+  const hasPrice = typeof price === "number" && price > 0;
+  const formattedPrice = hasPrice
+    ? new Intl.NumberFormat("en-US", {
+        minimumFractionDigits: price % 1 === 0 ? 0 : 2,
+        maximumFractionDigits: 2,
+      }).format(price)
+    : null;
+
   if (isDeleted) return null;
 
   return (
@@ -416,6 +424,13 @@ export default function EventCard({
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                       <span>{location}</span>
+                    </div>
+                  )}
+
+                  {hasPrice && formattedPrice && (
+                    <div className="flex items-center text-muted-foreground">
+                      <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
+                      <span>{formattedPrice} Dollars</span>
                     </div>
                   )}
 
@@ -623,6 +638,12 @@ export default function EventCard({
                   <Users className="h-4 w-4" />
                   <span>{localAttendeeCount}</span>
                 </div>
+                {hasPrice && formattedPrice && (
+                  <div className="flex items-center gap-1">
+                    <DollarSign className="h-4 w-4" />
+                    <span>{formattedPrice} Dollars</span>
+                  </div>
+                )}
               </div>
 
               {isBazaar && vendors.length > 0 && (
