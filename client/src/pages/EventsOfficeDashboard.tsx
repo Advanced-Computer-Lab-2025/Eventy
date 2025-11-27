@@ -941,23 +941,16 @@ export default function EventsOfficeDashboard() {
                       Revenue by Month
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4">
+                  <CardContent className="pt-0 pl-6 pr-6">
                     {loadingCharts ? (
                       <div className="h-[280px] flex items-center justify-center">
                         <p className="text-muted-foreground">Loading...</p>
-                      </div>
-                    ) : revenueChartData.length === 0 ||
-                      revenueChartData.every((d) => Number(d.revenue) === 0) ? (
-                      <div className="h-[280px] flex items-center justify-center">
-                        <p className="text-muted-foreground">
-                          No data available
-                        </p>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={280}>
                         <BarChart
                           data={revenueChartData}
-                          margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                          margin={{ top: 5, right: 5, left: 10, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis
