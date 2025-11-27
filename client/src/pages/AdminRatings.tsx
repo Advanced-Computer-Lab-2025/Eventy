@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import AdminHeader from "@/components/AdminHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 import { formatDistanceToNow } from "date-fns";
@@ -13,6 +12,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import AdminHeader from "@/components/AdminHeader";
+import StudentHeader from "@/components/StudentHeader";
+import ProfessorHeader from "@/components/ProfessorHeader";
+import StaffHeader from "@/components/StaffHeader";
+import VendorHeader from "@/components/VendorHeader";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 
 interface EventItem {
   id: string;
@@ -168,9 +173,28 @@ export default function AdminRatings() {
 
   const currentUser = getCurrentUser();
 
+  const renderHeader = () => {
+    const role = currentUser?.role;
+    switch (role) {
+      case "student":
+        return <StudentHeader />;
+      case "professor":
+        return <ProfessorHeader />;
+      case "staff":
+      case "ta":
+        return <StaffHeader />;
+      case "events_office":
+        return <EventsOfficeHeader />;
+      case "vendor":
+        return <VendorHeader />;
+      default:
+        return <AdminHeader />;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
-      <AdminHeader />
+      {renderHeader()}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-6">
