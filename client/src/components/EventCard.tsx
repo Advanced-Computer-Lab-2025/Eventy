@@ -118,6 +118,8 @@ export interface EventCardProps {
   allowCancellation?: boolean;
   onUnregister?: () => void; // New Prop callback
   hideRegisterButton?: boolean;
+  showAttendeeCount?: boolean;
+  inlinePriceWithLocation?: boolean;
 }
 
 export default function EventCard({
@@ -156,6 +158,8 @@ export default function EventCard({
   price = 0,
   allowCancellation = false,
   onUnregister, // Destructure new prop
+  showAttendeeCount = true,
+  inlinePriceWithLocation = false,
 }: EventCardProps & { price?: number }) {
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
@@ -352,6 +356,12 @@ export default function EventCard({
         maximumFractionDigits: 2,
       }).format(price)
     : null;
+  const inlinePriceLabel =
+    inlinePriceWithLocation && hasPrice && formattedPrice
+      ? `${formattedPrice} Dollars`
+      : null;
+  const showStandalonePrice =
+    hasPrice && formattedPrice && !inlinePriceWithLocation;
 
   if (isDeleted) return null;
 
@@ -427,10 +437,10 @@ export default function EventCard({
                     </div>
                   )}
 
-                  {hasPrice && formattedPrice && (
+                  {showStandalonePrice && (
                     <div className="flex items-center text-muted-foreground">
                       <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>{formattedPrice} Dollars</span>
+                      <span>$ {formattedPrice} Dollars</span>
                     </div>
                   )}
 
@@ -524,13 +534,27 @@ export default function EventCard({
               {/* ACTION BUTTONS (Detailed View) */}
               <div className="flex gap-2 mt-auto">
                 {registered && startDate && new Date() > new Date(startDate) ? (
-                  <Button
-                    className="flex-1"
-                    onClick={onFeedback}
-                    data-testid={`button-feedback-${id}`}
-                  >
-                    Give Feedback
-                  </Button>
+                  <>
+                    {onViewDetails && (
+                      <Button
+                        className="flex-1"
+                        variant="outline"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    )}
+                    <Button
+                      className="flex-1"
+                      onClick={onFeedback}
+                      data-testid={`button-feedback-${id}`}
+                    >
+                      Give Feedback
+                    </Button>
+                  </>
                 ) : registered ? (
                   allowCancellation ? (
                     <Button
@@ -607,95 +631,113 @@ export default function EventCard({
         ) : (
           <>
             {/* --- COMPACT VIEW --- */}
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-start gap-2">
-                <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
-                <div className="font-mono text-sm">
-                  <div className="font-semibold text-foreground leading-tight">
-                    {date}
-                    {time && (
-                      <span className="text-muted-foreground font-normal ml-2">
-                        {time}
-                      </span>
-                    )}
+            <CardContent className="p-4 flex-1 flex flex-col">
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <Calendar className="h-4 w-4 mt-0.5 text-primary flex-shrink-0" />
+                  <div className="font-mono text-sm">
+                    <div className="font-semibold text-foreground leading-tight">
+                      {date}
+                      {time && (
+                        <span className="text-muted-foreground font-normal ml-2">
+                          {time}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <h3
-                className="text-xl font-bold break-words whitespace-normal text-foreground"
-                data-testid={`text-event-title-${id}`}
-              >
-                {title}
-              </h3>
+                <h3
+                  className="text-xl font-bold break-words whitespace-normal text-foreground"
+                  data-testid={`text-event-title-${id}`}
+                >
+                  {title}
+                </h3>
 
-              <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span className="line-clamp-1">{location}</span>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
+                  <div className="flex flex-col gap-1">
+                    <div className="flex items-center gap-1">
+                      <MapPin className="h-4 w-4" />
+                      <span className="line-clamp-1">{location}</span>
+                    </div>
+                    {inlinePriceLabel && (
+                      <div className="flex items-center gap-1 text-muted-foreground">
+                        <DollarSign className="h-4 w-4" />
+                        <span>{inlinePriceLabel}</span>
+                      </div>
+                    )}
+                  </div>
+                  {showAttendeeCount && (
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>{localAttendeeCount}</span>
+                    </div>
+                  )}
+                  {showStandalonePrice && (
+                    <div className="flex items-center gap-1">
+                      <DollarSign className="h-4 w-4" />
+                      <span>{formattedPrice} Dollars</span>
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1">
-                  <Users className="h-4 w-4" />
-                  <span>{localAttendeeCount}</span>
-                </div>
-                {hasPrice && formattedPrice && (
-                  <div className="flex items-center gap-1">
-                    <DollarSign className="h-4 w-4" />
-                    <span>{formattedPrice} Dollars</span>
+
+                {isBazaar && vendors.length > 0 && (
+                  <div className="mt-2">
+                    <div className="flex items-center gap-2 text-foreground font-medium">
+                      <Store className="h-4 w-4 text-primary" />
+                      <span>Participating Vendors</span>
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {(() => {
+                        const names = vendors
+                          .map((v) => v.name || v.vendorName)
+                          .filter(Boolean) as string[];
+                        const shown = names.slice(0, 3);
+                        const remaining = Math.max(
+                          0,
+                          names.length - shown.length
+                        );
+                        return (
+                          <span data-testid={`text-vendors-${id}`}>
+                            {shown.join(", ")}
+                            {remaining > 0 ? ` and ${remaining} more` : ""}
+                          </span>
+                        );
+                      })()}
+                    </div>
                   </div>
                 )}
               </div>
 
-              {isBazaar && vendors.length > 0 && (
-                <div className="mt-2">
-                  <div className="flex items-center gap-2 text-foreground font-medium">
-                    <Store className="h-4 w-4 text-primary" />
-                    <span>Participating Vendors</span>
-                  </div>
-                  <div className="mt-1 text-sm text-muted-foreground">
-                    {(() => {
-                      const names = vendors
-                        .map((v) => v.name || v.vendorName)
-                        .filter(Boolean) as string[];
-                      const shown = names.slice(0, 3);
-                      const remaining = Math.max(
-                        0,
-                        names.length - shown.length
-                      );
-                      return (
-                        <span data-testid={`text-vendors-${id}`}>
-                          {shown.join(", ")}
-                          {remaining > 0 ? ` and ${remaining} more` : ""}
-                        </span>
-                      );
-                    })()}
-                  </div>
-                </div>
-              )}
-
               {showActions && (
-                <div className="flex flex-col gap-2 pt-2">
+                <div className="flex flex-col gap-2 pt-2 mt-auto">
                   {registered &&
                   startDate &&
                   new Date() > new Date(startDate) ? (
-                    <Button
-                      onClick={onFeedback}
-                      className="flex-1"
-                      data-testid={`button-feedback-${id}`}
-                    >
-                      Give Feedback
-                    </Button>
+                    <>
+                      {onViewDetails && (
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDetails();
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      )}
+                      <Button
+                        onClick={onFeedback}
+                        className="flex-1"
+                        data-testid={`button-feedback-${id}`}
+                      >
+                        Give Feedback
+                      </Button>
+                    </>
                   ) : registered ? (
                     allowCancellation ? (
                       <>
-                        <Button
-                          className="w-full"
-                          variant="destructive"
-                          onClick={() => setShowCancelDialog(true)}
-                          disabled={isCanceling}
-                        >
-                          {isCanceling ? "Canceling..." : "Cancel Registration"}
-                        </Button>
                         {onViewDetails && (
                           <Button
                             className="w-full"
@@ -708,6 +750,14 @@ export default function EventCard({
                             View Details
                           </Button>
                         )}
+                        <Button
+                          className="w-full"
+                          variant="destructive"
+                          onClick={() => setShowCancelDialog(true)}
+                          disabled={isCanceling}
+                        >
+                          {isCanceling ? "Canceling..." : "Cancel Registration"}
+                        </Button>
                       </>
                     ) : (
                       <>

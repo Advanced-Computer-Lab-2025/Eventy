@@ -165,7 +165,7 @@ export default function MyEvents() {
                   })}
                   location={
                     event.location ||
-                    (event.eventType === "platform_booth"
+                    (String(event.eventType).toLowerCase() === "platform_booth"
                       ? event.locationPreference
                       : null) ||
                     "Unknown location"
@@ -180,7 +180,6 @@ export default function MyEvents() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
-                  price={event.price}
                   showActions={true}
                   isRegistered={true}
                   hideRegisterButton={
@@ -191,6 +190,8 @@ export default function MyEvents() {
                   }
                   price={event.price || 0}
                   allowCancellation={true}
+                  showAttendeeCount={false}
+                  inlinePriceWithLocation
                   // CALLBACK to remove from list instantly
                   onUnregister={() => {
                     setRegisteredEvents((prev) =>
