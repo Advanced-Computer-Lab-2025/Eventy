@@ -384,10 +384,7 @@ export const getUpcomingEventsService = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -416,10 +413,7 @@ export const getUpcomingEventsWithVendors = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -507,20 +501,16 @@ export const searchEvents = async ({
   professor,
 }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Platform booths have startDate and endDate assigned when approved in updateApplicationStatus
+  // Platform booths should also respect startDate >= now, just like regular events
   const now = new Date();
   const filter = {
     status: "approved",
     deletedAt: null,
-    $and: [
-      {
-        $or: [
-          { startDate: { $gte: now } }, // Regular events with future startDate
-          { eventType: "platform_booth" }, // Platform booths (kept for backwards compatibility)
-        ],
-      },
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
+
+  // Additional filters will be added to $and array
+  filter.$and = [];
 
   // Filter out events where the user's role is restricted
   if (userRole && userRole !== "admin" && userRole !== "events_office") {
