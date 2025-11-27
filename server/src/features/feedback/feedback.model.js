@@ -41,18 +41,7 @@ const feedbackSchema = new mongoose.Schema(
       max: 5,
     },
 
-    comment: {
-      type: String,
-      required: false,
-      maxlength: 1000,
-    },
-
-    type: {
-      type: String,
-      enum: ["rating", "comment", "rating_and_comment"],
-      required: true,
-    },
-
+    comments: [feedbackCommentSchema],
     deletedAt: {
       type: Date,
       default: null, // null means not deleted
