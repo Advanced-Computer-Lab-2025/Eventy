@@ -50,7 +50,6 @@ export default function ProfessorDashboard() {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
-      // Use firstName field directly from the database model
       setUserName(userData.firstName);
     }
   };
@@ -91,61 +90,20 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    setEvents(searchResults);
+    // Sort events to show workshops first
+    const sortedResults = searchResults.sort((a, b) => {
+      if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
+      if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
+      return 0;
+    });
+    setEvents(sortedResults);
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
     }
   };
 
-  const handleRegisterEvent = async (eventId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please login to register for events",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You have been successfully registered for the event.",
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Registration Failed",
-          description: errorData.message || "Failed to register for event",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering for the event",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleLoading = (isLoading: boolean) => {
-    // Only show loading overlay when there are no events yet (initial load)
     if (events.length === 0) {
       setLoading(isLoading);
     }
@@ -158,20 +116,13 @@ export default function ProfessorDashboard() {
   const quickActions = [
     {
       title: "Workshop Management",
-      description: "Create, edit, and view all your workshops",
       icon: BookOpen,
       color: "bg-blue-500",
       path: "/professor/workshops",
-      features: [
-        "Create new workshops",
-        "Edit workshop details",
-        "View all your workshops",
-        "Track approval status",
-      ],
+      features: ["Create & edit workshops", "Track approval status"],
     },
     {
       title: "Sports Facilities",
-      description: "View gym schedule and fitness sessions",
       icon: Dumbbell,
       color: "bg-green-500",
       path: "/sports",
@@ -341,11 +292,16 @@ export default function ProfessorDashboard() {
                         : null) ||
                       "Unknown location"
                     }
+                    // 1. Pass the count for initial display
                     attendees={
                       Array.isArray(event.attendees)
                         ? event.attendees.length
                         : event.attendeesCount || 0
                     }
+                    // 2. Pass the list for "Registered" button check
+                    attendeesList={event.attendees}
+                    // 3. Pass the price for Payment Dialog logic
+                    price={event.price || 0}
                     image={event.bannerImage || event.image}
                     description={event.description}
                     startDate={event.startDate}
@@ -354,10 +310,9 @@ export default function ProfessorDashboard() {
                     capacity={event.capacity}
                     registrationDeadline={event.registrationDeadline}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
-                    onRegister={() =>
-                      console.log(handleRegisterEvent(event._id))
-                    }
+                    // 4. Removed 'onRegister'. EventCard handles this internally now.
                     onViewDetails={() =>
                       console.log("View details:", event.name)
                     }
@@ -380,8 +335,8 @@ export default function ProfessorDashboard() {
           </div>
 
           {/* Right Column - Quick Access */}
-          <div className="space-y-6">
-            <div>
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="sticky top-24">
               <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
               <div className="space-y-6">
                 {quickActions.map((action) => (
@@ -399,9 +354,6 @@ export default function ProfessorDashboard() {
                             <CardTitle className="text-xl">
                               {action.title}
                             </CardTitle>
-                            <CardDescription className="mt-1">
-                              {action.description}
-                            </CardDescription>
                           </div>
                         </div>
                       </div>
@@ -409,11 +361,11 @@ export default function ProfessorDashboard() {
                     <CardContent className="flex-1 flex flex-col">
                       <div className="flex-1">
                         {action.features && (
-                          <ul className="space-y-2 mb-4">
+                          <ul className="space-y-1.5 mb-3">
                             {action.features.map((feature, idx) => (
                               <li
                                 key={idx}
-                                className="flex items-center text-sm text-muted-foreground"
+                                className="flex items-center text-xs text-muted-foreground"
                               >
                                 <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
                                 {feature}
@@ -423,11 +375,7 @@ export default function ProfessorDashboard() {
                         )}
                         {action.activities && (
                           <div className="mb-4">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Access the gym schedule to view monthly fitness
-                              sessions and book your preferred time slots.
-                            </p>
-                            <p className="text-sm font-medium mb-3">
+                            <p className="text-xs font-medium mb-2 text-muted-foreground">
                               Available Sessions:
                             </p>
                             <div className="flex flex-wrap gap-2">

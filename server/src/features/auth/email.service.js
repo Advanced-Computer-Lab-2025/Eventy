@@ -615,7 +615,7 @@ export const sendGymSessionUpdateEmail = async (
                         `
                             : `
                         <tr>
-                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                          <td style="padding: 10px 0; font-size: 14px, color: #718096; font-weight: 600;">
                             Time:
                           </td>
                           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${newSession.startTime}</td>
@@ -832,7 +832,6 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
           <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${
             application.durationWeeks
           } week${application.durationWeeks > 1 ? "s" : ""}</td>
-          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}</td>
         </tr>
     `;
   }
@@ -982,7 +981,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
 };
 
 /**
- * Send QR codes for all registered visitors to the vendor
+ * Send QR codes for all registered visitors(attendees) to the vendor
  * @param {Object} application - Application object (populated with createdBy and event)
  * @param {Object} vendor - Vendor user object
  * @param {Object|null} event - Event object or null for platform booth
@@ -2075,5 +2074,442 @@ export const sendVendorPaymentReceipt = async (
       error?.message || error
     );
     // Don't throw - log error but don't fail the payment confirmation
+  }
+};
+
+/**
+ * Send workshop attendance certificate email to a participant
+ * @param {Object} attendee - Attendee user object with email, name/firstName/lastName, and role
+ * @param {Object} workshop - Workshop event object with name, startDate, endDate, professors, etc.
+ */
+export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
+  try {
+    // Add title prefix for professors
+    const namePrefix =
+      attendee?.role?.toLowerCase() === "professor" ? "Professor " : "";
+    const displayName =
+      (
+        attendee?.name ||
+        [attendee?.firstName, attendee?.lastName].filter(Boolean).join(" ")
+      ).trim() || "Participant";
+    const fullDisplayName = namePrefix + displayName;
+
+    const attendeeEmail = attendee?.email;
+    if (!attendeeEmail) {
+      console.error("❌ Attendee email not found");
+      return;
+    }
+
+    // Format workshop dates
+    const startDate = new Date(workshop.startDate).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+    const endDate = new Date(workshop.endDate).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+
+    // Get professor names
+    const professorNames =
+      workshop.professors && workshop.professors.length > 0
+        ? workshop.professors
+            .map(
+              (prof) =>
+                prof?.name ||
+                [prof?.firstName, prof?.lastName].filter(Boolean).join(" ")
+            )
+            .join(", ")
+        : "N/A";
+
+    // Path to logo image
+    const logoPath = path.resolve(
+      __dirname,
+      "../../../../client/public/images/logo-light.png"
+    );
+
+    const mailOptions = {
+      from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+      to: attendeeEmail,
+      subject: `Certificate of Attendance - ${workshop.name}`,
+      html: `
+        <!DOCTYPE html>
+        <html lang="en">
+        <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Certificate of Attendance</title>
+        </head>
+        <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+          <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+            <tr>
+              <td align="center" style="padding: 40px 20px;">
+                <table role="presentation" style="max-width: 700px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                  
+                  <!-- Header with Logo and Gradient -->
+                  <tr>
+                    <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                      <img src="cid:logo" alt="Eventy Logo" style="height: 120px; width: auto; display: block; margin: 0 auto 20px;" />
+                      <div style="margin-top: 20px; padding: 10px 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                        <h1 style="margin: 0; font-size: 18px; font-weight: 700; color: #92400e; line-height: 1.2;">
+                          🎓 Certificate of Attendance
+                        </h1>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                  <!-- Certificate Content -->
+                  <tr>
+                    <td style="padding: 50px 40px;">
+                      
+                      <!-- Congratulatory Message at Top -->
+                      <div style="margin-bottom: 32px; padding: 20px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 8px; border-left: 4px solid #10b981;">
+                        <p style="margin: 0; font-size: 15px; color: #065f46; line-height: 1.6; text-align: center;">
+                          <strong>Congratulations!</strong> Your commitment to professional development is commendable. We hope this workshop has enriched your knowledge and skills.
+                        </p>
+                      </div>
+                      
+                      <!-- Decorative Border -->
+                      <div style="border: 4px solid #6366f1; border-radius: 12px; padding: 40px 30px; background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%); box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.05);">
+                        
+                        <h2 style="margin: 0 0 24px; font-size: 22px; font-weight: 700; color: #1f2937; text-align: center; letter-spacing: 0.5px; text-transform: uppercase;">
+                          This Certifies That
+                        </h2>
+                        
+                        <!-- Attendee Name - Large and Prominent -->
+                        <div style="margin: 32px 0; text-align: center; padding: 24px 20px; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-radius: 8px; border-left: 4px solid #6366f1;">
+                          <h3 style="margin: 0; font-size: 32px; font-weight: 700; color: #4338ca; font-family: Georgia, serif; letter-spacing: 1px;">
+                            ${fullDisplayName}
+                          </h3>
+                        </div>
+                        
+                        <p style="margin: 24px 0; font-size: 16px; line-height: 1.8; color: #374151; text-align: center;">
+                          has successfully attended and completed
+                        </p>
+                        
+                        <!-- Workshop Name - Highlighted -->
+                        <div style="margin: 24px 0; text-align: center; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 8px; border-left: 4px solid #f59e0b;">
+                          <h4 style="margin: 0; font-size: 24px; font-weight: 700; color: #92400e; font-family: Georgia, serif;">
+                            ${workshop.name}
+                          </h4>
+                        </div>
+                        
+                        <!-- Workshop Details -->
+                        <div style="margin: 32px 0; padding: 24px; background-color: #f9fafb; border-radius: 8px; border: 1px solid #e5e7eb;">
+                          <table style="width: 100%; border-collapse: collapse;">
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 14px; color: #6b7280; font-weight: 600;">
+                                Workshop Duration:
+                              </td>
+                              <td style="padding: 10px 0; font-size: 15px; color: #1f2937; text-align: right;">
+                                ${startDate} - ${endDate}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 14px; color: #6b7280; font-weight: 600;">
+                                Location:
+                              </td>
+                              <td style="padding: 10px 0; font-size: 15px; color: #1f2937; text-align: right;">
+                                ${workshop.location || "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 14px; color: #6b7280; font-weight: 600;">
+                                Faculty:
+                              </td>
+                              <td style="padding: 10px 0; font-size: 15px; color: #1f2937; text-align: right;">
+                                ${workshop.faculty || "N/A"}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 14px; color: #6b7280; font-weight: 600;">
+                                Instructors:
+                              </td>
+                              <td style="padding: 10px 0; font-size: 15px; color: #1f2937; text-align: right;">
+                                ${professorNames}
+                              </td>
+                            </tr>
+                            <tr>
+                              <td style="padding: 10px 0; font-size: 14px; color: #6b7280; font-weight: 600;">
+                                Issued Date:
+                              </td>
+                              <td style="padding: 10px 0; font-size: 15px; color: #1f2937; text-align: right;">
+                                ${new Date().toLocaleDateString("en-US", {
+                                  year: "numeric",
+                                  month: "long",
+                                  day: "numeric",
+                                })}
+                              </td>
+                            </tr>
+                          </table>
+                        </div>
+                        
+                        <!-- Signature Section -->
+                        <div style="margin-top: 40px; padding-top: 24px; border-top: 2px solid #e5e7eb; text-align: center;">
+                          <p style="margin: 0 0 8px; font-size: 14px; color: #6b7280; font-weight: 600;">
+                            Issued by
+                          </p>
+                          <p style="margin: 0; font-size: 18px; font-weight: 700; color: #1f2937; font-family: Georgia, serif;">
+                            Eventy Platform
+                          </p>
+                          <p style="margin: 4px 0 0; font-size: 13px; color: #9ca3af;">
+                            Campus Event Management System
+                          </p>
+                        </div>
+                        
+                      </div>
+                      
+                      <!-- Action Button -->
+                      <table role="presentation" style="width: 100%; margin: 32px 0;">
+                        <tr>
+                          <td align="center">
+                            <a href="http://localhost:5000/my-events" 
+                               style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4); border: 1px solid rgba(99, 102, 241, 0.2); line-height: 20px;">
+                              View My Events
+                            </a>
+                          </td>
+                        </tr>
+                      </table>
+                      
+                    </td>
+                  </tr>
+                  
+                  <!-- Footer -->
+                  <tr>
+                    <td style="background-color: #f9fafb; padding: 32px 40px; border-top: 1px solid #e5e7eb;">
+                      <p style="margin: 0 0 16px; font-size: 13px; color: #6b7280; line-height: 1.6; text-align: center;">
+                        This is an official certificate of attendance. Please save this email for your records.
+                      </p>
+                      <div style="text-align: center; margin: 20px 0;">
+                        <p style="margin: 0; font-size: 12px; color: #9ca3af;">
+                          © 2025 Eventy Platform. All rights reserved.
+                        </p>
+                        <p style="margin: 8px 0 0; font-size: 11px; color: #d1d5db;">
+                          Campus Event Management System
+                        </p>
+                      </div>
+                    </td>
+                  </tr>
+                  
+                </table>
+              </td>
+            </tr>
+          </table>
+        </body>
+        </html>
+      `,
+      replyTo: process.env.EMAIL_USER,
+      attachments: [
+        {
+          filename: "logo-light.png",
+          path: logoPath,
+          cid: "logo",
+        },
+      ],
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    console.log(
+      `✅ Workshop certificate sent to ${attendeeEmail} for workshop "${workshop.name}":`,
+      {
+        messageId: info?.messageId,
+        accepted: info?.accepted,
+        rejected: info?.rejected,
+        workshopName: workshop.name,
+        attendeeName: fullDisplayName,
+      }
+    );
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      `❌ Error sending certificate email to ${attendee?.email}:`,
+      error?.message || error
+    );
+    return false;
+  }
+};
+
+/**
+ * Send comment deletion warning email to user
+ * @param {Object} params - Email parameters
+ * @param {string} params.userName - Full name of the user
+ * @param {string} params.userEmail - User's email address
+ * @param {string} params.eventName - Name of the event
+ * @param {string} params.commentBody - The deleted comment text
+ */
+export const sendCommentDeletionWarning = async ({
+  userName,
+  userEmail,
+  eventName,
+  commentBody,
+}) => {
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: userEmail,
+    subject: "⚠️ Comment Removed - Content Policy Violation",
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Comment Removed</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Warning Badge -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #991b1b; line-height: 1.2;">
+                        ⚠️ Comment Removed
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Dear ${userName},
+                    </h2>
+                    
+                    <!-- Warning Box -->
+                    <div style="background-color: #fef2f2; border-left: 4px solid #dc2626; padding: 20px; margin: 24px 0; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 15px; color: #991b1b; line-height: 1.6; font-weight: 600;">
+                        ⚠️ Warning: One of your comments has been removed by our admin team for violating our community guidelines.
+                      </p>
+                    </div>
+                    
+                    <!-- Event Info -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 20px; margin: 32px 0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <p style="margin: 0 0 8px; font-size: 14px; color: #718096; font-weight: 600;">
+                        Event:
+                      </p>
+                      <p style="margin: 0; font-size: 16px; color: #1a202c; font-weight: 700;">
+                        ${eventName}
+                      </p>
+                    </div>
+                    
+                    <!-- Deleted Comment Box -->
+                    <div style="background-color: #ffffff; border: 2px solid #fca5a5; border-radius: 8px; padding: 20px; margin: 24px 0;">
+                      <p style="margin: 0 0 12px; font-size: 13px; color: #991b1b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        Your Comment:
+                      </p>
+                      <p style="margin: 0; font-size: 15px; color: #6b7280; font-style: italic; line-height: 1.6; padding: 12px; background-color: #f9fafb; border-radius: 4px;">
+                        "${commentBody}"
+                      </p>
+                    </div>
+                    
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <!-- Guidelines -->
+                    <h3 style="margin: 0 0 16px; font-size: 18px; font-weight: 700; color: #1a202c;">
+                      Community Guidelines
+                    </h3>
+                    <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      Please ensure your future comments comply with our community standards:
+                    </p>
+                    <ul style="margin: 0 0 24px; padding-left: 24px; font-size: 15px; line-height: 1.8; color: #4a5568;">
+                      <li style="margin-bottom: 8px;">Be respectful and courteous to others</li>
+                      <li style="margin-bottom: 8px;">Avoid offensive or inappropriate language</li>
+                      <li style="margin-bottom: 8px;">Stay on topic and provide constructive feedback</li>
+                      <li style="margin-bottom: 8px;">Do not spam or post promotional content</li>
+                    </ul>
+                    
+                    <!-- Important Notice -->
+                    <div style="background-color: #fff5f5; border-left: 4px solid #ef4444; padding: 16px; margin: 24px 0; border-radius: 4px;">
+                      <p style="margin: 0; font-size: 14px; color: #991b1b; line-height: 1.5;">
+                        <strong>Important:</strong> Repeated violations may result in account restrictions or suspension.
+                      </p>
+                    </div>
+                    
+                   
+                    <!-- Divider -->
+                    <div style="margin: 32px 0; border-top: 1px solid #e2e8f0;"></div>
+                    
+                    <p style="margin: 24px 0 0; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      If you believe this was a mistake, please contact our support team at <a href="mailto:${process.env.EMAIL_USER}" style="color: #667eea; text-decoration: underline; font-weight: 600;">${process.env.EMAIL_USER}</a>.
+                    </p>
+                    
+                    <p style="margin: 20px 0 0; font-size: 15px; line-height: 1.6; color: #4a5568;">
+                      Best regards,<br>
+                      <strong>The Eventy Team</strong>
+                    </p>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="background-color: #f7fafc; padding: 32px 40px; border-top: 1px solid #e2e8f0;">
+                    <p style="margin: 0 0 16px; font-size: 13px; color: #718096; line-height: 1.6; text-align: center;">
+                      This is an automated message. Please do not reply to this email.
+                    </p>
+                    <div style="text-align: center; margin: 20px 0;">
+                      <p style="margin: 0; font-size: 12px; color: #a0aec0;">
+                        © ${new Date().getFullYear()} Eventy Platform. All rights reserved.
+                      </p>
+                      <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
+                        Campus Event Management System
+                      </p>
+                    </div>
+                  </td>
+                </tr>
+                
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    replyTo: process.env.EMAIL_USER,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`✅ Comment deletion warning email sent to ${userEmail}:`, {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      `❌ Error sending comment deletion warning email to ${userEmail}:`,
+      error?.message || error
+    );
+    return false;
   }
 };

@@ -102,6 +102,11 @@ export default function Header({
           )}
 
           <div className="flex items-center gap-2">
+            {user?.firstName && (
+              <span className="hidden md:inline-block text-sm font-medium text-foreground">
+                {user.firstName}
+              </span>
+            )}
             <Button
               variant="ghost"
               size="icon"
