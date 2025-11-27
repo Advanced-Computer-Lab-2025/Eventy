@@ -69,7 +69,6 @@ function Router() {
             "staff",
             "ta",
             "professor",
-            "vendor",
           ]}
         >
           <AdminRatings />

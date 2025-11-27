@@ -1,12 +1,4 @@
-import {
-  Bell,
-  Home,
-  Store,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Star,
-} from "lucide-react";
+import { Bell, Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -156,16 +148,6 @@ export default function VendorHeader({
           >
             <Gift className="h-4 w-4" />
             Loyalty Program
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-2`}
-            onClick={() => handleTabClick("ratings")}
-            data-testid="button-nav-ratings"
-          >
-            <Star className="h-4 w-4" />
-            Ratings
           </Button>
         </div>
       </div>
