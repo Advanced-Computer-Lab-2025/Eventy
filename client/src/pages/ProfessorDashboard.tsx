@@ -10,7 +10,6 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
-  ArrowUpDown,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
@@ -24,14 +23,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 
 interface Workshop {
@@ -362,24 +355,7 @@ export default function ProfessorDashboard() {
                     filters={filters}
                   />
                 </div>
-                <div className="flex items-center gap-2">
-                  <ArrowUpDown className="h-4 w-4" />
-                  <span className="text-sm font-semibold">Sort:</span>
-                  <Select
-                    value={sortOrder}
-                    onValueChange={(value: "asc" | "desc") =>
-                      setSortOrder(value)
-                    }
-                  >
-                    <SelectTrigger className="w-40">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="asc">Earliest First</SelectItem>
-                      <SelectItem value="desc">Latest First</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />
               </div>
 
               {loading ? (

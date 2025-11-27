@@ -5,6 +5,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { ArrowUpDown } from "lucide-react";
 
 interface EventSortProps {
   sortOrder: "asc" | "desc";
@@ -18,13 +19,14 @@ export default function EventSort({
   className = "",
 }: EventSortProps) {
   return (
-    <div className={`w-44 ${className}`}>
-      <label className="sr-only">Sort events</label>
+    <div className={`flex items-center gap-2 ${className}`}>
+      <ArrowUpDown className="h-4 w-4" />
+      <span className="text-sm font-semibold">Sort:</span>
       <Select
         value={sortOrder}
         onValueChange={(value) => onSortChange(value as "asc" | "desc")}
       >
-        <SelectTrigger>
+        <SelectTrigger className="w-40">
           <SelectValue placeholder="Sort" />
         </SelectTrigger>
         <SelectContent>
