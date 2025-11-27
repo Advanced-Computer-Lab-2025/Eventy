@@ -157,6 +157,7 @@ export default function ApplicationPaymentDialog({
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [actualFee, setActualFee] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Load Stripe publishable key and initialize Stripe
@@ -196,6 +197,10 @@ export default function ApplicationPaymentDialog({
         if (result.clientSecret) {
           setClientSecret(result.clientSecret);
         }
+        // Use the actual amount from the transaction returned by the backend
+        if (result.transaction?.amount !== undefined) {
+          setActualFee(result.transaction.amount);
+        }
       } catch (error) {
         const errorMessage =
           error instanceof Error
@@ -216,11 +221,12 @@ export default function ApplicationPaymentDialog({
 
   const handleClose = () => {
     setClientSecret(null);
+    setActualFee(null);
     onOpenChange(false);
   };
 
-  // Calculate fee (this should match the backend calculation)
-  const estimatedFee = application.type === "booth" ? 50 : 60;
+  // Use actual fee from backend, fallback to a simple estimate if not available yet
+  const estimatedFee = actualFee ?? (application.type === "booth" ? 50 : 60);
 
   const { theme } = useTheme();
 
