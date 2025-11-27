@@ -101,12 +101,17 @@ export default function AdminRatings() {
             });
 
             setEvents(eventsWithFeedback as EventItem[]);
-            if (eventsWithFeedback.length > 0)
-              setSelectedEvent((prev) => {
-                const next = eventsWithFeedback[0].id;
-                if (!prev) setDialogOpen(true);
-                return next;
-              });
+            setSelectedEvent((prev) => {
+              if (
+                prev &&
+                eventsWithFeedback.some(
+                  (eventWithFeedback) => eventWithFeedback.id === prev
+                )
+              ) {
+                return prev;
+              }
+              return null;
+            });
           })
           .catch(() => {
             setEvents([]);
