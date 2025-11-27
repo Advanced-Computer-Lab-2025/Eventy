@@ -10,6 +10,7 @@ import {
   Filter,
 } from "lucide-react";
 import AdminHeader from "@/components/AdminHeader";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -58,6 +59,7 @@ interface User {
 }
 
 export default function AdminUsers() {
+  const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -111,10 +113,21 @@ export default function AdminUsers() {
         }
       );
       setError(null);
+      toast({
+        title: action === "block" ? "User Blocked" : "User Unblocked",
+        description: `User has been successfully ${action === "block" ? "blocked" : "unblocked"}.`,
+      });
       fetchUsers(); // Refresh the users list
     } catch (error: any) {
       console.error(`${action} error:`, error);
-      setError(error.response?.data?.message || `Failed to ${action} user`);
+      const errorMsg =
+        error.response?.data?.message || `Failed to ${action} user`;
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
     }
   };
 
@@ -127,20 +140,30 @@ export default function AdminUsers() {
       });
       setUserToDelete(null);
       setError(null);
+      toast({
+        title: "User Deleted",
+        description: "User account has been successfully deleted.",
+      });
       fetchUsers();
     } catch (error: any) {
       console.error("Delete error:", error);
       console.error("Error response:", error.response?.data);
 
+      let errorMsg;
       if (error.response?.status === 403) {
-        setError("You cannot delete your own account");
+        errorMsg = "You cannot delete your own account";
       } else {
-        setError(
+        errorMsg =
           error.response?.data?.message ||
-            error.message ||
-            "Failed to delete user"
-        );
+          error.message ||
+          "Failed to delete user";
       }
+      setError(errorMsg);
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
       setUserToDelete(null);
     }
   };
@@ -579,6 +602,11 @@ export default function AdminUsers() {
           <CreatePrivilegedUserForm
             onSuccess={() => {
               setShowCreateDialog(false);
+              toast({
+                title: "Account Created",
+                description:
+                  "Management account has been successfully created.",
+              });
               fetchUsers();
             }}
             onCancel={() => setShowCreateDialog(false)}
