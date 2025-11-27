@@ -25,6 +25,13 @@ const updateSharedFavorites = (favorites: FavoriteEvent[]) => {
   notifyListeners();
 };
 
+// Add this reset function at the module level
+export const resetFavoritesCache = () => {
+  sharedFavorites = [];
+  isFetching = false;
+  updateSharedFavorites([]);
+};
+
 export const useFavorites = () => {
   const [favorites, setFavorites] = useState<FavoriteEvent[]>(sharedFavorites);
   const [initialLoading, setInitialLoading] = useState<boolean>(true);

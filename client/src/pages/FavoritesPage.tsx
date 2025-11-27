@@ -28,6 +28,21 @@ export default function FavoritesPage() {
     }
   }, []);
 
+  // Get dashboard route based on user role
+  const getDashboardRoute = () => {
+    switch (userRole?.toLowerCase()) {
+      case "professor":
+        return "/professor";
+      case "staff":
+      case "ta":
+        return "/staff-ta";
+      case "student":
+        return "/home";
+      default:
+        return "/home";
+    }
+  };
+
   const renderHeader = () => {
     switch (userRole) {
       case "professor":
@@ -130,12 +145,9 @@ export default function FavoritesPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="h-8 w-8 text-red-500 fill-current" />
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-              My Favorites
-            </h1>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">
+            My Favorites
+          </h1>
           <p className="text-muted-foreground text-lg">
             {favorites.length > 0
               ? `You have ${favorites.length} favorite event${favorites.length !== 1 ? "s" : ""}`
@@ -157,7 +169,7 @@ export default function FavoritesPage() {
                 Start exploring events and save your favorites to see them here.
               </p>
               <Button size="lg" className="w-full" asChild>
-                <Link to="/events">Browse Events</Link>
+                <Link to={getDashboardRoute()}>Browse Events</Link>
               </Button>
             </CardContent>
           </Card>
@@ -198,6 +210,8 @@ export default function FavoritesPage() {
                   price={event.price}
                   showActions={true}
                   showDetailedView={false}
+                  showAttendees={false}
+                  showRegisterButton={false}
                   onViewDetails={() => setLocation(`/events/${event._id}`)}
                 />
               );
