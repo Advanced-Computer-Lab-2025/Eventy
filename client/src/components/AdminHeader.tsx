@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
 export default function AdminHeader() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -56,7 +56,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-dashboard"
             onClick={() => setLocation("/admin")}
           >
@@ -66,7 +66,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/users" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-users"
             onClick={() => setLocation("/admin/users")}
           >
@@ -76,7 +76,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-ratings"
             onClick={() => setLocation("/admin/ratings")}
           >
@@ -86,7 +86,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/reports/attendees" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-attendees-report"
             onClick={() => setLocation("/reports/attendees")}
           >
@@ -96,7 +96,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/reports/sales" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/reports/sales")}
             data-testid="button-nav-sales-reports"
           >
@@ -106,7 +106,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >
