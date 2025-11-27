@@ -87,6 +87,7 @@ export interface EventCardProps {
   vendors?: Vendor[];
   showActions?: boolean;
   showDetailedView?: boolean;
+  showAttendees?: boolean;
   isRegistered?: boolean;
   onRegister?: () => void;
   status?: string;
@@ -119,6 +120,7 @@ export default function EventCard({
   vendors = [],
   showActions = true,
   showDetailedView = false,
+  showAttendees = true,
   onRegister,
   onSave,
   onShare,
@@ -264,29 +266,32 @@ export default function EventCard({
                   </div>
                 )}
 
-                {/* Attendees and Registration Deadline - Same Line */}
-                <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
-                  <div className="flex items-center">
-                    <Users className="mr-2 h-4 w-4 flex-shrink-0" />
-                    <span>
-                      {attendees} attendee{attendees !== 1 ? "s" : ""}
-                    </span>
-                  </div>
+                {(showAttendees || registrationDeadline) && (
+                  <div className="flex items-center gap-6 text-muted-foreground flex-wrap">
+                    {showAttendees && (
+                      <div className="flex items-center">
+                        <Users className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span>
+                          {attendees} attendee{attendees !== 1 ? "s" : ""}
+                        </span>
+                      </div>
+                    )}
 
-                  {registrationDeadline && (
-                    <div className="flex items-center">
-                      <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>
-                        Deadline: {formatDate(registrationDeadline)}
-                        {new Date() > new Date(registrationDeadline) && (
-                          <span className="text-red-500 font-semibold ml-2">
-                            (Closed)
-                          </span>
-                        )}
-                      </span>
-                    </div>
-                  )}
-                </div>
+                    {registrationDeadline && (
+                      <div className="flex items-center">
+                        <Clock className="mr-2 h-4 w-4 flex-shrink-0" />
+                        <span>
+                          Deadline: {formatDate(registrationDeadline)}
+                          {new Date() > new Date(registrationDeadline) && (
+                            <span className="text-red-500 font-semibold ml-2">
+                              (Closed)
+                            </span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Vendors Section for Bazaar only (not platform booths) */}
@@ -479,10 +484,12 @@ export default function EventCard({
                 <MapPin className="h-4 w-4" />
                 <span className="line-clamp-1">{location}</span>
               </div>
-              <div className="flex items-center gap-1">
-                <Users className="h-4 w-4" />
-                <span>{attendees}</span>
-              </div>
+              {showAttendees && (
+                <div className="flex items-center gap-1">
+                  <Users className="h-4 w-4" />
+                  <span>{attendees}</span>
+                </div>
+              )}
             </div>
 
             {/* Vendors section - compact view (bazaar only, not platform booths) */}

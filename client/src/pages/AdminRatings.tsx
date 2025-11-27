@@ -1,9 +1,8 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
 import EventCard from "@/components/EventCard";
+import type { EventCategory } from "@/components/CategoryBadge";
 import {
   Dialog,
   DialogContent,
@@ -24,6 +23,9 @@ interface EventItem {
   title?: string;
   name?: string;
   type?: string;
+  category?: EventCategory | string;
+  startDate?: string;
+  location?: string;
 }
 
 interface RatingItem {
@@ -73,6 +75,9 @@ export default function AdminRatings() {
           .map((e: any) => ({
             id: e._id || e.id,
             title: e.title || e.name || `Event ${e._id || e.id}`,
+            category: e.eventType || e.type || "academic",
+            startDate: e.startDate,
+            location: e.location,
           }))
           .filter((m: any) => {
             if (!m.id) return false;
@@ -217,11 +222,27 @@ export default function AdminRatings() {
               <EventCard
                 id={ev.id}
                 title={ev.title || `Event ${ev.id}`}
-                category="academic"
-                date=""
-                time=""
-                location=""
+                category={(ev.category as EventCategory) || "academic"}
+                date={
+                  ev.startDate
+                    ? new Date(ev.startDate).toLocaleDateString(undefined, {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                      })
+                    : "Date TBA"
+                }
+                time={
+                  ev.startDate
+                    ? new Date(ev.startDate).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    : ""
+                }
+                location={ev.location || "Location TBA"}
                 attendees={0}
+                showAttendees={false}
                 showActions={false}
                 className={selectedEvent === ev.id ? "ring-2 ring-primary" : ""}
               />
