@@ -144,7 +144,8 @@ export default function EventCard({
   showActions = true,
   showDetailedView = false,
   showAttendees = true,
-  showRegisterButton = true, // ✅ Default to true
+  showRegisterButton = true,
+  hideRegisterButton = false,
   onRegister,
   onSave,
   onShare,
@@ -636,7 +637,10 @@ export default function EventCard({
                       Registered
                     </Button>
                   )
-                ) : isRegisterable && isBeforeDeadline ? (
+                ) : showRegisterButton &&
+                  !hideRegisterButton &&
+                  isRegisterable &&
+                  isBeforeDeadline ? (
                   <Button
                     className="flex-1"
                     onClick={() =>
@@ -845,6 +849,8 @@ export default function EventCard({
                       </>
                     )
                   ) : (
+                    showRegisterButton &&
+                    !hideRegisterButton &&
                     isRegisterable &&
                     isBeforeDeadline && (
                       <Button
