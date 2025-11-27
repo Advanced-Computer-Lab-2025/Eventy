@@ -635,7 +635,8 @@ export const searchEvents = async ({
         // to avoid crashing consumer code; simply return an empty list
         return [];
       }
-      const profValue = mongoose.Types.ObjectId(profStr);
+      const profValue = new mongoose.Types.ObjectId(profStr);
+
       // Only filter for workshops and conferences when using professor filter
       filter.$and.push({ eventType: { $in: ["workshop", "conference"] } });
       filter.$and.push({ professors: { $in: [profValue] } });
