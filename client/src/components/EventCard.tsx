@@ -176,7 +176,7 @@ export default function EventCard({
     : String(category);
   const imageSrc = image || getEventImage(eventTypeForImage, title);
 
-  const requiresPayment = ["conference", "workshop"].includes(
+  const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
   );
 
