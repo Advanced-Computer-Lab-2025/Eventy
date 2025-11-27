@@ -49,6 +49,8 @@ export default function StaffUpcomingEvents() {
     startDate: "",
     endDate: "",
     professor: "",
+    showUpcoming: true,
+    showPast: true,
   });
   const { toast } = useToast();
 
@@ -248,6 +250,7 @@ export default function StaffUpcomingEvents() {
                       ? professorOptions
                       : computedProfessorOptions
                   }
+                  userRole=""
                 />
               </div>
             </aside>

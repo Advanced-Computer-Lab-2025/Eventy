@@ -52,6 +52,8 @@ export default function Home() {
     startDate: "",
     endDate: "",
     professor: "",
+    showUpcoming: true,
+    showPast: true,
   });
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
@@ -241,6 +243,7 @@ export default function Home() {
                       ? professorOptions
                       : computedProfessorOptions
                   }
+                  userRole=""
                 />
               </div>
             </aside>

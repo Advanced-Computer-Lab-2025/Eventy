@@ -18,14 +18,9 @@ import {
   Plane,
   Archive,
   FileText,
-  SlidersHorizontal,
   Users,
   PieChart as PieChartIcon,
-  MapPin,
-  User,
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   PieChart,
   Pie,
@@ -49,19 +44,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
@@ -93,6 +82,7 @@ export default function EventsOfficeDashboard() {
   const [showWorkshopNotif, setShowWorkshopNotif] = useState(false);
   const [reminderTime, setReminderTime] = useState<NodeJS.Timeout | null>(null);
   const existingRef = useRef<HTMLDivElement | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [upcomingError, setUpcomingError] = useState("");
@@ -110,8 +100,6 @@ export default function EventsOfficeDashboard() {
   const [pastEventSearch, setPastEventSearch] = useState("");
 
   // Combined filter states
-  const [showUpcoming, setShowUpcoming] = useState(true);
-  const [showPast, setShowPast] = useState(true);
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([
     "bazaar",
     "trip",
@@ -122,14 +110,18 @@ export default function EventsOfficeDashboard() {
   const [eventSearch, setEventSearch] = useState("");
   const [displayLimit, setDisplayLimit] = useState(12);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const [selectedType, setSelectedType] = useState("all");
-  const [selectedLocation, setSelectedLocation] = useState("all");
-  const [selectedStartDate, setSelectedStartDate] = useState("");
-  const [selectedEndDate, setSelectedEndDate] = useState("");
-  const [selectedProfessor, setSelectedProfessor] = useState("all");
   const [professorOptions, setProfessorOptions] = useState<
     { id: string; name: string }[]
   >([]);
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+    showUpcoming: true,
+    showPast: true,
+  });
 
   // Extra totals
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
@@ -151,7 +143,7 @@ export default function EventsOfficeDashboard() {
 
     const matchesType =
       selectedEventTypes.includes(event.eventType) &&
-      (selectedType === "all" || event.eventType === selectedType);
+      (filters.eventType === "all" || event.eventType === filters.eventType);
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
@@ -175,26 +167,27 @@ export default function EventsOfficeDashboard() {
     }
 
     const matchesTimeFilter =
-      (showUpcoming && isUpcoming) || (showPast && isPast);
+      ((filters.showUpcoming ?? true) && isUpcoming) ||
+      ((filters.showPast ?? true) && isPast);
 
     const matchesLocation =
-      selectedLocation === "all" || event.location === selectedLocation;
+      filters.location === "all" || event.location === filters.location;
 
     const eventStart = event.startDate ? new Date(event.startDate) : null;
     const eventEnd = event.endDate ? new Date(event.endDate) : null;
     const matchesDateRange =
-      (!selectedStartDate ||
+      (!filters.startDate ||
         !eventStart ||
-        eventStart >= new Date(selectedStartDate)) &&
-      (!selectedEndDate || !eventEnd || eventEnd <= new Date(selectedEndDate));
+        eventStart >= new Date(filters.startDate)) &&
+      (!filters.endDate || !eventEnd || eventEnd <= new Date(filters.endDate));
 
     // Professor filter: if a specific professor is selected, only include workshops/conferences with that professor
-    if (selectedProfessor && selectedProfessor !== "all") {
+    if (filters.professor && filters.professor !== "") {
       if (event.eventType !== "workshop" && event.eventType !== "conference")
         return false;
       const profs = (event as any).professors || [];
       const profIds = profs.map((p: any) => String(p._id || p.id || p));
-      if (!profIds.includes(String(selectedProfessor))) return false;
+      if (!profIds.includes(String(filters.professor))) return false;
     }
 
     return (
@@ -213,8 +206,6 @@ export default function EventsOfficeDashboard() {
   };
 
   const handleClearFilters = () => {
-    setShowUpcoming(true);
-    setShowPast(true);
     setSelectedEventTypes([
       "bazaar",
       "trip",
@@ -223,11 +214,6 @@ export default function EventsOfficeDashboard() {
       "platform_booth",
     ]);
     setEventSearch("");
-    setSelectedType("all");
-    setSelectedLocation("all");
-    setSelectedStartDate("");
-    setSelectedEndDate("");
-    setSelectedProfessor("all");
     setDisplayLimit(12);
   };
 
@@ -601,6 +587,13 @@ export default function EventsOfficeDashboard() {
   };
 
   useEffect(() => {
+    // Get user role from localStorage
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setUserRole(userData.role || "");
+    }
+
     fetchBazaars();
     fetchPendingWorkshops();
     fetchPastEvents();
@@ -687,7 +680,7 @@ export default function EventsOfficeDashboard() {
   // Reset display limit when filters change
   useEffect(() => {
     setDisplayLimit(12);
-  }, [showUpcoming, showPast, selectedEventTypes, eventSearch]);
+  }, [filters, selectedEventTypes, eventSearch]);
 
   // Prepare bazaars for BazaarList component (adds required fields and sane defaults)
   const formattedBazaars = bazaars.map((b) => ({
@@ -1269,181 +1262,23 @@ export default function EventsOfficeDashboard() {
             {/* Left Sidebar - Filters */}
             <aside className="lg:w-72 flex-shrink-0">
               <div className="sticky top-32">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <SlidersHorizontal className="h-5 w-5" />
-                      Filters
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Time Period Filter */}
-                    <div className="space-y-3">
-                      <div className="text-sm font-semibold">Time Period</div>
-                      {!showUpcoming && !showPast && (
-                        <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
-                          <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 font-medium">
-                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span>Select at least one time period</span>
-                          </p>
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="filter-upcoming"
-                            checked={showUpcoming}
-                            onCheckedChange={(checked) =>
-                              setShowUpcoming(checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor="filter-upcoming"
-                            className="cursor-pointer text-sm"
-                          >
-                            Upcoming Events
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="filter-past"
-                            checked={showPast}
-                            onCheckedChange={(checked) =>
-                              setShowPast(checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor="filter-past"
-                            className="cursor-pointer text-sm"
-                          >
-                            Past Events
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Event Type Filter */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <SlidersHorizontal className="h-4 w-4" />
-                        Event Type
-                      </div>
-                      <Select
-                        value={selectedType}
-                        onValueChange={setSelectedType}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select event type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Types</SelectItem>
-                          <SelectItem value="bazaar">Bazaars</SelectItem>
-                          <SelectItem value="conference">
-                            Conferences
-                          </SelectItem>
-                          <SelectItem value="trip">Trips</SelectItem>
-                          <SelectItem value="workshop">Workshops</SelectItem>
-                          <SelectItem value="platform_booth">
-                            Platform Booths
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Location Filter */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <MapPin className="h-4 w-4" />
-                        Location
-                      </div>
-                      <Select
-                        value={selectedLocation}
-                        onValueChange={setSelectedLocation}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">All Locations</SelectItem>
-                          {Array.from(
-                            new Set(
-                              combinedEvents
-                                .filter((event) => event)
-                                .map(
-                                  (event) =>
-                                    event.location || event.locationPreference
-                                )
-                                .filter((loc) => !!loc)
-                            )
-                          ).map((location) => (
-                            <SelectItem key={location} value={location}>
-                              {location}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {/* Date Range Filter */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <Calendar className="h-4 w-4" />
-                        Date Range
-                      </div>
-                      <div className="space-y-2">
-                        <Input
-                          type="date"
-                          value={selectedStartDate}
-                          onChange={(e) => setSelectedStartDate(e.target.value)}
-                          placeholder="Start date"
-                        />
-                        <Input
-                          type="date"
-                          value={selectedEndDate}
-                          onChange={(e) => setSelectedEndDate(e.target.value)}
-                          placeholder="End date"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Professor Filter */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-sm font-semibold">
-                        <User className="h-4 w-4" />
-                        Professor
-                      </div>
-                      <div>
-                        <Select
-                          value={selectedProfessor}
-                          onValueChange={(value) => setSelectedProfessor(value)}
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="All professors" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">All professors</SelectItem>
-                            {professorOptions.map((p) => (
-                              <SelectItem key={p.id} value={p.id}>
-                                {p.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleClearFilters();
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </CardContent>
-                </Card>
+                <EventFilters
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  locations={Array.from(
+                    new Set(
+                      combinedEvents
+                        .filter((event) => event)
+                        .map(
+                          (event) => event.location || event.locationPreference
+                        )
+                        .filter((loc) => !!loc)
+                    )
+                  )}
+                  professors={professorOptions}
+                  userRole={userRole}
+                  onClear={handleClearFilters}
+                />
               </div>
             </aside>
 

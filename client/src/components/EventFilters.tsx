@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -15,6 +17,7 @@ import {
   SlidersHorizontal,
   ArrowUpDown,
   User,
+  AlertCircle,
 } from "lucide-react";
 
 const eventTypes = [
@@ -32,6 +35,8 @@ export interface EventFilterState {
   startDate: string;
   professor?: string;
   endDate: string;
+  showUpcoming?: boolean;
+  showPast?: boolean;
 }
 
 interface EventFiltersProps {
@@ -41,6 +46,8 @@ interface EventFiltersProps {
   professors?: { id: string; name: string }[];
   sortOrder?: "asc" | "desc";
   onSortChange?: (order: "asc" | "desc") => void;
+  userRole?: string;
+  onClear?: () => void;
 }
 
 export default function EventFilters({
@@ -50,6 +57,8 @@ export default function EventFilters({
   professors = [],
   sortOrder,
   onSortChange,
+  userRole,
+  onClear,
 }: EventFiltersProps) {
   const today = useMemo(() => {
     const now = new Date();
@@ -73,7 +82,10 @@ export default function EventFilters({
       startDate: "",
       endDate: "",
       professor: "",
+      showUpcoming: true,
+      showPast: true,
     });
+    onClear?.();
   };
 
   return (
@@ -85,6 +97,49 @@ export default function EventFilters({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {userRole === "events_office" && (
+          <div className="space-y-3">
+            <div className="text-sm font-semibold">Time Period</div>
+            {!(filters.showUpcoming || filters.showPast) && (
+              <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
+                <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Select at least one time period</span>
+                </p>
+              </div>
+            )}
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="filter-upcoming"
+                  checked={filters.showUpcoming || false}
+                  onCheckedChange={(checked) =>
+                    updateFilters({ showUpcoming: checked as boolean })
+                  }
+                />
+                <Label
+                  htmlFor="filter-upcoming"
+                  className="cursor-pointer text-sm"
+                >
+                  Upcoming Events
+                </Label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="filter-past"
+                  checked={filters.showPast || false}
+                  onCheckedChange={(checked) =>
+                    updateFilters({ showPast: checked as boolean })
+                  }
+                />
+                <Label htmlFor="filter-past" className="cursor-pointer text-sm">
+                  Past Events
+                </Label>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="space-y-3">
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Calendar className="h-4 w-4" />

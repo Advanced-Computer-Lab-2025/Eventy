@@ -40,6 +40,7 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
+  const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [professorOptions, setProfessorOptions] = useState<
@@ -52,6 +53,8 @@ export default function ProfessorDashboard() {
     startDate: "",
     endDate: "",
     professor: "",
+    showUpcoming: true,
+    showPast: true,
   });
   const { toast } = useToast();
 
@@ -60,6 +63,48 @@ export default function ProfessorDashboard() {
     fetchWorkshopStats();
     fetchProfessors();
   }, []);
+
+  // Re-filter events when filters change
+  useEffect(() => {
+    if (rawEvents.length > 0) {
+      // Apply professor filter client-side for workshops/conferences
+      let filteredResults = rawEvents;
+      if (filters.professor && filters.professor !== "") {
+        filteredResults = rawEvents.filter((event) => {
+          if (
+            event.eventType !== "workshop" &&
+            event.eventType !== "conference"
+          ) {
+            return true; // Include non-workshop/conference events
+          }
+          const profs = (event as any).professors || [];
+          const profIds = profs.map((p: any) => String(p._id || p.id || p));
+          return profIds.includes(String(filters.professor));
+        });
+      }
+
+      // Apply time period filters
+      filteredResults = filteredResults.filter((event) => {
+        const eventDate = new Date(event.startDate);
+        const now = new Date();
+        const isUpcoming = eventDate >= now;
+        const isPast = eventDate < now;
+
+        if (filters.showUpcoming && filters.showPast) return true;
+        if (filters.showUpcoming && isUpcoming) return true;
+        if (filters.showPast && isPast) return true;
+        return false;
+      });
+
+      // Sort events to show workshops first
+      const sortedResults = filteredResults.sort((a, b) => {
+        if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
+        if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
+        return 0;
+      });
+      setEvents(sortedResults);
+    }
+  }, [filters, rawEvents]);
 
   const fetchUserData = () => {
     const user = localStorage.getItem("user");
@@ -141,13 +186,7 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    // Sort events to show workshops first
-    const sortedResults = searchResults.sort((a, b) => {
-      if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
-      if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
-      return 0;
-    });
-    setEvents(sortedResults);
+    setRawEvents(searchResults);
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
@@ -336,6 +375,7 @@ export default function ProfessorDashboard() {
                 onFilterChange={setFilters}
                 locations={computedLocationOptions}
                 professors={professorOptions.length > 0 ? professorOptions : []}
+                userRole=""
               />
             </div>
           </aside>{" "}
