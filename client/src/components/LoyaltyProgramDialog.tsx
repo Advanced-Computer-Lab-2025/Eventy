@@ -248,26 +248,32 @@ export default function LoyaltyProgramDialog({
           </div>
         ) : vendorStatus?.status === "active" ? (
           <div className="space-y-4">
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h4 className="font-medium text-green-800 mb-2">
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <h4 className="font-medium text-green-800 dark:text-green-300 mb-2">
                 Active Participation Details
               </h4>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Discount Rate:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Discount Rate:
+                  </span>
+                  <span className="font-medium text-foreground">
                     {vendorStatus.details?.discountRate}%
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Promo Code:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Promo Code:
+                  </span>
+                  <span className="font-medium text-foreground">
                     {vendorStatus.details?.promoCode}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Expiry Date:</span>
-                  <span className="font-medium">
+                  <span className="text-gray-600 dark:text-gray-400">
+                    Expiry Date:
+                  </span>
+                  <span className="font-medium text-foreground">
                     {vendorStatus.details?.expiryDate
                       ? new Date(
                           vendorStatus.details.expiryDate
@@ -275,8 +281,8 @@ export default function LoyaltyProgramDialog({
                       : "No expiry"}
                   </span>
                 </div>
-                <div className="mt-3 pt-3 border-t border-green-200">
-                  <p className="text-xs text-gray-600">
+                <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-800">
+                  <p className="text-xs text-gray-600 dark:text-gray-400">
                     {vendorStatus.details?.termsAndConditions}
                   </p>
                 </div>
@@ -285,11 +291,11 @@ export default function LoyaltyProgramDialog({
           </div>
         ) : vendorStatus?.status === "cancelled" ? (
           <div className="space-y-2">
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-2">
-              <h4 className="font-medium text-yellow-800 text-xs mb-1">
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-2">
+              <h4 className="font-medium text-yellow-800 dark:text-yellow-300 text-xs mb-1">
                 Previous Participation
               </h4>
-              <p className="text-xs text-yellow-700">
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
                 Cancelled. You can apply again.
               </p>
             </div>

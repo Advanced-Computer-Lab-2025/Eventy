@@ -25,7 +25,6 @@ export interface Bazaar {
 interface BazaarListProps {
   bazaars?: Bazaar[];
   onRegister?: (bazaarId: string) => void;
-  onSave?: (bazaarId: string) => void;
   onShare?: (bazaarId: string) => void;
   onEdit?: (bazaarId: string) => void;
   showFilters?: boolean;
@@ -35,7 +34,6 @@ interface BazaarListProps {
 export default function BazaarList({
   bazaars = [],
   onRegister,
-  onSave,
   onShare,
   onEdit,
   showFilters = true,
@@ -113,14 +111,6 @@ export default function BazaarList({
       onRegister(bazaarId);
     } else {
       handleRegisterEvent(bazaarId);
-    }
-  };
-
-  const handleSave = (bazaarId: string) => {
-    if (onSave) {
-      onSave(bazaarId);
-    } else {
-      console.log(`Save bazaar: ${bazaarId}`);
     }
   };
 
@@ -232,7 +222,6 @@ export default function BazaarList({
               capacity={bazaar.capacity}
               bannerImage={bazaar.bannerImage}
               onRegister={() => handleRegister(bazaar._id)}
-              onSave={() => handleSave(bazaar._id)}
               onShare={() => handleShare(bazaar._id)}
               {...(onEdit && { onEdit: () => handleEdit(bazaar._id) })}
             />

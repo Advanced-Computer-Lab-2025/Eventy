@@ -1,12 +1,4 @@
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Bookmark,
-  Share2,
-  Store,
-  Pencil,
-} from "lucide-react";
+import { Calendar, MapPin, Users, Share2, Store, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +18,6 @@ export interface BazaarCardProps {
   capacity?: number;
   bannerImage?: string;
   onRegister?: () => void;
-  onSave?: () => void;
   onShare?: () => void;
   onEdit?: () => void;
 }
@@ -44,7 +35,6 @@ export default function BazaarCard({
   capacity,
   bannerImage,
   onRegister,
-  onSave,
   onShare,
   onEdit,
 }: BazaarCardProps) {
@@ -193,14 +183,6 @@ export default function BazaarCard({
             data-testid={`button-register-${id}`}
           >
             {isRegistrationOpen ? "Register" : "Registration Closed"}
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onSave}
-            data-testid={`button-save-${id}`}
-          >
-            <Bookmark className="h-4 w-4" />
           </Button>
           <Button
             variant="outline"
