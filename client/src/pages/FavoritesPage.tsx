@@ -145,12 +145,9 @@ export default function FavoritesPage() {
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Heart className="h-8 w-8 text-red-500 fill-current" />
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
-              My Favorites
-            </h1>
-          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white mb-2">
+            My Favorites
+          </h1>
           <p className="text-muted-foreground text-lg">
             {favorites.length > 0
               ? `You have ${favorites.length} favorite event${favorites.length !== 1 ? "s" : ""}`

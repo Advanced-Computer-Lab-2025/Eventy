@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { resetFavoritesCache } from "../hooks/useFavorites";
 
 export default function ProfileMenu() {
   const [, setLocation] = useLocation();
@@ -33,6 +34,7 @@ export default function ProfileMenu() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    resetFavoritesCache(); // ✅ Reset favorites cache on logout
     setUser(null);
     setLocation("/login");
   };
