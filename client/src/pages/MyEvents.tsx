@@ -180,8 +180,15 @@ export default function MyEvents() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
+                  price={event.price}
                   showActions={true}
                   isRegistered={true}
+                  hideRegisterButton={
+                    userRole === "student" ||
+                    userRole === "professor" ||
+                    userRole === "staff" ||
+                    userRole === "ta"
+                  }
                   price={event.price || 0}
                   allowCancellation={true}
                   // CALLBACK to remove from list instantly

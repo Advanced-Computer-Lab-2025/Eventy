@@ -1,5 +1,27 @@
 import mongoose from "mongoose";
 
+const feedbackCommentSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    body: {
+      type: String,
+      required: true,
+      maxlength: 1000,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
 const feedbackSchema = new mongoose.Schema(
   {
     eventId: {

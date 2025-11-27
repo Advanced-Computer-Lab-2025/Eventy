@@ -7,6 +7,8 @@ import {
   Trash2,
   Archive,
   Clock,
+  DollarSign,
+  ArchiveRestore,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -96,6 +98,7 @@ export interface EventCardProps {
   capacity?: number;
   registrationDeadline?: string;
   vendors?: Vendor[];
+  price?: number;
   showActions?: boolean;
   showDetailedView?: boolean;
   isRegistered?: boolean;
@@ -108,11 +111,13 @@ export interface EventCardProps {
   onFeedback?: () => void;
   onArchive?: () => void;
   isArchiving?: boolean;
+  onUnarchive?: () => void;
+  isUnarchiving?: boolean;
   canDelete?: boolean;
   className?: string;
-  price?: number;
   allowCancellation?: boolean;
   onUnregister?: () => void; // New Prop callback
+  hideRegisterButton?: boolean;
 }
 
 export default function EventCard({
@@ -143,6 +148,8 @@ export default function EventCard({
   isRegistered = false,
   onArchive,
   isArchiving = false,
+  onUnarchive,
+  isUnarchiving = false,
   canDelete = false,
   status,
   className,
@@ -174,6 +181,12 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
+  // Display category name (human readable)
+  const displayCategory = isPlatformBooth
+    ? "Platform Booth"
+    : String(category)
+        .replace(/_/g, " ")
+        .replace(/\b\w/g, (c) => c.toUpperCase());
   const imageSrc = image || getEventImage(eventTypeForImage, title);
 
   const requiresPayment = ["trip", "workshop"].includes(
@@ -573,41 +586,6 @@ export default function EventCard({
                   )}
                   {canShowFavorites && <FavoriteButton eventId={id} />}
                 </div>
-                {canShowDelete && !hasRegistrations && (
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={async (e) => {
-                      if ((e as any).stopPropagation)
-                        (e as any).stopPropagation();
-                      if (
-                        !confirm(
-                          "This will permanently delete the event. Proceed?"
-                        )
-                      )
-                        return;
-                      try {
-                        await deleteEvent(id);
-                        toast({
-                          title: "Event deleted",
-                          description: "The event was deleted successfully.",
-                        });
-                        setIsDeleted(true);
-                        onDelete?.(id);
-                      } catch (err: any) {
-                        toast({
-                          title: "Delete failed",
-                          description: err?.message || "Failed to delete event",
-                          variant: "destructive",
-                        });
-                      }
-                    }}
-                    data-testid={`button-delete-event-${id}`}
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                )}
               </div>
             </CardContent>
           </>
