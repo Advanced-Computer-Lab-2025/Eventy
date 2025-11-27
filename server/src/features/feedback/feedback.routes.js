@@ -1,11 +1,14 @@
 import express from "express";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
+import validate from "../../middlewares/validate.middleware.js";
 import {
   submitFeedback,
   getEventFeedback,
   getUserEventFeedback,
+  deleteFeedbackCommentByAdmin,
 } from "./feedback.controller.js";
+import { deleteFeedbackCommentSchema } from "./feedback.validation.js";
 
 const router = express.Router();
 
@@ -21,7 +24,15 @@ router.post(
 router.get(
   "/events/:eventId",
   authMiddleware,
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  // Allow all users to view all feedback for moderation/reporting
+  roleMiddleware([
+    "student",
+    "staff",
+    "ta",
+    "professor",
+    "admin",
+    "events_office",
+  ]),
   getEventFeedback
 );
 
@@ -29,8 +40,17 @@ router.get(
 router.get(
   "/events/:eventId/me",
   authMiddleware,
-  roleMiddleware(["student", "staff", "ta", "professor"]),
+  roleMiddleware(["student", "staff", "ta", "professor", "admin"]),
   getUserEventFeedback
+);
+
+// DELETE /api/feedback/:feedbackId/comment
+router.delete(
+  "/:feedbackId/comment",
+  authMiddleware,
+  roleMiddleware(["admin"]),
+  validate(deleteFeedbackCommentSchema, "params"), // ADD THIS LINE
+  deleteFeedbackCommentByAdmin
 );
 
 export default router;

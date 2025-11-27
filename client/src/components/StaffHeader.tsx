@@ -6,6 +6,7 @@ import {
   Dumbbell,
   Heart,
   Gift,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -23,7 +24,7 @@ interface StaffHeaderProps {
 export default function StaffHeader({
   homeHref = "/staff-ta",
 }: StaffHeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -71,7 +72,7 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation(homeHref)}
             data-testid="button-nav-home"
           >
@@ -81,7 +82,7 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/my-events" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/my-events")}
             data-testid="button-nav-my-events"
           >
@@ -91,7 +92,7 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
           >
@@ -101,7 +102,7 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/favorites" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/favorites")}
             data-testid="button-nav-favorites"
           >
@@ -111,7 +112,17 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >

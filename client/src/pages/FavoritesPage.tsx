@@ -207,6 +207,7 @@ export default function FavoritesPage() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
+                  price={event.price}
                   showActions={true}
                   showDetailedView={false}
                   showAttendees={false}

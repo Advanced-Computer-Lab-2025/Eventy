@@ -138,8 +138,8 @@ export const loginUser = async (data) => {
   // ✅ Step 1: Normalize email safely
   const normalizedEmail = email.toLowerCase().trim();
 
-  // ✅ Step 2: Find the user by normalized email
-  const user = await User.findOne({ email: normalizedEmail });
+  // ✅ Step 2: Find the user by normalized email (exclude deleted accounts)
+  const user = await User.findOne({ email: normalizedEmail, deletedAt: null });
   if (!user) {
     throw new Error("No account found with this email.");
   }

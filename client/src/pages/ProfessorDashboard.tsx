@@ -50,7 +50,6 @@ export default function ProfessorDashboard() {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
-      // Use firstName field directly from the database model
       setUserName(userData.firstName);
     }
   };
@@ -104,54 +103,7 @@ export default function ProfessorDashboard() {
     }
   };
 
-  const handleRegisterEvent = async (eventId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please login to register for events",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You have been successfully registered for the event.",
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Registration Failed",
-          description: errorData.message || "Failed to register for event",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering for the event",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleLoading = (isLoading: boolean) => {
-    // Only show loading overlay when there are no events yet (initial load)
     if (events.length === 0) {
       setLoading(isLoading);
     }
@@ -340,11 +292,16 @@ export default function ProfessorDashboard() {
                         : null) ||
                       "Unknown location"
                     }
+                    // 1. Pass the count for initial display
                     attendees={
                       Array.isArray(event.attendees)
                         ? event.attendees.length
                         : event.attendeesCount || 0
                     }
+                    // 2. Pass the list for "Registered" button check
+                    attendeesList={event.attendees}
+                    // 3. Pass the price for Payment Dialog logic
+                    price={event.price || 0}
                     image={event.bannerImage || event.image}
                     description={event.description}
                     startDate={event.startDate}
@@ -353,10 +310,9 @@ export default function ProfessorDashboard() {
                     capacity={event.capacity}
                     registrationDeadline={event.registrationDeadline}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
-                    onRegister={() =>
-                      console.log(handleRegisterEvent(event._id))
-                    }
+                    // 4. Removed 'onRegister'. EventCard handles this internally now.
                     onViewDetails={() =>
                       console.log("View details:", event.name)
                     }

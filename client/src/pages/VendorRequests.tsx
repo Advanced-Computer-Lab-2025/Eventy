@@ -1,4 +1,4 @@
-import { CheckCircle, XCircle, Eye, Plus } from "lucide-react";
+import { CheckCircle, XCircle, Eye, Plus, Filter } from "lucide-react";
 import Header from "@/components/Header";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
@@ -312,49 +312,49 @@ export default function VendorRequests() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
             <p className="text-muted-foreground">
               Review vendor participation requests for bazaars and booths
             </p>
           </div>
-          {(userRole === "events_office" || userRole === "admin") && (
-            <Button
-              onClick={handleGoToPolls}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
+          <div className="flex flex-row gap-2 items-center">
+            {(userRole === "events_office" || userRole === "admin") && (
+              <Button
+                onClick={handleGoToPolls}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Create Poll
+              </Button>
+            )}
+            <Select
+              value={statusFilter}
+              onValueChange={(v) =>
+                setStatusFilter(
+                  v as "all" | "pending" | "approved" | "rejected"
+                )
+              }
             >
-              <Plus className="mr-1 h-4 w-4" />
-              Create Poll
-            </Button>
-          )}
+              <SelectTrigger className="h-auto px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap border border-input bg-background hover:bg-accent hover:text-accent-foreground w-auto">
+                <div className="flex items-center gap-1.5">
+                  <Filter className="h-4 w-4 flex-shrink-0" />
+                  <SelectValue placeholder="Filter" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         <Card>
-          {/* <CardHeader>
-            <CardTitle>Pending Vendor Requests</CardTitle>
-          </CardHeader> */}
           <CardContent>
-            <div className="flex items-center justify-end mb-4 gap-2">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) =>
-                  setStatusFilter(
-                    v as "all" | "pending" | "approved" | "rejected"
-                  )
-                }
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
             {loading ? (
               <div className="text-center py-8 text-muted-foreground">
                 Loading requests...

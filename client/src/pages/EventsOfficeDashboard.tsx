@@ -683,14 +683,14 @@ export default function EventsOfficeDashboard() {
       color: "#f97316", // orange
     },
     {
-      name: "Workshop",
-      value: attendeesByType.workshop || 0,
-      color: "#eab308", // yellow
-    },
-    {
       name: "Platform Booth",
       value: attendeesByType.platform_booth || 0,
       color: "#8b5cf6", // purple
+    },
+    {
+      name: "Workshop",
+      value: attendeesByType.workshop || 0,
+      color: "#eab308", // yellow
     },
   ].filter((item) => item.value > 0);
 
@@ -765,7 +765,7 @@ export default function EventsOfficeDashboard() {
                       Total Attendees by Event Type
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4">
+                  <CardContent className="pt-0 pl-6 pr-6">
                     {loadingCharts ? (
                       <div className="h-[280px] flex items-center justify-center">
                         <p className="text-muted-foreground">Loading...</p>
@@ -782,7 +782,7 @@ export default function EventsOfficeDashboard() {
                           <PieChart>
                             <Pie
                               data={attendeesChartData}
-                              cx="45%"
+                              cx="50%"
                               cy="50%"
                               innerRadius={60}
                               outerRadius={100}
@@ -941,23 +941,16 @@ export default function EventsOfficeDashboard() {
                       Revenue by Month
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4">
+                  <CardContent className="pt-0 pl-6 pr-6">
                     {loadingCharts ? (
                       <div className="h-[280px] flex items-center justify-center">
                         <p className="text-muted-foreground">Loading...</p>
-                      </div>
-                    ) : revenueChartData.length === 0 ||
-                      revenueChartData.every((d) => Number(d.revenue) === 0) ? (
-                      <div className="h-[280px] flex items-center justify-center">
-                        <p className="text-muted-foreground">
-                          No data available
-                        </p>
                       </div>
                     ) : (
                       <ResponsiveContainer width="100%" height={280}>
                         <BarChart
                           data={revenueChartData}
-                          margin={{ top: 5, right: 20, left: 20, bottom: 5 }}
+                          margin={{ top: 5, right: 5, left: 10, bottom: 5 }}
                         >
                           <CartesianGrid strokeDasharray="3 3" />
                           <XAxis
@@ -1410,6 +1403,7 @@ export default function EventsOfficeDashboard() {
                                 durationWeeks={event.durationWeeks}
                                 capacity={-1}
                                 vendors={event.vendors || []}
+                                price={event.price}
                                 showDetailedView={true}
                                 canDelete={false}
                                 {...(isPastEvent && {

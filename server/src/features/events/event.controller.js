@@ -121,6 +121,23 @@ export class EventsController {
       const { error } = createConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
 
+      // Check professors are active
+      const professorIds = req.body.professors;
+      const activeProfessors = await User.find({
+        _id: { $in: professorIds },
+        role: "professor",
+        status: "active", // Only active professors
+        deletedAt: null, // Not soft deleted
+      }).select("_id");
+
+      if (activeProfessors.length !== professorIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "All professors must be active and not pending, blocked, or deleted.",
+        });
+      }
+
       const userId = req.user.id;
       const newConference = await eventService.createConference(
         req.body,
@@ -174,6 +191,25 @@ export class EventsController {
     try {
       const { error } = updateConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
+
+      // Check professors are active if professors are being updated
+      if (req.body.professors) {
+        const professorIds = req.body.professors;
+        const activeProfessors = await User.find({
+          _id: { $in: professorIds },
+          role: "professor",
+          status: "active", // Only active professors
+          deletedAt: null, // Not soft deleted
+        }).select("_id");
+
+        if (activeProfessors.length !== professorIds.length) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "All professors must be active and not pending, blocked, or deleted.",
+          });
+        }
+      }
 
       const { conferenceId } = req.params;
       const updatedConference = await eventService.updateConferenceService(
@@ -607,17 +643,59 @@ export class EventsController {
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
     try {
-      const { name, type } = req.query;
+      const { name, type, location, startDate, endDate } = req.query;
 
       // Ensure at least one search parameter is provided
-      if (!name && !type) {
-        throw new ApiError(400, "Please provide a name or type to search.");
+      if (!name && !type && !location && !startDate && !endDate) {
+        throw new ApiError(
+          400,
+          "Please provide at least one search criteria (name, type, location, or date range)."
+        );
+      }
+
+      let parsedStartDate = null;
+      let parsedEndDate = null;
+
+      if (startDate || endDate) {
+        if (!startDate || !endDate) {
+          throw new ApiError(
+            400,
+            "Please provide both startDate and endDate when filtering by date."
+          );
+        }
+
+        const maybeStart = new Date(startDate);
+        const maybeEnd = new Date(endDate);
+
+        if (
+          Number.isNaN(maybeStart.getTime()) ||
+          Number.isNaN(maybeEnd.getTime())
+        ) {
+          throw new ApiError(400, "Invalid date format.");
+        }
+
+        if (maybeStart > maybeEnd) {
+          throw new ApiError(
+            400,
+            "startDate cannot be later than endDate for date range filtering."
+          );
+        }
+
+        parsedStartDate = maybeStart;
+        parsedEndDate = maybeEnd;
       }
 
       const userRole = req.user?.role;
 
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type, userRole });
+      const events = await eventService.searchEvents({
+        name,
+        type,
+        location,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        userRole,
+      });
 
       return res
         .status(200)
@@ -937,6 +1015,110 @@ export class EventsController {
         .status(200)
         .json(
           new ApiResponse(200, report, "Sales report generated successfully")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Send workshop attendance certificates to attendees
+   * Only works for workshops that have ended
+   * POST /api/events/:workshopId/send-certificates
+   */
+  async sendWorkshopCertificates(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const user = req.user;
+
+      // Check user role - only professors and events office can send certificates
+      if (!["professor", "events_office"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors and events office can send certificates"
+        );
+      }
+
+      // If professor, verify they created this workshop
+      if (user.role === "professor") {
+        const workshop = await eventService.getWorkshopById(workshopId);
+        if (!workshop) {
+          throw new ApiError(404, "Workshop not found");
+        }
+        if (String(workshop.createdBy) !== String(user._id)) {
+          throw new ApiError(
+            403,
+            "Forbidden: You can only send certificates for workshops you created"
+          );
+        }
+      }
+
+      const result = await eventService.sendWorkshopCertificates(workshopId);
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Send certificates for all completed workshops
+   * Only accessible by events office
+   * POST /api/events/send-all-certificates
+   */
+  async sendAllCompletedWorkshopCertificates(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office can trigger batch certificate sending
+      if (user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can send certificates for all workshops"
+        );
+      }
+
+      const result = await eventService.sendCertificatesForCompletedWorkshops();
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Manually trigger the certificate scheduler job
+   * Only accessible by events office or admin
+   * POST /api/events/trigger-certificate-job
+   */
+  async triggerCertificateScheduler(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office and admin can manually trigger the job
+      if (!["events_office", "admin"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office and admin can trigger the certificate scheduler"
+        );
+      }
+
+      // Import the scheduler function
+      const { triggerCertificateJobManually } = await import(
+        "../../utils/certificate-scheduler.js"
+      );
+
+      // Trigger the job manually
+      await triggerCertificateJobManually();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { triggered: true },
+            "Certificate scheduler job triggered successfully. Check server logs for results."
+          )
         );
     } catch (err) {
       next(err);
