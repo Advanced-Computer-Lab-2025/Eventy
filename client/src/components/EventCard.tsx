@@ -501,7 +501,7 @@ export default function EventCard({
                   {showStandalonePrice && (
                     <div className="flex items-center text-muted-foreground">
                       <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>$ {formattedPrice} Dollars</span>
+                      <span>{formattedPrice} Dollars</span>
                     </div>
                   )}
 
