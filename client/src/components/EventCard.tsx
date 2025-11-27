@@ -102,6 +102,7 @@ export interface EventCardProps {
   showActions?: boolean;
   showDetailedView?: boolean;
   showAttendees?: boolean;
+  showRegisterButton?: boolean; // ✅ Add new prop to control register button specifically
   isRegistered?: boolean;
   onRegister?: () => void;
   status?: string;
@@ -143,6 +144,8 @@ export default function EventCard({
   showActions = true,
   showDetailedView = false,
   showAttendees = true,
+  showRegisterButton = true,
+  hideRegisterButton = false,
   onRegister,
   onSave,
   onShare,
@@ -501,7 +504,7 @@ export default function EventCard({
                   {showStandalonePrice && (
                     <div className="flex items-center text-muted-foreground">
                       <DollarSign className="mr-2 h-4 w-4 flex-shrink-0" />
-                      <span>$ {formattedPrice} Dollars</span>
+                      <span>{formattedPrice} Dollars</span>
                     </div>
                   )}
 
@@ -634,7 +637,10 @@ export default function EventCard({
                       Registered
                     </Button>
                   )
-                ) : isRegisterable && isBeforeDeadline ? (
+                ) : showRegisterButton &&
+                  !hideRegisterButton &&
+                  isRegisterable &&
+                  isBeforeDeadline ? (
                   <Button
                     className="flex-1"
                     onClick={() =>
@@ -843,6 +849,8 @@ export default function EventCard({
                       </>
                     )
                   ) : (
+                    showRegisterButton &&
+                    !hideRegisterButton &&
                     isRegisterable &&
                     isBeforeDeadline && (
                       <Button

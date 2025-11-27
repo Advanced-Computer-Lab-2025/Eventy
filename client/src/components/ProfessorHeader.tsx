@@ -23,7 +23,7 @@ interface ProfessorHeaderProps {
 export default function ProfessorHeader({
   homeHref = "/professor",
 }: ProfessorHeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -71,7 +71,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation(homeHref)}
             data-testid="button-nav-home"
           >
@@ -81,7 +81,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/professor/workshops" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/professor/workshops")}
             data-testid="button-nav-workshops"
           >
@@ -91,7 +91,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/my-events" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/my-events")}
             data-testid="button-nav-my-events"
           >
@@ -101,7 +101,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
           >
@@ -111,7 +111,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/favorites" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/favorites")}
             data-testid="button-nav-favorites"
           >
@@ -121,7 +121,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/admin/ratings")}
             data-testid="button-nav-ratings"
           >
@@ -131,7 +131,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >

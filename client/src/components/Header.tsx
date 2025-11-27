@@ -42,7 +42,7 @@ export default function Header({
   showHomeTop = false,
   hideBottomNav = false,
 }: HeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -127,7 +127,7 @@ export default function Header({
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
                 onClick={() => setLocation(homeHref)}
                 data-testid="button-nav-home"
               >
@@ -148,7 +148,7 @@ export default function Header({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="gap-2"
+                  className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
                   onClick={() => setLocation("/admin/ratings")}
                   data-testid="button-nav-ratings"
                 >
