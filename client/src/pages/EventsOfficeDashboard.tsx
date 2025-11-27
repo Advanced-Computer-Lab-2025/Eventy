@@ -683,14 +683,14 @@ export default function EventsOfficeDashboard() {
       color: "#f97316", // orange
     },
     {
-      name: "Workshop",
-      value: attendeesByType.workshop || 0,
-      color: "#eab308", // yellow
-    },
-    {
       name: "Platform Booth",
       value: attendeesByType.platform_booth || 0,
       color: "#8b5cf6", // purple
+    },
+    {
+      name: "Workshop",
+      value: attendeesByType.workshop || 0,
+      color: "#eab308", // yellow
     },
   ].filter((item) => item.value > 0);
 
@@ -765,7 +765,7 @@ export default function EventsOfficeDashboard() {
                       Total Attendees by Event Type
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 px-4">
+                  <CardContent className="pt-0 pl-6 pr-6">
                     {loadingCharts ? (
                       <div className="h-[280px] flex items-center justify-center">
                         <p className="text-muted-foreground">Loading...</p>
@@ -782,7 +782,7 @@ export default function EventsOfficeDashboard() {
                           <PieChart>
                             <Pie
                               data={attendeesChartData}
-                              cx="45%"
+                              cx="50%"
                               cy="50%"
                               innerRadius={60}
                               outerRadius={100}
