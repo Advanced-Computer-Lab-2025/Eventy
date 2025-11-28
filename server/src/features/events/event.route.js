@@ -325,4 +325,12 @@ router.post(
   eventsController.triggerCertificateScheduler.bind(eventsController)
 );
 
+// Add this BEFORE the /:eventId route to avoid conflicts
+router.get(
+  "/approved/count",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getApprovedEventsCount.bind(eventsController)
+);
+
 export default router;
