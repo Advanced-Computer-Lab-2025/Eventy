@@ -73,6 +73,14 @@ export default function SportsFacilities() {
     undefined
   );
   const [reservingKeys, setReservingKeys] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // Load saved tab from localStorage, default to "courts"
+    if (typeof window !== "undefined") {
+      const savedTab = localStorage.getItem("sportsFacilitiesTab");
+      return savedTab || "courts";
+    }
+    return "courts";
+  });
   const { toast } = useToast();
 
   const ymdLocal = (d: string | Date | undefined | null) => {
@@ -162,6 +170,13 @@ export default function SportsFacilities() {
     // Fetch court schedules
     fetchCourtSchedules();
   }, []);
+
+  // Save tab selection to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sportsFacilitiesTab", activeTab);
+    }
+  }, [activeTab]);
 
   const getBodyDateFromIndex = (index: number) => {
     const today = new Date();
@@ -426,7 +441,11 @@ export default function SportsFacilities() {
         </div>
 
         {canViewCourts ? (
-          <Tabs defaultValue="courts" className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
             <TabsList>
               <TabsTrigger value="courts">
                 <Calendar className="h-4 w-4 mr-2" />
