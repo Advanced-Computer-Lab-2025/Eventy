@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
-import EventSearch from "@/components/EventSearch";
+import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import { useToast } from "@/hooks/use-toast";
 
@@ -39,7 +39,6 @@ export default function StaffUpcomingEvents() {
   const [professorOptions, setProfessorOptions] = useState<
     { id: string; name: string }[]
   >([]);
-  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
@@ -54,9 +53,26 @@ export default function StaffUpcomingEvents() {
   });
   const { toast } = useToast();
 
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (eventFilters.eventType !== "all") {
+      next.type = eventFilters.eventType;
+    }
+    if (eventFilters.location !== "all") {
+      next.location = eventFilters.location;
+    }
+    if (eventFilters.startDate && eventFilters.endDate) {
+      next.startDate = eventFilters.startDate;
+      next.endDate = eventFilters.endDate;
+    }
+    if (eventFilters.professor) {
+      (next as any).professor = eventFilters.professor;
+    }
+    return next;
+  }, [eventFilters]);
+
   const handleSearchResults = (results: any[]) => {
     setEvents(results);
-    setFilteredEvents(applyFilters(results));
     if (loading) setLoading(false);
   };
 
@@ -115,51 +131,6 @@ export default function StaffUpcomingEvents() {
   const handleError = (errorMessage: string) => {
     setError(errorMessage);
   };
-
-  // Filtering logic
-  const applyFilters = (events: Event[]) => {
-    return events.filter((event) => {
-      // Event type filter
-      if (
-        eventFilters.eventType !== "all" &&
-        event.eventType !== eventFilters.eventType
-      )
-        return false;
-      // Location filter
-      if (
-        eventFilters.location !== "all" &&
-        event.location !== eventFilters.location
-      )
-        return false;
-      // Date range filter
-      if (eventFilters.startDate) {
-        const eventDate = event.startDate
-          ? new Date(event.startDate).toISOString().split("T")[0]
-          : "";
-        if (eventDate < eventFilters.startDate) return false;
-      }
-      if (eventFilters.endDate) {
-        const eventDate = event.startDate
-          ? new Date(event.startDate).toISOString().split("T")[0]
-          : "";
-        if (eventDate > eventFilters.endDate) return false;
-      }
-      // Professor filter: only apply to workshops and conferences
-      if (eventFilters.professor) {
-        if (event.eventType !== "workshop" && event.eventType !== "conference")
-          return false;
-        const profs = (event as any).professors || [];
-        const ids = profs.map((p: any) => String(p._id || p.id || p));
-        if (!ids.includes(String(eventFilters.professor))) return false;
-      }
-      return true;
-    });
-  };
-
-  // When filters change, update filteredEvents
-  useEffect(() => {
-    setFilteredEvents(applyFilters(events));
-  }, [events, eventFilters]);
 
   const handleFilterChange = (newFilters: any) => {
     setEventFilters(newFilters);
@@ -265,7 +236,7 @@ export default function StaffUpcomingEvents() {
                     onError={handleError}
                     placeholder="Search events by name, professor, or type..."
                     className="w-full"
-                    filters={eventFilters}
+                    filters={appliedFilters}
                   />
                 </div>
 
@@ -276,11 +247,11 @@ export default function StaffUpcomingEvents() {
                 <p>Loading events...</p>
               ) : error ? (
                 <p className="text-red-500">{error}</p>
-              ) : filteredEvents.length === 0 ? (
+              ) : events.length === 0 ? (
                 <p>No upcoming events found.</p>
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {[...filteredEvents]
+                  {[...events]
                     .sort((a, b) => {
                       const aDate = a.startDate
                         ? new Date(a.startDate).getTime()

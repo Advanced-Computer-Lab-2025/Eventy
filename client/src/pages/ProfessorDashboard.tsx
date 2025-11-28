@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
-import EventSearch from "@/components/EventSearch";
+import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
 import { useToast } from "@/hooks/use-toast";
@@ -40,7 +40,6 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
-  const [rawEvents, setRawEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [professorOptions, setProfessorOptions] = useState<
@@ -58,53 +57,29 @@ export default function ProfessorDashboard() {
   });
   const { toast } = useToast();
 
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (filters.eventType !== "all") {
+      next.type = filters.eventType;
+    }
+    if (filters.location !== "all") {
+      next.location = filters.location;
+    }
+    if (filters.startDate && filters.endDate) {
+      next.startDate = filters.startDate;
+      next.endDate = filters.endDate;
+    }
+    if (filters.professor) {
+      (next as any).professor = filters.professor;
+    }
+    return next;
+  }, [filters]);
+
   useEffect(() => {
     fetchUserData();
     fetchWorkshopStats();
     fetchProfessors();
   }, []);
-
-  // Re-filter events when filters change
-  useEffect(() => {
-    if (rawEvents.length > 0) {
-      // Apply professor filter client-side for workshops/conferences
-      let filteredResults = rawEvents;
-      if (filters.professor && filters.professor !== "") {
-        filteredResults = rawEvents.filter((event) => {
-          if (
-            event.eventType !== "workshop" &&
-            event.eventType !== "conference"
-          ) {
-            return true; // Include non-workshop/conference events
-          }
-          const profs = (event as any).professors || [];
-          const profIds = profs.map((p: any) => String(p._id || p.id || p));
-          return profIds.includes(String(filters.professor));
-        });
-      }
-
-      // Apply time period filters
-      filteredResults = filteredResults.filter((event) => {
-        const eventDate = new Date(event.startDate);
-        const now = new Date();
-        const isUpcoming = eventDate >= now;
-        const isPast = eventDate < now;
-
-        if (filters.showUpcoming && filters.showPast) return true;
-        if (filters.showUpcoming && isUpcoming) return true;
-        if (filters.showPast && isPast) return true;
-        return false;
-      });
-
-      // Sort events to show workshops first
-      const sortedResults = filteredResults.sort((a, b) => {
-        if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
-        if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
-        return 0;
-      });
-      setEvents(sortedResults);
-    }
-  }, [filters, rawEvents]);
 
   const fetchUserData = () => {
     const user = localStorage.getItem("user");
@@ -186,7 +161,13 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    setRawEvents(searchResults);
+    // Sort events to show workshops first
+    const sortedResults = [...searchResults].sort((a, b) => {
+      if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
+      if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
+      return 0;
+    });
+    setEvents(sortedResults);
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
@@ -392,7 +373,7 @@ export default function ProfessorDashboard() {
                     onSearchResults={handleSearchResults}
                     onLoading={handleLoading}
                     onError={handleError}
-                    filters={filters}
+                    filters={appliedFilters}
                   />
                 </div>
                 <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />

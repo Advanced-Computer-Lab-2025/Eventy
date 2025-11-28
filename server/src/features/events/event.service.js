@@ -629,7 +629,12 @@ export const searchEvents = async ({
 
       // Only filter for workshops and conferences when using professor filter
       filter.$and.push({ eventType: { $in: ["workshop", "conference"] } });
-      filter.$and.push({ professors: { $in: [profValue] } });
+      filter.$and.push({
+        $or: [
+          { professors: { $in: [profValue] } }, // Professor is in the professors array
+          { createdBy: profValue }, // Professor created the event
+        ],
+      });
     }
   }
 
