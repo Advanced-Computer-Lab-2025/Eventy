@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Calendar,
@@ -45,6 +45,13 @@ const COURT_NAMES: Record<CourtType, string> = {
   basketball: "Basketball Court",
   tennis: "Tennis Court",
   football: "Football Field",
+};
+
+// Image mapping for each court type
+const COURT_IMAGES: Record<CourtType, string> = {
+  basketball: "/images/basketball.jpg",
+  tennis: "/images/tennis.jpg",
+  football: "/images/football.jpg",
 };
 
 // Helper to format 24h time into 12h AM/PM
@@ -375,11 +382,28 @@ export default function SportsFacilities() {
                       {label}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent className="pt-0 flex-1 flex items-center justify-center min-h-[200px]">
-                    <div className="flex flex-col gap-2 w-full">
+                  <CardContent className="pt-0 flex-1">
+                    <div className="flex flex-col gap-2 w-full h-full">
                       {!hasAvailableSlots ? (
-                        <div className="w-full min-h-12 flex items-center justify-center bg-muted rounded text-muted-foreground text-sm py-4 text-center">
-                          No available slots today
+                        <div className="w-full h-full min-h-[250px] flex flex-col items-center text-muted-foreground py-8">
+                          <div className="mb-4 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-muted/50 blur-xl"></div>
+                              <div className="relative rounded-full bg-background p-4 shadow-md">
+                                <img
+                                  src={COURT_IMAGES[type as CourtType]}
+                                  alt={`${label} icon`}
+                                  className="h-24 w-24 object-cover rounded-full"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-base font-semibold mb-1">
+                            No available slots today
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            New slots will appear here
+                          </p>
                         </div>
                       ) : (
                         availableSlots.map((slot) => {
