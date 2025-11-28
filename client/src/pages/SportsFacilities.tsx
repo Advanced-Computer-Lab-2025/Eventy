@@ -424,6 +424,13 @@ export default function SportsFacilities() {
     <div className="min-h-screen bg-background">
       {renderHeader()}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Sports Facilities</h1>
+          <p className="text-muted-foreground">
+            Book courts and join gym sessions
+          </p>
+        </div>
+
         {canViewCourts ? (
           <Tabs defaultValue="courts" className="space-y-6">
             <TabsList>
