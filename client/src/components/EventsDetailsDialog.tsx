@@ -123,6 +123,27 @@ export default function EventDetailsDialog({
               <p>{event.faculty}</p>
             </div>
           )}
+          {event.eventType === "workshop" &&
+            event.professors &&
+            event.professors.length > 0 && (
+              <div>
+                <h4 className="font-semibold mt-2">Professors</h4>
+                <div className="space-y-1">
+                  {event.professors.map((professor: any) => (
+                    <p key={professor._id || professor.id}>
+                      {professor.firstName && professor.lastName
+                        ? `${professor.firstName} ${professor.lastName}`
+                        : professor.name || "Unknown Professor"}
+                      {professor.email && (
+                        <span className="text-muted-foreground text-sm ml-2">
+                          ({professor.email})
+                        </span>
+                      )}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
           {event.fundingSource && (
             <div>
               <h4 className="font-semibold mt-2">Funding Source</h4>

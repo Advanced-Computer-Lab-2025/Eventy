@@ -743,7 +743,8 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
 export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
-    .populate("createdBy", "name email role");
+    .populate("createdBy", "name email role")
+    .populate("professors", "firstName lastName email");
   if (!event) {
     throw new ApiError(404, "Event not found");
   }
