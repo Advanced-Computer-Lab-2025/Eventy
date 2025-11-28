@@ -375,7 +375,7 @@ export default function SportsFacilities() {
                             <Button
                               key={slotKey}
                               variant="outline"
-                              className="w-full justify-start gap-2"
+                              className="w-full justify-start gap-2 min-h-12 py-3"
                               disabled={isReserving}
                               onClick={() =>
                                 handleReserveCourt(
@@ -389,9 +389,6 @@ export default function SportsFacilities() {
                                 <div className="text-left">
                                   <div className="font-medium">
                                     {slot.startTime} - {slot.endTime}
-                                  </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    Available
                                   </div>
                                 </div>
                                 <div>
@@ -407,9 +404,6 @@ export default function SportsFacilities() {
                         </div>
                       )}
                     </div>
-                    <p className="text-muted-foreground">
-                      Book courts and join gym sessions
-                    </p>
                   </CardContent>
                 </Card>
               );
