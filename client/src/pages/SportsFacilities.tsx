@@ -16,6 +16,7 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import StaffHeader from "@/components/StaffHeader";
+import AdminHeader from "@/components/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,15 +129,34 @@ export default function SportsFacilities() {
   };
 
   useEffect(() => {
-    // Fetch user role from token
+    // Fetch user role from token and localStorage
+    let role: string | null = null;
+
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        setUserRole(payload.role);
+        role = payload.role;
       } catch (error) {
         console.error("Failed to decode token:", error);
       }
+    }
+
+    // Also try to get role from localStorage user object as fallback
+    if (!role) {
+      try {
+        const user = localStorage.getItem("user");
+        if (user) {
+          const userData = JSON.parse(user);
+          role = userData.role || null;
+        }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+      }
+    }
+
+    if (role) {
+      setUserRole(role);
     }
 
     // Fetch court schedules
@@ -267,6 +287,24 @@ export default function SportsFacilities() {
 
   const canViewCourts = userRole === "student";
 
+  const renderHeader = () => {
+    switch (userRole) {
+      case "student":
+        return <StudentHeader />;
+      case "staff":
+      case "ta":
+        return <StaffHeader />;
+      case "professor":
+        return <ProfessorHeader />;
+      case "events_office":
+        return <EventsOfficeHeader />;
+      case "admin":
+        return <AdminHeader />;
+      default:
+        return <StudentHeader />;
+    }
+  };
+
   const renderCourtContent = () => {
     const bodyDate = getBodyDateFromIndex(currentDayIndex);
     return (
@@ -384,7 +422,7 @@ export default function SportsFacilities() {
 
   return (
     <div className="min-h-screen bg-background">
-      <StudentHeader />
+      {renderHeader()}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         {canViewCourts ? (
           <Tabs defaultValue="courts" className="space-y-6">
