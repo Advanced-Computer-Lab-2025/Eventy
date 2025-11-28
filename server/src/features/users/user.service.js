@@ -281,8 +281,12 @@ class UserService {
         .populate({
           path: "favoriteEvents",
           select:
-            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application", // Added application for booth events
-          match: { deletedAt: null },
+            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application archivedAt", // Added archivedAt
+          match: {
+            deletedAt: null,
+            archivedAt: null, // ✅ Exclude archived events
+            status: { $ne: "archived" }, // ✅ Exclude archived status
+          },
         })
         .lean();
 

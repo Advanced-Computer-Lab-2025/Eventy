@@ -14,8 +14,14 @@ import EventCard from "../components/EventCard";
 import type { EventCategory } from "../components/CategoryBadge";
 
 export default function FavoritesPage() {
-  const { favorites, loading, error, removeFromFavorites, isEventLoading } =
-    useFavorites();
+  const {
+    favorites,
+    loading,
+    error,
+    removeFromFavorites,
+    isEventLoading,
+    refetch,
+  } = useFavorites();
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [, setLocation] = useLocation();
@@ -27,6 +33,17 @@ export default function FavoritesPage() {
       setUserRole(userData.role);
     }
   }, []);
+
+  // Poll for updates every 30 seconds to check for archived events
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (refetch && !loading) {
+        refetch();
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [refetch, loading]);
 
   // Get dashboard route based on user role
   const getDashboardRoute = () => {
@@ -207,7 +224,6 @@ export default function FavoritesPage() {
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
-                  price={event.price}
                   showActions={true}
                   showDetailedView={false}
                   showAttendees={false}

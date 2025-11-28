@@ -195,6 +195,7 @@ export const useFavorites = () => {
     addToFavorites,
     removeFromFavorites,
     toggleFavorite,
-    fetchFavorites,
+    fetchFavorites, // ✅ Already exported, make sure it's in the return
+    refetch: fetchFavorites, // ✅ Add alias for clarity
   };
 };
