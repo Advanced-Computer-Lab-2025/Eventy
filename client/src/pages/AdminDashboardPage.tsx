@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Calendar, Users, TrendingUp, Settings, UserCheck } from "lucide-react";
+import { Calendar, Users, TrendingUp, UserCheck } from "lucide-react";
 import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -37,6 +37,8 @@ export default function AdminDashboardPage() {
   );
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(0); // ✅ Add this
+  const [activeUsersLoading, setActiveUsersLoading] = useState<boolean>(true); // ✅ Add this
   const [eventTypeFilter, setEventTypeFilter] = useState<
     "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
   >("all");
@@ -113,7 +115,9 @@ export default function AdminDashboardPage() {
       try {
         setApprovedLoading(true);
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/search`, {
+
+        // ✅ Use the new dedicated endpoint
+        const res = await fetch(`${API_BASE_URL}/api/events/approved/count`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -121,25 +125,57 @@ export default function AdminDashboardPage() {
           },
           credentials: "include",
         });
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(
-            `Unexpected response. Preview: ${text.substring(0, 60)}...`
-          );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch approved events count");
         }
+
         const body = await res.json();
-        if (!res.ok)
-          throw new Error(body.message || "Failed to fetch approved events");
-        const list = Array.isArray(body.data) ? body.data : body;
-        setApprovedEventsCount(Array.isArray(list) ? list.length : 0);
+        const count = body.data?.count ?? 0;
+
+        setApprovedEventsCount(count);
       } catch (err) {
+        console.error("Error fetching approved events count:", err);
         setApprovedEventsCount(0);
       } finally {
         setApprovedLoading(false);
       }
     };
     fetchApprovedEvents();
+  }, []);
+
+  // ✅ Add this new useEffect to fetch active users count
+  useEffect(() => {
+    const fetchActiveUsersCount = async () => {
+      try {
+        setActiveUsersLoading(true);
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${API_BASE_URL}/api/users/active/count`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch active users count");
+        }
+
+        const body = await res.json();
+        const count = body.data?.count ?? 0;
+
+        setActiveUsersCount(count);
+      } catch (err) {
+        console.error("Error fetching active users count:", err);
+        setActiveUsersCount(0);
+      } finally {
+        setActiveUsersLoading(false);
+      }
+    };
+    fetchActiveUsersCount();
   }, []);
 
   const formatDate = (dateString: string) => {
@@ -167,12 +203,11 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
+          {/* ✅ Replace Budget Requested card with Active Users */}
           <StatCard
-            title="Budget Requested (EGP)"
-            value={conferences
-              .reduce((sum, c) => sum + (c.requiredBudget || 0), 0)
-              .toLocaleString()}
-            icon={TrendingUp}
+            title="Active Users"
+            value={activeUsersLoading ? "-" : activeUsersCount.toString()}
+            icon={Users}
             themed={true}
           />
           <StatCard
@@ -349,14 +384,6 @@ export default function AdminDashboardPage() {
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Vendor Requests
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => console.log("Settings")}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
                 </Button>
               </CardContent>
             </Card>

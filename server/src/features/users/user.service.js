@@ -332,6 +332,18 @@ class UserService {
       throw new ApiError(500, err.message || "Error in getFavoriteEvents");
     }
   }
+
+  async getActiveUsersCount() {
+    try {
+      const count = await User.countDocuments({
+        status: "active",
+        deletedAt: null,
+      });
+      return count;
+    } catch (err) {
+      throw new ApiError(500, `Error counting active users: ${err.message}`);
+    }
+  }
 }
 
 export default new UserService();
