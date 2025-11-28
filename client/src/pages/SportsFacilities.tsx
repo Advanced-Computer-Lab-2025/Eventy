@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import {
   Calendar,
@@ -16,6 +16,7 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import StaffHeader from "@/components/StaffHeader";
+import AdminHeader from "@/components/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -46,6 +47,13 @@ const COURT_NAMES: Record<CourtType, string> = {
   football: "Football Field",
 };
 
+// Image mapping for each court type
+const COURT_IMAGES: Record<CourtType, string> = {
+  basketball: "/images/basketball.jpg",
+  tennis: "/images/tennis.jpg",
+  football: "/images/football.jpg",
+};
+
 // Helper to format 24h time into 12h AM/PM
 const formatTimeToAMPM = (time: string) => {
   const [hour, minute] = time.split(":").map(Number);
@@ -72,6 +80,14 @@ export default function SportsFacilities() {
     undefined
   );
   const [reservingKeys, setReservingKeys] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    // Load saved tab from localStorage, default to "courts"
+    if (typeof window !== "undefined") {
+      const savedTab = localStorage.getItem("sportsFacilitiesTab");
+      return savedTab || "courts";
+    }
+    return "courts";
+  });
   const { toast } = useToast();
 
   const ymdLocal = (d: string | Date | undefined | null) => {
@@ -128,20 +144,46 @@ export default function SportsFacilities() {
   };
 
   useEffect(() => {
-    // Fetch user role from token
+    // Fetch user role from token and localStorage
+    let role: string | null = null;
+
     const token = localStorage.getItem("token");
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
-        setUserRole(payload.role);
+        role = payload.role;
       } catch (error) {
         console.error("Failed to decode token:", error);
       }
     }
 
+    // Also try to get role from localStorage user object as fallback
+    if (!role) {
+      try {
+        const user = localStorage.getItem("user");
+        if (user) {
+          const userData = JSON.parse(user);
+          role = userData.role || null;
+        }
+      } catch (error) {
+        console.error("Failed to parse user from localStorage:", error);
+      }
+    }
+
+    if (role) {
+      setUserRole(role);
+    }
+
     // Fetch court schedules
     fetchCourtSchedules();
   }, []);
+
+  // Save tab selection to localStorage when it changes
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      localStorage.setItem("sportsFacilitiesTab", activeTab);
+    }
+  }, [activeTab]);
 
   const getBodyDateFromIndex = (index: number) => {
     const today = new Date();
@@ -267,6 +309,24 @@ export default function SportsFacilities() {
 
   const canViewCourts = userRole === "student";
 
+  const renderHeader = () => {
+    switch (userRole) {
+      case "student":
+        return <StudentHeader />;
+      case "staff":
+      case "ta":
+        return <StaffHeader />;
+      case "professor":
+        return <ProfessorHeader />;
+      case "events_office":
+        return <EventsOfficeHeader />;
+      case "admin":
+        return <AdminHeader />;
+      default:
+        return <StudentHeader />;
+    }
+  };
+
   const renderCourtContent = () => {
     const bodyDate = getBodyDateFromIndex(currentDayIndex);
     return (
@@ -308,36 +368,56 @@ export default function SportsFacilities() {
                 );
                 return { ...s, status: found ? "available" : "booked" } as Slot;
               });
+
+              // Check if there are any available slots
+              const availableSlots = slots.filter(
+                (s) => s.status === "available"
+              );
+              const hasAvailableSlots = availableSlots.length > 0;
+
               return (
-                <Card key={type} className="flex flex-col justify-between">
-                  <CardHeader>
+                <Card key={type} className="flex flex-col">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-xl text-center">
                       {label}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-2">
-                      {slots.length > 0 ? (
-                        slots.map((slot) => {
+                  <CardContent className="pt-0 flex-1">
+                    <div className="flex flex-col gap-2 w-full h-full">
+                      {!hasAvailableSlots ? (
+                        <div className="w-full h-full min-h-[250px] flex flex-col items-center text-muted-foreground py-8">
+                          <div className="mb-4 flex items-center justify-center">
+                            <div className="relative">
+                              <div className="absolute inset-0 rounded-full bg-muted/50 blur-xl"></div>
+                              <div className="relative rounded-full bg-background p-4 shadow-md">
+                                <img
+                                  src={COURT_IMAGES[type as CourtType]}
+                                  alt={`${label} icon`}
+                                  className="h-24 w-24 object-cover rounded-full"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-base font-semibold mb-1">
+                            No available slots today
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            New slots will appear here
+                          </p>
+                        </div>
+                      ) : (
+                        availableSlots.map((slot) => {
                           const slotKey = makeKey(
                             type as CourtType,
                             bodyDate,
                             slot.startTime
                           );
                           const isReserving = reservingKeys.includes(slotKey);
-                          if (slot.status !== "available") {
-                            return (
-                              <div
-                                key={slotKey}
-                                className="w-full h-12 flex items-center justify-center bg-muted rounded"
-                              />
-                            );
-                          }
                           return (
                             <Button
                               key={slotKey}
                               variant="outline"
-                              className="w-full justify-start gap-2"
+                              className="w-full justify-start gap-2 min-h-12 py-3"
                               disabled={isReserving}
                               onClick={() =>
                                 handleReserveCourt(
@@ -352,9 +432,6 @@ export default function SportsFacilities() {
                                   <div className="font-medium">
                                     {slot.startTime} - {slot.endTime}
                                   </div>
-                                  <div className="text-sm text-muted-foreground">
-                                    Available
-                                  </div>
                                 </div>
                                 <div>
                                   <Badge>Available</Badge>
@@ -363,15 +440,8 @@ export default function SportsFacilities() {
                             </Button>
                           );
                         })
-                      ) : (
-                        <div className="text-muted-foreground">
-                          No slots available
-                        </div>
                       )}
                     </div>
-                    <p className="text-muted-foreground">
-                      Book courts and join gym sessions
-                    </p>
                   </CardContent>
                 </Card>
               );
@@ -384,10 +454,21 @@ export default function SportsFacilities() {
 
   return (
     <div className="min-h-screen bg-background">
-      <StudentHeader />
+      {renderHeader()}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Sports Facilities</h1>
+          <p className="text-muted-foreground">
+            Book courts and join gym sessions
+          </p>
+        </div>
+
         {canViewCourts ? (
-          <Tabs defaultValue="courts" className="space-y-6">
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            className="space-y-6"
+          >
             <TabsList>
               <TabsTrigger value="courts">
                 <Calendar className="h-4 w-4 mr-2" />
