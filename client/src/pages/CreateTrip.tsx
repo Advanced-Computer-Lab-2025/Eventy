@@ -333,20 +333,21 @@ export default function TripManagement() {
       <EventsOfficeHeader />
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-2">Trip Management</h1>
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="text-4xl font-bold">Trip Management</h1>
+            <Button
+              onClick={() => handleOpenModal()}
+              data-testid="button-create-trip"
+              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
+            >
+              <Plus className="mr-1 h-4 w-4" />
+              Create Trip
+            </Button>
+          </div>
           <p className="text-muted-foreground">
             Organize and manage trips for university students and staff
           </p>
         </div>
-
-        <Button
-          onClick={() => handleOpenModal()}
-          className="mb-6"
-          data-testid="button-create-trip"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Create Trip
-        </Button>
 
         <Card>
           <CardHeader>
