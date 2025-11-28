@@ -102,7 +102,7 @@ export interface EventCardProps {
   showActions?: boolean;
   showDetailedView?: boolean;
   showAttendees?: boolean;
-  showRegisterButton?: boolean; // ✅ Add new prop to control register button specifically
+  showRegisterButton?: boolean;
   isRegistered?: boolean;
   onRegister?: () => void;
   status?: string;
@@ -118,7 +118,7 @@ export interface EventCardProps {
   canDelete?: boolean;
   className?: string;
   allowCancellation?: boolean;
-  onUnregister?: () => void; // New Prop callback
+  onUnregister?: () => void;
   hideRegisterButton?: boolean;
   showAttendeeCount?: boolean;
   inlinePriceWithLocation?: boolean;
@@ -162,7 +162,7 @@ export default function EventCard({
   className,
   price = 0,
   allowCancellation = false,
-  onUnregister, // Destructure new prop
+  onUnregister,
   showAttendeeCount = true,
   inlinePriceWithLocation = false,
 }: EventCardProps & { price?: number }) {
@@ -173,15 +173,13 @@ export default function EventCard({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 
-  // Share handler - similar to VendorDashboard
+  // Share handler
   const handleShare = async () => {
-    // If a custom onShare handler is provided, use it
     if (onShare) {
       onShare();
       return;
     }
 
-    // Otherwise, use native share API with clipboard fallback
     const shareText = `Check out this event: ${title}${location ? ` at ${location}` : ""}${date ? ` on ${date}` : ""}`;
     const shareUrl = `${window.location.origin}/events/${id}`;
 
@@ -193,13 +191,11 @@ export default function EventCard({
           url: shareUrl,
         });
       } catch (err) {
-        // User cancelled or error occurred - silently fail
         if ((err as Error).name !== "AbortError") {
           console.error("Error sharing:", err);
         }
       }
     } else {
-      // Fallback: copy to clipboard
       try {
         await navigator.clipboard.writeText(shareUrl);
         toast({
@@ -207,7 +203,6 @@ export default function EventCard({
           description: "Event link copied to clipboard!",
         });
       } catch (err) {
-        // Fallback for older browsers
         const textArea = document.createElement("textarea");
         textArea.value = shareUrl;
         textArea.style.position = "fixed";
@@ -232,7 +227,6 @@ export default function EventCard({
     }
   };
 
-  // --- STATE FOR ATTENDEE COUNT ---
   const [localAttendeeCount, setLocalAttendeeCount] = useState(attendees);
 
   useEffect(() => {
@@ -249,19 +243,20 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
-  // Display category name (human readable)
+
+  // Display category name (human readable) - THIS LOGIC WAS CORRECT BUT UNUSED
   const displayCategory = isPlatformBooth
     ? "Platform Booth"
     : String(category)
         .replace(/_/g, " ")
         .replace(/\b\w/g, (c) => c.toUpperCase());
+
   const imageSrc = image || getEventImage(eventTypeForImage, title);
 
   const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
   );
 
-  // --- HANDLE REGISTRATION (FREE) ---
   const handleDirectRegister = async () => {
     try {
       const token = localStorage.getItem("token");
@@ -300,7 +295,6 @@ export default function EventCard({
     }
   };
 
-  // --- HANDLE CANCELLATION (Triggered by Dialog) ---
   const executeCancellation = async () => {
     setIsCanceling(true);
     try {
@@ -328,7 +322,6 @@ export default function EventCard({
       setRegistered(false);
       setLocalAttendeeCount((prev) => Math.max(0, prev - 1));
 
-      // CALL THE CALLBACK TO REMOVE FROM PARENT LIST
       if (onUnregister) {
         onUnregister();
       }
@@ -445,7 +438,8 @@ export default function EventCard({
           />
           {!showDetailedView && (
             <div className="absolute top-3 left-3">
-              <CategoryBadge category={category} />
+              {/* UPDATED: Using displayCategory to show "Platform Booth" */}
+              <CategoryBadge category={displayCategory as EventCategory} />
             </div>
           )}
         </div>
@@ -458,7 +452,8 @@ export default function EventCard({
                 <CardTitle className="text-xl break-words whitespace-normal">
                   {title}
                 </CardTitle>
-                <CategoryBadge category={category} />
+                {/* UPDATED: Using displayCategory to show "Platform Booth" */}
+                <CategoryBadge category={displayCategory as EventCategory} />
               </div>
             </CardHeader>
 
