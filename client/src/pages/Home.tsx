@@ -39,6 +39,7 @@ interface Event {
 
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
+  const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [professorOptions, setProfessorOptions] = useState<
     { id: string; name: string }[]
   >([]);
@@ -121,6 +122,12 @@ export default function Home() {
     });
 
     setEvents(sortedResults);
+
+    // If this is the first load (allEvents is empty), store all events for location computation
+    if (allEvents.length === 0) {
+      setAllEvents(sortedResults);
+    }
+
     // After first results, we're no longer in initial loading
     if (loading) setLoading(false);
   };
@@ -137,8 +144,28 @@ export default function Home() {
   };
 
   const locationOptions = useMemo(() => {
+    // Filter events by current eventType and professor (excluding location filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by professor
+      if (filters.professor) {
+        const eventProfessors = (event as any).professors || [];
+        const hasProfessor = eventProfessors.some(
+          (p: any) => String(p._id || p.id || p) === filters.professor
+        );
+        if (!hasProfessor) return false;
+      }
+      return true;
+    });
+
     const uniqueLocations = new Set<string>();
-    events.forEach((event) => {
+    filteredEvents.forEach((event) => {
       const loc =
         event.location ||
         (event.eventType === "platform_booth"
@@ -147,7 +174,7 @@ export default function Home() {
       if (loc) uniqueLocations.add(loc);
     });
     return Array.from(uniqueLocations);
-  }, [events]);
+  }, [allEvents, filters.eventType, filters.professor]);
 
   const appliedFilters: EventSearchFilters = useMemo(() => {
     const next: EventSearchFilters = {};
@@ -167,26 +194,79 @@ export default function Home() {
     return next;
   }, [filters]);
 
-  // compute professorOptions from events as a fallback
+  // compute professorOptions dynamically by filtering API professors based on available events
   const computedProfessorOptions = useMemo(() => {
-    const seen = new Map<string, string>();
-    events.forEach((event) => {
+    // Filter events by current eventType and location (excluding professor filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by location
+      if (filters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? (event as any).locationPreference
+            : "");
+        if (eventLocation !== filters.location) return false;
+      }
+      return true;
+    });
+
+    // Get all professor IDs from filtered events
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
       if (event.eventType === "workshop" || event.eventType === "conference") {
         const profs = (event as any).professors || [];
-        (profs || []).forEach((p: any) => {
+        profs.forEach((p: any) => {
           const id = p._id || p.id || p;
-          const name =
-            p.firstName && p.lastName
-              ? `${p.firstName} ${p.lastName}`
-              : p.name ||
-                p.companyName ||
-                `${p.firstName || ""} ${p.lastName || ""}`.trim();
-          if (id) seen.set(String(id), name || String(id));
+          if (id) availableProfessorIds.add(String(id));
         });
       }
     });
-    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
-  }, [events]);
+
+    // Filter API professors to only include those available in filtered events
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [allEvents, filters.eventType, filters.location, professorOptions]);
+
+  // Clear invalid filter selections when options change
+  useEffect(() => {
+    let needsUpdate = false;
+    const newFilters = { ...filters };
+
+    // Clear location if it's no longer available
+    if (
+      filters.location !== "all" &&
+      !locationOptions.includes(filters.location)
+    ) {
+      newFilters.location = "all";
+      needsUpdate = true;
+    }
+
+    // Clear professor if it's no longer available
+    if (
+      filters.professor &&
+      !computedProfessorOptions.some((p) => p.id === filters.professor)
+    ) {
+      newFilters.professor = "";
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      setFilters(newFilters);
+    }
+  }, [
+    locationOptions,
+    computedProfessorOptions,
+    filters.location,
+    filters.professor,
+  ]);
 
   useEffect(() => {
     const baseUrl =
@@ -238,11 +318,7 @@ export default function Home() {
                   filters={filters}
                   onFilterChange={setFilters}
                   locations={locationOptions}
-                  professors={
-                    professorOptions.length > 0
-                      ? professorOptions
-                      : computedProfessorOptions
-                  }
+                  professors={computedProfessorOptions}
                   userRole=""
                 />
               </div>

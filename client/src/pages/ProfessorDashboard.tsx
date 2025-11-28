@@ -40,6 +40,7 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [professorOptions, setProfessorOptions] = useState<
@@ -134,9 +135,29 @@ export default function ProfessorDashboard() {
     }
   };
 
-  // Compute unique locations from events
+  // Compute unique locations dynamically based on current filters
   const computedLocationOptions = useMemo(() => {
-    const locations = events
+    // Filter events by current eventType and professor (excluding location filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by professor
+      if (filters.professor) {
+        const eventProfessors = (event as any).professors || [];
+        const hasProfessor = eventProfessors.some(
+          (p: any) => String(p._id || p.id || p) === filters.professor
+        );
+        if (!hasProfessor) return false;
+      }
+      return true;
+    });
+
+    const locations = filteredEvents
       .map(
         (event) =>
           event.location ||
@@ -146,7 +167,81 @@ export default function ProfessorDashboard() {
       )
       .filter(Boolean) as string[];
     return Array.from(new Set(locations));
-  }, [events]);
+  }, [allEvents, filters.eventType, filters.professor]);
+
+  // Compute professor options dynamically by filtering API professors based on available events
+  const computedProfessorOptions = useMemo(() => {
+    // Filter events by current eventType and location (excluding professor filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by location
+      if (filters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? event.locationPreference
+            : "");
+        if (eventLocation !== filters.location) return false;
+      }
+      return true;
+    });
+
+    // Get all professor IDs from filtered events
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          if (id) availableProfessorIds.add(String(id));
+        });
+      }
+    });
+
+    // Filter API professors to only include those available in filtered events
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [allEvents, filters.eventType, filters.location, professorOptions]);
+
+  // Clear invalid filter selections when options change
+  useEffect(() => {
+    let needsUpdate = false;
+    const newFilters = { ...filters };
+
+    // Clear location if it's no longer available
+    if (
+      filters.location !== "all" &&
+      !computedLocationOptions.includes(filters.location)
+    ) {
+      newFilters.location = "all";
+      needsUpdate = true;
+    }
+
+    // Clear professor if it's no longer available
+    if (
+      filters.professor &&
+      !computedProfessorOptions.some((p) => p.id === filters.professor)
+    ) {
+      newFilters.professor = "";
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      setFilters(newFilters);
+    }
+  }, [
+    computedLocationOptions,
+    computedProfessorOptions,
+    filters.location,
+    filters.professor,
+  ]);
 
   const getWorkshopStats = () => {
     const total = workshops.length;
@@ -168,6 +263,12 @@ export default function ProfessorDashboard() {
       return 0;
     });
     setEvents(sortedResults);
+
+    // If this is the first load (allEvents is empty), store all events for location computation
+    if (allEvents.length === 0) {
+      setAllEvents(sortedResults);
+    }
+
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
@@ -355,7 +456,7 @@ export default function ProfessorDashboard() {
                 filters={filters}
                 onFilterChange={setFilters}
                 locations={computedLocationOptions}
-                professors={professorOptions.length > 0 ? professorOptions : []}
+                professors={computedProfessorOptions}
                 userRole=""
               />
             </div>
