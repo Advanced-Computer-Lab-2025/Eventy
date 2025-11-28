@@ -233,7 +233,7 @@ export default function Home() {
           {/* Filters and Content Section */}
           <div className="flex flex-col lg:flex-row gap-8">
             <aside className="lg:w-72 flex-shrink-0">
-              <div className="sticky top-24 space-y-4">
+              <div className="sticky top-32 space-y-4">
                 <EventFilters
                   filters={filters}
                   onFilterChange={setFilters}

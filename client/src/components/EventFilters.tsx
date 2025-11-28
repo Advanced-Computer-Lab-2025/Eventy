@@ -18,6 +18,7 @@ import {
   ArrowUpDown,
   User,
   AlertCircle,
+  CalendarDays,
 } from "lucide-react";
 
 const eventTypes = [
@@ -96,9 +97,13 @@ export default function EventFilters({
           Filters
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent
+        className={userRole === "events_office" ? "space-y-4" : "space-y-6"}
+      >
         {userRole === "events_office" && (
-          <div className="space-y-3">
+          <div
+            className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+          >
             <div className="text-sm font-semibold">Time Period</div>
             {!(filters.showUpcoming || filters.showPast) && (
               <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
@@ -108,7 +113,11 @@ export default function EventFilters({
                 </p>
               </div>
             )}
-            <div className="space-y-2">
+            <div
+              className={
+                userRole === "events_office" ? "space-y-1.5" : "space-y-2"
+              }
+            >
               <div className="flex items-center gap-2">
                 <Checkbox
                   id="filter-upcoming"
@@ -140,7 +149,9 @@ export default function EventFilters({
           </div>
         )}
 
-        <div className="space-y-3">
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
           <div className="flex items-center gap-2 text-sm font-semibold">
             <Calendar className="h-4 w-4" />
             Event Type
@@ -163,7 +174,9 @@ export default function EventFilters({
         </div>
 
         {professors && professors.length > 0 && (
-          <div className="space-y-3">
+          <div
+            className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+          >
             <div className="flex items-center gap-2 text-sm font-semibold">
               <User className="h-4 w-4" />
               Professor
@@ -189,7 +202,9 @@ export default function EventFilters({
           </div>
         )}
 
-        <div className="space-y-3">
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
           <div className="flex items-center gap-2 text-sm font-semibold">
             <MapPin className="h-4 w-4" />
             Location
@@ -211,26 +226,22 @@ export default function EventFilters({
           </Select>
         </div>
 
-        <div className="space-y-3">
-          <div className="text-sm font-semibold mb-1">Date Range</div>
-          <div className="space-y-2">
-            <div
-              className="relative cursor-pointer group"
-              tabIndex={0}
-              onClick={(e) => {
-                const input = document.getElementById(
-                  "event-filter-start-date"
-                );
-                if (input) {
-                  if ((input as HTMLInputElement).showPicker) {
-                    (input as HTMLInputElement).showPicker();
-                  } else {
-                    input.focus();
-                  }
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarDays className="h-4 w-4" />
+            Date Range
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">
+                From
+              </label>
+              <div
+                className="relative cursor-pointer group"
+                tabIndex={0}
+                onClick={(e) => {
                   const input = document.getElementById(
                     "event-filter-start-date"
                   );
@@ -241,38 +252,46 @@ export default function EventFilters({
                       input.focus();
                     }
                   }
-                }
-              }}
-            >
-              <Input
-                id="event-filter-start-date"
-                type="date"
-                value={filters.startDate}
-                onChange={(e) => updateFilters({ startDate: e.target.value })}
-                min={today}
-                aria-label="Filter start date"
-                className="appearance-none pr-2 pl-2 cursor-pointer"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ pointerEvents: "auto" }}
-              ></div>
-            </div>
-            <div
-              className="relative cursor-pointer group"
-              tabIndex={0}
-              onClick={(e) => {
-                const input = document.getElementById("event-filter-end-date");
-                if (input) {
-                  if ((input as HTMLInputElement).showPicker) {
-                    (input as HTMLInputElement).showPicker();
-                  } else {
-                    input.focus();
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    const input = document.getElementById(
+                      "event-filter-start-date"
+                    );
+                    if (input) {
+                      if ((input as HTMLInputElement).showPicker) {
+                        (input as HTMLInputElement).showPicker();
+                      } else {
+                        input.focus();
+                      }
+                    }
                   }
-                }
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
+                }}
+              >
+                <Input
+                  id="event-filter-start-date"
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => updateFilters({ startDate: e.target.value })}
+                  min={today}
+                  placeholder="Start date"
+                  aria-label="Filter start date"
+                  className="appearance-none cursor-pointer"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ pointerEvents: "auto" }}
+                ></div>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">
+                To
+              </label>
+              <div
+                className="relative cursor-pointer group"
+                tabIndex={0}
+                onClick={(e) => {
                   const input = document.getElementById(
                     "event-filter-end-date"
                   );
@@ -283,22 +302,37 @@ export default function EventFilters({
                       input.focus();
                     }
                   }
-                }
-              }}
-            >
-              <Input
-                id="event-filter-end-date"
-                type="date"
-                value={filters.endDate}
-                onChange={(e) => updateFilters({ endDate: e.target.value })}
-                min={filters.startDate || today}
-                aria-label="Filter end date"
-                className="appearance-none pr-2 pl-2 cursor-pointer"
-              />
-              <div
-                className="absolute inset-0"
-                style={{ pointerEvents: "auto" }}
-              ></div>
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    const input = document.getElementById(
+                      "event-filter-end-date"
+                    );
+                    if (input) {
+                      if ((input as HTMLInputElement).showPicker) {
+                        (input as HTMLInputElement).showPicker();
+                      } else {
+                        input.focus();
+                      }
+                    }
+                  }
+                }}
+              >
+                <Input
+                  id="event-filter-end-date"
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => updateFilters({ endDate: e.target.value })}
+                  min={filters.startDate || today}
+                  placeholder="End date"
+                  aria-label="Filter end date"
+                  className="appearance-none cursor-pointer"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ pointerEvents: "auto" }}
+                ></div>
+              </div>
             </div>
           </div>
         </div>
