@@ -361,31 +361,34 @@ export default function SportsFacilities() {
                 );
                 return { ...s, status: found ? "available" : "booked" } as Slot;
               });
+
+              // Check if there are any available slots
+              const availableSlots = slots.filter(
+                (s) => s.status === "available"
+              );
+              const hasAvailableSlots = availableSlots.length > 0;
+
               return (
-                <Card key={type} className="flex flex-col justify-between">
-                  <CardHeader>
+                <Card key={type} className="flex flex-col">
+                  <CardHeader className="pb-3">
                     <CardTitle className="text-xl text-center">
                       {label}
                     </CardTitle>
                   </CardHeader>
-                  <CardContent>
-                    <div className="flex flex-col gap-2">
-                      {slots.length > 0 ? (
-                        slots.map((slot) => {
+                  <CardContent className="pt-0 flex-1 flex items-center justify-center min-h-[200px]">
+                    <div className="flex flex-col gap-2 w-full">
+                      {!hasAvailableSlots ? (
+                        <div className="w-full min-h-12 flex items-center justify-center bg-muted rounded text-muted-foreground text-sm py-4 text-center">
+                          No available slots today
+                        </div>
+                      ) : (
+                        availableSlots.map((slot) => {
                           const slotKey = makeKey(
                             type as CourtType,
                             bodyDate,
                             slot.startTime
                           );
                           const isReserving = reservingKeys.includes(slotKey);
-                          if (slot.status !== "available") {
-                            return (
-                              <div
-                                key={slotKey}
-                                className="w-full h-12 flex items-center justify-center bg-muted rounded"
-                              />
-                            );
-                          }
                           return (
                             <Button
                               key={slotKey}
@@ -413,10 +416,6 @@ export default function SportsFacilities() {
                             </Button>
                           );
                         })
-                      ) : (
-                        <div className="text-muted-foreground">
-                          No slots available
-                        </div>
                       )}
                     </div>
                   </CardContent>
