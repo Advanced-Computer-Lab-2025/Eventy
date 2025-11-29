@@ -1,6 +1,14 @@
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
-import { CheckCircle, XCircle, Info, Edit } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Info,
+  Edit,
+  SlidersHorizontal,
+  Building2,
+  Search,
+} from "lucide-react";
 
 // top-level components (from components folder)
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
@@ -10,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Table,
   TableBody,
@@ -41,8 +50,8 @@ export default function WorkshopApprovals() {
   const [allWorkshops, setAllWorkshops] = useState<any[]>([]);
   const [filteredWorkshops, setFilteredWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState("all");
-  const [facultyFilter, setFacultyFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
+  const [facultyFilter, setFacultyFilter] = useState<string[]>(["all"]);
   const [selectedWorkshop, setSelectedWorkshop] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditRequestDialog, setShowEditRequestDialog] = useState(false);
@@ -113,13 +122,15 @@ export default function WorkshopApprovals() {
   // Apply status, faculty filters, and search to workshops
   const applyFilters = (
     workshops: any[],
-    status: string,
-    faculty: string,
+    statuses: string[],
+    faculties: string[],
     search: string = ""
   ) => {
     let filtered = workshops.filter((w) => {
-      const statusMatch = status === "all" || w.status === status;
-      const facultyMatch = faculty === "all" || w.faculty === faculty;
+      const statusMatch =
+        statuses.includes("all") || statuses.includes(w.status);
+      const facultyMatch =
+        faculties.includes("all") || faculties.includes(w.faculty);
       return statusMatch && facultyMatch;
     });
 
@@ -156,15 +167,51 @@ export default function WorkshopApprovals() {
   }, [searchInput, allWorkshops, statusFilter, facultyFilter]);
 
   // Handle status filter change
-  const handleStatusFilterChange = (newStatus: string) => {
-    setStatusFilter(newStatus);
-    applyFilters(allWorkshops, newStatus, facultyFilter, searchInput);
+  const handleStatusFilterChange = (status: string, checked: boolean) => {
+    let newStatuses: string[];
+
+    if (status === "all") {
+      newStatuses = checked ? ["all"] : [];
+    } else {
+      if (checked) {
+        // Remove "all" if it exists and add the new status
+        newStatuses = statusFilter.filter((s) => s !== "all").concat(status);
+      } else {
+        // Remove the status
+        newStatuses = statusFilter.filter((s) => s !== status);
+        // If no statuses selected, default to "all"
+        if (newStatuses.length === 0) {
+          newStatuses = ["all"];
+        }
+      }
+    }
+
+    setStatusFilter(newStatuses);
+    applyFilters(allWorkshops, newStatuses, facultyFilter, searchInput);
   };
 
   // Handle faculty filter change
-  const handleFacultyFilterChange = (newFaculty: string) => {
-    setFacultyFilter(newFaculty);
-    applyFilters(allWorkshops, statusFilter, newFaculty, searchInput);
+  const handleFacultyFilterChange = (faculty: string, checked: boolean) => {
+    let newFaculties: string[];
+
+    if (faculty === "all") {
+      newFaculties = checked ? ["all"] : [];
+    } else {
+      if (checked) {
+        // Remove "all" if it exists and add the new faculty
+        newFaculties = facultyFilter.filter((f) => f !== "all").concat(faculty);
+      } else {
+        // Remove the faculty
+        newFaculties = facultyFilter.filter((f) => f !== faculty);
+        // If no faculties selected, default to "all"
+        if (newFaculties.length === 0) {
+          newFaculties = ["all"];
+        }
+      }
+    }
+
+    setFacultyFilter(newFaculties);
+    applyFilters(allWorkshops, statusFilter, newFaculties, searchInput);
   };
 
   // Approve workshop
@@ -224,7 +271,7 @@ export default function WorkshopApprovals() {
       setShowEditRequestDialog(false);
       setShowDetailsDialog(false);
       setRevisionComments("");
-      handleStatusFilterChange("needs_revision");
+      setStatusFilter(["needs_revision"]);
       fetchAllWorkshops();
     } catch (err: any) {
       console.error(
@@ -260,75 +307,216 @@ export default function WorkshopApprovals() {
           </p>
         </div>
 
-        {/* Search and Filter Bar */}
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end">
+        {/* Sidebar Layout with Filters */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Sidebar - Filters */}
+          <aside className="lg:w-72 flex-shrink-0">
+            <div className="sticky top-32">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-5 w-5" />
+                    Filters
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold">Status</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-all"
+                          checked={statusFilter.includes("all")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange("all", checked as boolean)
+                          }
+                        />
+                        <Label
+                          htmlFor="status-all"
+                          className="cursor-pointer text-sm"
+                        >
+                          All
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-pending"
+                          checked={statusFilter.includes("pending")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "pending",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-pending"
+                          className="cursor-pointer text-sm"
+                        >
+                          Pending
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-approved"
+                          checked={statusFilter.includes("approved")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "approved",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-approved"
+                          className="cursor-pointer text-sm"
+                        >
+                          Approved
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-rejected"
+                          checked={statusFilter.includes("rejected")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "rejected",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-rejected"
+                          className="cursor-pointer text-sm"
+                        >
+                          Rejected
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-needs_revision"
+                          checked={statusFilter.includes("needs_revision")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "needs_revision",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-needs_revision"
+                          className="cursor-pointer text-sm"
+                        >
+                          Requested Edits
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Faculty Filter */}
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm font-semibold">
+                      <Building2 className="h-4 w-4" />
+                      Faculty
+                    </div>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="faculty-all"
+                          checked={facultyFilter.includes("all")}
+                          onCheckedChange={(checked) =>
+                            handleFacultyFilterChange("all", checked as boolean)
+                          }
+                        />
+                        <Label
+                          htmlFor="faculty-all"
+                          className="cursor-pointer text-sm"
+                        >
+                          All Faculties
+                        </Label>
+                      </div>
+                      {faculties
+                        .filter(
+                          (faculty): faculty is string =>
+                            typeof faculty === "string"
+                        )
+                        .map((faculty) => (
+                          <div
+                            key={faculty}
+                            className="flex items-center gap-2"
+                          >
+                            <Checkbox
+                              id={`faculty-${faculty}`}
+                              checked={facultyFilter.includes(faculty)}
+                              onCheckedChange={(checked) =>
+                                handleFacultyFilterChange(
+                                  faculty,
+                                  checked as boolean
+                                )
+                              }
+                            />
+                            <Label
+                              htmlFor={`faculty-${faculty}`}
+                              className="cursor-pointer text-sm"
+                            >
+                              {faculty}
+                            </Label>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+
+                  {/* Clear Filters Button */}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setStatusFilter(["all"]);
+                      setFacultyFilter(["all"]);
+                      setSearchInput("");
+                      applyFilters(allWorkshops, ["all"], ["all"], "");
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </aside>
+
+          {/* Right Content - Workshops Table */}
           <div className="flex-1">
-            <Label htmlFor="search" className="mb-2 block text-sm font-medium">
-              Search Workshops
-            </Label>
-            <Input
-              id="search"
-              placeholder="Search by workshop name or creator..."
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="w-full"
-            />
-          </div>
-          <div className="w-full md:w-48">
-            <Label
-              htmlFor="faculty-filter"
-              className="mb-2 block text-sm font-medium"
-            >
-              Filter by Faculty
-            </Label>
-            <Select
-              value={facultyFilter}
-              onValueChange={handleFacultyFilterChange}
-            >
-              <SelectTrigger id="faculty-filter">
-                <SelectValue placeholder="Select Faculty" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Faculties</SelectItem>
-                {faculties
-                  .filter(
-                    (faculty): faculty is string => typeof faculty === "string"
-                  )
-                  .map((faculty) => (
-                    <SelectItem key={faculty} value={faculty}>
-                      {faculty}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        <Tabs value={statusFilter} onValueChange={handleStatusFilterChange}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="all">All</TabsTrigger>
-            <TabsTrigger value="pending">Pending</TabsTrigger>
-            <TabsTrigger value="approved">Approved</TabsTrigger>
-            <TabsTrigger value="rejected">Rejected</TabsTrigger>
-            <TabsTrigger value="needs_revision">Requested Edits</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={statusFilter}>
             <Card>
               <CardHeader>
                 <CardTitle>
-                  {statusFilter === "all"
-                    ? "All Workshops"
-                    : statusFilter === "needs_revision"
-                      ? "Workshops with Requested Edits"
-                      : `${statusFilter.charAt(0).toUpperCase() + statusFilter.slice(1)} Workshops`}
+                  Workshops{" "}
+                  {filteredWorkshops.length > 0 &&
+                    `(${filteredWorkshops.length})`}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                {filteredWorkshops.length === 0 ? (
+              <CardContent className="space-y-4">
+                {/* Search Bar */}
+                <div className="flex items-center gap-3">
+                  <div className="flex-1 relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search by workshop name or creator..."
+                      value={searchInput}
+                      onChange={(e) => setSearchInput(e.target.value)}
+                      className="w-full pl-10"
+                    />
+                  </div>
+                </div>
+
+                {/* Workshops Table */}
+                {loading ? (
                   <p className="text-muted-foreground text-center py-6">
-                    No {statusFilter === "all" ? "" : statusFilter} workshops
-                    found.
+                    Loading workshops...
+                  </p>
+                ) : filteredWorkshops.length === 0 ? (
+                  <p className="text-muted-foreground text-center py-6">
+                    No workshops found.
                   </p>
                 ) : (
                   <Table>
@@ -433,8 +621,8 @@ export default function WorkshopApprovals() {
                 )}
               </CardContent>
             </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        </div>
       </main>
 
       {/* Workshop Details Dialog */}
