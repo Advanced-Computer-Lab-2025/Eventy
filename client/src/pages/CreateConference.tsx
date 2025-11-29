@@ -108,6 +108,7 @@ export default function CreateConference() {
           includeProfessors
           submitLabel="Create Conference"
           title="Conference Information"
+          onCancel={() => setLocation("/events-office/dashboard")}
         />
       </main>
     </div>

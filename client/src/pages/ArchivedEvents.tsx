@@ -5,6 +5,8 @@ import EventCard from "@/components/EventCard";
 import { getEventImage } from "@/lib/eventImages";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
+import EmptyState from "@/components/EmptyState";
+import { Archive } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -126,15 +128,29 @@ export default function ArchivedEvents() {
           </p>
         </div>
 
-        <Card>
-          <CardContent>
-            {loading ? (
-              <p>Loading archived events...</p>
-            ) : error ? (
+        {loading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">
+                Loading archived events...
+              </p>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
               <p className="text-red-500">{error}</p>
-            ) : events.length === 0 ? (
-              <p className="text-muted-foreground">No archived events found.</p>
-            ) : (
+            </CardContent>
+          </Card>
+        ) : events.length === 0 ? (
+          <EmptyState
+            title="No archived events"
+            description="Events that have ended will appear here once they are archived."
+            icon={Archive}
+          />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {events.map((event: any) => (
                   <EventCard
@@ -200,9 +216,9 @@ export default function ArchivedEvents() {
                   />
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <EventDetailsDialog

@@ -597,18 +597,43 @@ export default function EventCard({
               <div className="flex gap-2 mt-auto">
                 {registered && startDate && new Date() > new Date(startDate) ? (
                   <>
-                    {onViewDetails && (
-                      <Button
-                        className="flex-1"
-                        variant="outline"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewDetails();
-                        }}
-                      >
-                        View Details
-                      </Button>
-                    )}
+                    <div className="flex gap-2 flex-1 justify-center">
+                      {onViewDetails && (
+                        <Button
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDetails();
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      )}
+                      {onUnarchive && (
+                        <Button
+                          variant="outline"
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            try {
+                              await onUnarchive();
+                            } catch (err) {
+                              // parent handles errors
+                            }
+                          }}
+                          disabled={isUnarchiving}
+                          data-testid={`button-unarchive-${id}`}
+                        >
+                          {isUnarchiving ? (
+                            "Unarchiving..."
+                          ) : (
+                            <>
+                              <ArchiveRestore className="h-4 w-4 mr-1" />
+                              Unarchive
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
                     <Button
                       className="flex-1"
                       onClick={onFeedback}
@@ -635,7 +660,8 @@ export default function EventCard({
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&
-                  isBeforeDeadline ? (
+                  isBeforeDeadline &&
+                  !isArchived ? (
                   <Button
                     className="flex-1"
                     onClick={() =>
@@ -675,10 +701,9 @@ export default function EventCard({
                     )}
                   </Button>
                 )}
-                <div className="flex gap-2 ml-auto">
+                <div className="flex gap-2 justify-center items-center w-full">
                   {onViewDetails && (
                     <Button
-                      className={canRegister ? "flex-1" : "flex-1"}
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -686,6 +711,30 @@ export default function EventCard({
                       }}
                     >
                       View Details
+                    </Button>
+                  )}
+                  {onUnarchive && (
+                    <Button
+                      variant="outline"
+                      onClick={async (e) => {
+                        e.stopPropagation();
+                        try {
+                          await onUnarchive();
+                        } catch (err) {
+                          // parent handles errors
+                        }
+                      }}
+                      disabled={isUnarchiving}
+                      data-testid={`button-unarchive-${id}`}
+                    >
+                      {isUnarchiving ? (
+                        "Unarchiving..."
+                      ) : (
+                        <>
+                          <ArchiveRestore className="h-4 w-4 mr-1" />
+                          Unarchive
+                        </>
+                      )}
                     </Button>
                   )}
                   {canShowFavorites && <FavoriteButton eventId={id} />}
@@ -780,18 +829,43 @@ export default function EventCard({
                   startDate &&
                   new Date() > new Date(startDate) ? (
                     <>
-                      {onViewDetails && (
-                        <Button
-                          className="w-full"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails();
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      )}
+                      <div className="flex gap-2 w-full justify-center">
+                        {onViewDetails && (
+                          <Button
+                            variant="outline"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewDetails();
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        )}
+                        {onUnarchive && (
+                          <Button
+                            variant="outline"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await onUnarchive();
+                              } catch (err) {
+                                // parent handles errors
+                              }
+                            }}
+                            disabled={isUnarchiving}
+                            data-testid={`button-unarchive-compact-${id}`}
+                          >
+                            {isUnarchiving ? (
+                              "Unarchiving..."
+                            ) : (
+                              <>
+                                <ArchiveRestore className="h-4 w-4 mr-1" />
+                                Unarchive
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                       <Button
                         onClick={onFeedback}
                         className="flex-1"
@@ -803,18 +877,43 @@ export default function EventCard({
                   ) : registered ? (
                     allowCancellation ? (
                       <>
-                        {onViewDetails && (
-                          <Button
-                            className="w-full"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
+                        <div className="flex gap-2 w-full justify-center">
+                          {onViewDetails && (
+                            <Button
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails();
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          )}
+                          {onUnarchive && (
+                            <Button
+                              variant="outline"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await onUnarchive();
+                                } catch (err) {
+                                  // parent handles errors
+                                }
+                              }}
+                              disabled={isUnarchiving}
+                              data-testid={`button-unarchive-compact-${id}`}
+                            >
+                              {isUnarchiving ? (
+                                "Unarchiving..."
+                              ) : (
+                                <>
+                                  <ArchiveRestore className="h-4 w-4 mr-1" />
+                                  Unarchive
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                         <Button
                           className="w-full"
                           variant="destructive"
@@ -829,25 +928,51 @@ export default function EventCard({
                         <Button className="w-full" disabled>
                           Registered
                         </Button>
-                        {onViewDetails && (
-                          <Button
-                            className="w-full"
-                            variant="outline"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
+                        <div className="flex gap-2 w-full justify-center">
+                          {onViewDetails && (
+                            <Button
+                              variant="outline"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onViewDetails();
+                              }}
+                            >
+                              View Details
+                            </Button>
+                          )}
+                          {onUnarchive && (
+                            <Button
+                              variant="outline"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                try {
+                                  await onUnarchive();
+                                } catch (err) {
+                                  // parent handles errors
+                                }
+                              }}
+                              disabled={isUnarchiving}
+                              data-testid={`button-unarchive-compact-${id}`}
+                            >
+                              {isUnarchiving ? (
+                                "Unarchiving..."
+                              ) : (
+                                <>
+                                  <ArchiveRestore className="h-4 w-4 mr-1" />
+                                  Unarchive
+                                </>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </>
                     )
                   ) : (
                     showRegisterButton &&
                     !hideRegisterButton &&
                     isRegisterable &&
-                    isBeforeDeadline && (
+                    isBeforeDeadline &&
+                    !isArchived && (
                       <Button
                         onClick={() =>
                           requiresPayment
