@@ -1368,34 +1368,34 @@ export default function EventsOfficeDashboard() {
                                     : event.eventType || "academic"
                                 }
                                 date={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? `Active for ${event.durationWeeks} week${
-                                        event.durationWeeks > 1 ? "s" : ""
-                                      }`
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleDateString("en-US", {
-                                          weekday: "short",
-                                          month: "long",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? `Active for ${event.durationWeeks} week${
+                                          event.durationWeeks > 1 ? "s" : ""
+                                        }`
                                       : "TBA"
                                 }
                                 time={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? ""
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleTimeString("en-US", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? ""
                                       : "TBA"
                                 }
                                 location={

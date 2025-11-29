@@ -122,8 +122,18 @@ export default function MyEvents() {
     });
   };
 
-  const formatBoothDate = (durationWeeks: number) => {
-    return `Active for ${durationWeeks} week${durationWeeks > 1 ? "s" : ""}`;
+  const formatBoothDate = (event: any) => {
+    // If platform booth has startDate and endDate, show dates
+    if (event.startDate && event.endDate) {
+      const start = formatEventDate(event.startDate);
+      const end = formatEventDate(event.endDate);
+      return `${start} - ${end}`;
+    }
+    // Otherwise fall back to duration
+    if (event.durationWeeks) {
+      return `Active for ${event.durationWeeks} week${event.durationWeeks > 1 ? "s" : ""}`;
+    }
+    return "TBA";
   };
 
   const handleCardClick = async (eventId: string) => {
@@ -184,12 +194,12 @@ export default function MyEvents() {
                     title={event.name}
                     category={event.eventType}
                     date={
-                      isBoothEvent && event.durationWeeks
-                        ? formatBoothDate(event.durationWeeks)
+                      isBoothEvent
+                        ? formatBoothDate(event)
                         : formatEventDate(event.startDate)
                     }
                     time={
-                      isBoothEvent && event.durationWeeks
+                      isBoothEvent && !event.startDate
                         ? ""
                         : formatEventTime(event.startDate)
                     }
