@@ -66,6 +66,14 @@ router.patch(
   UserController.toggleBlockStatus
 );
 
+// GET /api/users/active/count - Get count of active users (admin only)
+router.get(
+  "/active/count",
+  authMiddleware,
+  role(["admin"]),
+  UserController.getActiveUsersCount
+);
+
 // Favorite events routes for students, staff, TAs, and professors
 router.post(
   "/favorites",

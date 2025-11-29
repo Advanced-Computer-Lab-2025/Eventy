@@ -180,21 +180,11 @@ export default function ApprovedLoyaltyPartnersPage() {
     <>
       {renderHeader()}
       <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <div>
-            <h1 className="text-3xl font-bold">GUC Loyalty Program Partners</h1>
-            <p className="text-muted-foreground">
-              View all approved vendors participating in the loyalty program
-            </p>
-          </div>
-          <Button
-            onClick={fetchPartners}
-            variant="outline"
-            className="gap-2 shrink-0"
-          >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
-          </Button>
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">GUC Loyalty Program Partners</h1>
+          <p className="text-muted-foreground">
+            View all approved vendors participating in the loyalty program
+          </p>
         </div>
 
         {partners.length === 0 ? (

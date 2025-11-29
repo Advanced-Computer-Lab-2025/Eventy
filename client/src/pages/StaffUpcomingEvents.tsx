@@ -16,7 +16,7 @@ interface Event {
   location?: string;
   locationPreference?: string;
   attendeesCount?: number;
-  attendees?: string[];
+  attendees?: string[]; // List of IDs
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
@@ -24,6 +24,9 @@ interface Event {
   description?: string;
   professors?: any[];
   durationWeeks?: number;
+  price?: number; // Added price
+  durationWeeks?: number;
+  locationPreference?: string;
   vendors?: Array<{
     vendorId?: string;
     vendorName?: string;
@@ -89,52 +92,6 @@ export default function StaffUpcomingEvents() {
   const handleLoading = (isLoading: boolean) => {
     if (events.length === 0) {
       setLoading(isLoading);
-    }
-  };
-
-  const handleRegisterEvent = async (eventId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please login to register for events",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You have been successfully registered for the event.",
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Registration Failed",
-          description: errorData.message || "Failed to register for event",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering for the event",
-        variant: "destructive",
-      });
     }
   };
 

@@ -26,8 +26,8 @@ export const validateAcademicSignUp = (data) => {
     }
   }
 
-  if (!password || password.length < 6) {
-    throw new Error("Password must be at least 6 characters long.");
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters long.");
   }
 
   if (!firstName || !lastName) {
@@ -70,8 +70,8 @@ export const validateVendorSignUp = (data) => {
     );
   }
 
-  if (!password || password.length < 6) {
-    throw new Error("Password must be at least 6 characters long.");
+  if (!password || password.length < 8) {
+    throw new Error("Password must be at least 8 characters long.");
   }
 
   if (!companyName) {

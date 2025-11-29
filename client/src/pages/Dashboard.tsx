@@ -151,67 +151,56 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {[...events]
-                      .sort((a, b) => {
-                        const aDate = a.startDate
-                          ? new Date(a.startDate).getTime()
-                          : 0;
-                        const bDate = b.startDate
-                          ? new Date(b.startDate).getTime()
-                          : 0;
-                        return sortOrder === "asc"
-                          ? aDate - bDate
-                          : bDate - aDate;
-                      })
-                      .map((event: any, index: number) => (
-                        <EventCard
-                          key={event._id || index}
-                          id={event._id || String(index)}
-                          title={event.name || "Untitled Event"}
-                          category={(event.eventType || "academic") as any}
-                          date={
-                            event.startDate
-                              ? new Date(event.startDate).toLocaleDateString(
-                                  "en-US",
-                                  {
-                                    weekday: "short",
-                                    month: "long",
-                                    day: "numeric",
-                                    year: "numeric",
-                                  }
-                                )
-                              : "TBA"
-                          }
-                          time={
-                            event.startDate
-                              ? new Date(event.startDate).toLocaleTimeString(
-                                  "en-US",
-                                  {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                  }
-                                )
-                              : "TBA"
-                          }
-                          location={
-                            event.location ||
-                            (event.eventType === "platform_booth"
-                              ? event.locationPreference
-                              : null) ||
-                            "Unknown location"
-                          }
-                          attendees={
-                            Array.isArray(event.attendees)
-                              ? event.attendees.length
-                              : event.attendeesCount || 0
-                          }
-                          vendors={event.vendors || []}
-                          onRegister={() => console.log("hakoona batata")}
-                          onSave={() => console.log("Save:", event.name)}
-                          onShare={() => console.log("Share:", event.name)}
-                        />
-                      ))}
+                    {events.map((event: any, index: number) => (
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        vendors={event.vendors || []}
+                        price={event.price}
+                        onRegister={() => console.log("hakoona batata")}
+                        onSave={() => console.log("Save:", event.name)}
+                        onShare={() => console.log("Share:", event.name)}
+                      />
+                    ))}
                   </div>
                 )}
               </CardContent>

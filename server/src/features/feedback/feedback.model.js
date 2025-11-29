@@ -1,5 +1,27 @@
 import mongoose from "mongoose";
 
+const feedbackCommentSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    body: {
+      type: String,
+      required: true,
+      maxlength: 1000,
+    },
+    deletedAt: {
+      type: Date,
+      default: null,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
 const feedbackSchema = new mongoose.Schema(
   {
     eventId: {
@@ -14,22 +36,12 @@ const feedbackSchema = new mongoose.Schema(
     },
     rating: {
       type: Number,
+      required: false,
       min: 1,
       max: 5,
     },
 
-    comment: {
-      type: String,
-      required: false,
-      maxlength: 1000,
-    },
-
-    type: {
-      type: String,
-      enum: ["rating", "comment", "rating_and_comment"],
-      required: true,
-    },
-
+    comments: [feedbackCommentSchema],
     deletedAt: {
       type: Date,
       default: null, // null means not deleted

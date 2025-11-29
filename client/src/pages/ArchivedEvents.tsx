@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 import { getEventImage } from "@/lib/eventImages";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
@@ -119,10 +119,14 @@ export default function ArchivedEvents() {
       <EventsOfficeHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Archived Events</h1>
+          <p className="text-muted-foreground">
+            View and manage archived events
+          </p>
+        </div>
+
         <Card>
-          <CardHeader>
-            <CardTitle>Archived Events</CardTitle>
-          </CardHeader>
           <CardContent>
             {loading ? (
               <p>Loading archived events...</p>
@@ -187,6 +191,7 @@ export default function ArchivedEvents() {
                     durationWeeks={event.durationWeeks}
                     capacity={event.capacity || -1}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
                     onViewDetails={() => handleCardClick(event._id)}
                     onUnarchive={() => handleUnarchive(event._id)}

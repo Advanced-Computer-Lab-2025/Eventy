@@ -30,7 +30,7 @@ import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
 import EventFeedbackDialog from "@/components/EventFeedbackDialog";
 
-// Helper to get token (adjust as needed)
+// Helper to get token
 const getToken = () => localStorage.getItem("token");
 
 interface RegisteredEvent {
@@ -42,6 +42,11 @@ interface RegisteredEvent {
   endDate: string;
   bannerImage?: string;
   status?: string;
+  price?: number;
+  attendeesCount?: number;
+  attendees?: string[]; // Assuming backend returns array of IDs
+  durationWeeks?: number;
+  locationPreference?: string;
 }
 
 export default function MyEvents() {
@@ -70,7 +75,6 @@ export default function MyEvents() {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        // For local testing, you can just hardcode this
         const apiBaseUrl = "http://localhost:4000";
 
         const res = await fetch(`${apiBaseUrl}/api/events/me/events`, {
@@ -99,31 +103,6 @@ export default function MyEvents() {
     fetchEvents();
   }, []);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "bazaar":
-        return Store;
-      case "workshop":
-        return GraduationCap;
-      case "trip":
-        return Route;
-      case "conference":
-        return Megaphone;
-      default:
-        return Megaphone;
-    }
-  };
-
-  const handleCancelRegistration = (eventId: string) => {
-    alert(
-      `Registration cancelled for event ${eventId}. Amount will be refunded.`
-    );
-  };
-
-  const handleRemoveFavorite = (eventId: string) => {
-    alert(`Removed event ${eventId} from favorites.`);
-  };
-
   // Fetch full event details by ID
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -143,21 +122,6 @@ export default function MyEvents() {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);
-    }
-  };
-
-  const getStatusClasses = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/20";
-      case "pending":
-        return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
-      case "rejected":
-        return "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20";
-      case "needs_revision":
-        return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20";
-      default:
-        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -201,21 +165,40 @@ export default function MyEvents() {
                   })}
                   location={
                     event.location ||
-                    (event.eventType === "platform_booth"
+                    (String(event.eventType).toLowerCase() === "platform_booth"
                       ? event.locationPreference
                       : null) ||
                     "Unknown location"
                   }
-                  attendees={0}
+                  // FIX: Pass actual attendee data
+                  attendees={
+                    event.attendees
+                      ? event.attendees.length
+                      : event.attendeesCount || 0
+                  }
                   image={event.bannerImage}
                   startDate={event.startDate}
                   endDate={event.endDate}
                   durationWeeks={event.durationWeeks}
                   showActions={true}
                   isRegistered={true}
+                  hideRegisterButton={
+                    userRole === "student" ||
+                    userRole === "professor" ||
+                    userRole === "staff" ||
+                    userRole === "ta"
+                  }
+                  price={event.price || 0}
+                  allowCancellation={true}
+                  showAttendeeCount={false}
+                  inlinePriceWithLocation
+                  // CALLBACK to remove from list instantly
+                  onUnregister={() => {
+                    setRegisteredEvents((prev) =>
+                      prev.filter((e) => e._id !== event._id)
+                    );
+                  }}
                   onViewDetails={() => handleCardClick(event._id)}
-                  onSave={() => {}}
-                  onShare={() => {}}
                   onFeedback={() => {
                     setSelectedEventForFeedback(event);
                     setFeedbackDialogOpen(true);

@@ -1,4 +1,4 @@
-import { Home, Users, FileText, Gift } from "lucide-react";
+import { Users, Star, FileText, Gift, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -8,7 +8,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
 export default function AdminHeader() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -56,8 +56,8 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
-            data-testid="button-nav-admin-dashboard"
+            className={`gap-2 ${location === "/admin" ? "underline decoration-primary decoration-2" : ""}`}
+            data-testid="button-nav-dashboard"
             onClick={() => setLocation("/admin")}
           >
             <Home className="h-4 w-4" />
@@ -66,7 +66,7 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/users" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-users"
             onClick={() => setLocation("/admin/users")}
           >
@@ -76,9 +76,19 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            data-testid="button-nav-ratings"
+            onClick={() => setLocation("/admin/ratings")}
+          >
+            <Star className="h-4 w-4" />
+            Ratings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/reports/attendees" ? "underline decoration-primary decoration-2" : ""}`}
+            data-testid="button-nav-attendees-report"
             onClick={() => setLocation("/reports/attendees")}
-            data-testid="button-nav-reports"
           >
             <FileText className="h-4 w-4" />
             Attendees Report
@@ -86,28 +96,17 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/reports/sales" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/reports/sales")}
             data-testid="button-nav-sales-reports"
           >
             <FileText className="h-4 w-4" />
             Sales Report
           </Button>
-          {/* ✅ New Users Button */}
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
-            data-testid="button-nav-users"
-            onClick={() => setLocation("/admin/users")}
-          >
-            <Users className="h-4 w-4" />
-            Users
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >

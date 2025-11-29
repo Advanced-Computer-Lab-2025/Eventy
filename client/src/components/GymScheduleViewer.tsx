@@ -301,7 +301,9 @@ export default function GymScheduleViewer({
                   <TableHead>Duration</TableHead>
                   <TableHead>Instructor</TableHead>
                   <TableHead>Availability</TableHead>
-                  {canRegister && <TableHead>Registration</TableHead>}
+                  {canRegister && (
+                    <TableHead className="text-center">Registration</TableHead>
+                  )}
                   {(canEditSession || canCancelSession) && (
                     <TableHead>Actions</TableHead>
                   )}
@@ -337,7 +339,7 @@ export default function GymScheduleViewer({
                         )}
                       </TableCell>
                       {canRegister && (
-                        <TableCell>
+                        <TableCell className="text-center">
                           <Button
                             size="sm"
                             disabled={isFull || isRegistered}
