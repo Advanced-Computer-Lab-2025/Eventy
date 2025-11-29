@@ -317,10 +317,10 @@ export default function EventsReport() {
                       <TableHead>End Date</TableHead>{" "}
                       {/* ✅ Added End Date column */}
                       <TableHead>Location</TableHead>
-                      <TableHead className="text-left">
+                      <TableHead className="text-center">
                         Attendees
                       </TableHead>{" "}
-                      {/* ✅ Changed to text-left */}
+                      {/* ✅ Changed to text-center */}
                       <TableHead className="text-right">Export</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -345,9 +345,9 @@ export default function EventsReport() {
                             : "TBA"}
                         </TableCell>
                         <TableCell>{event.location || "N/A"}</TableCell>
-                        <TableCell className="text-left font-semibold">
+                        <TableCell className="text-center font-semibold">
                           {" "}
-                          {/* ✅ Changed to text-left */}
+                          {/* ✅ Changed to text-center */}
                           {event.attendeesCount}
                         </TableCell>
                         <TableCell className="text-right">
