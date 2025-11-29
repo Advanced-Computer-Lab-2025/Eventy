@@ -43,8 +43,6 @@ export default function Header({
   hideBottomNav = false,
 }: HeaderProps) {
   const [location, setLocation] = useLocation();
-
-  // Updated type definition here as well
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -104,10 +102,9 @@ export default function Header({
           )}
 
           <div className="flex items-center gap-2">
-            {/* Added Logic to show Last Name in the header bar */}
             {user?.firstName && (
               <span className="hidden md:inline-block text-sm font-medium text-foreground">
-                {user.firstName} {user.lastName}
+                {user.firstName}
               </span>
             )}
             <Button
