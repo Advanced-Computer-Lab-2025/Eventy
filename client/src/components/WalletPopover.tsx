@@ -62,14 +62,14 @@ export default function WalletPopover() {
     <>
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" title="My Wallet">
+          <Button variant="ghost" size="icon" title="My Transactions">
             <Wallet className="h-5 w-5" />
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-96 p-0" align="end">
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg">My Wallet</h3>
+              <h3 className="font-semibold text-lg">My Transactions</h3>
             </div>
             <Badge variant="outline" className="text-sm font-mono">
               ${balance.toFixed(2)}
