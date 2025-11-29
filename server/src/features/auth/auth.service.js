@@ -217,6 +217,7 @@ export const loginUser = async (data) => {
       email: user.email,
       role: user.role,
       firstName: user.firstName,
+      lastName: user.lastName,
       companyName: user.companyName,
     },
     token,
