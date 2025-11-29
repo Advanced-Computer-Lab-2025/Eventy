@@ -352,6 +352,7 @@ export default function StaffUpcomingEvents() {
                             ? event.attendees.length
                             : event.attendeesCount || 0
                         }
+                        price={event.price || 0}
                         image={event.bannerImage || event.image}
                         description={event.description}
                         startDate={event.startDate}

@@ -359,10 +359,15 @@ export default function Home() {
                             ? event.attendees.length
                             : event.attendeesCount || 0
                         }
+                        // Pass ACTUAL array for logic checks
+                        attendeesList={event.attendees}
                         image={
                           event.bannerImage ||
                           event.image ||
                           getEventImage(event.eventType, event.name)
+                        }
+                        price={
+                          typeof event.price === "number" ? event.price : 0
                         }
                         description={event.description}
                         startDate={event.startDate}
