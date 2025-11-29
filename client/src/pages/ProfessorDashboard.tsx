@@ -310,7 +310,6 @@ export default function ProfessorDashboard() {
                     capacity={event.capacity}
                     registrationDeadline={event.registrationDeadline}
                     vendors={event.vendors || []}
-                    price={event.price}
                     showDetailedView={true}
                     // 4. Removed 'onRegister'. EventCard handles this internally now.
                     onViewDetails={() =>

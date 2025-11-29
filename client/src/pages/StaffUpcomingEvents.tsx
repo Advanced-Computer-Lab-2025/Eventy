@@ -129,7 +129,6 @@ export default function StaffUpcomingEvents() {
                 capacity={event.capacity}
                 registrationDeadline={event.registrationDeadline}
                 vendors={event.vendors || []}
-                price={event.price}
                 showDetailedView={true}
                 // 4. Removed 'onRegister'. EventCard handles this internally now.
                 onShare={() => console.log("Share:", event.name)}
