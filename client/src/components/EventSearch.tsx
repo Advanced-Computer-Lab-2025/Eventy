@@ -1,6 +1,14 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+
+export interface EventSearchFilters {
+  type?: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  professor?: string;
+}
 
 interface EventSearchProps {
   onSearchResults: (events: any[]) => void;
@@ -9,15 +17,17 @@ interface EventSearchProps {
   placeholder?: string;
   debounceMs?: number;
   className?: string;
+  filters?: EventSearchFilters;
 }
 
 export default function EventSearch({
   onSearchResults,
   onLoading,
   onError,
-  placeholder = "Search by event name, professor name, or event type...",
-  debounceMs = 500,
+  placeholder = "Search by event name, professor, location, or type...",
+  debounceMs = 1000,
   className = "",
+  filters = {},
 }: EventSearchProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -63,22 +73,33 @@ export default function EventSearch({
     fetchInitialEvents();
   }, []); // Only run once on mount
 
-  // Search effect with debouncing (only when user types)
+  const hasSearchQuery = useMemo(() => !!searchQuery.trim(), [searchQuery]);
+  const hasFilterParams = useMemo(() => {
+    const hasDateRange = Boolean(filters.startDate && filters.endDate);
+    const prof = (filters as any).professor;
+    const hasValidProfessor = Boolean(
+      prof && /^[0-9a-fA-F]{24}$/.test(String(prof))
+    );
+
+    return Boolean(
+      (filters as any).type ||
+        (filters as any).location ||
+        hasValidProfessor ||
+        hasDateRange
+    );
+  }, [filters]);
+
+  // Search effect with debouncing (only when user interacts with filters)
   useEffect(() => {
-    // Skip if we haven't done the initial fetch yet
     if (!hasInitiallyFetched.current) return;
 
+    let lastResults: any[] = [];
+
     const fetchEvents = async () => {
-      // Always save scroll position after initial load (for any search interaction)
       scrollPositionRef.current = window.scrollY;
-
       try {
-        setIsSearching(true);
-        // Don't trigger the loading overlay for searches after initial load
         onError?.("");
-
-        // If search query is empty, fetch all upcoming events
-        if (!searchQuery.trim()) {
+        if (!hasSearchQuery && !hasFilterParams) {
           const response = await fetch(API_URL, {
             headers: {
               ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -87,13 +108,32 @@ export default function EventSearch({
           });
           if (!response.ok) throw new Error("Failed to fetch events");
           const data = await response.json();
-          onSearchResults(data.data || []);
+          lastResults = data.data || [];
+          onSearchResults(lastResults);
         } else {
-          // Search with the query
+          setIsSearching(true);
           const searchParams = new URLSearchParams();
-          searchParams.append("name", searchQuery);
-          searchParams.append("type", searchQuery);
-
+          if (searchQuery.trim()) {
+            searchParams.append("name", searchQuery.trim());
+            if (!filters.type) {
+              searchParams.append("type", searchQuery.trim());
+            }
+          }
+          if (filters.type) {
+            searchParams.set("type", filters.type);
+          }
+          if (filters.location) {
+            searchParams.append("location", filters.location);
+          }
+          if (filters.startDate && filters.endDate) {
+            searchParams.append("startDate", filters.startDate);
+            searchParams.append("endDate", filters.endDate);
+          }
+          if ((filters as any).professor) {
+            const p = (filters as any).professor;
+            const isObjectId = /^[0-9a-fA-F]{24}$/.test(String(p));
+            if (isObjectId) searchParams.append("professor", String(p));
+          }
           const response = await fetch(
             `${SEARCH_URL}?${searchParams.toString()}`,
             {
@@ -103,46 +143,41 @@ export default function EventSearch({
               },
             }
           );
-
-          if (!response.ok) throw new Error("Search failed");
-          const data = await response.json();
-          onSearchResults(data.data || []);
-
-          if (data.data?.length === 0) {
-            onError?.("No events found matching your search criteria.");
+          if (!response.ok) {
+            // Only show error if it's a real server/network error
+            console.error("Error fetching events:", response.statusText);
+            onError?.("Unable to load events. Please try again later.");
+            // Do NOT clear previous results
+            return;
           }
+          const data = await response.json();
+          lastResults = data.data || [];
+          onSearchResults(lastResults);
+          // Don't call onError for empty results - let parent handle display
         }
       } catch (err) {
         console.error("Error fetching events:", err);
         onError?.("Unable to load events. Please try again later.");
+        // Do NOT clear previous results
       } finally {
         setIsSearching(false);
-
-        // Always restore scroll position after initial load (prevents jumping)
-        requestAnimationFrame(() => {
-          window.scrollTo({
-            top: scrollPositionRef.current,
-            behavior: "instant" as ScrollBehavior,
-          });
-        });
       }
     };
-
-    // Debounce: wait after user stops typing
     const debounceTimer = setTimeout(() => {
       fetchEvents();
     }, debounceMs);
-
-    // Cleanup: cancel the timer if searchQuery changes before timeout
     return () => clearTimeout(debounceTimer);
-  }, [searchQuery, debounceMs]);
-
-  const handleClear = () => {
-    setSearchQuery("");
-  };
+  }, [
+    searchQuery,
+    filters,
+    hasSearchQuery,
+    hasFilterParams,
+    debounceMs,
+    token,
+  ]);
 
   return (
-    <div className={`space-y-3 ${className}`}>
+    <div className={`space-y-4 ${className}`}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -157,7 +192,7 @@ export default function EventSearch({
           </div>
         ) : searchQuery ? (
           <button
-            onClick={handleClear}
+            onClick={() => setSearchQuery("")}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
             aria-label="Clear search"
           >
@@ -165,14 +200,6 @@ export default function EventSearch({
           </button>
         ) : null}
       </div>
-      {searchQuery && (
-        <div className="text-sm text-muted-foreground flex items-center gap-2">
-          <span>
-            Searching for: <span className="font-medium">"{searchQuery}"</span>
-          </span>
-          {isSearching && <span className="text-xs">(searching...)</span>}
-        </div>
-      )}
     </div>
   );
 }

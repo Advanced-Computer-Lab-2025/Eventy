@@ -1,30 +1,94 @@
+import { useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Calendar, MapPin, SlidersHorizontal } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import {
+  Calendar,
+  MapPin,
+  SlidersHorizontal,
+  ArrowUpDown,
+  User,
+  AlertCircle,
+  CalendarDays,
+} from "lucide-react";
 
-const categories = [
-  { id: "academic", label: "Academic" },
-  { id: "social", label: "Social" },
-  { id: "sports", label: "Sports" },
-  { id: "cultural", label: "Cultural" },
-  { id: "career", label: "Career" },
+const eventTypes = [
+  { value: "all", label: "All event types" },
+  { value: "bazaar", label: "Bazaars" },
+  { value: "conference", label: "Conferences" },
+  { value: "trip", label: "Trips" },
+  { value: "workshop", label: "Workshops" },
+  { value: "platform_booth", label: "Platform Booths" },
 ];
 
-const locations = [
-  { id: "main-hall", label: "Main Hall" },
-  { id: "engineering", label: "Engineering Building" },
-  { id: "sports-center", label: "Sports Center" },
-  { id: "library", label: "Library" },
-  { id: "auditorium", label: "Auditorium" },
-];
-
-interface EventFiltersProps {
-  onFilterChange?: (filters: any) => void;
+export interface EventFilterState {
+  eventType: string;
+  location: string;
+  startDate: string;
+  professor?: string;
+  endDate: string;
+  showUpcoming?: boolean;
+  showPast?: boolean;
 }
 
-export default function EventFilters({ onFilterChange }: EventFiltersProps) {
+interface EventFiltersProps {
+  filters: EventFilterState;
+  onFilterChange: (filters: EventFilterState) => void;
+  locations: string[];
+  professors?: { id: string; name: string }[];
+  sortOrder?: "asc" | "desc";
+  onSortChange?: (order: "asc" | "desc") => void;
+  userRole?: string;
+  onClear?: () => void;
+}
+
+export default function EventFilters({
+  filters,
+  onFilterChange,
+  locations,
+  professors = [],
+  sortOrder,
+  onSortChange,
+  userRole,
+  onClear,
+}: EventFiltersProps) {
+  const today = useMemo(() => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    return now.toISOString().split("T")[0];
+  }, []);
+
+  const locationOptions = useMemo(() => {
+    const unique = Array.from(new Set(locations.filter(Boolean)));
+    return ["all", ...unique];
+  }, [locations]);
+
+  const updateFilters = (changes: Partial<EventFilterState>) => {
+    onFilterChange({ ...filters, ...changes });
+  };
+
+  const handleClearFilters = () => {
+    onFilterChange({
+      eventType: "all",
+      location: "all",
+      startDate: "",
+      endDate: "",
+      professor: "",
+      showUpcoming: true,
+      showPast: true,
+    });
+    onClear?.();
+  };
+
   return (
     <Card>
       <CardHeader>
@@ -33,57 +97,274 @@ export default function EventFilters({ onFilterChange }: EventFiltersProps) {
           Filters
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Calendar className="h-4 w-4" />
-            Categories
-          </div>
-          <div className="space-y-2">
-            {categories.map((category) => (
-              <div key={category.id} className="flex items-center gap-2">
+      <CardContent
+        className={userRole === "events_office" ? "space-y-4" : "space-y-6"}
+      >
+        {userRole === "events_office" && (
+          <div
+            className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+          >
+            <div className="text-sm font-semibold">Time Period</div>
+            {!(filters.showUpcoming || filters.showPast) && (
+              <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
+                <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 font-medium">
+                  <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Select at least one time period</span>
+                </p>
+              </div>
+            )}
+            <div
+              className={
+                userRole === "events_office" ? "space-y-1.5" : "space-y-2"
+              }
+            >
+              <div className="flex items-center gap-2">
                 <Checkbox
-                  id={category.id}
-                  data-testid={`checkbox-category-${category.id}`}
+                  id="filter-upcoming"
+                  checked={filters.showUpcoming || false}
                   onCheckedChange={(checked) =>
-                    console.log(`${category.label}: ${checked}`)
+                    updateFilters({ showUpcoming: checked as boolean })
                   }
                 />
-                <Label htmlFor={category.id} className="cursor-pointer">
-                  {category.label}
+                <Label
+                  htmlFor="filter-upcoming"
+                  className="cursor-pointer text-sm"
+                >
+                  Upcoming Events
                 </Label>
               </div>
-            ))}
+              <div className="flex items-center gap-2">
+                <Checkbox
+                  id="filter-past"
+                  checked={filters.showPast || false}
+                  onCheckedChange={(checked) =>
+                    updateFilters({ showPast: checked as boolean })
+                  }
+                />
+                <Label htmlFor="filter-past" className="cursor-pointer text-sm">
+                  Past Events
+                </Label>
+              </div>
+            </div>
           </div>
+        )}
+
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <Calendar className="h-4 w-4" />
+            Event Type
+          </div>
+          <Select
+            value={filters.eventType}
+            onValueChange={(value) => updateFilters({ eventType: value })}
+          >
+            <SelectTrigger className="w-full" data-testid="filter-event-type">
+              <SelectValue placeholder="Select event type" />
+            </SelectTrigger>
+            <SelectContent>
+              {eventTypes.map((type) => (
+                <SelectItem key={type.value} value={type.value}>
+                  {type.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
-        <div className="space-y-3">
+        {professors !== undefined && (
+          <div
+            className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+          >
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <User className="h-4 w-4" />
+              Professor
+            </div>
+            <Select
+              value={filters.professor || "all"}
+              onValueChange={(value) =>
+                updateFilters({ professor: value === "all" ? "" : value })
+              }
+            >
+              <SelectTrigger className="w-full" data-testid="filter-professor">
+                <SelectValue placeholder="Select professor" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All professors</SelectItem>
+                {professors.length === 0
+                  ? null
+                  : professors.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
           <div className="flex items-center gap-2 text-sm font-semibold">
             <MapPin className="h-4 w-4" />
             Location
           </div>
-          <div className="space-y-2">
-            {locations.map((location) => (
-              <div key={location.id} className="flex items-center gap-2">
-                <Checkbox
-                  id={location.id}
-                  data-testid={`checkbox-location-${location.id}`}
-                  onCheckedChange={(checked) =>
-                    console.log(`${location.label}: ${checked}`)
+          <Select
+            value={filters.location}
+            onValueChange={(value) => updateFilters({ location: value })}
+          >
+            <SelectTrigger className="w-full" data-testid="filter-location">
+              <SelectValue placeholder="Select location" />
+            </SelectTrigger>
+            <SelectContent>
+              {locationOptions.map((location) => (
+                <SelectItem key={location} value={location}>
+                  {location === "all" ? "All locations" : location}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div
+          className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
+        >
+          <div className="flex items-center gap-2 text-sm font-semibold">
+            <CalendarDays className="h-4 w-4" />
+            Date Range
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">
+                From
+              </label>
+              <div
+                className="relative cursor-pointer group"
+                tabIndex={0}
+                onClick={(e) => {
+                  const input = document.getElementById(
+                    "event-filter-start-date"
+                  );
+                  if (input) {
+                    if ((input as HTMLInputElement).showPicker) {
+                      (input as HTMLInputElement).showPicker();
+                    } else {
+                      input.focus();
+                    }
                   }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    const input = document.getElementById(
+                      "event-filter-start-date"
+                    );
+                    if (input) {
+                      if ((input as HTMLInputElement).showPicker) {
+                        (input as HTMLInputElement).showPicker();
+                      } else {
+                        input.focus();
+                      }
+                    }
+                  }
+                }}
+              >
+                <Input
+                  id="event-filter-start-date"
+                  type="date"
+                  value={filters.startDate}
+                  onChange={(e) => updateFilters({ startDate: e.target.value })}
+                  min={today}
+                  placeholder="Start date"
+                  aria-label="Filter start date"
+                  className="appearance-none cursor-pointer"
                 />
-                <Label htmlFor={location.id} className="cursor-pointer">
-                  {location.label}
-                </Label>
+                <div
+                  className="absolute inset-0"
+                  style={{ pointerEvents: "auto" }}
+                ></div>
               </div>
-            ))}
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs text-muted-foreground font-medium">
+                To
+              </label>
+              <div
+                className="relative cursor-pointer group"
+                tabIndex={0}
+                onClick={(e) => {
+                  const input = document.getElementById(
+                    "event-filter-end-date"
+                  );
+                  if (input) {
+                    if ((input as HTMLInputElement).showPicker) {
+                      (input as HTMLInputElement).showPicker();
+                    } else {
+                      input.focus();
+                    }
+                  }
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    const input = document.getElementById(
+                      "event-filter-end-date"
+                    );
+                    if (input) {
+                      if ((input as HTMLInputElement).showPicker) {
+                        (input as HTMLInputElement).showPicker();
+                      } else {
+                        input.focus();
+                      }
+                    }
+                  }
+                }}
+              >
+                <Input
+                  id="event-filter-end-date"
+                  type="date"
+                  value={filters.endDate}
+                  onChange={(e) => updateFilters({ endDate: e.target.value })}
+                  min={filters.startDate || today}
+                  placeholder="End date"
+                  aria-label="Filter end date"
+                  className="appearance-none cursor-pointer"
+                />
+                <div
+                  className="absolute inset-0"
+                  style={{ pointerEvents: "auto" }}
+                ></div>
+              </div>
+            </div>
           </div>
         </div>
+
+        {sortOrder !== undefined && onSortChange && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <ArrowUpDown className="h-4 w-4" />
+              Sort by Date
+            </div>
+            <Select
+              value={sortOrder}
+              onValueChange={(value) => onSortChange(value as "asc" | "desc")}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose sort order" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="asc">Earliest First</SelectItem>
+                <SelectItem value="desc">Latest First</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
         <Button
           variant="outline"
           className="w-full"
           data-testid="button-clear-filters"
+          onClick={handleClearFilters}
         >
           Clear Filters
         </Button>
