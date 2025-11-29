@@ -8,6 +8,7 @@ import {
   Heart,
   Gift,
   Wallet,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -24,7 +25,7 @@ interface StudentHeaderProps {
 export default function StudentHeader({
   homeHref = "/home",
 }: StudentHeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -78,7 +79,7 @@ export default function StudentHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation(homeHref)}
           >
             <Home className="h-4 w-4" /> Dashboard
@@ -86,7 +87,7 @@ export default function StudentHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/my-events" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/my-events")}
           >
             <Calendar className="h-4 w-4" /> My Events
@@ -94,7 +95,7 @@ export default function StudentHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
           >
             <Dumbbell className="h-4 w-4" /> Sports Facilities
@@ -102,7 +103,7 @@ export default function StudentHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/favorites" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/favorites")}
           >
             <Heart className="h-4 w-4" /> Favorites
@@ -110,10 +111,18 @@ export default function StudentHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
           >
             <Gift className="h-4 w-4" /> Loyalty Partners
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/admin/ratings")}
+          >
+            <Star className="h-4 w-4" /> Ratings
           </Button>
         </div>
       </div>

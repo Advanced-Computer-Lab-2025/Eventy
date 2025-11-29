@@ -8,6 +8,7 @@ import {
   FileText,
   PieChart,
   Gift,
+  Star,
   ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
 export default function EventsOfficeHeader() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -78,7 +79,7 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/events-office/dashboard" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={goHome}
             data-testid="button-nav-home"
           >
@@ -88,7 +89,7 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/create/trip" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/create/trip")}
             data-testid="button-nav-trips"
           >
@@ -98,7 +99,7 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
           >
@@ -113,7 +114,7 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent"
+                className={`gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent ${location === "/approvals/workshops" || location === "/vendor-requests" ? "underline decoration-primary decoration-2" : ""}`}
                 data-testid="button-nav-approvals"
                 onMouseEnter={() => setIsApprovalsOpen(true)}
               >
@@ -145,7 +146,7 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/events-office/archived" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/events-office/archived")}
             data-testid="button-nav-archived"
           >
@@ -157,7 +158,7 @@ export default function EventsOfficeHeader() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent"
+                className={`gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent ${location === "/reports/attendees" || location === "/reports/sales" ? "underline decoration-primary decoration-2" : ""}`}
                 data-testid="button-nav-reports"
                 onMouseEnter={() => setIsReportsOpen(true)}
               >
@@ -189,12 +190,22 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
           >
             <Gift className="h-4 w-4" />
             Loyalty Partners
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
           </Button>
         </div>
       </div>

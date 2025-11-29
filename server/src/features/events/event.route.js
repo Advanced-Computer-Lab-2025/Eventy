@@ -185,7 +185,14 @@ router.get(
 router.get(
   "/past",
   authMiddleware,
-  roleMiddleware(["events_office", "admin"]),
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getPastEvents.bind(eventsController)
 );
 
@@ -316,6 +323,14 @@ router.post(
   authMiddleware,
   roleMiddleware(["events_office", "admin"]),
   eventsController.triggerCertificateScheduler.bind(eventsController)
+);
+
+// Add this BEFORE the /:eventId route to avoid conflicts
+router.get(
+  "/approved/count",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getApprovedEventsCount.bind(eventsController)
 );
 
 export default router;

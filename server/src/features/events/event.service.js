@@ -2102,3 +2102,11 @@ export const sendCertificatesForCompletedWorkshops = async () => {
     ...summary,
   };
 };
+
+export async function getApprovedEventsCount() {
+  return await Event.countDocuments({
+    status: "approved",
+    deletedAt: null,
+    archivedAt: null,
+  });
+}

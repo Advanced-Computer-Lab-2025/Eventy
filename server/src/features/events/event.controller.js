@@ -14,7 +14,7 @@ import {
   restrictAccessSchema,
   getSalesReportSchema,
 } from "./event.validation.js";
-import { User } from "../users/user.model.js"; // adjust path if needed
+import { User } from "../users/user.model.js";
 import NotificationService from "../notifications/notification.service.js";
 
 //Write your code in this class!!!
@@ -1122,6 +1122,21 @@ export class EventsController {
         );
     } catch (err) {
       next(err);
+    }
+  }
+
+  async getApprovedEventsCount(req, res, next) {
+    try {
+      // ✅ Import the service function instead of using Event directly
+      const count = await eventService.getApprovedEventsCount();
+
+      return res.status(200).json({
+        success: true,
+        data: { count },
+      });
+    } catch (error) {
+      console.error("Error counting approved events:", error);
+      next(error);
     }
   }
 }

@@ -1,4 +1,4 @@
-import { Bell, Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -69,13 +69,6 @@ export default function VendorHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
             <ThemeToggle />
             <ProfileMenu />
             {user?.role && user?.companyName && (
