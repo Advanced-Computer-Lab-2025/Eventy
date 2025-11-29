@@ -173,7 +173,7 @@ export default function EventFilters({
           </Select>
         </div>
 
-        {professors && professors.length > 0 && (
+        {professors !== undefined && (
           <div
             className={userRole === "events_office" ? "space-y-2" : "space-y-3"}
           >
@@ -192,11 +192,13 @@ export default function EventFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All professors</SelectItem>
-                {professors.map((p) => (
-                  <SelectItem key={p.id} value={p.id}>
-                    {p.name}
-                  </SelectItem>
-                ))}
+                {professors.length === 0
+                  ? null
+                  : professors.map((p) => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.name}
+                      </SelectItem>
+                    ))}
               </SelectContent>
             </Select>
           </div>
