@@ -1001,8 +1001,34 @@ export class EventsController {
         return next(new ApiError(400, "Validation failed", error.details));
 
       // ✅ Use the validated values
-      const { eventType, startDate, endDate, sortOrder, page, limit } = value;
+      const { eventType, startDate, endDate, sortOrder, page, limit, format } =
+        value;
 
+      // Check if export format is requested
+      if (format && format.toLowerCase() === "xlsx") {
+        // Export as formatted Excel file
+        const { buffer, filename, mimeType } =
+          await eventService.exportSalesReport({
+            eventType,
+            startDate,
+            endDate,
+            sortOrder: sortOrder || "desc",
+            format: "xlsx",
+          });
+
+        // Set headers for file download
+        res.setHeader("Content-Type", mimeType);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${filename}"`
+        );
+        res.setHeader("Content-Length", buffer.length);
+
+        // Send the file buffer
+        return res.send(buffer);
+      }
+
+      // Regular JSON response
       const report = await eventService.getSalesReport({
         eventType,
         startDate,

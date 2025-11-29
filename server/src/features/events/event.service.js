@@ -384,7 +384,10 @@ export const getUpcomingEventsService = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    $or: [
+      { startDate: { $gte: now } }, // Regular events with future startDate
+      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
+    ],
   };
 
   // Filter out events where the user's role is restricted
@@ -393,7 +396,7 @@ export const getUpcomingEventsService = async (
   }
 
   const events = await Event.find(filter)
-    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("professors", "firstName lastName email")
     .populate("createdBy", "name email companyName")
     .lean();
 
@@ -638,9 +641,6 @@ export const searchEvents = async ({
     }
   }
 
-  // Date filtering: enforce strict bounds
-  // If startDate filter is set: event.startDate >= filter.startDate (no event can start before)
-  // If endDate filter is set: event.endDate <= filter.endDate (no event can end after)
   // Platform booths have startDate and endDate assigned in updateApplicationStatus, so they can be filtered normally
   if (startDate instanceof Date && !Number.isNaN(startDate.getTime())) {
     const startOfDay = new Date(startDate);
@@ -758,6 +758,7 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
 export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
+    .populate("professors", "firstName lastName email")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
@@ -775,6 +776,7 @@ export const getEventById = async (eventId, userRole = null) => {
 
   return event;
 };
+
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
@@ -794,6 +796,7 @@ export const getAllWorkshopsService = async (userRole) => {
   // ✅ 4. Return response
   return workshops;
 };
+
 export async function getAllEvents() {
   try {
     const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
@@ -1914,6 +1917,313 @@ export const getSalesReport = async (options = {}) => {
     totalPages: Math.ceil(totals.totalEvents / limit),
     events: paginatedEvents,
   };
+};
+
+/**
+ * Export sales report with formatting similar to attendees report
+ * @param {Object} options - Filter and format options
+ * @returns {Object} - Buffer, filename, and mimeType for download
+ */
+export const exportSalesReport = async (options = {}) => {
+  const {
+    eventType,
+    startDate,
+    endDate,
+    sortOrder = "desc",
+    format = "xlsx",
+  } = options;
+
+  const validFormats = ["xlsx"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  // Fetch all sales data without pagination
+  const reportData = await getSalesReport({
+    eventType,
+    startDate,
+    endDate,
+    sortOrder,
+    page: 1,
+    limit: 999999,
+  });
+
+  const allEvents = reportData.events;
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Sales Report", {
+    views: [{ state: "frozen", xSplit: 0, ySplit: 2 }],
+  });
+
+  // Title row (Row 1)
+  worksheet.mergeCells("A1:J1");
+  const titleCell = worksheet.getCell("A1");
+  titleCell.value = "Sales Report";
+  titleCell.font = {
+    name: "Calibri",
+    size: 18,
+    bold: true,
+    color: { argb: "FF210051" },
+  };
+  titleCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  worksheet.getRow(1).height = 35;
+
+  // Header row (Row 2) with strong borders
+  const headerRow = worksheet.getRow(2);
+  headerRow.values = [
+    "Event Name",
+    "Type",
+    "Start Date",
+    "End Date",
+    "Transactions",
+    "Gross Revenue",
+    "Refunds",
+    "Net Revenue",
+    "Wallet Payments",
+    "Card Payments",
+  ];
+  headerRow.font = {
+    name: "Calibri",
+    size: 12,
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+  headerRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  headerRow.height = 30;
+
+  // Apply styling to header cells with strong borders
+  ["A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "I2", "J2"].forEach(
+    (cellAddress) => {
+      const cell = worksheet.getCell(cellAddress);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF210051" },
+      };
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF000000" } },
+        left: { style: "medium", color: { argb: "FF000000" } },
+        bottom: { style: "medium", color: { argb: "FF000000" } },
+        right: { style: "medium", color: { argb: "FF000000" } },
+      };
+    }
+  );
+
+  // Add autofilter to all columns
+  const lastDataRowIndex = allEvents.length + 2;
+  worksheet.autoFilter = {
+    from: { row: 2, column: 1 },
+    to: { row: lastDataRowIndex, column: 10 },
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "TBA";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "TBA";
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  // Data rows (starting from Row 3) with clear borders
+  allEvents.forEach((event, index) => {
+    const rowIndex = index + 3;
+    const dataRow = worksheet.getRow(rowIndex);
+    dataRow.values = [
+      event.name || "-",
+      event.eventType || "-",
+      formatDate(event.startDate),
+      formatDate(event.endDate),
+      event.transactionCount || 0,
+      event.grossRevenue || 0,
+      event.totalRefunds || 0,
+      event.totalRevenue || 0,
+      event.walletPayments || 0,
+      event.cardPayments || 0,
+    ];
+
+    dataRow.font = {
+      name: "Calibri",
+      size: 11,
+      color: { argb: "FF1A202C" },
+    };
+    dataRow.alignment = {
+      vertical: "middle",
+      horizontal: "left",
+    };
+    dataRow.height = 22;
+
+    // Alternating row colors
+    const fillColor = index % 2 === 0 ? "FFF9FAFB" : "FFFFFFFF";
+
+    ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+      const cell = worksheet.getCell(`${col}${rowIndex}`);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: fillColor },
+      };
+      // Strong visible borders for all cells
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF000000" } },
+        left: { style: "thin", color: { argb: "FF000000" } },
+        bottom: { style: "thin", color: { argb: "FF000000" } },
+        right: { style: "thin", color: { argb: "FF000000" } },
+      };
+
+      // Format currency columns
+      if (["F", "G", "H", "I", "J"].includes(col)) {
+        cell.numFmt = "$#,##0.00";
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "right",
+        };
+      }
+
+      // Center align specific columns
+      if (["B", "C", "D", "E"].includes(col)) {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+      }
+    });
+  });
+
+  // Add bottom border to last data row
+  const lastDataRow = allEvents.length + 2;
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${lastDataRow}`);
+    cell.border = {
+      ...cell.border,
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+    };
+  });
+
+  // Total row at the bottom
+  const totalRowIndex = allEvents.length + 3;
+  const totalRow = worksheet.getRow(totalRowIndex);
+  totalRow.values = [
+    `Total Events: ${allEvents.length}`,
+    "",
+    "",
+    "",
+    "",
+    reportData.grossRevenue || 0,
+    reportData.totalRefunds || 0,
+    reportData.netRevenue || 0,
+    reportData.paymentBreakdown.wallet || 0,
+    reportData.paymentBreakdown.card || 0,
+  ];
+  totalRow.font = {
+    name: "Calibri",
+    size: 11,
+    bold: true,
+    color: { argb: "FF000000" },
+  };
+  totalRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  totalRow.height = 25;
+
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${totalRowIndex}`);
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE8E8E8" },
+    };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF000000" } },
+      left: { style: "thin", color: { argb: "FF000000" } },
+      bottom: { style: "thin", color: { argb: "FF000000" } },
+      right: { style: "thin", color: { argb: "FF000000" } },
+    };
+
+    // Format currency columns in total row
+    if (["F", "G", "H", "I", "J"].includes(col)) {
+      cell.numFmt = "$#,##0.00";
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "right",
+      };
+    }
+  });
+
+  // Footer (only spans table columns)
+  const footerRowIndex = totalRowIndex + 2;
+  worksheet.getRow(footerRowIndex - 1).height = 10;
+
+  worksheet.mergeCells(`A${footerRowIndex}:J${footerRowIndex}`);
+  const footerCell = worksheet.getCell(`A${footerRowIndex}`);
+  footerCell.value = `Report generated by Eventy | ${new Date().getFullYear()} © All rights reserved`;
+  footerCell.font = {
+    name: "Calibri",
+    size: 9,
+    italic: true,
+    color: { argb: "FF9CA3AF" },
+  };
+  footerCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  footerCell.border = {
+    top: { style: "thin", color: { argb: "FFE5E7EB" } },
+  };
+  worksheet.getRow(footerRowIndex).height = 25;
+
+  // Set column widths for better readability
+  worksheet.getColumn(1).width = 30; // Event Name
+  worksheet.getColumn(2).width = 15; // Type
+  worksheet.getColumn(3).width = 12; // Start Date
+  worksheet.getColumn(4).width = 12; // End Date
+  worksheet.getColumn(5).width = 12; // Transactions
+  worksheet.getColumn(6).width = 15; // Gross Revenue
+  worksheet.getColumn(7).width = 12; // Refunds
+  worksheet.getColumn(8).width = 15; // Net Revenue
+  worksheet.getColumn(9).width = 15; // Wallet Payments
+  worksheet.getColumn(10).width = 15; // Card Payments
+
+  // Set print options
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: "landscape",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.7,
+      right: 0.7,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.3,
+      footer: 0.3,
+    },
+  };
+
+  // Generate buffer
+  buffer = await workbook.xlsx.writeBuffer();
+  mimeType =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  filename = `sales_report_${timestamp}.xlsx`;
+
+  return { buffer, filename, mimeType };
 };
 
 /**
