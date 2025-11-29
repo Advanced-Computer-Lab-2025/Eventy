@@ -118,11 +118,12 @@ export default function EventDetailsDialog({
                 <h4 className="font-semibold mt-2">Professors</h4>
                 <div className="flex flex-wrap gap-2">
                   {event.professors.map((prof: any, index: number) => (
-                    <Badge key={index} variant="secondary">
+                    <span key={index} className="text-sm">
                       {prof.firstName && prof.lastName
                         ? `${prof.firstName} ${prof.lastName}`
                         : prof.name || prof.username || "Unknown Professor"}
-                    </Badge>
+                      {index < event.professors.length - 1 && ","}
+                    </span>
                   ))}
                 </div>
               </div>
