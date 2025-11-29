@@ -1413,6 +1413,7 @@ export default function EventsOfficeDashboard() {
                                 showDetailedView={true}
                                 canDelete={false}
                                 hideRegisterButton={true}
+                                fillButtonWidth={true}
                                 onViewDetails={() => handleCardClick(event._id)}
                                 {...(isPastEvent
                                   ? {

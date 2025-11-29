@@ -604,6 +604,7 @@ export default function EventCard({
                       {onViewDetails && (
                         <Button
                           variant="outline"
+                          className={canRegister ? "flex-1" : "w-full"}
                           onClick={(e) => {
                             e.stopPropagation();
                             onViewDetails();
@@ -662,7 +663,7 @@ export default function EventCard({
                   )
                 ) : onEdit ? (
                   <Button
-                    className="flex-1"
+                    className={canRegister ? "flex-1" : "w-full"}
                     onClick={() => onEdit()}
                     data-testid={`button-edit-${id}`}
                   >
@@ -717,6 +718,7 @@ export default function EventCard({
                   {onViewDetails && (
                     <Button
                       variant="outline"
+                      className={canRegister ? "flex-1" : "w-full"}
                       onClick={(e) => {
                         e.stopPropagation();
                         onViewDetails();
