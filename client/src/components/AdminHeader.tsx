@@ -114,6 +114,16 @@ export default function AdminHeader() {
             <Gift className="h-4 w-4" />
             Loyalty Partners
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/vendor-requests")}
+            data-testid="button-nav-vendor-requests"
+          >
+            <Users className="h-4 w-4" />
+            Vendor Requests
+          </Button>
         </div>
       </div>
     </header>
