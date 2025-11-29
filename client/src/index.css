@@ -2,6 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Hide calendar icon for date inputs (cross-browser) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0;
+  display: none;
+}
+input[type="date"]::-ms-clear {
+  display: none;
+}
+input[type="date"]::-ms-expand {
+  display: none;
+}
+input[type="date"]::-o-calendar-picker-indicator {
+  display: none;
+}
+input[type="date"] {
+  /* Remove default icon in Firefox */
+  background: #fff;
+  color: #222;
+}
+
+.dark input[type="date"] {
+  background: #18181b;
+  color: #f3f3f3;
+  border-color: #27272a;
+}
+
 /* LIGHT MODE */
 :root {
   --button-outline: rgba(0, 0, 0, 0.1);
