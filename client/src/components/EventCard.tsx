@@ -9,6 +9,7 @@ import {
   Clock,
   DollarSign,
   ArchiveRestore,
+  Edit,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -115,6 +116,7 @@ export interface EventCardProps {
   isArchiving?: boolean;
   onUnarchive?: () => void;
   isUnarchiving?: boolean;
+  onEdit?: () => void;
   canDelete?: boolean;
   className?: string;
   allowCancellation?: boolean;
@@ -157,6 +159,7 @@ export default function EventCard({
   isArchiving = false,
   onUnarchive,
   isUnarchiving = false,
+  onEdit,
   canDelete = false,
   status,
   className,
@@ -632,6 +635,15 @@ export default function EventCard({
                       Registered
                     </Button>
                   )
+                ) : onEdit ? (
+                  <Button
+                    className="flex-1"
+                    onClick={() => onEdit()}
+                    data-testid={`button-edit-${id}`}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&

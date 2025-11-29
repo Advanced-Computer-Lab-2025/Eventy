@@ -15,6 +15,7 @@ import CreateConference from "@/pages/CreateConference";
 import EditConference from "@/pages/EditConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
 import CreateTrip from "@/pages/CreateTrip";
+import EditTrip from "@/pages/EditTrip";
 import CreateBazaar from "@/pages/CreateBazaar";
 import VendorDashboard from "@/pages/VendorDashboard";
 import SportsFacilities from "@/pages/SportsFacilities";
@@ -113,6 +114,11 @@ function Router() {
       <Route path="/create/trip">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <CreateTrip />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/events/trip/edit/:id">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EditTrip />
         </ProtectedRoute>
       </Route>
       <Route path="/staff-ta">

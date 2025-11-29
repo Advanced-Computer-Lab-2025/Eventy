@@ -111,6 +111,20 @@ export default function EventDetailsDialog({
               <p>{event.agenda}</p>
             </div>
           )}
+          {event.eventType === "conference" &&
+            event.professors &&
+            event.professors.length > 0 && (
+              <div>
+                <h4 className="font-semibold mt-2">Professors</h4>
+                <div className="flex flex-wrap gap-2">
+                  {event.professors.map((prof: any, index: number) => (
+                    <Badge key={index} variant="secondary">
+                      {prof.name || prof.username || "Unknown Professor"}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
           {event.extraResources && (
             <div>
               <h4 className="font-semibold mt-2">Extra Resources</h4>

@@ -8,6 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateBazaar() {
@@ -25,6 +35,7 @@ export default function CreateBazaar() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
   const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
@@ -435,18 +446,18 @@ export default function CreateBazaar() {
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
+          <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/events-office/dashboard")}
-              className="flex-1"
+              onClick={() => setShowCancelDialog(true)}
+              className="min-w-[120px]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className="min-w-[120px]"
               data-testid="button-submit-bazaar"
               disabled={submitting}
             >
@@ -460,6 +471,27 @@ export default function CreateBazaar() {
             </Button>
           </div>
         </form>
+
+        {/* Cancel Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to discard your changes and return to the Events
+                Office dashboard? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => setLocation("/events-office/dashboard")}
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

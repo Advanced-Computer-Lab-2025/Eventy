@@ -37,6 +37,8 @@ interface CreateEventFormProps {
   title?: string;
   initialValues?: Partial<CreateEventFormValues>;
   initialProfessors?: string[];
+  hideSubmitButton?: boolean;
+  formId?: string;
 }
 
 export default function CreateEventForm({
@@ -51,6 +53,8 @@ export default function CreateEventForm({
   title = "Event Information",
   initialValues = {},
   initialProfessors = [],
+  hideSubmitButton = false,
+  formId,
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
@@ -208,7 +212,7 @@ export default function CreateEventForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} id={formId}>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -488,11 +492,13 @@ export default function CreateEventForm({
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
-        <Button type="submit" disabled={submitting} className="flex-1">
-          {submitLabel}
-        </Button>
-      </div>
+      {!hideSubmitButton && (
+        <div className="flex gap-4">
+          <Button type="submit" disabled={submitting} className="flex-1">
+            {submitLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }
