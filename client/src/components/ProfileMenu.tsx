@@ -16,6 +16,8 @@ import { resetFavoritesCache } from "../hooks/useFavorites";
 
 export default function ProfileMenu() {
   const [, setLocation] = useLocation();
+
+  // Updated state to handle both camelCase and lowercase last name
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -36,7 +38,7 @@ export default function ProfileMenu() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
-    resetFavoritesCache(); // ✅ Reset favorites cache on logout
+    resetFavoritesCache();
     setUser(null);
     setLocation("/login");
   };
@@ -45,6 +47,7 @@ export default function ProfileMenu() {
     if (!user) return "";
     if (user.role !== "vendor") {
       const first = user.firstName?.[0] || "";
+      // Check both lastName and lastname
       const last = user.lastName?.[0] || "";
       return (first + last).toUpperCase() || "";
     } else {
@@ -86,10 +89,10 @@ export default function ProfileMenu() {
               {(() => {
                 if (!user) return "Guest";
                 if (user.role !== "vendor") {
-                  return (
-                    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                    "Guest"
-                  );
+                  // Fallback logic for last name
+                  const fName = user.firstName || "";
+                  const lName = user.lastName || "";
+                  return `${fName} ${lName}`.trim() || "Guest";
                 } else {
                   return user.companyName || "Guest";
                 }
@@ -105,7 +108,7 @@ export default function ProfileMenu() {
 
         <DropdownMenuItem
           onSelect={handleLogout}
-          className="text-destructive flex items-center gap-2 px-3 py-2 rounded-md hover:bg-destructive/10 transition-colors duration-150"
+          className="text-destructive flex items-center gap-2 px-3 py-2 rounded-md hover:bg-destructive/10 transition-colors duration-150 cursor-pointer"
         >
           <LogOut className="h-4 w-4" /> Logout
         </DropdownMenuItem>
