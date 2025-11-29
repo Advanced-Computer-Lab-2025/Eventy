@@ -153,9 +153,7 @@ export default function EventSearch({
           const data = await response.json();
           lastResults = data.data || [];
           onSearchResults(lastResults);
-          if (lastResults.length === 0) {
-            onError?.("No events found matching your search criteria.");
-          }
+          // Don't call onError for empty results - let parent handle display
         }
       } catch (err) {
         console.error("Error fetching events:", err);

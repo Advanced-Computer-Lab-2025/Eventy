@@ -6,6 +6,7 @@ import EventSort from "@/components/EventSort";
 import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
+import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 import { getEventImage } from "@/lib/eventImages";
 
@@ -344,7 +345,7 @@ export default function Home() {
               ) : error ? (
                 <p className="text-red-500">{error}</p>
               ) : events.length === 0 ? (
-                <p>No upcoming events found.</p>
+                <EmptyState />
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {[...events]

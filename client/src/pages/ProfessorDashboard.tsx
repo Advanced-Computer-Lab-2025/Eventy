@@ -25,6 +25,7 @@ import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 
 interface Workshop {
@@ -484,14 +485,11 @@ export default function ProfessorDashboard() {
                 <div className="flex items-center justify-center py-12">
                   <div className="text-muted-foreground">Loading events...</div>
                 </div>
-              ) : error && events.length === 0 ? (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-center">{error}</p>
-                  </CardContent>
-                </Card>
-              ) : events.length > 0 ? (
+              ) : error ? (
+                <p className="text-red-500 text-center py-8">{error}</p>
+              ) : events.length === 0 ? (
+                <EmptyState />
+              ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {[...events]
                     .sort((a, b) => {
@@ -566,18 +564,6 @@ export default function ProfessorDashboard() {
                       />
                     ))}
                 </div>
-              ) : (
-                <Card>
-                  <CardContent className="flex flex-col items-center justify-center py-12">
-                    <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-                    <h3 className="text-xl font-semibold mb-2">
-                      No Events Found
-                    </h3>
-                    <p className="text-muted-foreground text-center">
-                      There are no upcoming events at the moment.
-                    </p>
-                  </CardContent>
-                </Card>
               )}
             </div>
           </div>

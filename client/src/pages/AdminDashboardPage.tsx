@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import { getEventImage } from "@/lib/eventImages";
 import EventSort from "@/components/EventSort";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
@@ -418,7 +419,7 @@ export default function AdminDashboardPage() {
             ) : eventsError ? (
               <p className="text-red-500">{eventsError}</p>
             ) : upcomingEvents.length === 0 ? (
-              <p>No upcoming events found.</p>
+              <EmptyState />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {[...upcomingEvents]

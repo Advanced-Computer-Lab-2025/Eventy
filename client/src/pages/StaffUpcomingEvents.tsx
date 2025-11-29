@@ -4,6 +4,7 @@ import EventCard from "@/components/EventCard";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
+import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 
 interface Event {
@@ -62,8 +63,10 @@ export default function StaffUpcomingEvents() {
     if (eventFilters.location !== "all") {
       next.location = eventFilters.location;
     }
-    if (eventFilters.startDate && eventFilters.endDate) {
+    if (eventFilters.startDate) {
       next.startDate = eventFilters.startDate;
+    }
+    if (eventFilters.endDate) {
       next.endDate = eventFilters.endDate;
     }
     if (eventFilters.professor) {
@@ -334,7 +337,7 @@ export default function StaffUpcomingEvents() {
               ) : error ? (
                 <p className="text-red-500">{error}</p>
               ) : events.length === 0 ? (
-                <p>No upcoming events found.</p>
+                <EmptyState />
               ) : (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {[...events]

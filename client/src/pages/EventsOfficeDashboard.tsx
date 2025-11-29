@@ -49,6 +49,7 @@ import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
@@ -1317,15 +1318,7 @@ export default function EventsOfficeDashboard() {
                       {upcomingError || pastEventsError}
                     </p>
                   ) : filteredEvents.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">
-                        No events found
-                      </p>
-                      <p className="text-sm">
-                        Try adjusting your filters or search criteria
-                      </p>
-                    </div>
+                    <EmptyState />
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
                       {[...filteredEvents]
