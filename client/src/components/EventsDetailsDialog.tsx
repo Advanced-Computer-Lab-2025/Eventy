@@ -119,7 +119,9 @@ export default function EventDetailsDialog({
                 <div className="flex flex-wrap gap-2">
                   {event.professors.map((prof: any, index: number) => (
                     <Badge key={index} variant="secondary">
-                      {prof.name || prof.username || "Unknown Professor"}
+                      {prof.firstName && prof.lastName
+                        ? `${prof.firstName} ${prof.lastName}`
+                        : prof.name || prof.username || "Unknown Professor"}
                     </Badge>
                   ))}
                 </div>

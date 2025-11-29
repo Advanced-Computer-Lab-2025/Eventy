@@ -396,7 +396,7 @@ export const getUpcomingEventsService = async (
   }
 
   const events = await Event.find(filter)
-    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("professors", "firstName lastName email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
 
@@ -743,6 +743,7 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
 export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
+    .populate("professors", "firstName lastName email")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
