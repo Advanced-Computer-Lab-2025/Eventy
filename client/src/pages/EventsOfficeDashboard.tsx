@@ -18,12 +18,9 @@ import {
   Plane,
   Archive,
   FileText,
-  SlidersHorizontal,
   Users,
   PieChart as PieChartIcon,
 } from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Label } from "@/components/ui/label";
 import {
   PieChart,
   Pie,
@@ -50,8 +47,11 @@ import {
 import StatCard from "@/components/StatCard";
 import BazaarList from "@/components/BazaarList";
 import EventSearch from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
@@ -83,6 +83,7 @@ export default function EventsOfficeDashboard() {
   const [showWorkshopNotif, setShowWorkshopNotif] = useState(false);
   const [reminderTime, setReminderTime] = useState<NodeJS.Timeout | null>(null);
   const existingRef = useRef<HTMLDivElement | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [upcomingError, setUpcomingError] = useState("");
@@ -100,8 +101,6 @@ export default function EventsOfficeDashboard() {
   const [pastEventSearch, setPastEventSearch] = useState("");
 
   // Combined filter states
-  const [showUpcoming, setShowUpcoming] = useState(true);
-  const [showPast, setShowPast] = useState(true);
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([
     "bazaar",
     "trip",
@@ -111,6 +110,19 @@ export default function EventsOfficeDashboard() {
   ]);
   const [eventSearch, setEventSearch] = useState("");
   const [displayLimit, setDisplayLimit] = useState(12);
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+    showUpcoming: true,
+    showPast: true,
+  });
 
   // Extra totals
   const [totalTrips, setTotalTrips] = useState<number | null>(null);
@@ -118,7 +130,9 @@ export default function EventsOfficeDashboard() {
   const [totalBooths, setTotalBooths] = useState<number | null>(null);
 
   // Combined filtered events
-  const combinedEvents = [...upcomingEvents, ...pastEvents];
+  const combinedEvents = [...upcomingEvents, ...pastEvents].filter(
+    (event) => event
+  );
   const filteredEvents = combinedEvents.filter((event: any) => {
     const q = eventSearch.trim().toLowerCase();
     const matchesSearch =
@@ -128,7 +142,9 @@ export default function EventsOfficeDashboard() {
       (event.location || "").toLowerCase().includes(q) ||
       (event.locationPreference || "").toLowerCase().includes(q);
 
-    const matchesType = selectedEventTypes.includes(event.eventType);
+    const matchesType =
+      selectedEventTypes.includes(event.eventType) &&
+      (filters.eventType === "all" || event.eventType === filters.eventType);
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
@@ -152,9 +168,36 @@ export default function EventsOfficeDashboard() {
     }
 
     const matchesTimeFilter =
-      (showUpcoming && isUpcoming) || (showPast && isPast);
+      ((filters.showUpcoming ?? true) && isUpcoming) ||
+      ((filters.showPast ?? true) && isPast);
 
-    return matchesSearch && matchesType && matchesTimeFilter;
+    const matchesLocation =
+      filters.location === "all" || event.location === filters.location;
+
+    const eventStart = event.startDate ? new Date(event.startDate) : null;
+    const eventEnd = event.endDate ? new Date(event.endDate) : null;
+    const matchesDateRange =
+      (!filters.startDate ||
+        !eventStart ||
+        eventStart >= new Date(filters.startDate)) &&
+      (!filters.endDate || !eventEnd || eventEnd <= new Date(filters.endDate));
+
+    // Professor filter: if a specific professor is selected, only include workshops/conferences with that professor
+    if (filters.professor && filters.professor !== "") {
+      if (event.eventType !== "workshop" && event.eventType !== "conference")
+        return false;
+      const profs = (event as any).professors || [];
+      const profIds = profs.map((p: any) => String(p._id || p.id || p));
+      if (!profIds.includes(String(filters.professor))) return false;
+    }
+
+    return (
+      matchesSearch &&
+      matchesType &&
+      matchesTimeFilter &&
+      matchesLocation &&
+      matchesDateRange
+    );
   });
 
   const toggleEventType = (type: string) => {
@@ -164,8 +207,6 @@ export default function EventsOfficeDashboard() {
   };
 
   const handleClearFilters = () => {
-    setShowUpcoming(true);
-    setShowPast(true);
     setSelectedEventTypes([
       "bazaar",
       "trip",
@@ -547,6 +588,13 @@ export default function EventsOfficeDashboard() {
   };
 
   useEffect(() => {
+    // Get user role from localStorage
+    const user = localStorage.getItem("user");
+    if (user) {
+      const userData = JSON.parse(user);
+      setUserRole(userData.role || "");
+    }
+
     fetchBazaars();
     fetchPendingWorkshops();
     fetchPastEvents();
@@ -587,6 +635,35 @@ export default function EventsOfficeDashboard() {
     };
   }, []);
 
+  // Fetch professors for dropdown
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const baseUrl =
+      (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:4000";
+    const fetchProfessors = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    };
+    fetchProfessors();
+  }, []);
+
   // Filter conferences when search changes
   useEffect(() => {
     let filtered = conferences;
@@ -604,7 +681,7 @@ export default function EventsOfficeDashboard() {
   // Reset display limit when filters change
   useEffect(() => {
     setDisplayLimit(12);
-  }, [showUpcoming, showPast, selectedEventTypes, eventSearch]);
+  }, [filters, selectedEventTypes, eventSearch]);
 
   // Prepare bazaars for BazaarList component (adds required fields and sane defaults)
   const formattedBazaars = bazaars.map((b) => ({
@@ -1178,105 +1255,24 @@ export default function EventsOfficeDashboard() {
           <div className="flex flex-col lg:flex-row gap-6">
             {/* Left Sidebar - Filters */}
             <aside className="lg:w-72 flex-shrink-0">
-              <div className="sticky top-24">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <SlidersHorizontal className="h-5 w-5" />
-                      Filters
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Time Period Filter */}
-                    <div className="space-y-3">
-                      <div className="text-sm font-semibold">Time Period</div>
-                      {!showUpcoming && !showPast && (
-                        <div className="bg-amber-50/80 dark:bg-amber-900/10 border border-amber-300/50 dark:border-amber-700/30 rounded-lg p-2.5">
-                          <p className="text-xs text-amber-700 dark:text-amber-300 flex items-center gap-1.5 font-medium">
-                            <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                            <span>Select at least one time period</span>
-                          </p>
-                        </div>
-                      )}
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="filter-upcoming"
-                            checked={showUpcoming}
-                            onCheckedChange={(checked) =>
-                              setShowUpcoming(checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor="filter-upcoming"
-                            className="cursor-pointer text-sm"
-                          >
-                            Upcoming Events
-                          </Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Checkbox
-                            id="filter-past"
-                            checked={showPast}
-                            onCheckedChange={(checked) =>
-                              setShowPast(checked as boolean)
-                            }
-                          />
-                          <Label
-                            htmlFor="filter-past"
-                            className="cursor-pointer text-sm"
-                          >
-                            Past Events
-                          </Label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Event Type Filter */}
-                    <div className="space-y-3">
-                      <div className="text-sm font-semibold">Event Type</div>
-                      <div className="space-y-2">
-                        {[
-                          { value: "bazaar", label: "Bazaars" },
-                          { value: "trip", label: "Trips" },
-                          { value: "workshop", label: "Workshops" },
-                          { value: "conference", label: "Conferences" },
-                          { value: "platform_booth", label: "Platform Booths" },
-                        ].map((type) => (
-                          <div
-                            key={type.value}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox
-                              id={`filter-${type.value}`}
-                              checked={selectedEventTypes.includes(type.value)}
-                              onCheckedChange={() =>
-                                toggleEventType(type.value)
-                              }
-                            />
-                            <Label
-                              htmlFor={`filter-${type.value}`}
-                              className="cursor-pointer text-sm"
-                            >
-                              {type.label}
-                            </Label>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Button
-                      variant="outline"
-                      className="w-full"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handleClearFilters();
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </CardContent>
-                </Card>
+              <div className="sticky top-32">
+                <EventFilters
+                  filters={filters}
+                  onFilterChange={setFilters}
+                  locations={Array.from(
+                    new Set(
+                      combinedEvents
+                        .filter((event) => event)
+                        .map(
+                          (event) => event.location || event.locationPreference
+                        )
+                        .filter((loc) => !!loc)
+                    )
+                  )}
+                  professors={professorOptions}
+                  userRole={userRole}
+                  onClear={handleClearFilters}
+                />
               </div>
             </aside>
 
@@ -1288,12 +1284,19 @@ export default function EventsOfficeDashboard() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {/* Search Bar */}
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Search events by name, type, or location..."
-                      value={eventSearch}
-                      onChange={(e) => setEventSearch(e.target.value)}
-                      className="flex-1"
+                  <div className="flex items-center gap-3">
+                    <div className="flex-1">
+                      <Input
+                        placeholder="Search events by name, type, or location..."
+                        value={eventSearch}
+                        onChange={(e) => setEventSearch(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+
+                    <EventSort
+                      sortOrder={sortOrder}
+                      onSortChange={setSortOrder}
                     />
                   </div>
 
@@ -1308,18 +1311,21 @@ export default function EventsOfficeDashboard() {
                       {upcomingError || pastEventsError}
                     </p>
                   ) : filteredEvents.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium mb-2">
-                        No events found
-                      </p>
-                      <p className="text-sm">
-                        Try adjusting your filters or search criteria
-                      </p>
-                    </div>
+                    <EmptyState />
                   ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                      {filteredEvents
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4">
+                      {[...filteredEvents]
+                        .sort((a, b) => {
+                          const aDate = a.startDate
+                            ? new Date(a.startDate).getTime()
+                            : 0;
+                          const bDate = b.startDate
+                            ? new Date(b.startDate).getTime()
+                            : 0;
+                          return sortOrder === "asc"
+                            ? aDate - bDate
+                            : bDate - aDate;
+                        })
                         .filter((event: any) => !event?.deletedAt)
                         .slice(0, displayLimit)
                         .map((event: any, index: number) => {

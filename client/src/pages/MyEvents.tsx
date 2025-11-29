@@ -104,6 +104,28 @@ export default function MyEvents() {
   }, []);
 
   // Fetch full event details by ID
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatEventTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatBoothDate = (durationWeeks: number) => {
+    return `Active for ${durationWeeks} week${durationWeeks > 1 ? "s" : ""}`;
+  };
+
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
     setDialogOpen(true);
@@ -152,59 +174,66 @@ export default function MyEvents() {
             </p>
           ) : (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {registeredEvents.map((event) => (
-                <EventCard
-                  key={event._id}
-                  id={event._id}
-                  title={event.name}
-                  category={event.eventType}
-                  date={new Date(event.startDate).toLocaleDateString()}
-                  time={new Date(event.startDate).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  location={
-                    event.location ||
-                    (String(event.eventType).toLowerCase() === "platform_booth"
-                      ? event.locationPreference
-                      : null) ||
-                    "Unknown location"
-                  }
-                  // FIX: Pass actual attendee data
-                  attendees={
-                    event.attendees
-                      ? event.attendees.length
-                      : event.attendeesCount || 0
-                  }
-                  image={event.bannerImage}
-                  startDate={event.startDate}
-                  endDate={event.endDate}
-                  durationWeeks={event.durationWeeks}
-                  showActions={true}
-                  isRegistered={true}
-                  hideRegisterButton={
-                    userRole === "student" ||
-                    userRole === "professor" ||
-                    userRole === "staff" ||
-                    userRole === "ta"
-                  }
-                  price={event.price || 0}
-                  allowCancellation={true}
-                  showAttendeeCount={false}
-                  inlinePriceWithLocation
-                  // CALLBACK to remove from list instantly
-                  onUnregister={() => {
-                    setRegisteredEvents((prev) =>
-                      prev.filter((e) => e._id !== event._id)
-                    );
-                  }}
-                  onViewDetails={() => handleCardClick(event._id)}
-                  onFeedback={() => {
-                    setSelectedEventForFeedback(event);
-                    setFeedbackDialogOpen(true);
-                  }}
-                />
-              ))}
+              {registeredEvents.map((event) => {
+                const isBoothEvent =
+                  String(event.eventType).toLowerCase() === "platform_booth";
+                return (
+                  <EventCard
+                    key={event._id}
+                    id={event._id}
+                    title={event.name}
+                    category={event.eventType}
+                    date={
+                      isBoothEvent && event.durationWeeks
+                        ? formatBoothDate(event.durationWeeks)
+                        : formatEventDate(event.startDate)
+                    }
+                    time={
+                      isBoothEvent && event.durationWeeks
+                        ? ""
+                        : formatEventTime(event.startDate)
+                    }
+                    location={
+                      event.location ||
+                      (isBoothEvent ? event.locationPreference : null) ||
+                      "Unknown location"
+                    }
+                    // FIX: Pass actual attendee data
+                    attendees={
+                      event.attendees
+                        ? event.attendees.length
+                        : event.attendeesCount || 0
+                    }
+                    image={event.bannerImage}
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    durationWeeks={event.durationWeeks}
+                    showActions={true}
+                    isRegistered={true}
+                    hideRegisterButton={
+                      userRole === "student" ||
+                      userRole === "professor" ||
+                      userRole === "staff" ||
+                      userRole === "ta"
+                    }
+                    price={event.price || 0}
+                    allowCancellation={true}
+                    showAttendeeCount={false}
+                    inlinePriceWithLocation
+                    // CALLBACK to remove from list instantly
+                    onUnregister={() => {
+                      setRegisteredEvents((prev) =>
+                        prev.filter((e) => e._id !== event._id)
+                      );
+                    }}
+                    onViewDetails={() => handleCardClick(event._id)}
+                    onFeedback={() => {
+                      setSelectedEventForFeedback(event);
+                      setFeedbackDialogOpen(true);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

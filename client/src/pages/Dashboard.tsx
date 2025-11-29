@@ -6,6 +6,7 @@ import EventListItem from "@/components/EventListItem";
 import QuickActions from "@/components/QuickActions";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import EventSearch from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
@@ -39,6 +40,7 @@ export default function Dashboard() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true); // Initial loading state
   const [error, setError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
 
   const handleSearchResults = (results: any[]) => {
     setEvents(results);
@@ -117,12 +119,21 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 {/* Search Section */}
-                <EventSearch
-                  onSearchResults={handleSearchResults}
-                  onLoading={handleLoading}
-                  onError={handleError}
-                  className="mb-6"
-                />
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex-1">
+                    <EventSearch
+                      onSearchResults={handleSearchResults}
+                      onLoading={handleLoading}
+                      onError={handleError}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <EventSort
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                  />
+                </div>
 
                 {loading ? (
                   <div className="text-center py-8 text-muted-foreground">

@@ -384,10 +384,7 @@ export const getUpcomingEventsService = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -416,10 +413,7 @@ export const getUpcomingEventsWithVendors = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -428,7 +422,9 @@ export const getUpcomingEventsWithVendors = async (
   }
 
   // Get all approved upcoming events
-  const events = await Event.find(filter).lean();
+  const events = await Event.find(filter)
+    .populate("professors", "firstName lastName role")
+    .lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -502,22 +498,19 @@ export const searchEvents = async ({
   startDate,
   endDate,
   userRole,
+  professor,
 }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Platform booths have startDate and endDate assigned when approved in updateApplicationStatus
+  // Platform booths should also respect startDate >= now, just like regular events
   const now = new Date();
   const filter = {
     status: "approved",
     deletedAt: null,
-    $and: [
-      {
-        $or: [
-          { startDate: { $gte: now } }, // Regular events with future startDate
-          { eventType: "platform_booth" }, // Platform booths (kept for backwards compatibility)
-        ],
-      },
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
+
+  // Additional filters will be added to $and array
+  filter.$and = [];
 
   // Filter out events where the user's role is restricted
   if (userRole && userRole !== "admin" && userRole !== "events_office") {
@@ -621,6 +614,28 @@ export const searchEvents = async ({
         { locationPreference: { $regex: location, $options: "i" } },
       ],
     });
+  }
+
+  if (professor) {
+    // Accept professor as ID (string), convert to ObjectId if valid
+    const profStr = String(professor).trim();
+    if (profStr && profStr.toLowerCase() !== "all") {
+      if (!mongoose.Types.ObjectId.isValid(profStr)) {
+        // Invalid professor id format - return an empty result rather than throwing
+        // to avoid crashing consumer code; simply return an empty list
+        return [];
+      }
+      const profValue = new mongoose.Types.ObjectId(profStr);
+
+      // Only filter for workshops and conferences when using professor filter
+      filter.$and.push({ eventType: { $in: ["workshop", "conference"] } });
+      filter.$and.push({
+        $or: [
+          { professors: { $in: [profValue] } }, // Professor is in the professors array
+          { createdBy: profValue }, // Professor created the event
+        ],
+      });
+    }
   }
 
   // Date filtering: enforce strict bounds

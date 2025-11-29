@@ -39,6 +39,7 @@ interface CreateEventFormProps {
   initialProfessors?: string[];
   hideSubmitButton?: boolean;
   formId?: string;
+  onCancel?: () => void;
 }
 
 export default function CreateEventForm({
@@ -55,6 +56,7 @@ export default function CreateEventForm({
   initialProfessors = [],
   hideSubmitButton = false,
   formId,
+  onCancel,
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
@@ -494,6 +496,17 @@ export default function CreateEventForm({
 
       {!hideSubmitButton && (
         <div className="flex gap-4">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1"
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+          )}
           <Button type="submit" disabled={submitting} className="flex-1">
             {submitLabel}
           </Button>

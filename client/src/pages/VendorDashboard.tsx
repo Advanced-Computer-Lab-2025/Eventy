@@ -677,7 +677,7 @@ export default function VendorDashboard() {
                               );
                             }}
                             labelLine={(props: any) => {
-                              if (props.value === 0) return null;
+                              if (props.value === 0) return <g />;
                               return (
                                 <path
                                   d={props.points?.reduce(

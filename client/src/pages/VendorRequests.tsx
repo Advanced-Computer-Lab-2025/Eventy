@@ -320,7 +320,7 @@ export default function VendorRequests() {
             </p>
           </div>
           <div className="flex flex-row gap-2 items-center">
-            {(userRole === "events_office" || userRole === "admin") && (
+            {userRole === "events_office" && (
               <Button
                 onClick={handleGoToPolls}
                 className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
