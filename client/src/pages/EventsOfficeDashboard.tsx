@@ -148,14 +148,26 @@ export default function EventsOfficeDashboard() {
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
-    // Booth events don't have endDate, so they're always considered "upcoming"
     let isUpcoming = false;
     let isPast = false;
 
     if (isBoothEvent) {
-      // Booth events are always considered upcoming
-      isUpcoming = true;
-      isPast = false;
+      // Platform booths now have startDate and endDate
+      // Check if both dates have passed
+      if (event.startDate && event.endDate) {
+        const eventStartDate = new Date(event.startDate);
+        const eventEndDate = new Date(event.endDate);
+        eventEndDate.setUTCHours(23, 59, 59, 999);
+        // Both start and end dates must have passed for it to be past
+        isPast =
+          eventStartDate.getTime() < now.getTime() &&
+          eventEndDate.getTime() < now.getTime();
+        isUpcoming = !isPast;
+      } else {
+        // If booth doesn't have dates yet, consider it upcoming
+        isUpcoming = true;
+        isPast = false;
+      }
     } else if (event.endDate) {
       const eventEndDate = new Date(event.endDate);
       eventEndDate.setUTCHours(23, 59, 59, 999);
