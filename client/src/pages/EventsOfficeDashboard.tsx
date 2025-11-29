@@ -1145,7 +1145,7 @@ export default function EventsOfficeDashboard() {
                               className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
                               onClick={() => {
                                 setIsCreateEventDialogOpen(false);
-                                setLocation("/create/trip");
+                                setLocation("/events-office/create/trip");
                               }}
                             >
                               <Plane className="h-4 w-4" />
