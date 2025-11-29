@@ -789,9 +789,12 @@ export const getAllTripsService = async () => {
 
 export const getAllWorkshopsService = async (userRole) => {
   // ✅ 3. Fetch all workshops from the database
-  const workshops = await Event.find({ eventType: "workshop" }).sort({
-    createdAt: -1,
-  });
+  const workshops = await Event.find({ eventType: "workshop" })
+    .populate("createdBy", "firstName lastName email")
+    .populate("professors", "firstName lastName email")
+    .sort({
+      createdAt: -1,
+    });
 
   // ✅ 4. Return response
   return workshops;

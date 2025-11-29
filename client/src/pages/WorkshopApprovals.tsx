@@ -483,6 +483,19 @@ export default function WorkshopApprovals() {
                 {selectedWorkshop.createdBy?.firstName}{" "}
                 {selectedWorkshop.createdBy?.lastName}
               </p>
+              {selectedWorkshop.professors &&
+                selectedWorkshop.professors.length > 0 && (
+                  <div>
+                    <strong>Participating Professors:</strong>
+                    <ul className="list-disc list-inside ml-2 mt-1">
+                      {selectedWorkshop.professors.map((prof: any) => (
+                        <li key={prof._id}>
+                          {prof.firstName} {prof.lastName} ({prof.email})
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               {selectedWorkshop.revisionComments && (
                 <div className="mt-4 p-3 bg-muted rounded-md">
                   <p>
