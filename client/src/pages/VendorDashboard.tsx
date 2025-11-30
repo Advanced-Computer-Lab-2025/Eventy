@@ -494,6 +494,20 @@ export default function VendorDashboard() {
       }
     }
 
+    // Check for duplicate emails (case-insensitive)
+    const emails = validAttendees.map((attendee) =>
+      attendee.email.toLowerCase()
+    );
+    const uniqueEmails = new Set(emails);
+    if (emails.length !== uniqueEmails.size) {
+      toast({
+        title: "Validation Error",
+        description: "All attendees must have unique email addresses.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     // Check for missing IDs and collect all attendees without IDs
     // Check all attendees that have at least a name (so we can display them)
     const attendeesToCheck = platformBoothAttendees.filter(

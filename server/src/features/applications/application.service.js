@@ -10,6 +10,33 @@ import NotificationService from "../notifications/notification.service.js"; // I
 
 class ApplicationServiceClass {
   /**
+   * Checks and updates overdue status for an approved application
+   * This runs automatically when applications are fetched
+   * @param {Document} application - The application document
+   * @returns {Promise<Document>} The application with updated paymentStatus if needed
+   */
+  async checkAndUpdateOverdueStatus(application) {
+    // Only check approved applications that haven't been paid
+    if (
+      application.status === "approved" &&
+      application.paymentStatus === "pending"
+    ) {
+      const approvalDate = new Date(application.updatedAt);
+      const currentDate = new Date();
+      const daysSinceApproval = Math.floor(
+        (currentDate - approvalDate) / (1000 * 60 * 60 * 24)
+      );
+
+      // If more than 3 days have passed, mark as overdue
+      if (daysSinceApproval > 3) {
+        application.paymentStatus = "overdue";
+        await application.save();
+      }
+    }
+    return application;
+  }
+
+  /**
    * Creates a new application in the database.
    * @param {object} applicationData - The data for the new application.
    * @param {Array} applicationData.attendees - Array of attendee objects, each containing:
@@ -201,6 +228,11 @@ class ApplicationServiceClass {
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 });
 
+    // Check and update overdue status for each application automatically
+    for (const app of applications) {
+      await this.checkAndUpdateOverdueStatus(app);
+    }
+
     // Filter out applications for events that have already passed
     const currentDate = new Date();
     const activeApplications = applications.filter((app) => {
@@ -233,6 +265,11 @@ class ApplicationServiceClass {
       // Populate 'event' with specific fields from the linked Event/Bazaar document
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
+
+    // Check and update overdue status for each application automatically
+    for (const app of applications) {
+      await this.checkAndUpdateOverdueStatus(app);
+    }
 
     // Filter out applications for events that have already passed
     const currentDate = new Date();
