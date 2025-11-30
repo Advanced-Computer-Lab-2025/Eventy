@@ -189,7 +189,6 @@ export const createConference = async (data, userId) => {
     startDate,
     endDate,
     description,
-    location: "TBD",
     registrationDeadline: startDate, // placeholder
     status: "approved",
     requiredBudget,
