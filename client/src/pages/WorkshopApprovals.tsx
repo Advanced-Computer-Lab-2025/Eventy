@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import axios from "axios";
 import {
   CheckCircle,
@@ -51,7 +51,7 @@ export default function WorkshopApprovals() {
   const [filteredWorkshops, setFilteredWorkshops] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
-  const [facultyFilter, setFacultyFilter] = useState<string[]>(["all"]);
+  const [facultyFilter, setFacultyFilter] = useState<string>("all");
   const [selectedWorkshop, setSelectedWorkshop] = useState<any>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showEditRequestDialog, setShowEditRequestDialog] = useState(false);
@@ -62,16 +62,16 @@ export default function WorkshopApprovals() {
   const apiBase =
     (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
 
-  const faculties = [
-    "MET",
-    "IET",
-    "EMS",
-    "Pharmacy & Biotechnology",
-    "Dentistry",
-    "BI",
-    "Management",
-    "Applied Arts",
-  ];
+  // Compute unique faculties dynamically from workshops data
+  const facultyOptions = useMemo(() => {
+    const uniqueFaculties = new Set<string>();
+    allWorkshops.forEach((workshop) => {
+      if (workshop.faculty) {
+        uniqueFaculties.add(workshop.faculty);
+      }
+    });
+    return Array.from(uniqueFaculties).sort();
+  }, [allWorkshops]);
 
   // Fetch all workshops
   const fetchAllWorkshops = async () => {
@@ -123,14 +123,13 @@ export default function WorkshopApprovals() {
   const applyFilters = (
     workshops: any[],
     statuses: string[],
-    faculties: string[],
+    faculty: string,
     search: string = ""
   ) => {
     let filtered = workshops.filter((w) => {
       const statusMatch =
         statuses.includes("all") || statuses.includes(w.status);
-      const facultyMatch =
-        faculties.includes("all") || faculties.includes(w.faculty);
+      const facultyMatch = faculty === "all" || w.faculty === faculty;
       return statusMatch && facultyMatch;
     });
 
@@ -191,27 +190,9 @@ export default function WorkshopApprovals() {
   };
 
   // Handle faculty filter change
-  const handleFacultyFilterChange = (faculty: string, checked: boolean) => {
-    let newFaculties: string[];
-
-    if (faculty === "all") {
-      newFaculties = checked ? ["all"] : [];
-    } else {
-      if (checked) {
-        // Remove "all" if it exists and add the new faculty
-        newFaculties = facultyFilter.filter((f) => f !== "all").concat(faculty);
-      } else {
-        // Remove the faculty
-        newFaculties = facultyFilter.filter((f) => f !== faculty);
-        // If no faculties selected, default to "all"
-        if (newFaculties.length === 0) {
-          newFaculties = ["all"];
-        }
-      }
-    }
-
-    setFacultyFilter(newFaculties);
-    applyFilters(allWorkshops, statusFilter, newFaculties, searchInput);
+  const handleFacultyFilterChange = (faculty: string) => {
+    setFacultyFilter(faculty);
+    applyFilters(allWorkshops, statusFilter, faculty, searchInput);
   };
 
   // Approve workshop
@@ -302,7 +283,7 @@ export default function WorkshopApprovals() {
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-6">
           <h1 className="text-4xl font-bold mb-2">Workshop Management</h1>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground m-0">
             View, filter, and manage workshop approvals
           </p>
         </div>
@@ -310,7 +291,7 @@ export default function WorkshopApprovals() {
         {/* Sidebar Layout with Filters */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Sidebar - Filters */}
-          <aside className="lg:w-72 flex-shrink-0">
+          <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-32">
               <Card>
                 <CardHeader>
@@ -420,51 +401,22 @@ export default function WorkshopApprovals() {
                       <Building2 className="h-4 w-4" />
                       Faculty
                     </div>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="faculty-all"
-                          checked={facultyFilter.includes("all")}
-                          onCheckedChange={(checked) =>
-                            handleFacultyFilterChange("all", checked as boolean)
-                          }
-                        />
-                        <Label
-                          htmlFor="faculty-all"
-                          className="cursor-pointer text-sm"
-                        >
-                          All Faculties
-                        </Label>
-                      </div>
-                      {faculties
-                        .filter(
-                          (faculty): faculty is string =>
-                            typeof faculty === "string"
-                        )
-                        .map((faculty) => (
-                          <div
-                            key={faculty}
-                            className="flex items-center gap-2"
-                          >
-                            <Checkbox
-                              id={`faculty-${faculty}`}
-                              checked={facultyFilter.includes(faculty)}
-                              onCheckedChange={(checked) =>
-                                handleFacultyFilterChange(
-                                  faculty,
-                                  checked as boolean
-                                )
-                              }
-                            />
-                            <Label
-                              htmlFor={`faculty-${faculty}`}
-                              className="cursor-pointer text-sm"
-                            >
-                              {faculty}
-                            </Label>
-                          </div>
+                    <Select
+                      value={facultyFilter}
+                      onValueChange={handleFacultyFilterChange}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select faculty" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Faculties</SelectItem>
+                        {facultyOptions.map((faculty) => (
+                          <SelectItem key={faculty} value={faculty}>
+                            {faculty}
+                          </SelectItem>
                         ))}
-                    </div>
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   {/* Clear Filters Button */}
@@ -473,9 +425,9 @@ export default function WorkshopApprovals() {
                     className="w-full"
                     onClick={() => {
                       setStatusFilter(["all"]);
-                      setFacultyFilter(["all"]);
+                      setFacultyFilter("all");
                       setSearchInput("");
-                      applyFilters(allWorkshops, ["all"], ["all"], "");
+                      applyFilters(allWorkshops, ["all"], "all", "");
                     }}
                   >
                     Clear Filters
