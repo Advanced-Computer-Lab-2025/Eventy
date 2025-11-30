@@ -39,6 +39,7 @@ import SalesReport from "@/components/SalesReportPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 function Router() {
@@ -54,6 +55,12 @@ function Router() {
       <Route path="/home">
         <ProtectedRoute allowedRoles={["student"]}>
           <Home />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/booth-vote">
+        <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
+          <BoothVotePage />
         </ProtectedRoute>
       </Route>
 
