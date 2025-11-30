@@ -281,12 +281,14 @@ export default function StaffTADashboard() {
 
   const availableLocations = useMemo(() => {
     const filteredEvents = allUpcomingEvents.filter((event) => {
+      // Filter by event type
       if (
         eventFilters.eventType !== "all" &&
         event.eventType !== eventFilters.eventType
       ) {
         return false;
       }
+      // Filter by professor
       if (eventFilters.professor) {
         const eventProfessors = (event as any).professors || [];
         const hasProfessor = eventProfessors.some(
@@ -296,26 +298,86 @@ export default function StaffTADashboard() {
       }
       return true;
     });
-
-    const locations = filteredEvents
-      .map(
-        (event) =>
-          event.location ||
-          (event.eventType === "platform_booth"
-            ? event.locationPreference
-            : null)
-      )
-      .filter(Boolean) as string[];
-    return Array.from(new Set(locations));
+    const uniqueLocations = new Set<string>();
+    filteredEvents.forEach((event) => {
+      const loc =
+        event.location ||
+        (event.eventType === "platform_booth"
+          ? (event as any).locationPreference
+          : "");
+      if (loc) uniqueLocations.add(loc);
+    });
+    return Array.from(uniqueLocations);
   }, [allUpcomingEvents, eventFilters.eventType, eventFilters.professor]);
 
-  // Only show professors when event type is workshop
   const filteredProfessorOptions = useMemo(() => {
-    if (eventFilters.eventType === "workshop") {
-      return professorOptions;
+    // Match Home: filter professors by available events
+    const filteredEvents = allUpcomingEvents.filter((event) => {
+      // Filter by event type
+      if (
+        eventFilters.eventType !== "all" &&
+        event.eventType !== eventFilters.eventType
+      ) {
+        return false;
+      }
+      // Filter by location
+      if (eventFilters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? (event as any).locationPreference
+            : "");
+        if (eventLocation !== eventFilters.location) return false;
+      }
+      return true;
+    });
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          if (id) availableProfessorIds.add(String(id));
+        });
+      }
+    });
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [
+    allUpcomingEvents,
+    eventFilters.eventType,
+    eventFilters.location,
+    professorOptions,
+  ]);
+
+  // Clear invalid filter selections when options change (like Home)
+  useEffect(() => {
+    let needsUpdate = false;
+    const newFilters = { ...eventFilters };
+    if (
+      eventFilters.location !== "all" &&
+      !availableLocations.includes(eventFilters.location)
+    ) {
+      newFilters.location = "all";
+      needsUpdate = true;
     }
-    return [];
-  }, [eventFilters.eventType, professorOptions]);
+    if (
+      eventFilters.professor &&
+      !filteredProfessorOptions.some((p) => p.id === eventFilters.professor)
+    ) {
+      newFilters.professor = "";
+      needsUpdate = true;
+    }
+    if (needsUpdate) {
+      setEventFilters(newFilters);
+    }
+  }, [
+    availableLocations,
+    filteredProfessorOptions,
+    eventFilters.location,
+    eventFilters.professor,
+  ]);
 
   if (loading) {
     return (
