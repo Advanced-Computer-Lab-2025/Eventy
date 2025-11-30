@@ -1,5 +1,12 @@
 import Joi from "joi";
 
+export const voteSchema = Joi.object({
+  optionId: Joi.string().required().messages({
+    "any.required": "Option ID is required",
+    "string.base": "Option ID must be a string",
+    "string.empty": "Option ID cannot be empty",
+  }),
+});
 export const createBoothConflictPollSchema = Joi.object({
   applicationIds: Joi.array()
     .items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/))
