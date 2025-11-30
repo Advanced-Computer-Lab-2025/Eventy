@@ -160,10 +160,14 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
     if (feedback.comment && String(feedback.comment).trim()) {
       // Clear the comment only
       const commentBody = feedback.comment;
+
+      // ✅ Get event BEFORE clearing comment
+      const event = await Event.findById(feedback.eventId).select("name");
+
       feedback.comment = null;
       await feedback.save();
 
-      // Optionally notify the user
+      // Send email
       const allowedRoles = [
         "student",
         "staff",
@@ -172,19 +176,31 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
         "events_office",
       ];
       const commentAuthor = feedback.userId;
-      const event = await Event.findById(feedback.eventId).select("name");
+
       if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
         try {
+          console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
           await sendCommentDeletionWarning({
             userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
             userEmail: commentAuthor.email,
             eventName: event.name,
             commentBody: commentBody,
-            deletionReason: "inappropriate content",
           });
+          console.log("Email sent successfully!"); // ✅ Add logging
         } catch (emailError) {
           console.error("Failed to send comment deletion warning:", emailError);
+          console.error("Email error details:", emailError.message); // ✅ Add detailed logging
         }
+      } else {
+        console.log("Email not sent. Conditions:", {
+          // ✅ Debug logging
+          hasAuthor: !!commentAuthor,
+          authorRole: commentAuthor?.role,
+          roleAllowed: commentAuthor
+            ? allowedRoles.includes(commentAuthor.role)
+            : false,
+          hasEvent: !!event,
+        });
       }
 
       return {
@@ -193,7 +209,6 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
         message: "Comment cleared, rating retained.",
       };
     } else {
-      // Rating only, nothing to delete
       throw new ApiError(
         400,
         "Cannot delete: feedback is rating only and has no comment."
@@ -207,10 +222,15 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
     feedback.comment &&
     String(feedback.comment).trim()
   ) {
+    const commentBody = feedback.comment;
+
+    // ✅ Get event BEFORE soft-deleting
+    const event = await Event.findById(feedback.eventId).select("name");
+
     feedback.deletedAt = new Date();
     await feedback.save();
 
-    // Optionally notify the user
+    // Send email
     const allowedRoles = [
       "student",
       "staff",
@@ -219,18 +239,20 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
       "events_office",
     ];
     const commentAuthor = feedback.userId;
-    const event = await Event.findById(feedback.eventId).select("name");
+
     if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
       try {
+        console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
         await sendCommentDeletionWarning({
           userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
           userEmail: commentAuthor.email,
           eventName: event.name,
-          commentBody: feedback.comment,
-          deletionReason: "inappropriate content",
+          commentBody: commentBody,
         });
+        console.log("Email sent successfully!"); // ✅ Add logging
       } catch (emailError) {
         console.error("Failed to send comment deletion warning:", emailError);
+        console.error("Email error details:", emailError.message); // ✅ Add detailed logging
       }
     }
 

@@ -10,6 +10,16 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import AdminHeader from "@/components/AdminHeader";
@@ -18,6 +28,7 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StaffHeader from "@/components/StaffHeader";
 import VendorHeader from "@/components/VendorHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventItem {
   id: string;
@@ -48,6 +59,10 @@ export default function FeedbackDashboard() {
   const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingRatings, setLoadingRatings] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [ratingToDelete, setRatingToDelete] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     // Fetch both upcoming and past events so we include any event
@@ -129,59 +144,80 @@ export default function FeedbackDashboard() {
       setRatings([]);
       return;
     }
-    // Fetch feedback for the selected event from the API
-    setLoadingRatings(true);
-    api
-      .get(`/feedback/events/${selectedEvent}/all`)
-      .then((resp) => {
-        const data = resp.data?.data || {};
-        const feedback = data.feedback || [];
-        const mapped = feedback.map((f: any) => ({
-          id: f._id,
-          eventId: f.eventId,
-          user: f.userId
-            ? {
-                firstName: f.userId.firstName,
-                lastName: f.userId.lastName,
-                email: f.userId.email,
-              }
-            : null,
-          rating: f.rating,
-          comment: f.deletedAt ? null : f.comment || null,
-          commentRemoved: Boolean(f.deletedAt),
-          createdAt: f.createdAt,
-          deletedAt: f.deletedAt || null,
-        }));
-        setAllRatings(mapped);
-        setRatings(mapped);
-      })
-      .catch(() => {
-        setRatings([]);
-        setAllRatings([]);
-      })
-      .finally(() => setLoadingRatings(false));
+    fetchEventRatings();
   }, [selectedEvent]);
 
-  async function handleDeleteComment(ratingId: string) {
-    if (!confirm("Delete this comment? This action is permanent.")) return;
+  const fetchEventRatings = async () => {
+    if (!selectedEvent) return;
+
+    setLoadingRatings(true);
     try {
-      await api.delete(`/feedback/${ratingId}/comment`);
-      // Optimistically remove from UI
-      const updated = allRatings.map((r) => {
-        if (r.id !== ratingId) return r;
-        return {
-          ...r,
-          comment: null,
-          commentRemoved: true,
-          deletedAt: new Date().toISOString(),
-        };
-      });
-      setAllRatings(updated);
-      setRatings(updated.filter((r) => r.eventId === selectedEvent));
+      // ✅ Use the correct endpoint without '/all'
+      const resp = await api.get(`/feedback/events/${selectedEvent}`);
+      const data = resp.data?.data || {};
+      const feedback = data.feedback || [];
+      const mapped = feedback.map((f: any) => ({
+        id: f._id,
+        eventId: f.eventId,
+        user: f.userId
+          ? {
+              firstName: f.userId.firstName,
+              lastName: f.userId.lastName,
+              email: f.userId.email,
+            }
+          : null,
+        rating: f.rating,
+        // ✅ Check if comment field is empty or feedback has type indicating deletion
+        comment: !f.comment || !f.comment.trim() ? null : f.comment,
+        commentRemoved: !f.comment || !f.comment.trim(),
+        createdAt: f.createdAt,
+        deletedAt: f.deletedAt || null,
+      }));
+      setAllRatings(mapped);
+      setRatings(mapped);
     } catch (err) {
-      alert("Failed to delete comment");
+      console.error("Error fetching ratings:", err);
+      setRatings([]);
+      setAllRatings([]);
+    } finally {
+      setLoadingRatings(false);
     }
-  }
+  };
+
+  const handleDeleteCommentClick = (ratingId: string) => {
+    setRatingToDelete(ratingId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!ratingToDelete) return;
+
+    setDeleting(true);
+    try {
+      await api.delete(`/feedback/${ratingToDelete}/comment`);
+
+      toast({
+        title: "Comment Deleted",
+        description:
+          "The comment has been successfully deleted and a warning email has been sent to the user.",
+      });
+
+      // Refresh the ratings list automatically
+      await fetchEventRatings();
+    } catch (err: any) {
+      const errorMsg =
+        err.response?.data?.message || "Failed to delete comment";
+      toast({
+        title: "Error",
+        description: errorMsg,
+        variant: "destructive",
+      });
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmOpen(false);
+      setRatingToDelete(null);
+    }
+  };
 
   const getCurrentUser = () => {
     try {
@@ -226,45 +262,60 @@ export default function FeedbackDashboard() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((ev) => (
-            <div
-              key={ev.id}
-              onClick={() => {
-                setSelectedEvent(ev.id);
-                setDialogOpen(true);
-              }}
-            >
-              <EventCard
-                id={ev.id}
-                title={ev.title || `Event ${ev.id}`}
-                category={(ev.category as EventCategory) || "academic"}
-                date={
-                  ev.startDate
-                    ? new Date(ev.startDate).toLocaleDateString(undefined, {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      })
-                    : "Date TBA"
-                }
-                time={
-                  ev.startDate
-                    ? new Date(ev.startDate).toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })
-                    : ""
-                }
-                location={ev.location || "Location TBA"}
-                attendees={0}
-                showAttendees={false}
-                showActions={false}
-              />
-            </div>
-          ))}
-        </div>
-        {/* Dialog overlay to show ratings/comments for selected event */}
+        {loadingEvents ? (
+          <div className="text-center py-8 text-muted-foreground">
+            Loading events...
+          </div>
+        ) : events.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            No events with feedback found.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {events.map((ev) => (
+              <div
+                key={ev.id}
+                onClick={() => {
+                  setSelectedEvent(ev.id);
+                  setDialogOpen(true);
+                }}
+                className="cursor-pointer"
+              >
+                <EventCard
+                  id={ev.id}
+                  title={ev.title || `Event ${ev.id}`}
+                  category={(ev.category as EventCategory) || "academic"}
+                  date={
+                    ev.startDate
+                      ? new Date(ev.startDate).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "Date TBA"
+                  }
+                  time={
+                    ev.startDate
+                      ? new Date(ev.startDate).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : ""
+                  }
+                  location={ev.location || "Location TBA"}
+                  attendees={0}
+                  showAttendees={false}
+                  showActions={false}
+                  className={
+                    selectedEvent === ev.id ? "ring-2 ring-primary" : ""
+                  }
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Ratings Dialog */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
@@ -280,9 +331,11 @@ export default function FeedbackDashboard() {
                   Click an event card to view ratings.
                 </div>
               ) : loadingRatings ? (
-                <div className="text-muted-foreground">Loading ratings…</div>
+                <div className="text-center py-8 text-muted-foreground">
+                  Loading ratings…
+                </div>
               ) : ratings.length === 0 ? (
-                <div className="text-muted-foreground">
+                <div className="text-center py-8 text-muted-foreground">
                   No ratings/comments for the selected event.
                 </div>
               ) : (
@@ -332,19 +385,19 @@ export default function FeedbackDashboard() {
                         </div>
                       )}
 
-                      <div className="mt-3 flex gap-2 justify-end">
-                        {currentUser?.role === "admin" &&
-                          !r.deletedAt &&
-                          r.comment && (
+                      {currentUser?.role === "admin" &&
+                        !r.deletedAt &&
+                        r.comment && (
+                          <div className="mt-3 flex gap-2 justify-end">
                             <Button
                               variant="destructive"
                               size="sm"
-                              onClick={() => handleDeleteComment(r.id)}
+                              onClick={() => handleDeleteCommentClick(r.id)}
                             >
-                              Delete comment
+                              Delete Comment
                             </Button>
-                          )}
-                      </div>
+                          </div>
+                        )}
                     </div>
                   ))}
                 </div>
@@ -352,6 +405,33 @@ export default function FeedbackDashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+        >
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Comment</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this comment? This action cannot
+                be undone. A warning email will be sent to the user who posted
+                this comment.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleConfirmDelete}
+                disabled={deleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {deleting ? "Deleting..." : "Delete Comment"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );
