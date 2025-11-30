@@ -282,13 +282,28 @@ export default function EventCard({
         });
         return;
       }
+      const data = await res.json().catch(() => null);
+
       toast({
         title: "Registered!",
         description: "You are now registered for this event.",
       });
 
+      // Update local UI state
       setRegistered(true);
       setLocalAttendeeCount((prev) => prev + 1);
+
+      // Dispatch a custom event so other parts of the app (e.g. MyEvents)
+      // can react and refetch their data if needed
+      try {
+        window.dispatchEvent(
+          new CustomEvent("event:registered", {
+            detail: { eventId: id, event: data?.event || null },
+          })
+        );
+      } catch (e) {
+        // ignore if dispatch not supported
+      }
     } catch {
       toast({
         title: "Error",

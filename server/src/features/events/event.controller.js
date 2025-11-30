@@ -569,11 +569,16 @@ export class EventsController {
       const user = req.user; // expects at least { _id, role, ... }
       const eventId = req.params.id;
 
-      await eventService.registerUserToEvent(user, eventId);
+      const updatedEvent = await eventService.registerUserToEvent(
+        user,
+        eventId
+      );
 
-      return res
-        .status(200)
-        .json({ message: "Successfully registered for the event." });
+      // Return the updated event so the client can update UI without refetch
+      return res.status(200).json({
+        message: "Successfully registered for the event.",
+        event: updatedEvent,
+      });
     } catch (err) {
       // If the service threw an error object with statusCode, use it
       if (err && err.statusCode) {

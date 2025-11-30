@@ -394,7 +394,13 @@ export const registerUserToEvent = async (user, eventId) => {
   event.attendees.push(user._id);
   await event.save();
 
-  return { message: "Successfully registered for the event." };
+  // Return the updated event document so callers can use it immediately
+  const updatedEvent = await Event.findById(eventId).populate(
+    "attendees",
+    "firstName lastName email role"
+  );
+
+  return updatedEvent;
 };
 
 export const getEventsByUser = async (userId) => {
