@@ -46,7 +46,14 @@ class PollServiceClass {
     // Add user to selected option votes
     option.votes.push(userObjectId);
 
-    await poll.save();
+    try {
+      await poll.save();
+    } catch (err) {
+      throw new ApiError(
+        500,
+        "Failed to save vote to database. Please try again later."
+      );
+    }
     return poll;
   }
 }
