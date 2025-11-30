@@ -5,6 +5,7 @@ import validate from "../../middlewares/validate.middleware.js";
 import {
   submitFeedback,
   getEventFeedback,
+  getEventFeedbackAll,
   getUserEventFeedback,
   deleteFeedbackCommentByAdmin,
 } from "./feedback.controller.js";
@@ -34,6 +35,14 @@ router.get(
     "events_office",
   ]),
   getEventFeedback
+);
+
+// Get all feedback for a specific event INCLUDING soft-deleted entries (admin/events_office only)
+router.get(
+  "/events/:eventId/all",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  getEventFeedbackAll
 );
 
 // Get the authenticated user's feedback for a specific event

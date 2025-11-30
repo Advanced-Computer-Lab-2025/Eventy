@@ -60,38 +60,54 @@ export async function submitFeedbackService(
     );
   }
 
-  // Create the feedback document. store comment (if provided) as a subdocument
-  const feedbackData = {
-    eventId,
-    userId,
-    rating,
-    comments: [],
-  };
-
-  if (comment && comment.trim()) {
-    feedbackData.comments.push({
-      userId,
-      body: comment.trim(),
-    });
-  }
+  // Create the feedback document (single optional rating, single optional comment)
+  const feedbackData = { eventId, userId };
+  if (typeof rating === "number") feedbackData.rating = rating;
+  if (comment && String(comment).trim())
+    feedbackData.comment = String(comment).trim();
 
   const feedback = await Feedback.create(feedbackData);
 
-  // return populated feedback for consistency with other endpoints
-  return await Feedback.findById(feedback._id)
-    .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email");
+  return await Feedback.findById(feedback._id).populate(
+    "userId",
+    "firstName lastName email"
+  );
 }
 
 export async function getEventFeedbackService(eventId) {
   const feedback = await Feedback.find({ eventId, deletedAt: null })
     .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email")
     .sort("-createdAt");
 
-  const ratings = feedback.map((f) => f.rating);
+  const ratings = feedback
+    .map((f) => (typeof f.rating === "number" ? f.rating : null))
+    .filter((v) => typeof v === "number");
   const averageRating =
-    ratings.length > 0 ? ratings.reduce((a, b) => a + b) / ratings.length : 0;
+    ratings.length > 0
+      ? ratings.reduce((a, b) => a + (b || 0), 0) / ratings.length
+      : 0;
+
+  return {
+    feedback,
+    averageRating,
+    totalReviews: feedback.length,
+  };
+}
+
+export async function getEventFeedbackServiceAdmin(eventId) {
+  const feedback = await Feedback.find({ eventId })
+    .populate("userId", "firstName lastName email")
+    .sort("-createdAt");
+
+  // Average computed only from non-deleted ratings
+  const ratings = feedback
+    .filter((f) => f.deletedAt === null)
+    .map((f) => (typeof f.rating === "number" ? f.rating : null))
+    .filter((v) => typeof v === "number");
+  const averageRating =
+    ratings.length > 0
+      ? ratings.reduce((a, b) => a + (b || 0), 0) / ratings.length
+      : 0;
 
   return {
     feedback,
@@ -101,15 +117,14 @@ export async function getEventFeedbackService(eventId) {
 }
 
 export async function getUserEventFeedbackService(userId, eventId) {
-  const feedback = await Feedback.findOne({
+  const ratingDoc = await Feedback.findOne({
     eventId,
     userId,
     deletedAt: null,
-  })
-    .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email");
+    rating: { $exists: true },
+  }).populate("userId", "firstName lastName email");
 
-  return feedback;
+  return ratingDoc;
 }
 
 export async function deleteCommentByAdmin(adminId, feedbackId) {
@@ -140,54 +155,131 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
     throw new ApiError(404, "Feedback not found.");
   }
 
-  // Check if comment exists and not already deleted
-  if (!feedback.comment || !feedback.comment.trim()) {
-    throw new ApiError(404, "No comment found for this feedback.");
-  }
+  // If feedback has a rating and a comment, clear only the comment
+  if (typeof feedback.rating === "number" && feedback.rating >= 1) {
+    if (feedback.comment && String(feedback.comment).trim()) {
+      // Clear the comment only
+      const commentBody = feedback.comment;
 
-  // Get event details
-  const event = await Event.findById(feedback.eventId).select("name");
-  if (!event) {
-    throw new ApiError(404, "Event not found.");
-  }
+      // ✅ Get event BEFORE clearing comment
+      const event = await Event.findById(feedback.eventId).select("name");
 
-  // Store comment before deletion
-  const commentBody = feedback.comment;
-  const commentAuthor = feedback.userId;
+      feedback.comment = null;
+      feedback.commentDeletedAt = new Date();
+      await feedback.save();
 
-  // Delete the comment (clear the field)
-  feedback.comment = "";
+      // Send email
+      const allowedRoles = [
+        "student",
+        "staff",
+        "ta",
+        "professor",
+        "events_office",
+      ];
+      const commentAuthor = feedback.userId;
 
-  // Update the type field based on what remains
-  if (feedback.rating) {
-    // If rating exists, change type to "rating"
-    feedback.type = "rating";
-  } else {
-    // If no rating, soft-delete entire feedback
-    feedback.deletedAt = new Date();
-  }
+      if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
+        try {
+          console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
+          await sendCommentDeletionWarning({
+            userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
+            userEmail: commentAuthor.email,
+            eventName: event.name,
+            commentBody: commentBody,
+          });
+          console.log("Email sent successfully!"); // ✅ Add logging
+        } catch (emailError) {
+          console.error("Failed to send comment deletion warning:", emailError);
+          console.error("Email error details:", emailError.message); // ✅ Add detailed logging
+        }
+      } else {
+        console.log("Email not sent. Conditions:", {
+          // ✅ Debug logging
+          hasAuthor: !!commentAuthor,
+          authorRole: commentAuthor?.role,
+          roleAllowed: commentAuthor
+            ? allowedRoles.includes(commentAuthor.role)
+            : false,
+          hasEvent: !!event,
+        });
+      }
 
-  await feedback.save();
-
-  // Send warning email
-  const allowedRoles = ["student", "staff", "ta", "professor", "events_office"];
-  if (commentAuthor && allowedRoles.includes(commentAuthor.role)) {
-    try {
-      await sendCommentDeletionWarning({
-        userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
-        userEmail: commentAuthor.email,
-        eventName: event.name,
-        commentBody: commentBody,
-        deletionReason: "inappropriate content", // Default reason for deletion
-      });
-    } catch (emailError) {
-      console.error("Failed to send comment deletion warning:", emailError);
+      return {
+        _id: feedback._id,
+        commentCleared: true,
+        message: "Comment cleared, rating retained.",
+      };
+    } else {
+      throw new ApiError(
+        400,
+        "Cannot delete: feedback is rating only and has no comment."
+      );
     }
   }
 
-  return {
-    _id: feedback._id,
-    commentDeleted: true,
-    message: "Comment successfully deleted",
-  };
+  // If feedback is comment only (no rating), soft-delete
+  if (
+    (!feedback.rating || feedback.rating === null) &&
+    feedback.comment &&
+    String(feedback.comment).trim()
+  ) {
+    const commentBody = feedback.comment;
+
+    // ✅ Get event BEFORE soft-deleting
+    const event = await Event.findById(feedback.eventId).select("name");
+
+    feedback.deletedAt = new Date();
+    await feedback.save();
+
+    // Send email
+    const allowedRoles = [
+      "student",
+      "staff",
+      "ta",
+      "professor",
+      "events_office",
+    ];
+    const commentAuthor = feedback.userId;
+
+    if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
+      try {
+        console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
+        await sendCommentDeletionWarning({
+          userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
+          userEmail: commentAuthor.email,
+          eventName: event.name,
+          commentBody: commentBody,
+        });
+        console.log("Email sent successfully!"); // ✅ Add logging
+      } catch (emailError) {
+        console.error("Failed to send comment deletion warning:", emailError);
+        console.error("Email error details:", emailError.message); // ✅ Add detailed logging
+      }
+    }
+
+    return {
+      _id: feedback._id,
+      commentSoftDeleted: true,
+      message: "Comment-only feedback soft-deleted.",
+    };
+  }
+
+  // If feedback is rating only (no comment), do not allow deletion
+  if (
+    typeof feedback.rating === "number" &&
+    feedback.rating >= 1 &&
+    (!feedback.comment || !String(feedback.comment).trim())
+  ) {
+    throw new ApiError(
+      400,
+      "Cannot delete: feedback is rating only and has no comment."
+    );
+  }
+
+  // If feedback is already deleted
+  if (feedback.deletedAt) {
+    throw new ApiError(400, "Feedback already deleted.");
+  }
+
+  throw new ApiError(400, "Invalid feedback state for deletion.");
 }

@@ -79,12 +79,12 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            data-testid="button-nav-ratings"
-            onClick={() => setLocation("/admin/ratings")}
+            className={`gap-2 ${location === "/admin/feedback" ? "underline decoration-primary decoration-2" : ""}`}
+            data-testid="button-nav-feedback"
+            onClick={() => setLocation("/admin/feedback")}
           >
             <Star className="h-4 w-4" />
-            Ratings
+            Feedback
           </Button>
           <Button
             variant="ghost"

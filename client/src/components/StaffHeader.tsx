@@ -126,16 +126,6 @@ export default function StaffHeader({
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/admin/ratings")}
-            data-testid="button-nav-ratings"
-          >
-            <Star className="h-4 w-4" />
-            Ratings
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/loyalty-partners")}
             data-testid="button-nav-loyalty-partners"
