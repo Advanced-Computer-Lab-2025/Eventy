@@ -185,8 +185,17 @@ export default function EditTrip() {
 
       const payload = {
         ...formData,
-        price: parseFloat(formData.price),
-        capacity: parseInt(formData.capacity, 10),
+        // Normalize numeric fields to avoid floating/locale issues
+        price: (() => {
+          const p = Number(String(formData.price).trim());
+          if (Number.isNaN(p)) return undefined;
+          return Math.round(p * 100) / 100; // keep two decimals
+        })(),
+        capacity: (() => {
+          const c = Number(String(formData.capacity).trim());
+          if (Number.isNaN(c)) return undefined;
+          return Math.max(1, Math.round(c));
+        })(),
         restrictedRoles,
       };
 
@@ -415,6 +424,8 @@ export default function EditTrip() {
                     onChange={(e) =>
                       setFormData({ ...formData, capacity: e.target.value })
                     }
+                    step={1}
+                    min={1}
                     className="pl-10"
                     required
                     placeholder="Maximum number of attendees"
