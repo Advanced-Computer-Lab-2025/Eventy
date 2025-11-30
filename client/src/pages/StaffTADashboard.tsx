@@ -195,29 +195,29 @@ export default function StaffTADashboard() {
 
   // Fetch professors for filter
   useEffect(() => {
+    const token = localStorage.getItem("token");
+    const baseUrl =
+      (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:4000";
+
     const fetchProfessors = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const response = await fetch("/api/users/professors", {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
           headers: {
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
           },
         });
-
-        if (response.ok) {
-          const data = await response.json();
-          const professors = data.map((prof: any) => ({
-            id: prof._id || prof.id,
-            name:
-              `${prof.firstName || ""} ${prof.lastName || ""}`.trim() ||
-              prof.email,
-          }));
-          setProfessorOptions(professors);
-        }
-      } catch (error) {
-        console.error("Error fetching professors:", error);
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
       }
     };
 
@@ -308,46 +308,6 @@ export default function StaffTADashboard() {
       .filter(Boolean) as string[];
     return Array.from(new Set(locations));
   }, [allUpcomingEvents, eventFilters.eventType, eventFilters.professor]);
-
-  const computedProfessorOptions = useMemo(() => {
-    const filteredEvents = allUpcomingEvents.filter((event) => {
-      if (
-        eventFilters.eventType !== "all" &&
-        event.eventType !== eventFilters.eventType
-      ) {
-        return false;
-      }
-      if (eventFilters.location !== "all") {
-        const eventLocation =
-          event.location ||
-          (event.eventType === "platform_booth"
-            ? (event as any).locationPreference
-            : "");
-        if (eventLocation !== eventFilters.location) return false;
-      }
-      return true;
-    });
-
-    const availableProfessorIds = new Set<string>();
-    filteredEvents.forEach((event) => {
-      if (event.eventType === "workshop" || event.eventType === "conference") {
-        const profs = (event as any).professors || [];
-        profs.forEach((p: any) => {
-          const id = p._id || p.id || p;
-          if (id) availableProfessorIds.add(String(id));
-        });
-      }
-    });
-
-    return professorOptions.filter((prof) =>
-      availableProfessorIds.has(prof.id)
-    );
-  }, [
-    allUpcomingEvents,
-    eventFilters.eventType,
-    eventFilters.location,
-    professorOptions,
-  ]);
 
   const quickActions = [
     {
@@ -565,7 +525,7 @@ export default function StaffTADashboard() {
                     filters={eventFilters}
                     onFilterChange={setEventFilters}
                     locations={availableLocations}
-                    professors={computedProfessorOptions}
+                    professors={professorOptions}
                     userRole=""
                   />
                 </div>
