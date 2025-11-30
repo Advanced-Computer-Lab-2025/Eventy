@@ -1656,7 +1656,7 @@ async function notifyNewEvent(event, eventType) {
  * @param {Object} event - The event to send reminders for
  * @param {Date} reminderTime - When the reminder should be sent
  */
-async function sendEventReminder(event, reminderTime) {
+async function sendEventReminder(event, reminderTime, reminderType) {
   try {
     // Get all users registered for this event
     const eventWithAttendees = await Event.findById(event._id).populate(
@@ -1676,12 +1676,10 @@ async function sendEventReminder(event, reminderTime) {
     // Calculate time until event
     const eventStart = new Date(event.startDate);
     const timeUntilEvent = differenceInHours(eventStart, reminderTime);
-    const timeString = timeUntilEvent < 24 ? "1 hour" : "1 day";
-
-    // Send notifications
+    // Use reminderType for message
     await NotificationService.createNotification({
       title: `⏰ Event Reminder: ${event.name}`,
-      message: `The event \"${event.name}\" is starting in ${timeString}.`,
+      message: `The event \"${event.name}\" is starting in ${reminderType}.`,
       link: `/events/${event._id}`,
       recipients: usersToNotify.map((user) => user._id),
       event: event._id,
@@ -1689,7 +1687,7 @@ async function sendEventReminder(event, reminderTime) {
     });
 
     console.log(
-      `Sent ${timeString} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
+      `Sent ${reminderType} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
     );
   } catch (error) {
     console.error(`Error sending reminder for event ${event._id}:`, error);
@@ -1702,6 +1700,9 @@ async function sendEventReminder(event, reminderTime) {
 export async function scheduleEventReminders() {
   try {
     const now = new Date();
+    console.log(
+      `[Scheduler] Running event reminder check at ${now.toISOString()}`
+    );
 
     // Find all upcoming events starting within the next 25 hours
     const upcomingEvents = await Event.find({
@@ -1712,18 +1713,56 @@ export async function scheduleEventReminders() {
       status: "approved",
       deletedAt: null,
     });
+    console.log(
+      `[Scheduler] Found ${upcomingEvents.length} upcoming events in the next 25 hours.`
+    );
 
     for (const event of upcomingEvents) {
       const eventStart = new Date(event.startDate);
-      const timeUntilEvent = differenceInHours(eventStart, now);
+      const diffMs = eventStart.getTime() - now.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      const diffHours = diffMs / (1000 * 60 * 60);
+      console.log(
+        `[Scheduler] Event '${event.name}' (${event._id}) starts at ${eventStart.toISOString()} (${diffDays.toFixed(2)} days, ${diffHours.toFixed(2)} hours from now)`
+      );
 
-      // Schedule 1-day reminder if event is between 24-25 hours away
-      if (timeUntilEvent > 24 && timeUntilEvent <= 25) {
-        await sendEventReminder(event, now);
+      // 1-day reminder: send if exactly 1 day left or less than 1 day and not sent yet
+      if (
+        Math.abs(diffDays - 1) < 0.05 ||
+        (diffDays < 1 && !event.reminder1DaySent && diffHours > 1)
+      ) {
+        if (!event.reminder1DaySent) {
+          console.log(
+            `[Scheduler] Sending 1-day reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 day");
+          await Event.findByIdAndUpdate(event._id, { reminder1DaySent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-day reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
       }
-      // Schedule 1-hour reminder if event is between 1-2 hours away
-      else if (timeUntilEvent > 1 && timeUntilEvent <= 2) {
-        await sendEventReminder(event, now);
+      // 1-hour reminder: send if exactly 1 hour left or less than 1 hour and not sent yet
+      else if (
+        Math.abs(diffHours - 1) < 0.05 ||
+        (diffHours < 1 && !event.reminder1HourSent && diffHours > 0)
+      ) {
+        if (!event.reminder1HourSent) {
+          console.log(
+            `[Scheduler] Sending 1-hour reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 hour");
+          await Event.findByIdAndUpdate(event._id, { reminder1HourSent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-hour reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
+      } else {
+        console.log(
+          `[Scheduler] No reminder needed for event '${event.name}' (${event._id}) at this time.`
+        );
       }
     }
   } catch (error) {
@@ -1736,12 +1775,23 @@ export async function scheduleEventReminders() {
  */
 export function startReminderScheduler() {
   // Run immediately on start
+  console.log(
+    `[Scheduler] Starting event reminder scheduler at ${new Date().toISOString()}`
+  );
   scheduleEventReminders();
 
-  // Then run every 30 minutes
-  reminderInterval = setInterval(scheduleEventReminders, 30 * 60 * 1000);
+  // Then run every 5 minutes
+  reminderInterval = setInterval(
+    () => {
+      console.log(
+        `[Scheduler] Triggered event reminder scheduler at ${new Date().toISOString()}`
+      );
+      scheduleEventReminders();
+    },
+    5 * 60 * 1000
+  );
 
-  console.log("Event reminder scheduler started");
+  console.log("Event reminder scheduler started (interval: 5 minutes)");
 }
 
 /**
