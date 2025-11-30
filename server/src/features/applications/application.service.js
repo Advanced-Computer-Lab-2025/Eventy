@@ -223,7 +223,7 @@ class ApplicationServiceClass {
     })
       .populate({
         path: "createdBy",
-        select: "companyName email companyLogoUrl taxCardUrl status",
+        select: "companyName email companyLogoUrl taxCardUrl status createdAt",
       })
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 });
