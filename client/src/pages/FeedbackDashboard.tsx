@@ -221,8 +221,8 @@ export default function FeedbackDashboard() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">Event Feedback</h1>
           <p className="text-muted-foreground">
-            Review event ratings and comments. Admins can remove inappropriate
-            comments.
+            Review event ratings and comments. Click on any event card to view
+            its ratings and comments.
           </p>
         </div>
 
