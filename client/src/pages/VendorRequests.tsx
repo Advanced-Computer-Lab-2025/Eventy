@@ -5,6 +5,8 @@ import {
   Plus,
   Filter,
   SlidersHorizontal,
+  Download,
+  FileText,
 } from "lucide-react";
 import Header from "@/components/Header";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
@@ -40,6 +42,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useLocation } from "wouter";
+import DocumentViewer from "@/components/DocumentViewer";
 
 async function updateVendorStatus(
   requestId: string,
@@ -98,7 +101,7 @@ interface VendorRequest {
   durationWeeks?: number;
   locationPreference?: string;
   createdAt: string;
-  attendees: Array<{ name: string; email: string }>;
+  attendees: Array<{ name: string; email: string; individualID?: string }>;
   event?:
     | {
         _id: string;
@@ -143,6 +146,12 @@ export default function VendorRequests() {
   const [error, setError] = useState<string | null>(null);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<VendorRequest | null>(null);
+  const [documentViewerOpen, setDocumentViewerOpen] = useState(false);
+  const [viewingDocument, setViewingDocument] = useState<{
+    url: string;
+    title: string;
+    filename?: string;
+  } | null>(null);
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
   const [, setLocation] = useLocation();
@@ -326,6 +335,54 @@ export default function VendorRequests() {
     const req = requests.find((r) => r._id === requestId);
     setSelected(req || null);
     setDetailsOpen(!!req);
+  };
+
+  const handleViewDocument = (
+    url: string,
+    title: string,
+    filename?: string
+  ) => {
+    setViewingDocument({ url, title, filename });
+    setDocumentViewerOpen(true);
+  };
+
+  const handleDownloadDocument = async (url: string, filename?: string) => {
+    try {
+      // Fetch the file as a blob
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error("Failed to fetch file");
+      }
+      const blob = await response.blob();
+
+      // Extract filename from URL, handling query parameters
+      const urlPath = url.split("?")[0]; // Remove query parameters
+      const defaultFilename = urlPath.split("/").pop() || "document";
+      const downloadFilename = filename || defaultFilename;
+
+      // Create a blob URL and trigger download
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = downloadFilename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Clean up the blob URL
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast({
+        title: "Download successful",
+        description: "ID card downloaded successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Download failed",
+        description: "Failed to download the document. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -609,30 +666,6 @@ export default function VendorRequests() {
                     <div>{selected?.boothSize || "-"}</div>
                   </div>
                   <div>
-                    <div className="font-medium">Status</div>
-                    <div>
-                      <Badge
-                        variant="outline"
-                        className={
-                          selected?.status === "approved"
-                            ? "bg-green-100 text-green-700 border-green-200"
-                            : selected?.status === "rejected"
-                              ? "bg-red-100 text-red-700 border-red-200"
-                              : "bg-yellow-100 text-yellow-800 border-yellow-200"
-                        }
-                      >
-                        {selected?.status?.charAt(0).toUpperCase() +
-                          selected?.status?.slice(1)}
-                      </Badge>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <div className="font-medium">Company Email</div>
-                    <div>{selected?.createdBy?.email || "-"}</div>
-                  </div>
-                  <div>
                     <div className="font-medium">Created At</div>
                     <div>
                       {selected?.createdAt
@@ -640,6 +673,10 @@ export default function VendorRequests() {
                         : "-"}
                     </div>
                   </div>
+                </div>
+                <div>
+                  <div className="font-medium">Company Email</div>
+                  <div>{selected?.createdBy?.email || "-"}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
@@ -674,16 +711,78 @@ export default function VendorRequests() {
                   </div>
                 </div>
                 <div>
-                  <div className="font-medium mb-1">Attendees</div>
+                  <div className="font-medium mb-2">Attendees</div>
                   {Array.isArray(selected?.attendees) &&
                   selected.attendees.length > 0 ? (
-                    <ul className="list-disc pl-5 space-y-1">
-                      {selected.attendees.map((a) => (
-                        <li key={`${a.name}-${a.email}`}>
-                          {a.name} — {a.email}
-                        </li>
+                    <div className="space-y-3">
+                      {selected.attendees.map((attendee, index) => (
+                        <div
+                          key={`${attendee.name}-${attendee.email}-${index}`}
+                          className="border rounded-lg p-3 space-y-2"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{attendee.name}</div>
+                              <div className="text-sm text-muted-foreground">
+                                {attendee.email}
+                              </div>
+                            </div>
+                            {attendee.individualID ? (
+                              <div className="flex items-center gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const urlPath =
+                                      attendee.individualID!.split("?")[0];
+                                    const extension =
+                                      urlPath.split(".").pop() || "jpg";
+                                    handleViewDocument(
+                                      attendee.individualID!,
+                                      `ID Card - ${attendee.name}`,
+                                      `${attendee.name.replace(
+                                        /\s+/g,
+                                        "_"
+                                      )}_ID.${extension}`
+                                    );
+                                  }}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  View ID
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const urlPath =
+                                      attendee.individualID!.split("?")[0];
+                                    const extension =
+                                      urlPath.split(".").pop() || "jpg";
+                                    handleDownloadDocument(
+                                      attendee.individualID!,
+                                      `${attendee.name.replace(
+                                        /\s+/g,
+                                        "_"
+                                      )}_ID.${extension}`
+                                    );
+                                  }}
+                                  className="flex items-center gap-1"
+                                >
+                                  <Download className="h-3 w-3" />
+                                  Download
+                                </Button>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <FileText className="h-3 w-3" />
+                                No ID uploaded
+                              </div>
+                            )}
+                          </div>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   ) : (
                     <div>-</div>
                   )}
@@ -722,6 +821,17 @@ export default function VendorRequests() {
             )}
           </DialogContent>
         </Dialog>
+
+        {/* Document Viewer Dialog */}
+        {viewingDocument && (
+          <DocumentViewer
+            open={documentViewerOpen}
+            onOpenChange={setDocumentViewerOpen}
+            url={viewingDocument.url}
+            title={viewingDocument.title}
+            filename={viewingDocument.filename}
+          />
+        )}
       </main>
     </div>
   );
