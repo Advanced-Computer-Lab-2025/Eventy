@@ -39,9 +39,19 @@ export class PollController {
       // Validate optionId
       const { error } = voteSchema.validate({ optionId });
       if (error) {
+        // If no body or optionId, return a more detailed error
+        let detail = error.details[0].message;
+        if (
+          !req.body ||
+          typeof req.body !== "object" ||
+          !("optionId" in req.body)
+        ) {
+          detail =
+            "Request body must include an 'optionId' field (string). Example: { optionId: '...' }";
+        }
         return res.status(400).json({
           success: false,
-          message: error.details[0].message,
+          message: detail,
         });
       }
 
