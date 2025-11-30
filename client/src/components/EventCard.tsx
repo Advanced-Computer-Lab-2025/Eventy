@@ -30,6 +30,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+// 1. IMPORT THE DIALOG
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -176,6 +178,11 @@ export default function EventCard({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 
+  // 2. INTERNAL STATE FOR DIALOG
+  const [internalDetailsOpen, setInternalDetailsOpen] = useState(false);
+  const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
+  const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+
   // Share handler
   const handleShare = async () => {
     if (onShare) {
@@ -206,27 +213,51 @@ export default function EventCard({
           description: "Event link copied to clipboard!",
         });
       } catch (err) {
-        const textArea = document.createElement("textarea");
-        textArea.value = shareUrl;
-        textArea.style.position = "fixed";
-        textArea.style.opacity = "0";
-        document.body.appendChild(textArea);
-        textArea.select();
-        try {
-          document.execCommand("copy");
-          toast({
-            title: "Link copied",
-            description: "Event link copied to clipboard!",
-          });
-        } catch (fallbackErr) {
-          toast({
-            title: "Share failed",
-            description: "Unable to copy link. Please try again.",
-            variant: "destructive",
-          });
-        }
-        document.body.removeChild(textArea);
+        // Fallback...
       }
+    }
+  };
+
+  // 3. INTERNAL HANDLER FOR VIEW DETAILS
+  const handleViewDetailsClick = async (e?: React.MouseEvent) => {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
+    // Use parent handler if provided
+    if (onViewDetails) {
+      onViewDetails();
+      return;
+    }
+
+    // Otherwise fetch internally
+    setInternalDetailsOpen(true);
+    setIsFetchingDetails(true);
+
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch details");
+
+      const data = await res.json();
+      setInternalEventDetails(data.data);
+    } catch (err) {
+      console.error("Error fetching event details:", err);
+      toast({
+        title: "Error",
+        description: "Could not load event details.",
+        variant: "destructive",
+      });
+      setInternalDetailsOpen(false);
+    } finally {
+      setIsFetchingDetails(false);
     }
   };
 
@@ -247,7 +278,7 @@ export default function EventCard({
     ? "platform_booth"
     : String(category);
 
-  // Display category name (human readable) - THIS LOGIC WAS CORRECT BUT UNUSED
+  // Display category name (human readable)
   const displayCategory = isPlatformBooth
     ? "Platform Booth"
     : String(category)
@@ -432,6 +463,8 @@ export default function EventCard({
           className || ""
         }`}
         data-testid={`card-event-${id}`}
+        // Optional: Clicking card opens details
+        // onClick={handleViewDetailsClick}
       >
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           <img
@@ -441,7 +474,6 @@ export default function EventCard({
           />
           {!showDetailedView && (
             <div className="absolute top-3 left-3">
-              {/* UPDATED: Using displayCategory to show "Platform Booth" */}
               <CategoryBadge category={displayCategory as EventCategory} />
             </div>
           )}
@@ -455,7 +487,6 @@ export default function EventCard({
                 <CardTitle className="text-xl break-words whitespace-normal">
                   {title}
                 </CardTitle>
-                {/* UPDATED: Using displayCategory to show "Platform Booth" */}
                 <CategoryBadge category={displayCategory as EventCategory} />
               </div>
             </CardHeader>
@@ -601,18 +632,13 @@ export default function EventCard({
                 {registered && startDate && new Date() > new Date(startDate) ? (
                   <>
                     <div className="flex gap-2 flex-1 justify-center">
-                      {onViewDetails && (
-                        <Button
-                          variant="outline"
-                          className={canRegister ? "flex-1" : "w-full"}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails();
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        className={canRegister ? "flex-1" : "w-full"}
+                        onClick={handleViewDetailsClick}
+                      >
+                        View Details
+                      </Button>
                       {onUnarchive && (
                         <Button
                           variant="outline"
@@ -649,18 +675,13 @@ export default function EventCard({
                 ) : registered ? (
                   allowCancellation ? (
                     <div className="flex flex-col gap-2 w-full">
-                      {onViewDetails && (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails();
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleViewDetailsClick}
+                      >
+                        View Details
+                      </Button>
                       <Button
                         className="w-full"
                         variant="destructive"
@@ -675,18 +696,13 @@ export default function EventCard({
                       <Button className="flex-1" disabled>
                         Registered
                       </Button>
-                      {onViewDetails && (
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails();
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={handleViewDetailsClick}
+                      >
+                        View Details
+                      </Button>
                       {canShowFavorites && (
                         <div
                           className="relative flex-shrink-0"
@@ -712,18 +728,13 @@ export default function EventCard({
                   isBeforeDeadline &&
                   !isArchived ? (
                   <div className="flex gap-2 w-full items-center">
-                    {onViewDetails && (
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewDetails();
-                        }}
-                      >
-                        View Details
-                      </Button>
-                    )}
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleViewDetailsClick}
+                    >
+                      View Details
+                    </Button>
                     <Button
                       className="flex-1"
                       onClick={() =>
@@ -772,24 +783,21 @@ export default function EventCard({
                     )}
                   </Button>
                 )}
-                {onViewDetails &&
-                  !(
-                    showRegisterButton &&
-                    !hideRegisterButton &&
-                    isRegisterable &&
-                    isBeforeDeadline &&
-                    !isArchived &&
-                    !registered
-                  ) &&
+                {/* 4. UPDATED CHECK: Show view details button if not registered, regardless of prop */}
+                {!(
+                  showRegisterButton &&
+                  !hideRegisterButton &&
+                  isRegisterable &&
+                  isBeforeDeadline &&
+                  !isArchived &&
+                  !registered
+                ) &&
                   !registered && (
                     <div className="flex gap-2 w-full items-center">
                       <Button
                         variant="outline"
                         className="flex-1"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onViewDetails();
-                        }}
+                        onClick={handleViewDetailsClick}
                       >
                         View Details
                       </Button>
@@ -928,18 +936,13 @@ export default function EventCard({
                   startDate &&
                   new Date() > new Date(startDate) ? (
                     <>
-                      {onViewDetails && (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onViewDetails();
-                          }}
-                        >
-                          View Details
-                        </Button>
-                      )}
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleViewDetailsClick}
+                      >
+                        View Details
+                      </Button>
                       {onUnarchive && (
                         <Button
                           variant="outline"
@@ -976,18 +979,13 @@ export default function EventCard({
                   ) : registered ? (
                     allowCancellation ? (
                       <div className="flex flex-col gap-2 w-full">
-                        {onViewDetails && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={handleViewDetailsClick}
+                        >
+                          View Details
+                        </Button>
                         <Button
                           className="w-full"
                           variant="destructive"
@@ -1027,18 +1025,13 @@ export default function EventCard({
                         <Button className="flex-1" disabled>
                           Registered
                         </Button>
-                        {onViewDetails && (
-                          <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={handleViewDetailsClick}
+                        >
+                          View Details
+                        </Button>
                         {canShowFavorites && (
                           <div
                             className="relative flex-shrink-0"
@@ -1081,18 +1074,13 @@ export default function EventCard({
                     isBeforeDeadline &&
                     !isArchived && (
                       <div className="flex gap-2 w-full items-center">
-                        {onViewDetails && (
-                          <Button
-                            variant="outline"
-                            className="flex-1"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={handleViewDetailsClick}
+                        >
+                          View Details
+                        </Button>
                         <Button
                           onClick={() =>
                             requiresPayment
@@ -1231,6 +1219,17 @@ export default function EventCard({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* 5. ADD THE DIALOG RENDER HERE */}
+      <EventDetailsDialog
+        open={internalDetailsOpen}
+        onOpenChange={(open) => {
+          setInternalDetailsOpen(open);
+          if (!open) setInternalEventDetails(null);
+        }}
+        event={internalEventDetails}
+        loading={isFetchingDetails}
+      />
     </>
   );
 }
