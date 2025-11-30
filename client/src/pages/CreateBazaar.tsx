@@ -56,6 +56,18 @@ export default function CreateBazaar() {
     setSubmitting(true);
     setError("");
     try {
+      // Validate registration deadline (must be today or in the future)
+      const todayIso = new Date().toISOString().slice(0, 10);
+      if (formData.deadline && formData.deadline < todayIso) {
+        toast({
+          title: "Invalid registration deadline",
+          description:
+            "Vendor registration deadline must be today or a future date.",
+          variant: "destructive",
+        });
+        setSubmitting(false);
+        return;
+      }
       const token = localStorage.getItem("token");
       // Validate date logic: no past start, and end after start
       const now = new Date();
@@ -309,17 +321,22 @@ export default function CreateBazaar() {
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="startDate"
                       type="date"
-                      className="pl-10"
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({ ...formData, startDate: e.target.value })
                       }
+                      onClick={(e) => {
+                        // show native picker where supported
+                        (e.currentTarget as HTMLInputElement).showPicker?.();
+                      }}
                       data-testid="input-start-date"
                       required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
@@ -333,8 +350,12 @@ export default function CreateBazaar() {
                     onChange={(e) =>
                       setFormData({ ...formData, startTime: e.target.value })
                     }
+                    onClick={(e) => {
+                      (e.currentTarget as HTMLInputElement).showPicker?.();
+                    }}
                     data-testid="input-start-time"
                     required
+                    className="cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
                 </div>
               </div>
@@ -343,17 +364,21 @@ export default function CreateBazaar() {
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="endDate"
                       type="date"
-                      className="pl-10"
+                      min={new Date().toISOString().split("T")[0]}
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
                       }
+                      onClick={(e) => {
+                        (e.currentTarget as HTMLInputElement).showPicker?.();
+                      }}
                       data-testid="input-end-date"
                       required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                     />
                   </div>
                 </div>
@@ -367,8 +392,12 @@ export default function CreateBazaar() {
                     onChange={(e) =>
                       setFormData({ ...formData, endTime: e.target.value })
                     }
+                    onClick={(e) => {
+                      (e.currentTarget as HTMLInputElement).showPicker?.();
+                    }}
                     data-testid="input-end-time"
                     required
+                    className="cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                   />
                 </div>
               </div>
@@ -390,16 +419,24 @@ export default function CreateBazaar() {
 
               <div className="space-y-2">
                 <Label htmlFor="deadline">Vendor Registration Deadline</Label>
-                <Input
-                  id="deadline"
-                  type="date"
-                  value={formData.deadline}
-                  onChange={(e) =>
-                    setFormData({ ...formData, deadline: e.target.value })
-                  }
-                  data-testid="input-deadline"
-                  required
-                />
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                  <Input
+                    id="deadline"
+                    type="date"
+                    min={new Date().toISOString().split("T")[0]}
+                    value={formData.deadline}
+                    onChange={(e) =>
+                      setFormData({ ...formData, deadline: e.target.value })
+                    }
+                    onClick={(e) =>
+                      (e.currentTarget as HTMLInputElement).showPicker?.()
+                    }
+                    data-testid="input-deadline"
+                    required
+                    className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                  />
+                </div>
               </div>
 
               {/* Restrict Access Section */}
