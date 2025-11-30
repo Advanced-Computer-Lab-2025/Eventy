@@ -680,31 +680,101 @@ export default function VendorRequests() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <div className="font-medium">Company Logo</div>
+                    <div className="font-medium mb-2">Company Logo</div>
                     {selected?.createdBy?.companyLogoUrl ? (
-                      <a
-                        className="text-primary underline"
-                        href={selected.createdBy.companyLogoUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View Logo
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (!selected?.createdBy?.companyLogoUrl) return;
+                            const urlPath =
+                              selected.createdBy.companyLogoUrl.split("?")[0];
+                            const extension = urlPath.split(".").pop() || "jpg";
+                            const companyName =
+                              selected.createdBy.companyName || "Vendor";
+                            handleViewDocument(
+                              selected.createdBy.companyLogoUrl,
+                              `Company Logo - ${companyName}`,
+                              `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
+                            );
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (!selected?.createdBy?.companyLogoUrl) return;
+                            const urlPath =
+                              selected.createdBy.companyLogoUrl.split("?")[0];
+                            const extension = urlPath.split(".").pop() || "jpg";
+                            const companyName =
+                              selected.createdBy.companyName || "company";
+                            handleDownloadDocument(
+                              selected.createdBy.companyLogoUrl,
+                              `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
+                            );
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
                     ) : (
                       <div>-</div>
                     )}
                   </div>
                   <div>
-                    <div className="font-medium">Tax Card</div>
+                    <div className="font-medium mb-2">Tax Card</div>
                     {selected?.createdBy?.taxCardUrl ? (
-                      <a
-                        className="text-primary underline"
-                        href={selected.createdBy.taxCardUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        View Document
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (!selected?.createdBy?.taxCardUrl) return;
+                            const urlPath =
+                              selected.createdBy.taxCardUrl.split("?")[0];
+                            const extension = urlPath.split(".").pop() || "pdf";
+                            const companyName =
+                              selected.createdBy.companyName || "Vendor";
+                            handleViewDocument(
+                              selected.createdBy.taxCardUrl,
+                              `Tax Card - ${companyName}`,
+                              `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
+                            );
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Eye className="h-3 w-3" />
+                          View
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            if (!selected?.createdBy?.taxCardUrl) return;
+                            const urlPath =
+                              selected.createdBy.taxCardUrl.split("?")[0];
+                            const extension = urlPath.split(".").pop() || "pdf";
+                            const companyName =
+                              selected.createdBy.companyName || "company";
+                            handleDownloadDocument(
+                              selected.createdBy.taxCardUrl,
+                              `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
+                            );
+                          }}
+                          className="flex items-center gap-1"
+                        >
+                          <Download className="h-3 w-3" />
+                          Download
+                        </Button>
+                      </div>
                     ) : (
                       <div>-</div>
                     )}
