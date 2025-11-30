@@ -6,6 +6,17 @@ import CreateEventForm, {
 } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -21,12 +32,15 @@ interface Conference {
   fundingSource?: "external" | "guc";
   extraResources?: string;
   agenda?: string;
+  restrictedRoles?: string[];
 }
 
 export default function EditConference() {
   const [, setLocation] = useLocation();
   const [, params] = useRoute("/events-office/events/conference/edit/:id");
+  const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conference, setConference] = useState<Conference | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -83,10 +97,21 @@ export default function EditConference() {
     try {
       const token = localStorage.getItem("token");
 
-      const payload = {
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        values.startTime && values.startTime.trim()
+          ? values.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        values.endTime && values.endTime.trim()
+          ? values.endTime.trim()
+          : "00:00";
+      const payload: any = {
         name: values.name,
-        startDate: `${values.startDate}T${values.startTime}:00.000Z`,
-        endDate: `${values.endDate}T${values.endTime}:00.000Z`,
+        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         description: values.description,
         websiteUrl: values.websiteUrl || "https://example.com",
         requiredBudget: values.requiredBudget
@@ -95,6 +120,9 @@ export default function EditConference() {
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
       };
+
+      // Always send restrictedRoles when editing (even if empty) to clear restrictions
+      payload.restrictedRoles = values.restrictedRoles || [];
 
       const res = await fetch(
         `${API_BASE_URL}/api/events/admin/conferences/${conferenceId}`,
@@ -121,9 +149,21 @@ export default function EditConference() {
       if (!res.ok)
         throw new Error(data.message || "Failed to update conference");
 
-      setLocation("/events-office/dashboard");
+      toast({
+        title: "Conference updated",
+        description: "The conference was updated successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      alert(err.message || "Something went wrong");
+      toast({
+        title: "Failed to update conference",
+        description: err.message || "Something went wrong",
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -134,7 +174,10 @@ export default function EditConference() {
   };
 
   const formatTimeForInput = (dateString: string) => {
-    return new Date(dateString).toTimeString().slice(0, 5);
+    if (!dateString) return "";
+    // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
+    const timeMatch = dateString.match(/T(\d{2}:\d{2})/);
+    return timeMatch ? timeMatch[1] : "";
   };
 
   if (loading) {
@@ -176,9 +219,13 @@ export default function EditConference() {
   const initialValues: Partial<CreateEventFormValues> = {
     name: conference.name,
     startDate: formatDateForInput(conference.startDate),
-    startTime: formatTimeForInput(conference.startDate),
+    // Use separate startTime field if available, otherwise extract from date
+    startTime:
+      (conference as any).startTime ?? formatTimeForInput(conference.startDate),
     endDate: formatDateForInput(conference.endDate),
-    endTime: formatTimeForInput(conference.endDate),
+    // Use separate endTime field if available, otherwise extract from date
+    endTime:
+      (conference as any).endTime ?? formatTimeForInput(conference.endDate),
     description: conference.description,
     websiteUrl: conference.websiteUrl || "",
     requiredBudget: conference.requiredBudget?.toString() || "",
@@ -191,15 +238,7 @@ export default function EditConference() {
       <EventsOfficeHeader />
       <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-4xl font-bold">Edit Conference</h1>
-            <Button
-              variant="outline"
-              onClick={() => setLocation("/events-office/dashboard")}
-            >
-              Back to Events Office
-            </Button>
-          </div>
+          <h1 className="text-4xl font-bold mb-2">Edit Conference</h1>
           <p className="text-muted-foreground">
             Update conference details. The conference website will contain all
             the conference's details.
@@ -215,7 +254,50 @@ export default function EditConference() {
           submitLabel="Update Conference"
           title="Conference Information"
           initialValues={initialValues}
+          hideSubmitButton={true}
+          formId="edit-conference-form"
         />
+
+        <div className="flex justify-end gap-4 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowCancelDialog(true)}
+            disabled={submitting}
+            className="min-w-[120px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="edit-conference-form"
+            disabled={submitting}
+            className="min-w-[120px]"
+          >
+            {submitting ? "Updating..." : "Update Conference"}
+          </Button>
+        </div>
+
+        {/* Cancel Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to discard your changes and return to the Events
+                Office dashboard? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => setLocation("/events-office/dashboard")}
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

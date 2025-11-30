@@ -42,12 +42,24 @@ export default function Login() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
+      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
+
+      // Use companyName for vendors, firstName for other users
+      let displayName = "user";
+      if (role === "vendor") {
+        displayName = data.user.companyName || "Vendor";
+      } else if (data.user.firstName) {
+        displayName = data.user.firstName;
+      } else if (data.user.email) {
+        // Extract name from email (part before @) for events_office, admin, etc.
+        const emailName = data.user.email.split("@")[0];
+        displayName = emailName.charAt(0).toUpperCase() + emailName.slice(1);
+      }
+
       toast({
         title: "Login successful 🎉",
-        description: `Welcome back, ${data.user.firstName || "user"}!`,
+        description: `Welcome back, ${displayName}!`,
       });
-
-      const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
 
       setTimeout(() => {
         // Prefer the normalized `role` variable for comparisons
@@ -152,7 +164,7 @@ export default function Login() {
                 className="w-full"
                 data-testid="button-login"
               >
-                LogIn
+                Login
               </Button>
             </form>
 

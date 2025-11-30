@@ -22,4 +22,25 @@ router.post(
   pollController.vote.bind(pollController)
 );
 
+router.get(
+  "/booth-conflict",
+  authMiddleware,
+  role(["events_office"]),
+  pollController.listBoothConflictPolls.bind(pollController)
+);
+
+router.post(
+  "/booth-conflict",
+  authMiddleware,
+  role(["events_office"]),
+  pollController.createBoothConflictPoll.bind(pollController)
+);
+
+router.patch(
+  "/:pollId/end",
+  authMiddleware,
+  role(["events_office"]),
+  pollController.endPoll.bind(pollController)
+);
+
 export default router;

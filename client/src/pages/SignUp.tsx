@@ -316,6 +316,9 @@ export default function SignUp() {
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters.
+                  </p>
                 </div>
 
                 <Button
@@ -433,6 +436,9 @@ export default function SignUp() {
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters.
+                  </p>
                 </div>
 
                 <Button
@@ -506,6 +512,9 @@ export default function SignUp() {
                       required
                     />
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Password must be at least 8 characters.
+                  </p>
                 </div>
 
                 <FileUploadWithCrop

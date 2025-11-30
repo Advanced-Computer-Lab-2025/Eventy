@@ -11,8 +11,11 @@ import {
   updateConferenceSchema,
   updateWorkshopSchema,
   getAttendeesReportSchema,
+  restrictAccessSchema,
+  getSalesReportSchema,
 } from "./event.validation.js";
-import { User } from "../users/user.model.js"; // adjust path if needed
+import { User } from "../users/user.model.js";
+import NotificationService from "../notifications/notification.service.js";
 
 //Write your code in this class!!!
 
@@ -118,6 +121,23 @@ export class EventsController {
       const { error } = createConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
 
+      // Check professors are active
+      const professorIds = req.body.professors;
+      const activeProfessors = await User.find({
+        _id: { $in: professorIds },
+        role: "professor",
+        status: "active", // Only active professors
+        deletedAt: null, // Not soft deleted
+      }).select("_id");
+
+      if (activeProfessors.length !== professorIds.length) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "All professors must be active and not pending, blocked, or deleted.",
+        });
+      }
+
       const userId = req.user.id;
       const newConference = await eventService.createConference(
         req.body,
@@ -171,6 +191,25 @@ export class EventsController {
     try {
       const { error } = updateConferenceSchema.validate(req.body);
       if (error) throw new ApiError(400, error.details[0].message);
+
+      // Check professors are active if professors are being updated
+      if (req.body.professors) {
+        const professorIds = req.body.professors;
+        const activeProfessors = await User.find({
+          _id: { $in: professorIds },
+          role: "professor",
+          status: "active", // Only active professors
+          deletedAt: null, // Not soft deleted
+        }).select("_id");
+
+        if (activeProfessors.length !== professorIds.length) {
+          return res.status(400).json({
+            success: false,
+            message:
+              "All professors must be active and not pending, blocked, or deleted.",
+          });
+        }
+      }
 
       const { conferenceId } = req.params;
       const updatedConference = await eventService.updateConferenceService(
@@ -282,6 +321,30 @@ export class EventsController {
         req.body,
         req.user.id
       );
+
+      // Create notification for Events Office users
+      try {
+        const eventsOfficeUsers = await User.find({
+          role: "events_office",
+          status: "active",
+          deletedAt: null,
+        }).select("_id firstName lastName");
+
+        if (eventsOfficeUsers.length > 0) {
+          await NotificationService.createNotification({
+            recipients: eventsOfficeUsers.map((u) => u._id),
+            title: "New Workshop Submission",
+            message: `${req.user.firstName || "Professor"} submitted a workshop: ${req.body.name}`,
+            link: "/approvals/workshops",
+          });
+        }
+      } catch (notifErr) {
+        // Log but do not fail the main request
+        console.error(
+          "Failed to create notification for workshop submission",
+          notifErr
+        );
+      }
 
       return res
         .status(201)
@@ -562,7 +625,11 @@ export class EventsController {
   // /api/events/upcoming
   async getUpcomingEvents(req, res, next) {
     try {
-      const events = await eventService.getUpcomingEventsWithVendors(true);
+      const userRole = req.user?.role;
+      const events = await eventService.getUpcomingEventsWithVendors(
+        true,
+        userRole
+      );
       return res
         .status(200)
         .json(
@@ -576,15 +643,60 @@ export class EventsController {
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
     try {
-      const { name, type } = req.query;
+      const { name, type, location, startDate, endDate, professor } = req.query;
 
-      // Ensure at least one search parameter is provided
-      if (!name && !type) {
-        throw new ApiError(400, "Please provide a name or type to search.");
+      // Ensure at least one search parameter is provided (allow professor only searches too)
+      if (!name && !type && !location && !startDate && !endDate && !professor) {
+        throw new ApiError(
+          400,
+          "Please provide at least one search criteria (name, type, location, professor, or date range)."
+        );
       }
 
+      let parsedStartDate = null;
+      let parsedEndDate = null;
+
+      if (startDate || endDate) {
+        if (!startDate || !endDate) {
+          throw new ApiError(
+            400,
+            "Please provide both startDate and endDate when filtering by date."
+          );
+        }
+
+        const maybeStart = new Date(startDate);
+        const maybeEnd = new Date(endDate);
+
+        if (
+          Number.isNaN(maybeStart.getTime()) ||
+          Number.isNaN(maybeEnd.getTime())
+        ) {
+          throw new ApiError(400, "Invalid date format.");
+        }
+
+        if (maybeStart > maybeEnd) {
+          throw new ApiError(
+            400,
+            "startDate cannot be later than endDate for date range filtering."
+          );
+        }
+
+        parsedStartDate = maybeStart;
+        parsedEndDate = maybeEnd;
+      }
+
+      const userRole = req.user?.role;
+
       // Delegate filter construction and search to the service
-      const events = await eventService.searchEvents({ name, type });
+      const events = await eventService.searchEvents({
+        name,
+        type,
+        location,
+        startDate: parsedStartDate,
+        endDate: parsedEndDate,
+        userRole,
+        professor,
+      });
 
       return res
         .status(200)
@@ -619,7 +731,8 @@ export class EventsController {
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
-      const event = await eventService.getEventById(eventId);
+      const userRole = req.user?.role;
+      const event = await eventService.getEventById(eventId, userRole);
       return res
         .status(200)
         .json(new ApiResponse(200, event, "Event fetched successfully"));
@@ -710,6 +823,347 @@ export class EventsController {
         .json(new ApiResponse(200, event, "Event archived successfully"));
     } catch (err) {
       next(err);
+    }
+  }
+
+  // Unarchive an event (restore to approved status)
+  async unarchiveEvent(req, res, next) {
+    try {
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can unarchive events"
+        );
+      }
+
+      const event = await eventService.unarchiveEvent(req.params.id, req.user);
+
+      return res
+        .status(200)
+        .json(new ApiResponse(200, event, "Event unarchived successfully"));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Get all registered users for an event (name and role only)
+  async getEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can view registered users lists
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can view event registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const registeredUsers =
+        await eventService.getEventRegisteredUsers(eventId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            registeredUsers,
+            "Event registered users fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Cancel event registration (for Student/Staff/TA/Professor)
+  async cancelEventRegistration(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only registered users can cancel their registrations."
+        );
+      }
+
+      const result = await eventService.cancelEventRegistration(
+        eventId,
+        userId
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            result,
+            "Registration cancelled and amount refunded."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Export registered users for an event in various formats
+  async exportEventRegisteredUsers(req, res, next) {
+    try {
+      // Authentication check
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Authorization: only events_office can export registered users
+      if (req.user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only Events Office can export registered users"
+        );
+      }
+
+      const { eventId } = req.params;
+      const { format = "xlsx" } = req.query; // Default to xlsx if not specified
+
+      const { buffer, filename, mimeType } =
+        await eventService.exportEventRegisteredUsers(eventId, format);
+
+      // Set headers for file download
+      res.setHeader("Content-Type", mimeType);
+      res.setHeader(
+        "Content-Disposition",
+        `attachment; filename="${filename}"`
+      );
+      res.setHeader("Content-Length", buffer.length);
+
+      // Send the file buffer
+      return res.send(buffer);
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async restrictAccess(req, res, next) {
+    try {
+      // Check authentication
+      if (!req.user) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Validate request body
+      const { error } = restrictAccessSchema.validate(req.body);
+      if (error) throw new ApiError(400, error.details[0].message);
+
+      // Call service to restrict access
+      const event = await eventService.restrictAccess(
+        req.params.id,
+        req.body.roles,
+        req.user
+      );
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            event,
+            "Event access restrictions updated successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getSalesReport(req, res, next) {
+    try {
+      // ✅ Validate query params
+      const { error, value } = getSalesReportSchema.validate(req.query, {
+        abortEarly: false,
+      });
+
+      if (error)
+        return next(new ApiError(400, "Validation failed", error.details));
+
+      // ✅ Use the validated values
+      const { eventType, startDate, endDate, sortOrder, page, limit, format } =
+        value;
+
+      // Check if export format is requested
+      if (format && format.toLowerCase() === "xlsx") {
+        // Export as formatted Excel file
+        const { buffer, filename, mimeType } =
+          await eventService.exportSalesReport({
+            eventType,
+            startDate,
+            endDate,
+            sortOrder: sortOrder || "desc",
+            format: "xlsx",
+          });
+
+        // Set headers for file download
+        res.setHeader("Content-Type", mimeType);
+        res.setHeader(
+          "Content-Disposition",
+          `attachment; filename="${filename}"`
+        );
+        res.setHeader("Content-Length", buffer.length);
+
+        // Send the file buffer
+        return res.send(buffer);
+      }
+
+      // Regular JSON response
+      const report = await eventService.getSalesReport({
+        eventType,
+        startDate,
+        endDate,
+        sortOrder: sortOrder || "desc",
+        page: page || 1,
+        limit: limit || 10,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, report, "Sales report generated successfully")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Send workshop attendance certificates to attendees
+   * Only works for workshops that have ended
+   * POST /api/events/:workshopId/send-certificates
+   */
+  async sendWorkshopCertificates(req, res, next) {
+    try {
+      const { workshopId } = req.params;
+      const user = req.user;
+
+      // Check user role - only professors and events office can send certificates
+      if (!["professor", "events_office"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only professors and events office can send certificates"
+        );
+      }
+
+      // If professor, verify they created this workshop
+      if (user.role === "professor") {
+        const workshop = await eventService.getWorkshopById(workshopId);
+        if (!workshop) {
+          throw new ApiError(404, "Workshop not found");
+        }
+        if (String(workshop.createdBy) !== String(user._id)) {
+          throw new ApiError(
+            403,
+            "Forbidden: You can only send certificates for workshops you created"
+          );
+        }
+      }
+
+      const result = await eventService.sendWorkshopCertificates(workshopId);
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Send certificates for all completed workshops
+   * Only accessible by events office
+   * POST /api/events/send-all-certificates
+   */
+  async sendAllCompletedWorkshopCertificates(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office can trigger batch certificate sending
+      if (user.role !== "events_office") {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office can send certificates for all workshops"
+        );
+      }
+
+      const result = await eventService.sendCertificatesForCompletedWorkshops();
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Manually trigger the certificate scheduler job
+   * Only accessible by events office or admin
+   * POST /api/events/trigger-certificate-job
+   */
+  async triggerCertificateScheduler(req, res, next) {
+    try {
+      const user = req.user;
+
+      // Only events office and admin can manually trigger the job
+      if (!["events_office", "admin"].includes(user.role)) {
+        throw new ApiError(
+          403,
+          "Forbidden: Only events office and admin can trigger the certificate scheduler"
+        );
+      }
+
+      // Import the scheduler function
+      const { triggerCertificateJobManually } = await import(
+        "../../utils/certificate-scheduler.js"
+      );
+
+      // Trigger the job manually
+      await triggerCertificateJobManually();
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            { triggered: true },
+            "Certificate scheduler job triggered successfully. Check server logs for results."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getApprovedEventsCount(req, res, next) {
+    try {
+      // ✅ Import the service function instead of using Event directly
+      const count = await eventService.getApprovedEventsCount();
+
+      return res.status(200).json({
+        success: true,
+        data: { count },
+      });
+    } catch (error) {
+      console.error("Error counting approved events:", error);
+      next(error);
     }
   }
 }
