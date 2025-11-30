@@ -8,7 +8,6 @@ import {
   Heart,
   Gift,
   Wallet,
-  Star,
   Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -119,14 +118,6 @@ export default function StudentHeader({
             onClick={() => setLocation("/loyalty-partners")}
           >
             <Gift className="h-4 w-4" /> Loyalty Partners
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/admin/ratings")}
-          >
-            <Star className="h-4 w-4" /> Ratings
           </Button>
           <Button
             variant="ghost"
