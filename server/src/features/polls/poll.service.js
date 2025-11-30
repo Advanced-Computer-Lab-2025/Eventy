@@ -52,4 +52,3 @@ class PollServiceClass {
 }
 
 export const PollService = new PollServiceClass();
-
