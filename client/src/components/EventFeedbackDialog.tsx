@@ -292,44 +292,38 @@ export default function EventFeedbackDialog({
                 </div>
               )}
 
-              {/* Rating Section (disabled if already rated) */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  {hasSubmitted ? "Your Rating (locked)" : "Your Rating"}
-                </label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        if (hasSubmitted) return;
-                        setRating(index);
-                        setRatingError("");
-                      }}
-                      onMouseEnter={() =>
-                        !hasSubmitted && setHoverRating(index)
-                      }
-                      onMouseLeave={() => !hasSubmitted && setHoverRating(0)}
-                      className="focus:outline-none"
-                      disabled={hasSubmitted}
-                    >
-                      <Star
-                        className={`w-6 h-6 ${
-                          index <=
-                          (hoverRating ||
-                            (hasSubmitted ? userFeedback?.rating || 0 : rating))
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        } ${hasSubmitted ? "opacity-60" : ""}`}
-                      />
-                    </button>
-                  ))}
+              {/* Rating Section (only show if not already rated) */}
+              {!hasSubmitted && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Your Rating</label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setRating(index);
+                          setRatingError("");
+                        }}
+                        onMouseEnter={() => setHoverRating(index)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            index <= (hoverRating || rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {ratingError && (
+                    <p className="text-sm text-destructive">{ratingError}</p>
+                  )}
                 </div>
-                {ratingError && (
-                  <p className="text-sm text-destructive">{ratingError}</p>
-                )}
-              </div>
+              )}
 
               {/* Comment Section */}
               <div className="space-y-2">
