@@ -119,7 +119,7 @@ export default function ProfessorHeader({
             data-testid="button-nav-booth-vote"
           >
             <Store className="h-4 w-4" />
-            Booth Vote
+            Booth Voting
           </Button>
           <Button
             variant="ghost"

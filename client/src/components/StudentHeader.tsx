@@ -133,7 +133,7 @@ export default function StudentHeader({
             data-testid="button-nav-booth-vote"
           >
             <Store className="h-4 w-4" />
-            Booth Vote
+            Booth Voting
           </Button>
         </div>
       </div>

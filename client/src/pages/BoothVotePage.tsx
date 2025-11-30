@@ -212,7 +212,7 @@ export default function BoothVotePage() {
       {renderHeader()}
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8 space-y-6">
         <div>
-          <h1 className="text-4xl font-bold mb-2">Booth Vote</h1>
+          <h1 className="text-4xl font-bold mb-2">Booth Voting</h1>
           <p className="text-muted-foreground">
             Vote for the vendor you would like to see setting up a booth on
             campus.
