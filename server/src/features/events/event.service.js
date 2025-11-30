@@ -64,11 +64,42 @@ export async function editBazaar(id, updates) {
   if (new Date(bazaar.startDate) <= now)
     throw new ApiError(400, "Cannot edit a bazaar that has already started");
 
-  // Apply updates and save
-  Object.assign(bazaar, updates);
-  await bazaar.save();
+  // Build update object with only allowed fields
+  // Note: attendees field is intentionally NOT included - it's managed through applications
+  const allowedUpdates = {};
+  if (updates.name !== undefined) allowedUpdates.name = updates.name;
+  if (updates.description !== undefined)
+    allowedUpdates.description = updates.description;
+  if (updates.location !== undefined)
+    allowedUpdates.location = updates.location;
+  if (updates.startDate !== undefined)
+    allowedUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) allowedUpdates.endDate = updates.endDate;
+  if (updates.registrationDeadline !== undefined)
+    allowedUpdates.registrationDeadline = updates.registrationDeadline;
+  if (updates.status !== undefined) allowedUpdates.status = updates.status;
+  if (updates.capacity !== undefined)
+    allowedUpdates.capacity = updates.capacity;
+  if (updates.bannerImage !== undefined)
+    allowedUpdates.bannerImage = updates.bannerImage;
+  if (updates.extraResources !== undefined)
+    allowedUpdates.extraResources = updates.extraResources;
+  if (updates.startTime !== undefined)
+    allowedUpdates.startTime = updates.startTime;
+  if (updates.endTime !== undefined) allowedUpdates.endTime = updates.endTime;
+  if (updates.restrictedRoles !== undefined)
+    allowedUpdates.restrictedRoles = updates.restrictedRoles;
 
-  return bazaar;
+  // Use findByIdAndUpdate instead of save() to only validate updated fields
+  // This prevents validation errors on existing corrupted fields like attendees
+  const updatedBazaar = await Event.findByIdAndUpdate(id, allowedUpdates, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedBazaar) throw new ApiError(404, "Bazaar not found after update");
+
+  return updatedBazaar;
 }
 
 // ✅ Export properly for ESM
@@ -396,7 +427,7 @@ export const getUpcomingEventsService = async (
   }
 
   const events = await Event.find(filter)
-    .populate("professors", "firstName lastName email")
+    .populate("professors", "firstName lastName email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
 

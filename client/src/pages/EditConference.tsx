@@ -6,6 +6,16 @@ import CreateEventForm, {
 } from "@/components/CreateEventForm";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
@@ -30,6 +40,7 @@ export default function EditConference() {
   const [, params] = useRoute("/events-office/events/conference/edit/:id");
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [conference, setConference] = useState<Conference | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -243,7 +254,50 @@ export default function EditConference() {
           submitLabel="Update Conference"
           title="Conference Information"
           initialValues={initialValues}
+          hideSubmitButton={true}
+          formId="edit-conference-form"
         />
+
+        <div className="flex justify-end gap-4 mt-4">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setShowCancelDialog(true)}
+            disabled={submitting}
+            className="min-w-[120px]"
+          >
+            Cancel
+          </Button>
+          <Button
+            type="submit"
+            form="edit-conference-form"
+            disabled={submitting}
+            className="min-w-[120px]"
+          >
+            {submitting ? "Updating..." : "Update Conference"}
+          </Button>
+        </div>
+
+        {/* Cancel Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to discard your changes and return to the Events
+                Office dashboard? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => setLocation("/events-office/dashboard")}
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

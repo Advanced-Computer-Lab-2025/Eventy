@@ -111,6 +111,23 @@ export default function EventDetailsDialog({
               <p>{event.agenda}</p>
             </div>
           )}
+          {event.eventType === "conference" &&
+            event.professors &&
+            event.professors.length > 0 && (
+              <div>
+                <h4 className="font-semibold mt-2">Professors</h4>
+                <div className="flex flex-wrap gap-2">
+                  {event.professors.map((prof: any, index: number) => (
+                    <span key={index} className="text-sm">
+                      {prof.firstName && prof.lastName
+                        ? `${prof.firstName} ${prof.lastName}`
+                        : prof.name || prof.username || "Unknown Professor"}
+                      {index < event.professors.length - 1 && ","}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
           {event.extraResources && (
             <div>
               <h4 className="font-semibold mt-2">Extra Resources</h4>

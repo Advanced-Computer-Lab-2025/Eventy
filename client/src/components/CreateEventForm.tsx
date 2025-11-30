@@ -37,6 +37,8 @@ interface CreateEventFormProps {
   title?: string;
   initialValues?: Partial<CreateEventFormValues>;
   initialProfessors?: string[];
+  hideSubmitButton?: boolean;
+  formId?: string;
   onCancel?: () => void;
 }
 
@@ -52,6 +54,8 @@ export default function CreateEventForm({
   title = "Event Information",
   initialValues = {},
   initialProfessors = [],
+  hideSubmitButton = false,
+  formId,
   onCancel,
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
@@ -210,7 +214,7 @@ export default function CreateEventForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} id={formId}>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -490,22 +494,24 @@ export default function CreateEventForm({
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
-        {onCancel && (
-          <Button
-            type="button"
-            variant="outline"
-            onClick={onCancel}
-            className="flex-1"
-            disabled={submitting}
-          >
-            Cancel
+      {!hideSubmitButton && (
+        <div className="flex gap-4">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1"
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={submitting} className="flex-1">
+            {submitLabel}
           </Button>
-        )}
-        <Button type="submit" disabled={submitting} className="flex-1">
-          {submitLabel}
-        </Button>
-      </div>
+        </div>
+      )}
     </form>
   );
 }

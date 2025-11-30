@@ -89,16 +89,6 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/create/trip" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
-          >
-            <Plane className="h-4 w-4" />
-            Trips
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
