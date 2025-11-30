@@ -145,16 +145,7 @@ export default function Header({
                   <LayoutGrid className="h-4 w-4" />
                   All Events
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-                  onClick={() => setLocation("/admin/ratings")}
-                  data-testid="button-nav-ratings"
-                >
-                  <Star className="h-4 w-4" />
-                  Ratings
-                </Button>
+                {/* Ratings link removed for non-admin/non-events-office headers */}
                 <Button
                   variant="ghost"
                   size="sm"

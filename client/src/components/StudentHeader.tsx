@@ -116,14 +116,6 @@ export default function StudentHeader({
           >
             <Gift className="h-4 w-4" /> Loyalty Partners
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/admin/ratings")}
-          >
-            <Star className="h-4 w-4" /> Ratings
-          </Button>
         </div>
       </div>
     </header>

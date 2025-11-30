@@ -33,14 +33,14 @@ interface RatingItem {
   id: string;
   eventId: string;
   user?: { firstName?: string; lastName?: string; email?: string } | null;
-  rating: number;
+  rating?: number;
   comment?: string | null;
   commentRemoved?: boolean;
   createdAt?: string;
   deletedAt?: string | null;
 }
 
-export default function AdminRatings() {
+export default function FeedbackDashboard() {
   const [events, setEvents] = useState<EventItem[]>([]);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -132,34 +132,26 @@ export default function AdminRatings() {
     // Fetch feedback for the selected event from the API
     setLoadingRatings(true);
     api
-      .get(`/feedback/events/${selectedEvent}`)
+      .get(`/feedback/events/${selectedEvent}/all`)
       .then((resp) => {
         const data = resp.data?.data || {};
         const feedback = data.feedback || [];
-        const mapped = feedback.map((f: any) => {
-          const commentEntries = Array.isArray(f.comments) ? f.comments : [];
-          const activeComment = commentEntries.find(
-            (c: any) => !c?.deletedAt && c?.body?.trim()
-          );
-          const hasAnyComment = commentEntries.length > 0;
-
-          return {
-            id: f._id,
-            eventId: f.eventId,
-            user: f.userId
-              ? {
-                  firstName: f.userId.firstName,
-                  lastName: f.userId.lastName,
-                  email: f.userId.email,
-                }
-              : null,
-            rating: f.rating,
-            comment: activeComment?.body || null,
-            commentRemoved: !activeComment && hasAnyComment,
-            createdAt: f.createdAt,
-            deletedAt: f.deletedAt || null,
-          };
-        });
+        const mapped = feedback.map((f: any) => ({
+          id: f._id,
+          eventId: f.eventId,
+          user: f.userId
+            ? {
+                firstName: f.userId.firstName,
+                lastName: f.userId.lastName,
+                email: f.userId.email,
+              }
+            : null,
+          rating: f.rating,
+          comment: f.deletedAt ? null : f.comment || null,
+          commentRemoved: Boolean(f.deletedAt),
+          createdAt: f.createdAt,
+          deletedAt: f.deletedAt || null,
+        }));
         setAllRatings(mapped);
         setRatings(mapped);
       })
@@ -173,7 +165,7 @@ export default function AdminRatings() {
   async function handleDeleteComment(ratingId: string) {
     if (!confirm("Delete this comment? This action is permanent.")) return;
     try {
-      await api.delete(`/feedback/events/${selectedEvent}/${ratingId}`);
+      await api.delete(`/feedback/${ratingId}/comment`);
       // Optimistically remove from UI
       const updated = allRatings.map((r) => {
         if (r.id !== ratingId) return r;
@@ -227,10 +219,10 @@ export default function AdminRatings() {
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Event Ratings & Comments</h1>
+          <h1 className="text-3xl font-bold">Event Feedback</h1>
           <p className="text-muted-foreground">
-            Click an event card to view its ratings and comments. Admins can
-            remove inappropriate comments.
+            Review event ratings and comments. Admins can remove inappropriate
+            comments.
           </p>
         </div>
 
@@ -268,14 +260,13 @@ export default function AdminRatings() {
                 attendees={0}
                 showAttendees={false}
                 showActions={false}
-                className={selectedEvent === ev.id ? "ring-2 ring-primary" : ""}
               />
             </div>
           ))}
         </div>
         {/* Dialog overlay to show ratings/comments for selected event */}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="sm:max-w-[800px] max-h-[90vh]">
+          <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Ratings & Comments</DialogTitle>
               <DialogDescription>
@@ -311,10 +302,12 @@ export default function AdminRatings() {
                         </div>
 
                         <div className="text-right">
-                          <div className="font-semibold text-foreground flex items-center justify-end gap-1">
-                            {r.rating} / 5
-                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          </div>
+                          {typeof r.rating === "number" && (
+                            <div className="font-semibold text-foreground flex items-center justify-end gap-1">
+                              {r.rating} / 5
+                              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                            </div>
+                          )}
                           <div className="text-xs text-muted-foreground">
                             {r.createdAt
                               ? formatDistanceToNow(new Date(r.createdAt), {
@@ -325,13 +318,13 @@ export default function AdminRatings() {
                         </div>
                       </div>
 
-                      {r.comment ? (
-                        <div className="mt-2 text-sm text-foreground">
-                          {r.comment}
-                        </div>
-                      ) : r.commentRemoved ? (
+                      {r.deletedAt || r.commentRemoved ? (
                         <div className="mt-2 text-sm text-muted-foreground italic">
                           Comment removed by admin
+                        </div>
+                      ) : r.comment ? (
+                        <div className="mt-2 text-sm text-foreground">
+                          {r.comment}
                         </div>
                       ) : (
                         <div className="mt-2 text-sm text-muted-foreground italic">
@@ -340,15 +333,17 @@ export default function AdminRatings() {
                       )}
 
                       <div className="mt-3 flex gap-2 justify-end">
-                        {r.comment && currentUser?.role === "admin" && (
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDeleteComment(r.id)}
-                          >
-                            Delete comment
-                          </Button>
-                        )}
+                        {currentUser?.role === "admin" &&
+                          !r.deletedAt &&
+                          r.comment && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleDeleteComment(r.id)}
+                            >
+                              Delete comment
+                            </Button>
+                          )}
                       </div>
                     </div>
                   ))}
