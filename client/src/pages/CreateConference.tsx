@@ -3,7 +3,6 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import CreateEventForm, {
   CreateEventFormValues,
 } from "@/components/CreateEventForm";
-import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 
@@ -15,7 +14,10 @@ export default function CreateConference() {
   const { toast } = useToast();
   const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = async (values: CreateEventFormValues) => {
+  const handleSubmit = async (
+    values: CreateEventFormValues,
+    professors?: string[]
+  ) => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
@@ -43,6 +45,7 @@ export default function CreateConference() {
           : 1000,
         fundingSource: values.fundingSource || "guc",
         agenda: values.agenda || "Conference agenda to be determined",
+        professors: professors || [],
       };
 
       // Add restricted roles if provided
@@ -102,8 +105,10 @@ export default function CreateConference() {
           includeWebsiteUrl
           includeBudgetAndFunding
           includeAgenda
+          includeProfessors
           submitLabel="Create Conference"
           title="Conference Information"
+          onCancel={() => setLocation("/events-office/dashboard")}
         />
       </main>
     </div>

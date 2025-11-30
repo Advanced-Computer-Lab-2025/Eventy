@@ -14,21 +14,37 @@ class UserService {
       );
     }
 
+    // Look up any account with this email (even if soft-deleted)
     const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      throw new ApiError(409, "Email already exists.");
-    }
 
     const hashedPassword = await bcrypt.hash(password, 10);
+    let newUser;
 
-    const newUser = await User.create({
-      firstName,
-      lastName,
-      email,
-      password: hashedPassword,
-      role,
-      status: "active",
-    });
+    if (existingUser) {
+      if (!existingUser.deletedAt && existingUser.status !== "deleted") {
+        throw new ApiError(409, "Email already exists.");
+      }
+
+      // Revive soft-deleted account so we avoid unique index conflicts
+      existingUser.firstName = firstName;
+      existingUser.lastName = lastName;
+      existingUser.password = hashedPassword;
+      existingUser.role = role;
+      existingUser.status = "active";
+      existingUser.deletedAt = null;
+      existingUser.isVerified = true;
+      await existingUser.save();
+      newUser = existingUser;
+    } else {
+      newUser = await User.create({
+        firstName,
+        lastName,
+        email,
+        password: hashedPassword,
+        role,
+        status: "active",
+      });
+    }
 
     // ✅ Send email after creating the account
     await sendRegistrationEmail({
@@ -55,12 +71,10 @@ class UserService {
       );
     }
 
-    if (!targetUser.deletedAt) {
-      targetUser.status = "blocked";
-      await targetUser.save();
-      targetUser.status = "deleted";
-      await targetUser.save();
-    }
+    // Set deletedAt timestamp to allow account recreation
+    targetUser.deletedAt = new Date();
+    targetUser.status = "deleted";
+    await targetUser.save();
 
     return targetUser;
   }
@@ -267,8 +281,12 @@ class UserService {
         .populate({
           path: "favoriteEvents",
           select:
-            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application", // Added application for booth events
-          match: { deletedAt: null },
+            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application archivedAt", // Added archivedAt
+          match: {
+            deletedAt: null,
+            archivedAt: null, // ✅ Exclude archived events
+            status: { $ne: "archived" }, // ✅ Exclude archived status
+          },
         })
         .lean();
 
@@ -316,6 +334,18 @@ class UserService {
       console.error("[getFavoriteEvents] Error:", err);
       if (err instanceof ApiError) throw err;
       throw new ApiError(500, err.message || "Error in getFavoriteEvents");
+    }
+  }
+
+  async getActiveUsersCount() {
+    try {
+      const count = await User.countDocuments({
+        status: "active",
+        deletedAt: null,
+      });
+      return count;
+    } catch (err) {
+      throw new ApiError(500, `Error counting active users: ${err.message}`);
     }
   }
 }

@@ -6,6 +6,7 @@ import { Transaction } from "../transactions/transaction.model.js";
 import { sendVendorApplicationStatusEmail } from "../auth/email.service.js";
 import { Event } from "../events/event.model.js";
 import { User } from "../users/user.model.js";
+import NotificationService from "../notifications/notification.service.js"; // Import NotificationService
 
 class ApplicationServiceClass {
   /**
@@ -31,6 +32,10 @@ class ApplicationServiceClass {
 
       const newApplication = new Application(applicationData);
       await newApplication.save();
+
+      // Notify Events Office/Admin about the new application
+      await this.notifyPendingVendorRequest(newApplication);
+
       return newApplication;
     } catch (error) {
       // For booth availability errors, pass the original message directly
@@ -49,6 +54,76 @@ class ApplicationServiceClass {
       }
       // For other errors, wrap with context
       throw new Error(`Could not create application: ${error.message}`);
+    }
+  }
+
+  /**
+   * Notify Events Office/Admin about a pending vendor request
+   * @param {Object} application - The newly created application
+   */
+  async notifyPendingVendorRequest(application) {
+    try {
+      // Fetch all Events Office and Admin users
+      const recipients = await User.find({
+        role: { $in: ["events_office", "admin"] },
+      }).select("_id");
+
+      // Get vendor details
+      const vendor = await User.findById(application.createdBy).select(
+        "name companyName email"
+      );
+
+      // Get event details if application is for a specific event
+      let eventDetails = {};
+      if (application.event) {
+        const event = await Event.findById(application.event).select("title");
+        if (event) {
+          eventDetails = {
+            eventName: event.title,
+            eventId: application.event,
+          };
+        }
+      }
+
+      // Format application date
+      const appDate = new Date(application.createdAt).toLocaleDateString(
+        "en-US",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        }
+      );
+
+      const vendorName = vendor?.name || "a vendor";
+      const companyName = vendor?.companyName ? ` (${vendor.companyName})` : "";
+      const eventInfo = eventDetails.eventName
+        ? ` for ${eventDetails.eventName}`
+        : "";
+
+      // Create a notification with personalized details
+      const notificationData = {
+        title: `New ${application.type.charAt(0).toUpperCase() + application.type.slice(1)} Application`,
+        message: `${vendorName}${companyName} has submitted a ${application.type} application${eventInfo}`,
+        recipients: recipients.map((user) => user._id),
+        metadata: {
+          applicationId: application._id,
+          vendorId: application.createdBy,
+          vendorEmail: vendor?.email,
+          applicationType: application.type,
+          ...(eventDetails.eventId && { eventId: eventDetails.eventId }),
+        },
+      };
+
+      // Call NotificationService to create the notification
+      await NotificationService.createNotification(notificationData);
+    } catch (error) {
+      console.error(
+        "Failed to send notification for pending vendor request:",
+        error
+      );
     }
   }
 

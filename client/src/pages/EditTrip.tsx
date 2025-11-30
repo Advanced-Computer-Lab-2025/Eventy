@@ -1,0 +1,538 @@
+import { useState, useEffect } from "react";
+import { useLocation, useRoute } from "wouter";
+import { Calendar, MapPin, Users, DollarSign } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
+export default function EditTrip() {
+  const [, params] = useRoute("/events-office/events/trip/edit/:id");
+  const [, setLocation] = useLocation();
+  const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [trip, setTrip] = useState<any>(null);
+  const [formData, setFormData] = useState({
+    name: "",
+    location: "",
+    price: "",
+    startDate: "",
+    startTime: "",
+    endDate: "",
+    endTime: "",
+    description: "",
+    capacity: "",
+    registrationDeadline: "",
+  });
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+  ];
+
+  useEffect(() => {
+    if (params?.id) {
+      fetchTrip(params.id);
+    }
+  }, [params?.id]);
+
+  const fetchTrip = async (tripId: string) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${tripId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to fetch trip details");
+      }
+
+      const data = await res.json();
+      const tripData = data.data;
+
+      if (tripData.eventType !== "trip") {
+        toast({
+          title: "Error",
+          description: "This event is not a trip",
+          variant: "destructive",
+        });
+        setLocation("/events-office");
+        return;
+      }
+
+      setTrip(tripData);
+
+      const getTimeFromDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
+        return timeMatch ? timeMatch[1] : "";
+      };
+
+      setFormData({
+        name: tripData.name || "",
+        location: tripData.location || "",
+        price: tripData.price?.toString() || "",
+        startDate: tripData.startDate?.split("T")[0] || "",
+        startTime:
+          tripData.startTime || getTimeFromDate(tripData.startDate || ""),
+        endDate: tripData.endDate?.split("T")[0] || "",
+        endTime: tripData.endTime || getTimeFromDate(tripData.endDate || ""),
+        description: tripData.description || "",
+        capacity: tripData.capacity?.toString() || "",
+        registrationDeadline:
+          tripData.registrationDeadline?.split("T")[0] || "",
+      });
+      setRestrictedRoles(tripData.restrictedRoles || []);
+    } catch (error) {
+      console.error("Error fetching trip:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load trip details",
+        variant: "destructive",
+      });
+      setLocation("/events-office");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+
+    try {
+      const token = localStorage.getItem("token");
+
+      // Validate dates
+      const now = new Date();
+      const start = formData.startDate
+        ? new Date(
+            `${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`
+          )
+        : null;
+      const end = formData.endDate
+        ? new Date(
+            `${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`
+          )
+        : null;
+
+      if (!start || isNaN(start.getTime())) {
+        toast({
+          title: "Invalid start date",
+          description: "Please provide a valid start date/time.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      if (start < now) {
+        toast({
+          title: "Start date in the past",
+          description: "Trip start date/time cannot be in the past.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      if (!end || isNaN(end.getTime())) {
+        toast({
+          title: "Invalid end date",
+          description: "Please provide a valid end date/time.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      if (end <= start) {
+        toast({
+          title: "Invalid date range",
+          description: "End date/time must be after start date/time.",
+          variant: "destructive",
+        });
+        setSaving(false);
+        return;
+      }
+
+      const payload = {
+        ...formData,
+        price: parseFloat(formData.price),
+        capacity: parseInt(formData.capacity, 10),
+        restrictedRoles,
+      };
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/edit/trips/${params?.id}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to update trip");
+      }
+
+      toast({
+        title: "Success",
+        description: "Trip updated successfully",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
+    } catch (error: any) {
+      console.error("Error updating trip:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to update trip",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleRole = (role: string) => {
+    setRestrictedRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role]
+    );
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <EventsOfficeHeader />
+        <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-muted-foreground">Loading trip details...</div>
+          </div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!trip) {
+    return (
+      <div className="min-h-screen bg-background">
+        <EventsOfficeHeader />
+        <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
+          <Card>
+            <CardHeader>
+              <CardTitle>Error</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-red-500 mb-4">Trip not found</p>
+              <Button onClick={() => setLocation("/events-office")}>
+                Back to Events Office Dashboard
+              </Button>
+            </CardContent>
+          </Card>
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <EventsOfficeHeader />
+      <main className="max-w-4xl mx-auto px-4 md:px-6 py-8">
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold mb-2">Edit Trip</h1>
+          <p className="text-muted-foreground">
+            Update the trip information below
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Trip Details</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              {/* Trip Name */}
+              <div className="space-y-2">
+                <Label htmlFor="name">Trip Name *</Label>
+                <Input
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                  required
+                  placeholder="Enter trip name"
+                />
+              </div>
+
+              {/* Location */}
+              <div className="space-y-2">
+                <Label htmlFor="location">Location *</Label>
+                <div className="relative">
+                  <MapPin className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="location"
+                    value={formData.location}
+                    onChange={(e) =>
+                      setFormData({ ...formData, location: e.target.value })
+                    }
+                    className="pl-10"
+                    required
+                    placeholder="Enter location"
+                  />
+                </div>
+              </div>
+
+              {/* Price */}
+              <div className="space-y-2">
+                <Label htmlFor="price">Price (EGP) *</Label>
+                <div className="relative">
+                  <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) =>
+                      setFormData({ ...formData, price: e.target.value })
+                    }
+                    className="pl-10"
+                    required
+                    placeholder="0.00"
+                  />
+                </div>
+              </div>
+
+              {/* Start Date & Time */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="startDate">Start Date *</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={formData.startDate}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startDate: e.target.value })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="startTime">Start Time *</Label>
+                  <Input
+                    id="startTime"
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) =>
+                      setFormData({ ...formData, startTime: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* End Date & Time */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="endDate">End Date *</Label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endDate: e.target.value })
+                      }
+                      className="pl-10"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="endTime">End Time *</Label>
+                  <Input
+                    id="endTime"
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) =>
+                      setFormData({ ...formData, endTime: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Capacity */}
+              <div className="space-y-2">
+                <Label htmlFor="capacity">Capacity *</Label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="capacity"
+                    type="number"
+                    value={formData.capacity}
+                    onChange={(e) =>
+                      setFormData({ ...formData, capacity: e.target.value })
+                    }
+                    className="pl-10"
+                    required
+                    placeholder="Maximum number of attendees"
+                  />
+                </div>
+              </div>
+
+              {/* Registration Deadline */}
+              <div className="space-y-2">
+                <Label htmlFor="registrationDeadline">
+                  Registration Deadline *
+                </Label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="registrationDeadline"
+                    type="date"
+                    value={formData.registrationDeadline}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        registrationDeadline: e.target.value,
+                      })
+                    }
+                    className="pl-10"
+                    required
+                  />
+                </div>
+              </div>
+
+              {/* Description */}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description *</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  required
+                  placeholder="Enter trip description"
+                  rows={4}
+                />
+              </div>
+
+              {/* Restricted Roles */}
+              <div className="space-y-2">
+                <Label>Restrict Access For</Label>
+                <div className="space-y-2">
+                  {availableRoles.map((role) => (
+                    <div
+                      key={role.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={role.value}
+                        checked={restrictedRoles.includes(role.value)}
+                        onCheckedChange={() => toggleRole(role.value)}
+                      />
+                      <Label
+                        htmlFor={role.value}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {role.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Selected roles will not be able to view or register for this
+                  trip
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-4 pt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowCancelDialog(true)}
+                  disabled={saving}
+                  className="min-w-[120px]"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={saving}
+                  className="min-w-[120px]"
+                >
+                  {saving ? "Updating..." : "Update Trip"}
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        {/* Cancel Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to discard your changes? This action cannot be
+                undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => setLocation("/events-office/dashboard")}
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </main>
+    </div>
+  );
+}

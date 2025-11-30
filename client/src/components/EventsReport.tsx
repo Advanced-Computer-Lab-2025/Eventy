@@ -17,7 +17,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Loader2, Download } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -45,6 +52,7 @@ export default function EventsReport() {
   const [reportData, setReportData] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const { toast } = useToast();
 
   // Filters
   const [name, setEventName] = useState("");
@@ -108,6 +116,72 @@ export default function EventsReport() {
     setStartDate("");
     setEndDate(""); // ✅ Added endDate to clear
     setPage(1);
+  };
+
+  const handleExport = async (
+    eventId: string,
+    eventName: string,
+    format: "pdf" | "xlsx"
+  ) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${API_BASE_URL}/api/events/export-registered/${eventId}?format=${format}`,
+        {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to export data");
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+
+      // Use event name for filename, sanitize it for filesystem
+      const sanitizedName = eventName.replace(/[^a-z0-9]/gi, "_").toLowerCase();
+      let filename = `${sanitizedName}-attendees.${format}`;
+
+      // Try to extract filename from Content-Disposition header as fallback
+      const contentDisposition = response.headers.get("Content-Disposition");
+      if (contentDisposition) {
+        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
+          contentDisposition
+        );
+        if (matches != null && matches[1]) {
+          const headerFilename = matches[1].replace(/['"]/g, "");
+          // Only use header filename if it doesn't contain the event ID
+          if (!headerFilename.includes(eventId)) {
+            filename = headerFilename;
+          }
+        }
+      }
+
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+
+      toast({
+        title: "Export successful",
+        description: `Event data exported as ${format.toUpperCase()}`,
+      });
+    } catch (err: any) {
+      console.error("Export error:", err);
+      toast({
+        title: "Export failed",
+        description: err.message || "Failed to export event data",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading && !reportData) {
@@ -243,10 +317,11 @@ export default function EventsReport() {
                       <TableHead>End Date</TableHead>{" "}
                       {/* ✅ Added End Date column */}
                       <TableHead>Location</TableHead>
-                      <TableHead className="text-left">
+                      <TableHead className="text-center">
                         Attendees
                       </TableHead>{" "}
-                      {/* ✅ Changed to text-left */}
+                      {/* ✅ Changed to text-center */}
+                      <TableHead className="text-right">Export</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -270,10 +345,41 @@ export default function EventsReport() {
                             : "TBA"}
                         </TableCell>
                         <TableCell>{event.location || "N/A"}</TableCell>
-                        <TableCell className="text-left font-semibold">
+                        <TableCell className="text-center font-semibold">
                           {" "}
-                          {/* ✅ Changed to text-left */}
+                          {/* ✅ Changed to text-center */}
                           {event.attendeesCount}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleExport(event._id, event.name, "pdf")
+                                }
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Export as PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  handleExport(event._id, event.name, "xlsx")
+                                }
+                              >
+                                <Download className="mr-2 h-4 w-4" />
+                                Export as XLSX
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))}

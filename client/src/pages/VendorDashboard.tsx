@@ -567,13 +567,6 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleSave = (bazaarId: string) => {
-    toast({
-      title: "Saved",
-      description: "Bazaar saved to your favorites!",
-    });
-  };
-
   const handleShare = (bazaarId: string) => {
     if (navigator.share) {
       navigator.share({
@@ -684,7 +677,7 @@ export default function VendorDashboard() {
                               );
                             }}
                             labelLine={(props: any) => {
-                              if (props.value === 0) return null;
+                              if (props.value === 0) return <g />;
                               return (
                                 <path
                                   d={props.points?.reduce(
@@ -911,7 +904,6 @@ export default function VendorDashboard() {
               <BazaarList
                 bazaars={filteredUpcomingBazaars}
                 onRegister={handleRegister}
-                onSave={handleSave}
                 onShare={handleShare}
                 showFilters={false}
               />

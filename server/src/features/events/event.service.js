@@ -2,7 +2,7 @@ import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
 import Application from "../applications/application.model.js";
-import xlsx from "xlsx";
+import ExcelJS from "exceljs";
 import PDFDocument from "pdfkit";
 import { Parser } from "json2csv";
 import path from "path";
@@ -47,7 +47,7 @@ export async function createBazaar(data, user) {
 
   // Send notification about new bazaar
   try {
-    await notifyNewEvent(bazaar, "bazaar");
+    await NotificationService.notifyNewEvent(bazaar, "bazaar");
   } catch (error) {
     console.error("Error sending bazaar notification:", error);
     // Don't fail the request if notification fails
@@ -68,11 +68,42 @@ export async function editBazaar(id, updates) {
   if (new Date(bazaar.startDate) <= now)
     throw new ApiError(400, "Cannot edit a bazaar that has already started");
 
-  // Apply updates and save
-  Object.assign(bazaar, updates);
-  await bazaar.save();
+  // Build update object with only allowed fields
+  // Note: attendees field is intentionally NOT included - it's managed through applications
+  const allowedUpdates = {};
+  if (updates.name !== undefined) allowedUpdates.name = updates.name;
+  if (updates.description !== undefined)
+    allowedUpdates.description = updates.description;
+  if (updates.location !== undefined)
+    allowedUpdates.location = updates.location;
+  if (updates.startDate !== undefined)
+    allowedUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) allowedUpdates.endDate = updates.endDate;
+  if (updates.registrationDeadline !== undefined)
+    allowedUpdates.registrationDeadline = updates.registrationDeadline;
+  if (updates.status !== undefined) allowedUpdates.status = updates.status;
+  if (updates.capacity !== undefined)
+    allowedUpdates.capacity = updates.capacity;
+  if (updates.bannerImage !== undefined)
+    allowedUpdates.bannerImage = updates.bannerImage;
+  if (updates.extraResources !== undefined)
+    allowedUpdates.extraResources = updates.extraResources;
+  if (updates.startTime !== undefined)
+    allowedUpdates.startTime = updates.startTime;
+  if (updates.endTime !== undefined) allowedUpdates.endTime = updates.endTime;
+  if (updates.restrictedRoles !== undefined)
+    allowedUpdates.restrictedRoles = updates.restrictedRoles;
 
-  return bazaar;
+  // Use findByIdAndUpdate instead of save() to only validate updated fields
+  // This prevents validation errors on existing corrupted fields like attendees
+  const updatedBazaar = await Event.findByIdAndUpdate(id, allowedUpdates, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedBazaar) throw new ApiError(404, "Bazaar not found after update");
+
+  return updatedBazaar;
 }
 
 // ✅ Export properly for ESM
@@ -118,7 +149,7 @@ export const createTrip = async (tripData, createdBy) => {
 
   // Send notification about new trip
   try {
-    await notifyNewEvent(newTrip, "trip");
+    await NotificationService.notifyNewEvent(newTrip, "trip");
   } catch (error) {
     console.error("Error sending trip notification:", error);
     // Don't fail the request if notification fails
@@ -140,6 +171,7 @@ export const createConference = async (data, userId) => {
     agenda,
     startTime,
     endTime,
+    professors,
   } = data;
 
   // Validate required fields
@@ -151,6 +183,9 @@ export const createConference = async (data, userId) => {
       400,
       "Conference must include requiredBudget and fundingSource"
     );
+
+  if (!professors || professors.length === 0)
+    throw new ApiError(400, "Conference must include at least one professor");
 
   const event = await Event.create({
     name,
@@ -168,13 +203,14 @@ export const createConference = async (data, userId) => {
     websiteUrl,
     startTime,
     endTime,
+    professors,
     createdBy: userId,
     restrictedRoles: data.restrictedRoles || [],
   });
 
   // Send notification about new conference
   try {
-    await notifyNewEvent(event, "conference");
+    await NotificationService.notifyNewEvent(event, "conference");
   } catch (error) {
     console.error("Error sending conference notification:", error);
     // Don't fail the request if notification fails
@@ -241,7 +277,7 @@ export const createWorkshop = async (workshopData, professorId) => {
 
   // Send notification about new workshop
   try {
-    await notifyNewEvent(workshop, "workshop");
+    await NotificationService.notifyNewEvent(workshop, "workshop");
   } catch (error) {
     console.error("Error sending workshop notification:", error);
     // Don't fail the request if notification fails
@@ -384,10 +420,7 @@ export const getUpcomingEventsService = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -396,7 +429,7 @@ export const getUpcomingEventsService = async (
   }
 
   const events = await Event.find(filter)
-    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("professors", "firstName lastName email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
 
@@ -416,10 +449,7 @@ export const getUpcomingEventsWithVendors = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
@@ -428,7 +458,9 @@ export const getUpcomingEventsWithVendors = async (
   }
 
   // Get all approved upcoming events
-  const events = await Event.find(filter).lean();
+  const events = await Event.find(filter)
+    .populate("professors", "firstName lastName role")
+    .lean();
 
   const eventsWithVendors = await Promise.all(
     events.map(async (event) => {
@@ -495,22 +527,26 @@ export async function deleteEvent(eventId, user) {
   return true;
 }
 // 🔍 Search events service
-export const searchEvents = async ({ name, type, userRole }) => {
+export const searchEvents = async ({
+  name,
+  type,
+  location,
+  startDate,
+  endDate,
+  userRole,
+  professor,
+}) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Include platform booths even if they don't have a startDate
+  // Platform booths should also respect startDate >= now, just like regular events
   const now = new Date();
   const filter = {
     status: "approved",
     deletedAt: null,
-    $and: [
-      {
-        $or: [
-          { startDate: { $gte: now } }, // Regular events with future startDate
-          { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-        ],
-      },
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
+
+  // Additional filters will be added to $and array
+  filter.$and = [];
 
   // Filter out events where the user's role is restricted
   if (userRole && userRole !== "admin" && userRole !== "events_office") {
@@ -605,6 +641,56 @@ export const searchEvents = async ({ name, type, userRole }) => {
         ],
       });
     }
+  }
+
+  if (location) {
+    filter.$and.push({
+      $or: [
+        { location: { $regex: location, $options: "i" } },
+        { locationPreference: { $regex: location, $options: "i" } },
+      ],
+    });
+  }
+
+  if (professor) {
+    // Accept professor as ID (string), convert to ObjectId if valid
+    const profStr = String(professor).trim();
+    if (profStr && profStr.toLowerCase() !== "all") {
+      if (!mongoose.Types.ObjectId.isValid(profStr)) {
+        // Invalid professor id format - return an empty result rather than throwing
+        // to avoid crashing consumer code; simply return an empty list
+        return [];
+      }
+      const profValue = new mongoose.Types.ObjectId(profStr);
+
+      // Only filter for workshops and conferences when using professor filter
+      filter.$and.push({ eventType: { $in: ["workshop", "conference"] } });
+      filter.$and.push({
+        $or: [
+          { professors: { $in: [profValue] } }, // Professor is in the professors array
+          { createdBy: profValue }, // Professor created the event
+        ],
+      });
+    }
+  }
+
+  // Platform booths have startDate and endDate assigned in updateApplicationStatus, so they can be filtered normally
+  if (startDate instanceof Date && !Number.isNaN(startDate.getTime())) {
+    const startOfDay = new Date(startDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    // Event startDate must be >= filter startDate
+    filter.$and.push({
+      startDate: { $gte: startOfDay },
+    });
+  }
+
+  if (endDate instanceof Date && !Number.isNaN(endDate.getTime())) {
+    const endOfDay = new Date(endDate);
+    endOfDay.setHours(23, 59, 59, 999);
+    // Event endDate must be <= filter endDate
+    filter.$and.push({
+      endDate: { $lte: endOfDay },
+    });
   }
 
   return await Event.find(filter)
@@ -705,6 +791,7 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
 export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
+    .populate("professors", "firstName lastName email")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
@@ -722,6 +809,7 @@ export const getEventById = async (eventId, userRole = null) => {
 
   return event;
 };
+
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
@@ -734,13 +822,17 @@ export const getAllTripsService = async () => {
 
 export const getAllWorkshopsService = async (userRole) => {
   // ✅ 3. Fetch all workshops from the database
-  const workshops = await Event.find({ eventType: "workshop" }).sort({
-    createdAt: -1,
-  });
+  const workshops = await Event.find({ eventType: "workshop" })
+    .populate("createdBy", "firstName lastName email")
+    .populate("professors", "firstName lastName email")
+    .sort({
+      createdAt: -1,
+    });
 
   // ✅ 4. Return response
   return workshops;
 };
+
 export async function getAllEvents() {
   try {
     const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
@@ -910,10 +1002,55 @@ export const archiveEvent = async (eventId, user) => {
   return updatedEvent;
 };
 
+export const unarchiveEvent = async (eventId, user) => {
+  // Authorization
+  if (!user || user.role !== "events_office") {
+    throw new ApiError(
+      403,
+      "Forbidden: Only Events Office can unarchive events"
+    );
+  }
+
+  // Find the archived event
+  const existingEvent = await Event.findOne({
+    _id: eventId,
+    deletedAt: null,
+    status: "archived",
+  });
+
+  if (!existingEvent) {
+    const event = await Event.findById(eventId);
+    if (!event) {
+      throw new ApiError(404, "Event not found");
+    } else if (event.deletedAt !== null) {
+      throw new ApiError(400, "Cannot unarchive a deleted event");
+    } else if (event.status !== "archived") {
+      throw new ApiError(400, "Event is not archived");
+    }
+  }
+
+  // Update event to approved status
+  const updatedEvent = await Event.findByIdAndUpdate(
+    eventId,
+    {
+      $set: {
+        status: "approved",
+      },
+      $unset: {
+        archivedAt: "",
+        archivedBy: "",
+      },
+    },
+    { new: true }
+  );
+
+  return updatedEvent;
+};
+
 export const getEventRegisteredUsers = async (eventId) => {
   // Find event and populate attendees with firstName, lastName and role
   const event = await Event.findById(eventId)
-    .select("attendees deletedAt")
+    .select("attendees deletedAt eventType application")
     .populate("attendees", "firstName lastName role");
 
   if (!event) {
@@ -924,6 +1061,76 @@ export const getEventRegisteredUsers = async (eventId) => {
     throw new ApiError(400, "Cannot view attendees of a deleted event");
   }
 
+  // For bazaar and platform_booth events, get attendees from approved applications
+  if (event.eventType === "bazaar" || event.eventType === "platform_booth") {
+    // Build query for applications
+    const applicationQuery = {
+      status: "approved",
+    };
+
+    if (event.eventType === "bazaar") {
+      // For bazaar, applications have event field pointing to the bazaar
+      applicationQuery.event = eventId;
+      applicationQuery.type = "bazaar";
+    } else if (event.eventType === "platform_booth") {
+      // For platform_booth, we can use the event's application field or query by event
+      if (event.application) {
+        // Use the application field from the event
+        const application = await Application.findById(
+          event.application
+        ).select("attendees");
+        if (
+          application &&
+          application.attendees &&
+          application.attendees.length > 0
+        ) {
+          return application.attendees.map((attendee) => {
+            const nameParts = (attendee.name || "").trim().split(/\s+/);
+            return {
+              _id: null,
+              firstName: nameParts[0] || "",
+              lastName: nameParts.slice(1).join(" ") || "",
+              role: "vendor_attendee",
+            };
+          });
+        }
+      }
+      // Fallback: query by event field
+      applicationQuery.event = eventId;
+      applicationQuery.type = "booth";
+    }
+
+    const applications =
+      await Application.find(applicationQuery).select("attendees");
+
+    if (!applications || applications.length === 0) {
+      throw new ApiError(404, "No registered users for this event");
+    }
+
+    // Extract all attendees from all approved applications
+    const registeredUsers = [];
+    applications.forEach((application) => {
+      if (application.attendees && Array.isArray(application.attendees)) {
+        application.attendees.forEach((attendee) => {
+          const nameParts = (attendee.name || "").trim().split(/\s+/);
+          registeredUsers.push({
+            _id: null,
+            firstName: nameParts[0] || "",
+            lastName: nameParts.slice(1).join(" ") || "",
+            role: "vendor_attendee",
+          });
+        });
+      }
+    });
+
+    if (registeredUsers.length === 0) {
+      throw new ApiError(404, "No registered users for this event");
+    }
+
+    return registeredUsers;
+  }
+
+  // For other event types, use the regular attendees from the event
   // Check if attendees array is empty or doesn't exist
   if (!event.attendees || event.attendees.length === 0) {
     throw new ApiError(404, "No registered users for this event");
@@ -959,78 +1166,222 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
   switch (format.toLowerCase()) {
     case "xlsx":
-      const worksheetData = [
-        ["First Name", "Last Name", "Role"],
-        ...registeredUsers.map((user) => [
-          user.firstName,
-          user.lastName,
-          user.role,
-        ]),
-      ];
-      const worksheet = xlsx.utils.aoa_to_sheet(worksheetData);
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Registered Users", {
+        views: [{ state: "frozen", xSplit: 0, ySplit: 2 }],
+      });
 
-      const headerStyle = {
-        font: { bold: true, color: { rgb: "FFFFFF" }, size: 12 },
-        fill: { fgColor: { rgb: "210051" } },
-        alignment: { horizontal: "center", vertical: "center" },
-        border: {
-          top: { style: "thin", color: { rgb: "210051" } },
-          bottom: { style: "thin", color: { rgb: "210051" } },
-          left: { style: "thin", color: { rgb: "210051" } },
-          right: { style: "thin", color: { rgb: "210051" } },
+      // Event title row (Row 1)
+      worksheet.mergeCells("A1:C1");
+      const titleCell = worksheet.getCell("A1");
+      titleCell.value = eventName;
+      titleCell.font = {
+        name: "Calibri",
+        size: 18,
+        bold: true,
+        color: { argb: "FF210051" },
+      };
+      titleCell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      worksheet.getRow(1).height = 35;
+
+      // Header row (Row 2) with strong borders
+      const headerRow = worksheet.getRow(2);
+      headerRow.values = ["First Name", "Last Name", "Role"];
+      headerRow.font = {
+        name: "Calibri",
+        size: 12,
+        bold: true,
+        color: { argb: "FFFFFFFF" },
+      };
+      headerRow.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      headerRow.height = 30;
+
+      // Apply styling to header cells with strong borders
+      ["A2", "B2", "C2"].forEach((cellAddress) => {
+        const cell = worksheet.getCell(cellAddress);
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF210051" },
+        };
+        cell.border = {
+          top: { style: "medium", color: { argb: "FF000000" } },
+          left: { style: "medium", color: { argb: "FF000000" } },
+          bottom: { style: "medium", color: { argb: "FF000000" } },
+          right: { style: "medium", color: { argb: "FF000000" } },
+        };
+      });
+
+      // Add autofilter only to Role column (column C)
+      const lastDataRowIndex = registeredUsers.length + 2;
+      worksheet.autoFilter = {
+        from: { row: 2, column: 3 },
+        to: { row: lastDataRowIndex, column: 3 },
+      };
+
+      // Data rows (starting from Row 3) with clear borders
+      registeredUsers.forEach((user, index) => {
+        const rowIndex = index + 3;
+        const dataRow = worksheet.getRow(rowIndex);
+        dataRow.values = [
+          user.firstName || "-",
+          user.lastName || "-",
+          user.role || "-",
+        ];
+
+        dataRow.font = {
+          name: "Calibri",
+          size: 11,
+          color: { argb: "FF1A202C" },
+        };
+        dataRow.alignment = {
+          vertical: "middle",
+          horizontal: "left",
+        };
+        dataRow.height = 22;
+
+        // Alternating row colors
+        const fillColor = index % 2 === 0 ? "FFF9FAFB" : "FFFFFFFF";
+
+        ["A", "B", "C"].forEach((col) => {
+          const cell = worksheet.getCell(`${col}${rowIndex}`);
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: fillColor },
+          };
+          // Strong visible borders for all cells
+          cell.border = {
+            top: { style: "thin", color: { argb: "FF000000" } },
+            left: { style: "thin", color: { argb: "FF000000" } },
+            bottom: { style: "thin", color: { argb: "FF000000" } },
+            right: { style: "thin", color: { argb: "FF000000" } },
+          };
+        });
+
+        // Center align role column
+        const roleCell = worksheet.getCell(`C${rowIndex}`);
+        roleCell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+      });
+
+      // Add bottom border to last data row
+      const lastDataRow = registeredUsers.length + 2;
+      ["A", "B", "C"].forEach((col) => {
+        const cell = worksheet.getCell(`${col}${lastDataRow}`);
+        cell.border = {
+          ...cell.border,
+          bottom: { style: "medium", color: { argb: "FF000000" } },
+        };
+      });
+
+      // Total row at the bottom (single cell merged)
+      const totalRowIndex = registeredUsers.length + 3;
+      worksheet.mergeCells(`A${totalRowIndex}:C${totalRowIndex}`);
+      const totalCell = worksheet.getCell(`A${totalRowIndex}`);
+      totalCell.value = `Total Registered: ${registeredUsers.length}`;
+      totalCell.font = {
+        name: "Calibri",
+        size: 11,
+        bold: true,
+        color: { argb: "FF000000" },
+      };
+      totalCell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      totalCell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFE8E8E8" }, // Light gray background
+      };
+      totalCell.border = {
+        top: { style: "thin", color: { argb: "FF000000" } },
+        left: { style: "thin", color: { argb: "FF000000" } },
+        bottom: { style: "thin", color: { argb: "FF000000" } },
+        right: { style: "thin", color: { argb: "FF000000" } },
+      };
+      worksheet.getRow(totalRowIndex).height = 25;
+
+      // Footer (only spans table columns)
+      const footerRowIndex = totalRowIndex + 2;
+      worksheet.getRow(footerRowIndex - 1).height = 10;
+
+      worksheet.mergeCells(`A${footerRowIndex}:C${footerRowIndex}`);
+      const footerCell = worksheet.getCell(`A${footerRowIndex}`);
+      footerCell.value = `Report generated by Eventy | ${new Date().getFullYear()} © All rights reserved`;
+      footerCell.font = {
+        name: "Calibri",
+        size: 9,
+        italic: true,
+        color: { argb: "FF9CA3AF" },
+      };
+      footerCell.alignment = {
+        vertical: "middle",
+        horizontal: "center",
+      };
+      footerCell.border = {
+        top: { style: "thin", color: { argb: "FFE5E7EB" } },
+      };
+      worksheet.getRow(footerRowIndex).height = 25;
+
+      // Set column widths for better readability
+      worksheet.getColumn(1).width = 28;
+      worksheet.getColumn(2).width = 28;
+      worksheet.getColumn(3).width = 22;
+
+      // Set print options
+      worksheet.pageSetup = {
+        paperSize: 9, // A4
+        orientation: "portrait",
+        fitToPage: true,
+        fitToWidth: 1,
+        fitToHeight: 0,
+        margins: {
+          left: 0.7,
+          right: 0.7,
+          top: 0.75,
+          bottom: 0.75,
+          header: 0.3,
+          footer: 0.3,
         },
       };
 
-      worksheet["A1"].s = headerStyle;
-      worksheet["B1"].s = headerStyle;
-      worksheet["C1"].s = headerStyle;
-
-      for (let i = 2; i <= registeredUsers.length + 1; i++) {
-        const rowStyle = {
-          fill: { fgColor: { rgb: i % 2 === 0 ? "F9FAFB" : "FFFFFF" } },
-          border: {
-            top: { style: "thin", color: { rgb: "E5E7EB" } },
-            bottom: { style: "thin", color: { rgb: "E5E7EB" } },
-            left: { style: "thin", color: { rgb: "E5E7EB" } },
-            right: { style: "thin", color: { rgb: "E5E7EB" } },
-          },
-        };
-        ["A", "B", "C"].forEach((col) => {
-          if (worksheet[`${col}${i}`]) worksheet[`${col}${i}`].s = rowStyle;
-        });
-      }
-
-      worksheet["!cols"] = [{ wch: 20 }, { wch: 20 }, { wch: 15 }];
-
-      const workbook = xlsx.utils.book_new();
-      xlsx.utils.book_append_sheet(workbook, worksheet, "Registered Users");
-      buffer = xlsx.write(workbook, { type: "buffer", bookType: "xlsx" });
+      // Generate buffer
+      buffer = await workbook.xlsx.writeBuffer();
       mimeType =
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
       break;
-
     case "pdf":
       const doc = new PDFDocument({ margin: 50, size: "A4" });
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
 
-      const logoLightPath = path.join(
+      const logoLight = path.join(
         __dirname,
         "../../../../client/public/images/logo-light.png"
       );
-      const logoDarkPath = path.join(
+      const logoDark = path.join(
         __dirname,
         "../../../../client/public/images/logo-dark.png"
       );
 
       // Watermark
-      if (fs.existsSync(logoLightPath)) {
+      if (fs.existsSync(logoLight)) {
         doc
           .save()
           .opacity(0.03)
           .image(
-            logoLightPath,
+            logoLight,
             doc.page.width / 2 - 150,
             doc.page.height / 2 - 150,
             { width: 300, height: 300 }
@@ -1040,8 +1391,8 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
       // Header function for all pages
       const drawHeader = () => {
-        if (fs.existsSync(logoLightPath)) {
-          doc.image(logoLightPath, 50, 40, { width: 70 });
+        if (fs.existsSync(logoLight)) {
+          doc.image(logoLight, 50, 40, { width: 70 });
         }
         doc
           .fillColor("#1a202c")
@@ -1827,4 +2178,520 @@ export function stopReminderScheduler() {
     clearInterval(reminderInterval);
     console.log("Event reminder scheduler stopped");
   }
+}
+
+/**
+ * Export sales report with formatting similar to attendees report
+ * @param {Object} options - Filter and format options
+ * @returns {Object} - Buffer, filename, and mimeType for download
+ */
+export const exportSalesReport = async (options = {}) => {
+  const {
+    eventType,
+    startDate,
+    endDate,
+    sortOrder = "desc",
+    format = "xlsx",
+  } = options;
+
+  const validFormats = ["xlsx"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  // Fetch all sales data without pagination
+  const reportData = await getSalesReport({
+    eventType,
+    startDate,
+    endDate,
+    sortOrder,
+    page: 1,
+    limit: 999999,
+  });
+
+  const allEvents = reportData.events;
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Sales Report", {
+    views: [{ state: "frozen", xSplit: 0, ySplit: 2 }],
+  });
+
+  // Title row (Row 1)
+  worksheet.mergeCells("A1:J1");
+  const titleCell = worksheet.getCell("A1");
+  titleCell.value = "Sales Report";
+  titleCell.font = {
+    name: "Calibri",
+    size: 18,
+    bold: true,
+    color: { argb: "FF210051" },
+  };
+  titleCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  worksheet.getRow(1).height = 35;
+
+  // Header row (Row 2) with strong borders
+  const headerRow = worksheet.getRow(2);
+  headerRow.values = [
+    "Event Name",
+    "Type",
+    "Start Date",
+    "End Date",
+    "Transactions",
+    "Gross Revenue",
+    "Refunds",
+    "Net Revenue",
+    "Wallet Payments",
+    "Card Payments",
+  ];
+  headerRow.font = {
+    name: "Calibri",
+    size: 12,
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+  headerRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  headerRow.height = 30;
+
+  // Apply styling to header cells with strong borders
+  ["A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "I2", "J2"].forEach(
+    (cellAddress) => {
+      const cell = worksheet.getCell(cellAddress);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF210051" },
+      };
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF000000" } },
+        left: { style: "medium", color: { argb: "FF000000" } },
+        bottom: { style: "medium", color: { argb: "FF000000" } },
+        right: { style: "medium", color: { argb: "FF000000" } },
+      };
+    }
+  );
+
+  // Add autofilter to all columns
+  const lastDataRowIndex = allEvents.length + 2;
+  worksheet.autoFilter = {
+    from: { row: 2, column: 1 },
+    to: { row: lastDataRowIndex, column: 10 },
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "TBA";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "TBA";
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  // Data rows (starting from Row 3) with clear borders
+  allEvents.forEach((event, index) => {
+    const rowIndex = index + 3;
+    const dataRow = worksheet.getRow(rowIndex);
+    dataRow.values = [
+      event.name || "-",
+      event.eventType || "-",
+      formatDate(event.startDate),
+      formatDate(event.endDate),
+      event.transactionCount || 0,
+      event.grossRevenue || 0,
+      event.totalRefunds || 0,
+      event.totalRevenue || 0,
+      event.walletPayments || 0,
+      event.cardPayments || 0,
+    ];
+
+    dataRow.font = {
+      name: "Calibri",
+      size: 11,
+      color: { argb: "FF1A202C" },
+    };
+    dataRow.alignment = {
+      vertical: "middle",
+      horizontal: "left",
+    };
+    dataRow.height = 22;
+
+    // Alternating row colors
+    const fillColor = index % 2 === 0 ? "FFF9FAFB" : "FFFFFFFF";
+
+    ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+      const cell = worksheet.getCell(`${col}${rowIndex}`);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: fillColor },
+      };
+      // Strong visible borders for all cells
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF000000" } },
+        left: { style: "thin", color: { argb: "FF000000" } },
+        bottom: { style: "thin", color: { argb: "FF000000" } },
+        right: { style: "thin", color: { argb: "FF000000" } },
+      };
+
+      // Format currency columns
+      if (["F", "G", "H", "I", "J"].includes(col)) {
+        cell.numFmt = "$#,##0.00";
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "right",
+        };
+      }
+
+      // Center align specific columns
+      if (["B", "C", "D", "E"].includes(col)) {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+      }
+    });
+  });
+
+  // Add bottom border to last data row
+  const lastDataRow = allEvents.length + 2;
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${lastDataRow}`);
+    cell.border = {
+      ...cell.border,
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+    };
+  });
+
+  // Total row at the bottom
+  const totalRowIndex = allEvents.length + 3;
+  const totalRow = worksheet.getRow(totalRowIndex);
+  totalRow.values = [
+    `Total Events: ${allEvents.length}`,
+    "",
+    "",
+    "",
+    "",
+    reportData.grossRevenue || 0,
+    reportData.totalRefunds || 0,
+    reportData.netRevenue || 0,
+    reportData.paymentBreakdown.wallet || 0,
+    reportData.paymentBreakdown.card || 0,
+  ];
+  totalRow.font = {
+    name: "Calibri",
+    size: 11,
+    bold: true,
+    color: { argb: "FF000000" },
+  };
+  totalRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  totalRow.height = 25;
+
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${totalRowIndex}`);
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE8E8E8" },
+    };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF000000" } },
+      left: { style: "thin", color: { argb: "FF000000" } },
+      bottom: { style: "thin", color: { argb: "FF000000" } },
+      right: { style: "thin", color: { argb: "FF000000" } },
+    };
+
+    // Format currency columns in total row
+    if (["F", "G", "H", "I", "J"].includes(col)) {
+      cell.numFmt = "$#,##0.00";
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "right",
+      };
+    }
+  });
+
+  // Footer (only spans table columns)
+  const footerRowIndex = totalRowIndex + 2;
+  worksheet.getRow(footerRowIndex - 1).height = 10;
+
+  worksheet.mergeCells(`A${footerRowIndex}:J${footerRowIndex}`);
+  const footerCell = worksheet.getCell(`A${footerRowIndex}`);
+  footerCell.value = `Report generated by Eventy | ${new Date().getFullYear()} © All rights reserved`;
+  footerCell.font = {
+    name: "Calibri",
+    size: 9,
+    italic: true,
+    color: { argb: "FF9CA3AF" },
+  };
+  footerCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  footerCell.border = {
+    top: { style: "thin", color: { argb: "FFE5E7EB" } },
+  };
+  worksheet.getRow(footerRowIndex).height = 25;
+
+  // Set column widths for better readability
+  worksheet.getColumn(1).width = 30; // Event Name
+  worksheet.getColumn(2).width = 15; // Type
+  worksheet.getColumn(3).width = 12; // Start Date
+  worksheet.getColumn(4).width = 12; // End Date
+  worksheet.getColumn(5).width = 12; // Transactions
+  worksheet.getColumn(6).width = 15; // Gross Revenue
+  worksheet.getColumn(7).width = 12; // Refunds
+  worksheet.getColumn(8).width = 15; // Net Revenue
+  worksheet.getColumn(9).width = 15; // Wallet Payments
+  worksheet.getColumn(10).width = 15; // Card Payments
+
+  // Set print options
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: "landscape",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.7,
+      right: 0.7,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.3,
+      footer: 0.3,
+    },
+  };
+
+  // Generate buffer
+  buffer = await workbook.xlsx.writeBuffer();
+  mimeType =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  filename = `sales_report_${timestamp}.xlsx`;
+
+  return { buffer, filename, mimeType };
+};
+
+/**
+ * Send workshop attendance certificates to all attendees who haven't received them yet
+ * Only sends if the workshop has ended
+ * @param {string} workshopId - Workshop event ID
+ * @returns {Object} - Result with counts of sent/failed certificates
+ */
+export const sendWorkshopCertificates = async (workshopId) => {
+  const { sendWorkshopCertificateEmail } = await import(
+    "../auth/email.service.js"
+  );
+
+  // Find the workshop and populate attendees and professors
+  const workshop = await Event.findById(workshopId)
+    .populate("attendees", "email firstName lastName name role")
+    .populate("professors", "email firstName lastName name");
+
+  if (!workshop) {
+    throw new ApiError(404, "Workshop not found");
+  }
+
+  if (workshop.eventType !== "workshop") {
+    throw new ApiError(400, "This event is not a workshop");
+  }
+
+  // Check if workshop has ended
+  const now = new Date();
+  const workshopEndDate = new Date(workshop.endDate);
+  if (workshopEndDate > now) {
+    throw new ApiError(
+      400,
+      "Cannot send certificates for a workshop that hasn't ended yet"
+    );
+  }
+
+  // Get attendees who haven't received certificates yet
+  const certificatesSentIds = (workshop.certificatesSent || []).map((id) =>
+    id.toString()
+  );
+  // Build recipient list: attendees + professors (all roles should receive)
+  const recipientMap = new Map();
+  for (const u of workshop.attendees || []) {
+    recipientMap.set(u._id.toString(), u);
+  }
+  for (const p of workshop.professors || []) {
+    // Professors may not have `role` populated in some queries; still include
+    recipientMap.set(p._id.toString(), p);
+  }
+  const recipientsToSend = Array.from(recipientMap.values()).filter(
+    (user) => !certificatesSentIds.includes(user._id.toString())
+  );
+
+  if (recipientsToSend.length === 0) {
+    return {
+      message: "All eligible recipients have already received certificates",
+      sent: 0,
+      failed: 0,
+      alreadySent: certificatesSentIds.length,
+    };
+  }
+
+  // Send certificates to each attendee
+  const results = {
+    sent: 0,
+    failed: 0,
+    errors: [],
+  };
+
+  for (const attendee of recipientsToSend) {
+    try {
+      const success = await sendWorkshopCertificateEmail(attendee, workshop);
+      if (success) {
+        // Add to certificatesSent array
+        await Event.findByIdAndUpdate(workshopId, {
+          $addToSet: { certificatesSent: attendee._id },
+        });
+        results.sent++;
+      } else {
+        results.failed++;
+        results.errors.push({
+          attendeeId: attendee._id,
+          email: attendee.email,
+          error: "Email sending failed",
+        });
+      }
+    } catch (error) {
+      results.failed++;
+      results.errors.push({
+        attendeeId: attendee._id,
+        email: attendee.email,
+        error: error.message,
+      });
+    }
+  }
+
+  return {
+    message: `Certificates sent to ${results.sent} attendees, ${results.failed} failed`,
+    sent: results.sent,
+    failed: results.failed,
+    alreadySent: certificatesSentIds.length,
+    errors: results.errors.length > 0 ? results.errors : undefined,
+  };
+};
+
+/**
+ * Check all completed workshops and send certificates to attendees who haven't received them
+ * This can be called periodically or manually
+ * @returns {Object} - Summary of all workshops processed
+ */
+export const sendCertificatesForCompletedWorkshops = async () => {
+  const { sendWorkshopCertificateEmail } = await import(
+    "../auth/email.service.js"
+  );
+
+  const now = new Date();
+
+  // Find all workshops that have ended and are approved
+  const completedWorkshops = await Event.find({
+    eventType: "workshop",
+    status: "approved",
+    endDate: { $lt: now },
+    deletedAt: null,
+  })
+    .populate("attendees", "email firstName lastName name role")
+    .populate("professors", "email firstName lastName name role");
+
+  if (completedWorkshops.length === 0) {
+    return {
+      message: "No completed workshops found",
+      workshopsProcessed: 0,
+      totalSent: 0,
+      totalFailed: 0,
+    };
+  }
+
+  const summary = {
+    workshopsProcessed: 0,
+    totalSent: 0,
+    totalFailed: 0,
+    workshops: [],
+  };
+
+  for (const workshop of completedWorkshops) {
+    const certificatesSentIds = (workshop.certificatesSent || []).map((id) =>
+      id.toString()
+    );
+    // Build recipients: attendees + professors, dedupe by id, exclude already sent
+    const batchRecipientMap = new Map();
+    for (const u of workshop.attendees || []) {
+      batchRecipientMap.set(u._id.toString(), u);
+    }
+    for (const p of workshop.professors || []) {
+      batchRecipientMap.set(p._id.toString(), p);
+    }
+    const attendeesToSend = Array.from(batchRecipientMap.values()).filter(
+      (user) => !certificatesSentIds.includes(user._id.toString())
+    );
+
+    if (attendeesToSend.length === 0) {
+      continue; // Skip workshops where all certificates are already sent
+    }
+
+    summary.workshopsProcessed++;
+    let workshopSent = 0;
+    let workshopFailed = 0;
+
+    for (const attendee of attendeesToSend) {
+      try {
+        const success = await sendWorkshopCertificateEmail(attendee, workshop);
+        if (success) {
+          await Event.findByIdAndUpdate(workshop._id, {
+            $addToSet: { certificatesSent: attendee._id },
+          });
+          workshopSent++;
+        } else {
+          workshopFailed++;
+        }
+      } catch (error) {
+        console.error(
+          `Error sending certificate to ${attendee.email}:`,
+          error.message
+        );
+        workshopFailed++;
+      }
+    }
+
+    summary.totalSent += workshopSent;
+    summary.totalFailed += workshopFailed;
+    summary.workshops.push({
+      workshopId: workshop._id,
+      workshopName: workshop.name,
+      sent: workshopSent,
+      failed: workshopFailed,
+    });
+  }
+
+  return {
+    message: `Processed ${summary.workshopsProcessed} workshops, sent ${summary.totalSent} certificates, ${summary.totalFailed} failed`,
+    ...summary,
+  };
+};
+
+export async function getApprovedEventsCount() {
+  return await Event.countDocuments({
+    status: "approved",
+    deletedAt: null,
+    archivedAt: null,
+  });
 }

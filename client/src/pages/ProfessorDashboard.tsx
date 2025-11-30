@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   GraduationCap,
@@ -21,8 +21,11 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import EventSearch from "@/components/EventSearch";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
+import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 
 interface Workshop {
@@ -38,19 +41,52 @@ export default function ProfessorDashboard() {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [events, setEvents] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [error, setError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+    showUpcoming: true,
+    showPast: true,
+  });
   const { toast } = useToast();
+
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (filters.eventType !== "all") {
+      next.type = filters.eventType;
+    }
+    if (filters.location !== "all") {
+      next.location = filters.location;
+    }
+    if (filters.startDate && filters.endDate) {
+      next.startDate = filters.startDate;
+      next.endDate = filters.endDate;
+    }
+    if (filters.professor) {
+      (next as any).professor = filters.professor;
+    }
+    return next;
+  }, [filters]);
 
   useEffect(() => {
     fetchUserData();
     fetchWorkshopStats();
+    fetchProfessors();
   }, []);
 
   const fetchUserData = () => {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
-      // Use firstName field directly from the database model
       setUserName(userData.firstName);
     }
   };
@@ -78,6 +114,135 @@ export default function ProfessorDashboard() {
     }
   };
 
+  const fetchProfessors = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+      const res = await fetch("http://localhost:4000/api/users/professors", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      const payload = await res.json();
+      const list = payload?.data || payload || [];
+      setProfessorOptions(
+        (list || []).map((u: any) => ({
+          id: u._id,
+          name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+        }))
+      );
+    } catch (err) {
+      console.error("Failed to fetch professors", err);
+    }
+  };
+
+  // Compute unique locations dynamically based on current filters
+  const computedLocationOptions = useMemo(() => {
+    // Filter events by current eventType and professor (excluding location filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by professor
+      if (filters.professor) {
+        const eventProfessors = (event as any).professors || [];
+        const hasProfessor = eventProfessors.some(
+          (p: any) => String(p._id || p.id || p) === filters.professor
+        );
+        if (!hasProfessor) return false;
+      }
+      return true;
+    });
+
+    const locations = filteredEvents
+      .map(
+        (event) =>
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? event.locationPreference
+            : null)
+      )
+      .filter(Boolean) as string[];
+    return Array.from(new Set(locations));
+  }, [allEvents, filters.eventType, filters.professor]);
+
+  // Compute professor options dynamically by filtering API professors based on available events
+  const computedProfessorOptions = useMemo(() => {
+    // Filter events by current eventType and location (excluding professor filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by location
+      if (filters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? event.locationPreference
+            : "");
+        if (eventLocation !== filters.location) return false;
+      }
+      return true;
+    });
+
+    // Get all professor IDs from filtered events
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          if (id) availableProfessorIds.add(String(id));
+        });
+      }
+    });
+
+    // Filter API professors to only include those available in filtered events
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [allEvents, filters.eventType, filters.location, professorOptions]);
+
+  // Clear invalid filter selections when options change
+  useEffect(() => {
+    let needsUpdate = false;
+    const newFilters = { ...filters };
+
+    // Clear location if it's no longer available
+    if (
+      filters.location !== "all" &&
+      !computedLocationOptions.includes(filters.location)
+    ) {
+      newFilters.location = "all";
+      needsUpdate = true;
+    }
+
+    // Clear professor if it's no longer available
+    if (
+      filters.professor &&
+      !computedProfessorOptions.some((p) => p.id === filters.professor)
+    ) {
+      newFilters.professor = "";
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      setFilters(newFilters);
+    }
+  }, [
+    computedLocationOptions,
+    computedProfessorOptions,
+    filters.location,
+    filters.professor,
+  ]);
+
   const getWorkshopStats = () => {
     const total = workshops.length;
     const pending = workshops.filter((w) => w.status === "pending").length;
@@ -91,61 +256,26 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    setEvents(searchResults);
+    // Sort events to show workshops first
+    const sortedResults = [...searchResults].sort((a, b) => {
+      if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
+      if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
+      return 0;
+    });
+    setEvents(sortedResults);
+
+    // If this is the first load (allEvents is empty), store all events for location computation
+    if (allEvents.length === 0) {
+      setAllEvents(sortedResults);
+    }
+
     // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
     }
   };
 
-  const handleRegisterEvent = async (eventId: string) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        toast({
-          title: "Login Required",
-          description: "Please login to register for events",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      if (response.ok) {
-        toast({
-          title: "Registration Successful! 🎉",
-          description: "You have been successfully registered for the event.",
-        });
-      } else {
-        const errorData = await response.json();
-        toast({
-          title: "Registration Failed",
-          description: errorData.message || "Failed to register for event",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Registration error:", error);
-      toast({
-        title: "Registration Error",
-        description: "An error occurred while registering for the event",
-        variant: "destructive",
-      });
-    }
-  };
-
   const handleLoading = (isLoading: boolean) => {
-    // Only show loading overlay when there are no events yet (initial load)
     if (events.length === 0) {
       setLoading(isLoading);
     }
@@ -158,20 +288,13 @@ export default function ProfessorDashboard() {
   const quickActions = [
     {
       title: "Workshop Management",
-      description: "Create, edit, and view all your workshops",
       icon: BookOpen,
       color: "bg-blue-500",
       path: "/professor/workshops",
-      features: [
-        "Create new workshops",
-        "Edit workshop details",
-        "View all your workshops",
-        "Track approval status",
-      ],
+      features: ["Create & edit workshops", "Track approval status"],
     },
     {
       title: "Sports Facilities",
-      description: "View gym schedule and fitness sessions",
       icon: Dumbbell,
       color: "bg-green-500",
       path: "/sports",
@@ -278,183 +401,123 @@ export default function ProfessorDashboard() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid gap-12 lg:grid-cols-3">
-          {/* Left Column - Upcoming Events */}
-          <div className="lg:col-span-2">
-            <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
-
-            <EventSearch
-              onSearchResults={handleSearchResults}
-              onLoading={handleLoading}
-              onError={handleError}
-              className="mb-6"
-            />
-
-            {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-muted-foreground">Loading events...</div>
-              </div>
-            ) : error && events.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <AlertCircle className="h-16 w-16 text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground text-center">{error}</p>
-                </CardContent>
-              </Card>
-            ) : events.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {events.map((event: any, index: number) => (
-                  <EventCard
-                    key={event._id || index}
-                    id={event._id || String(index)}
-                    title={event.name || "Untitled Event"}
-                    category={(event.eventType || "academic") as any}
-                    date={
-                      event.startDate
-                        ? new Date(event.startDate).toLocaleDateString(
-                            "en-US",
-                            {
-                              weekday: "short",
-                              month: "long",
-                              day: "numeric",
-                              year: "numeric",
-                            }
-                          )
-                        : "TBA"
-                    }
-                    time={
-                      event.startDate
-                        ? new Date(event.startDate).toLocaleTimeString(
-                            "en-US",
-                            {
-                              hour: "2-digit",
-                              minute: "2-digit",
-                              hour12: true,
-                            }
-                          )
-                        : "TBA"
-                    }
-                    location={
-                      event.location ||
-                      (event.eventType === "platform_booth"
-                        ? event.locationPreference
-                        : null) ||
-                      "Unknown location"
-                    }
-                    attendees={
-                      Array.isArray(event.attendees)
-                        ? event.attendees.length
-                        : event.attendeesCount || 0
-                    }
-                    image={event.bannerImage || event.image}
-                    description={event.description}
-                    startDate={event.startDate}
-                    endDate={event.endDate}
-                    durationWeeks={event.durationWeeks}
-                    capacity={event.capacity}
-                    registrationDeadline={event.registrationDeadline}
-                    vendors={event.vendors || []}
-                    showDetailedView={true}
-                    onRegister={() =>
-                      console.log(handleRegisterEvent(event._id))
-                    }
-                    onViewDetails={() =>
-                      console.log("View details:", event.name)
-                    }
-                  />
-                ))}
-              </div>
-            ) : (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Calendar className="h-16 w-16 text-muted-foreground mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">
-                    No Events Found
-                  </h3>
-                  <p className="text-muted-foreground text-center">
-                    There are no upcoming events at the moment.
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          {/* Right Column - Quick Access */}
-          <div className="space-y-6">
+        <div className="flex flex-col lg:flex-row gap-8">
+          {/* Left Column - Event Filters */}
+          <aside className="lg:w-72 flex-shrink-0">
+            <div className="sticky top-32 space-y-4">
+              <EventFilters
+                filters={filters}
+                onFilterChange={setFilters}
+                locations={computedLocationOptions}
+                professors={computedProfessorOptions}
+                userRole=""
+              />
+            </div>
+          </aside>{" "}
+          {/* Center and Right Columns */}
+          <div className="flex-1">
+            {/* Center Column - Upcoming Events */}
             <div>
-              <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
-              <div className="space-y-6">
-                {quickActions.map((action) => (
-                  <Card
-                    key={action.title}
-                    className="hover:shadow-lg transition-shadow flex flex-col"
-                  >
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className={`${action.color} p-3 rounded-lg`}>
-                            <action.icon className="h-6 w-6 text-white" />
-                          </div>
-                          <div>
-                            <CardTitle className="text-xl">
-                              {action.title}
-                            </CardTitle>
-                            <CardDescription className="mt-1">
-                              {action.description}
-                            </CardDescription>
-                          </div>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent className="flex-1 flex flex-col">
-                      <div className="flex-1">
-                        {action.features && (
-                          <ul className="space-y-2 mb-4">
-                            {action.features.map((feature, idx) => (
-                              <li
-                                key={idx}
-                                className="flex items-center text-sm text-muted-foreground"
-                              >
-                                <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                                {feature}
-                              </li>
-                            ))}
-                          </ul>
-                        )}
-                        {action.activities && (
-                          <div className="mb-4">
-                            <p className="text-sm text-muted-foreground mb-3">
-                              Access the gym schedule to view monthly fitness
-                              sessions and book your preferred time slots.
-                            </p>
-                            <p className="text-sm font-medium mb-3">
-                              Available Sessions:
-                            </p>
-                            <div className="flex flex-wrap gap-2">
-                              {action.activities.map((activity, idx) => (
-                                <Badge
-                                  key={idx}
-                                  variant="secondary"
-                                  className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                                >
-                                  {activity}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        className="w-full mt-auto"
-                        onClick={() => setLocation(action.path)}
-                      >
-                        Access {action.title}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
+              <h2 className="text-2xl font-bold mb-4">Upcoming Events</h2>
+
+              {/* Event Search and Sort */}
+              <div className="mb-6 flex items-center gap-3">
+                <div className="flex-1">
+                  <EventSearch
+                    onSearchResults={handleSearchResults}
+                    onLoading={handleLoading}
+                    onError={handleError}
+                    filters={appliedFilters}
+                  />
+                </div>
+                <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />
               </div>
+
+              {loading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-muted-foreground">Loading events...</div>
+                </div>
+              ) : error ? (
+                <p className="text-red-500 text-center py-8">{error}</p>
+              ) : events.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {[...events]
+                    .sort((a, b) => {
+                      const aDate = a.startDate
+                        ? new Date(a.startDate).getTime()
+                        : 0;
+                      const bDate = b.startDate
+                        ? new Date(b.startDate).getTime()
+                        : 0;
+                      return sortOrder === "asc"
+                        ? aDate - bDate
+                        : bDate - aDate;
+                    })
+                    .map((event: any, index: number) => (
+                      <EventCard
+                        key={event._id || index}
+                        id={event._id || String(index)}
+                        title={event.name || "Untitled Event"}
+                        category={(event.eventType || "academic") as any}
+                        date={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-US",
+                                {
+                                  weekday: "short",
+                                  month: "long",
+                                  day: "numeric",
+                                  year: "numeric",
+                                }
+                              )
+                            : "TBA"
+                        }
+                        time={
+                          event.startDate
+                            ? new Date(event.startDate).toLocaleTimeString(
+                                "en-US",
+                                {
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                  hour12: true,
+                                }
+                              )
+                            : "TBA"
+                        }
+                        location={
+                          event.location ||
+                          (event.eventType === "platform_booth"
+                            ? event.locationPreference
+                            : null) ||
+                          "Unknown location"
+                        }
+                        attendees={
+                          Array.isArray(event.attendees)
+                            ? event.attendees.length
+                            : event.attendeesCount || 0
+                        }
+                        price={event.price || 0}
+                        image={event.bannerImage || event.image}
+                        description={event.description}
+                        startDate={event.startDate}
+                        endDate={event.endDate}
+                        durationWeeks={event.durationWeeks}
+                        capacity={event.capacity}
+                        registrationDeadline={event.registrationDeadline}
+                        vendors={event.vendors || []}
+                        showDetailedView={true}
+                        onRegister={() =>
+                          console.log(handleRegisterEvent(event._id))
+                        }
+                        onViewDetails={() =>
+                          console.log("View details:", event.name)
+                        }
+                      />
+                    ))}
+                </div>
+              )}
             </div>
           </div>
         </div>

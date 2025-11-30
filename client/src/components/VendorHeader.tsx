@@ -1,4 +1,4 @@
-import { Bell, Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -20,6 +20,25 @@ export default function VendorHeader({
   const [, setLocation] = useLocation();
 
   const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(false);
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    companyName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   // Check URL hash on component mount and when it changes
   useEffect(() => {
@@ -50,15 +69,15 @@ export default function VendorHeader({
           </div>
 
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
             <ThemeToggle />
             <ProfileMenu />
+            {user?.role && user?.companyName && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.companyName} / {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

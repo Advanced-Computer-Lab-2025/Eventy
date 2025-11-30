@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { Calendar, Users, TrendingUp, Settings, UserCheck } from "lucide-react";
+import { useState, useEffect, useMemo } from "react";
+import { Calendar, Users, TrendingUp, UserCheck } from "lucide-react";
 import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -7,7 +7,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
+import EmptyState from "@/components/EmptyState";
 import { getEventImage } from "@/lib/eventImages";
+import EventSort from "@/components/EventSort";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
+import EventCountBadge from "@/components/EventCountBadge";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -32,11 +36,27 @@ export default function AdminDashboardPage() {
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [allEvents, setAllEvents] = useState<any[]>([]);
   const [totalUpcomingCount, setTotalUpcomingCount] = useState<number | null>(
     null
   );
   const [approvedEventsCount, setApprovedEventsCount] = useState<number>(0);
   const [approvedLoading, setApprovedLoading] = useState<boolean>(true);
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [filters, setFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+    showUpcoming: true,
+    showPast: true,
+  });
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [activeUsersCount, setActiveUsersCount] = useState<number>(0); // ✅ Add this
+  const [activeUsersLoading, setActiveUsersLoading] = useState<boolean>(true); // ✅ Add this
   const [eventTypeFilter, setEventTypeFilter] = useState<
     "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
   >("all");
@@ -113,7 +133,9 @@ export default function AdminDashboardPage() {
       try {
         setApprovedLoading(true);
         const token = localStorage.getItem("token");
-        const res = await fetch(`${API_BASE_URL}/api/events/search`, {
+
+        // ✅ Use the new dedicated endpoint
+        const res = await fetch(`${API_BASE_URL}/api/events/approved/count`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
@@ -121,19 +143,17 @@ export default function AdminDashboardPage() {
           },
           credentials: "include",
         });
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(
-            `Unexpected response. Preview: ${text.substring(0, 60)}...`
-          );
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch approved events count");
         }
+
         const body = await res.json();
-        if (!res.ok)
-          throw new Error(body.message || "Failed to fetch approved events");
-        const list = Array.isArray(body.data) ? body.data : body;
-        setApprovedEventsCount(Array.isArray(list) ? list.length : 0);
+        const count = body.data?.count ?? 0;
+
+        setApprovedEventsCount(count);
       } catch (err) {
+        console.error("Error fetching approved events count:", err);
         setApprovedEventsCount(0);
       } finally {
         setApprovedLoading(false);
@@ -142,9 +162,217 @@ export default function AdminDashboardPage() {
     fetchApprovedEvents();
   }, []);
 
+  useEffect(() => {
+    const baseUrl =
+      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+    const token = localStorage.getItem("token");
+    const fetchProfessors = async () => {
+      try {
+        const res = await fetch(`${baseUrl}/api/users/professors`, {
+          headers: {
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            "Content-Type": "application/json",
+          },
+        });
+        if (!res.ok) return;
+        const payload = await res.json();
+        const list = payload?.data || payload || [];
+        setProfessorOptions(
+          (list || []).map((u: any) => ({
+            id: u._id,
+            name: `${u.firstName || ""} ${u.lastName || ""}`.trim(),
+          }))
+        );
+      } catch (err) {
+        console.error("Failed to fetch professors", err);
+      }
+    };
+    fetchProfessors();
+  }, []);
+
+  const handleSearchResults = (results: any[]) => {
+    setUpcomingEvents(results);
+
+    // If this is the first load (allEvents is empty), store all events for location computation
+    if (allEvents.length === 0) {
+      setAllEvents(results);
+    }
+
+    if (eventsLoading) setEventsLoading(false);
+  };
+
+  const handleLoading = (isLoading: boolean) => {
+    if (upcomingEvents.length === 0) {
+      setEventsLoading(isLoading);
+    }
+  };
+  // ✅ Add this new useEffect to fetch active users count
+  useEffect(() => {
+    const fetchActiveUsersCount = async () => {
+      try {
+        setActiveUsersLoading(true);
+        const token = localStorage.getItem("token");
+
+        const res = await fetch(`${API_BASE_URL}/api/users/active/count`, {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch active users count");
+        }
+
+        const body = await res.json();
+        const count = body.data?.count ?? 0;
+
+        setActiveUsersCount(count);
+      } catch (err) {
+        console.error("Error fetching active users count:", err);
+        setActiveUsersCount(0);
+      } finally {
+        setActiveUsersLoading(false);
+      }
+    };
+    fetchActiveUsersCount();
+  }, []);
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
+
+  const handleError = (errorMessage: string) => {
+    setEventsError(errorMessage);
+  };
+
+  // compute professorOptions dynamically by filtering API professors based on available events
+  const computedProfessorOptions = useMemo(() => {
+    // Filter events by current eventType and location (excluding professor filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by location
+      if (filters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? (event as any).locationPreference
+            : "");
+        if (eventLocation !== filters.location) return false;
+      }
+      return true;
+    });
+
+    // Get all professor IDs from filtered events
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          if (id) availableProfessorIds.add(String(id));
+        });
+      }
+    });
+
+    // Filter API professors to only include those available in filtered events
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [allEvents, filters.eventType, filters.location, professorOptions]);
+
+  // Compute unique locations dynamically based on current filters
+  const locationOptions = useMemo(() => {
+    // Filter events by current eventType and professor (excluding location filter)
+    const filteredEvents = allEvents.filter((event) => {
+      // Filter by event type
+      if (
+        filters.eventType !== "all" &&
+        event.eventType !== filters.eventType
+      ) {
+        return false;
+      }
+      // Filter by professor
+      if (filters.professor) {
+        const eventProfessors = (event as any).professors || [];
+        const hasProfessor = eventProfessors.some(
+          (p: any) => String(p._id || p.id || p) === filters.professor
+        );
+        if (!hasProfessor) return false;
+      }
+      return true;
+    });
+
+    const uniqueLocations = new Set<string>();
+    filteredEvents.forEach((event) => {
+      const loc =
+        event.location ||
+        (event.eventType === "platform_booth"
+          ? (event as any).locationPreference
+          : "");
+      if (loc) uniqueLocations.add(loc);
+    });
+    return Array.from(uniqueLocations);
+  }, [allEvents, filters.eventType, filters.professor]);
+
+  // Clear invalid filter selections when options change
+  useEffect(() => {
+    let needsUpdate = false;
+    const newFilters = { ...filters };
+
+    // Clear location if it's no longer available
+    if (
+      filters.location !== "all" &&
+      !locationOptions.includes(filters.location)
+    ) {
+      newFilters.location = "all";
+      needsUpdate = true;
+    }
+
+    // Clear professor if it's no longer available
+    if (
+      filters.professor &&
+      !computedProfessorOptions.some((p) => p.id === filters.professor)
+    ) {
+      newFilters.professor = "";
+      needsUpdate = true;
+    }
+
+    if (needsUpdate) {
+      setFilters(newFilters);
+    }
+  }, [
+    locationOptions,
+    computedProfessorOptions,
+    filters.location,
+    filters.professor,
+  ]);
+
+  const appliedFilters = useMemo(() => {
+    const next: any = {};
+    if (filters.eventType !== "all") {
+      next.type = filters.eventType;
+    }
+    if (filters.location !== "all") {
+      next.location = filters.location;
+    }
+    if (filters.startDate && filters.endDate) {
+      next.startDate = filters.startDate;
+      next.endDate = filters.endDate;
+    }
+    if (filters.professor) {
+      next.professor = filters.professor;
+    }
+    return next;
+  }, [filters]);
 
   const formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], {
@@ -167,12 +395,12 @@ export default function AdminDashboardPage() {
         </div>
 
         <div className="grid gap-6 md:grid-cols-3 mb-8">
+          {/* ✅ Replace Budget Requested card with Active Users */}
           <StatCard
-            title="Budget Requested (EGP)"
-            value={conferences
-              .reduce((sum, c) => sum + (c.requiredBudget || 0), 0)
-              .toLocaleString()}
-            icon={TrendingUp}
+            title="Active Users"
+            value={activeUsersLoading ? "-" : activeUsersCount.toString()}
+            icon={Users}
+            themed={true}
           />
           <StatCard
             title="Upcoming Events"
@@ -180,182 +408,163 @@ export default function AdminDashboardPage() {
               totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()
             }
             icon={Calendar}
+            themed={true}
           />
           <StatCard
             title="Approved Events"
             value={approvedLoading ? "-" : approvedEventsCount.toString()}
             icon={TrendingUp}
+            themed={true}
           />
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Upcoming Events</CardTitle>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Curated upcoming events across all categories
-                    </p>
-                  </div>
-                  {!eventsLoading && (
-                    <span className="text-xs px-2 py-1 rounded-full bg-muted text-muted-foreground border">
-                      {upcomingEvents.length} found
-                    </span>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { key: "all", label: "All" },
-                    { key: "bazaar", label: "Bazaars" },
-                    { key: "trip", label: "Trips" },
-                    { key: "workshop", label: "Workshops" },
-                    { key: "conference", label: "Conferences" },
-                    { key: "platform_booth", label: "Platform Booths" },
-                  ].map((opt) => (
-                    <Button
-                      key={opt.key}
-                      size="sm"
-                      variant={
-                        eventTypeFilter === (opt.key as any)
-                          ? "default"
-                          : "outline"
-                      }
-                      onClick={() => setEventTypeFilter(opt.key as any)}
-                    >
-                      {opt.label}
-                    </Button>
-                  ))}
-                </div>
+        <div className="flex flex-col lg:flex-row gap-8">
+          <aside className="lg:w-72 flex-shrink-0">
+            <div className="sticky top-32 space-y-4">
+              <EventFilters
+                filters={filters}
+                onFilterChange={setFilters}
+                locations={locationOptions}
+                professors={computedProfessorOptions}
+              />
+            </div>
+          </aside>
 
+          <div className="flex-1">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-2xl font-bold">Upcoming Events</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Curated upcoming events across all categories
+                </p>
+              </div>
+              <EventCountBadge
+                count={upcomingEvents.length}
+                loading={eventsLoading}
+              />
+            </div>
+
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex-1">
                 <EventSearch
-                  onSearchResults={(results) => setUpcomingEvents(results)}
-                  onLoading={(isLoading) => setEventsLoading(isLoading)}
-                  onError={(msg) => setEventsError(msg)}
+                  onSearchResults={handleSearchResults}
+                  onLoading={handleLoading}
+                  onError={handleError}
                   placeholder="Search events by name, professor, or type..."
+                  className="w-full"
+                  filters={appliedFilters}
                 />
+              </div>
+              <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />
+            </div>
 
-                {eventsLoading ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    Loading upcoming events...
-                  </div>
-                ) : eventsError ? (
-                  <div className="text-center py-8 text-red-600">
-                    {eventsError}
-                  </div>
-                ) : upcomingEvents.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    No upcoming events found.
-                  </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-8">
-                    {upcomingEvents
-                      .filter((e: any) =>
-                        eventTypeFilter === "all"
-                          ? true
-                          : e.eventType === eventTypeFilter
-                      )
-                      .slice(0, 6)
-                      .map((e: any, index: number) => (
-                        <div key={e._id || index} className="h-full">
-                          <EventCard
-                            className="h-full hover:-translate-y-2"
-                            id={e._id || String(index)}
-                            title={e.name || "Untitled Event"}
-                            category={(e.eventType || "academic") as any}
-                            date={
-                              e.startDate
-                                ? new Date(e.startDate).toLocaleDateString(
-                                    "en-US",
-                                    {
-                                      weekday: "short",
-                                      month: "long",
-                                      day: "numeric",
-                                      year: "numeric",
-                                    }
-                                  )
-                                : "TBA"
-                            }
-                            time={
-                              e.startDate
-                                ? new Date(e.startDate).toLocaleTimeString(
-                                    "en-US",
-                                    {
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                      hour12: true,
-                                    }
-                                  )
-                                : "TBA"
-                            }
-                            location={
-                              e.location ||
-                              (e.eventType === "platform_booth"
-                                ? e.locationPreference
-                                : null) ||
-                              "Unknown location"
-                            }
-                            attendees={
-                              Array.isArray(e.attendees)
-                                ? e.attendees.length
-                                : e.attendeesCount || 0
-                            }
-                            image={
-                              e.bannerImage ||
-                              e.image ||
-                              getEventImage(e.eventType, e.name)
-                            }
-                            description={e.description}
-                            startDate={e.startDate}
-                            endDate={e.endDate}
-                            durationWeeks={e.durationWeeks}
-                            capacity={-1}
-                            vendors={e.vendors || []}
-                            showDetailedView={true}
-                          />
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => setLocation("/admin/users")}
-                >
-                  <UserCheck className="h-4 w-4 mr-2" />
-                  Manage Users
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => setLocation("/vendor-requests")}
-                >
-                  <Users className="h-4 w-4 mr-2" />
-                  Vendor Requests
-                </Button>
-                <Button
-                  className="w-full"
-                  variant="outline"
-                  onClick={() => console.log("Settings")}
-                >
-                  <Settings className="h-4 w-4 mr-2" />
-                  Settings
-                </Button>
-              </CardContent>
-            </Card>
+            {eventsLoading ? (
+              <p>Loading events...</p>
+            ) : eventsError ? (
+              <p className="text-red-500">{eventsError}</p>
+            ) : upcomingEvents.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                {[...upcomingEvents]
+                  .sort((a, b) => {
+                    const aDate = a.startDate
+                      ? new Date(a.startDate).getTime()
+                      : 0;
+                    const bDate = b.startDate
+                      ? new Date(b.startDate).getTime()
+                      : 0;
+                    return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+                  })
+                  .filter((e: any) => {
+                    // Filter by event type
+                    if (
+                      filters.eventType !== "all" &&
+                      e.eventType !== filters.eventType
+                    ) {
+                      return false;
+                    }
+                    // Filter by location
+                    if (filters.location !== "all") {
+                      const eventLocation =
+                        e.location ||
+                        (e.eventType === "platform_booth"
+                          ? e.locationPreference
+                          : "");
+                      if (eventLocation !== filters.location) return false;
+                    }
+                    // Filter by professor
+                    if (filters.professor) {
+                      const eventProfessors = (e as any).professors || [];
+                      const hasProfessor = eventProfessors.some(
+                        (p: any) =>
+                          String(p._id || p.id || p) === filters.professor
+                      );
+                      if (!hasProfessor) return false;
+                    }
+                    // Filter by date range
+                    if (filters.startDate && filters.endDate) {
+                      const eventDate = new Date(e.startDate);
+                      const startDate = new Date(filters.startDate);
+                      const endDate = new Date(filters.endDate);
+                      if (eventDate < startDate || eventDate > endDate)
+                        return false;
+                    }
+                    return true;
+                  })
+                  .map((e: any, index: number) => (
+                    <EventCard
+                      key={e._id || index}
+                      id={e._id || String(index)}
+                      title={e.name || "Untitled Event"}
+                      category={(e.eventType || "academic") as any}
+                      date={
+                        e.startDate
+                          ? new Date(e.startDate).toLocaleDateString("en-US", {
+                              weekday: "short",
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "TBA"
+                      }
+                      time={
+                        e.startDate
+                          ? new Date(e.startDate).toLocaleTimeString("en-US", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                              hour12: true,
+                            })
+                          : "TBA"
+                      }
+                      location={
+                        e.location ||
+                        (e.eventType === "platform_booth"
+                          ? e.locationPreference
+                          : null) ||
+                        "Unknown location"
+                      }
+                      attendees={
+                        Array.isArray(e.attendees)
+                          ? e.attendees.length
+                          : e.attendeesCount || 0
+                      }
+                      image={
+                        e.bannerImage ||
+                        e.image ||
+                        getEventImage(e.eventType, e.name)
+                      }
+                      description={e.description}
+                      startDate={e.startDate}
+                      endDate={e.endDate}
+                      durationWeeks={e.durationWeeks}
+                      capacity={-1}
+                      vendors={e.vendors || []}
+                      showDetailedView={true}
+                    />
+                  ))}
+              </div>
+            )}
           </div>
         </div>
       </main>

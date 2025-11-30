@@ -1,10 +1,19 @@
-import { CheckCircle, XCircle, Eye, Plus } from "lucide-react";
+import {
+  CheckCircle,
+  XCircle,
+  Eye,
+  Plus,
+  Filter,
+  SlidersHorizontal,
+} from "lucide-react";
 import Header from "@/components/Header";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -135,9 +144,7 @@ export default function VendorRequests() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [selected, setSelected] = useState<VendorRequest | null>(null);
   const { toast } = useToast();
-  const [statusFilter, setStatusFilter] = useState<
-    "all" | "pending" | "approved" | "rejected"
-  >("all");
+  const [statusFilter, setStatusFilter] = useState<string[]>(["all"]);
   const [, setLocation] = useLocation();
   const [token, setToken] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
@@ -295,6 +302,26 @@ export default function VendorRequests() {
     setLocation("/events-office/polls");
   };
 
+  // Handle status filter change
+  const handleStatusFilterChange = (status: string, checked: boolean) => {
+    let newStatuses: string[];
+
+    if (status === "all") {
+      newStatuses = checked ? ["all"] : [];
+    } else {
+      if (checked) {
+        newStatuses = statusFilter.filter((s) => s !== "all").concat(status);
+      } else {
+        newStatuses = statusFilter.filter((s) => s !== status);
+        if (newStatuses.length === 0) {
+          newStatuses = ["all"];
+        }
+      }
+    }
+
+    setStatusFilter(newStatuses);
+  };
+
   const handleViewDocuments = (requestId: string) => {
     const req = requests.find((r) => r._id === requestId);
     setSelected(req || null);
@@ -312,141 +339,237 @@ export default function VendorRequests() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
-            <p className="text-muted-foreground">
-              Review vendor participation requests for bazaars and booths
-            </p>
+        <div className="mb-6">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Vendor Requests</h1>
+              <p className="text-muted-foreground">
+                Review vendor participation requests for bazaars and booths
+              </p>
+            </div>
+            {userRole === "events_office" && (
+              <Button
+                onClick={handleGoToPolls}
+                className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
+              >
+                <Plus className="mr-1 h-4 w-4" />
+                Create Poll
+              </Button>
+            )}
           </div>
-          {(userRole === "events_office" || userRole === "admin") && (
-            <Button
-              onClick={handleGoToPolls}
-              className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-4 py-2 text-xs sm:text-sm font-semibold rounded-md shadow-sm whitespace-nowrap"
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Create Poll
-            </Button>
-          )}
         </div>
 
-        <Card>
-          {/* <CardHeader>
-            <CardTitle>Pending Vendor Requests</CardTitle>
-          </CardHeader> */}
-          <CardContent>
-            <div className="flex items-center justify-end mb-4 gap-2">
-              <Select
-                value={statusFilter}
-                onValueChange={(v) =>
-                  setStatusFilter(
-                    v as "all" | "pending" | "approved" | "rejected"
-                  )
-                }
-              >
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Filter by status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="approved">Approved</SelectItem>
-                  <SelectItem value="rejected">Rejected</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
-                Loading requests...
-              </div>
-            ) : error ? (
-              <div className="text-center py-8 text-red-600">{error}</div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Company Name</TableHead>
-                    <TableHead>Event</TableHead>
-                    <TableHead>Booth Size</TableHead>
-                    <TableHead>Attendees</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(statusFilter === "all"
-                    ? requests
-                    : requests.filter((r) => r.status === statusFilter)
-                  ).map((request) => (
-                    <TableRow
-                      key={request._id}
-                      data-testid={`row-request-${request._id}`}
-                    >
-                      <TableCell className="font-medium">
-                        {request?.createdBy?.companyName || "Unknown"}
-                      </TableCell>
-                      <TableCell>{getEventName(request)}</TableCell>
-                      <TableCell>{request?.boothSize || "-"}</TableCell>
-                      <TableCell>
-                        {Array.isArray(request?.attendees)
-                          ? request.attendees.length
-                          : 0}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className={
-                            request.status === "approved"
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : request.status === "rejected"
-                                ? "bg-red-100 text-red-700 border-red-200"
-                                : "bg-yellow-100 text-yellow-800 border-yellow-200"
+        {/* Sidebar Layout with Filters */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Sidebar - Filters */}
+          <aside className="lg:w-64 flex-shrink-0">
+            <div className="sticky top-32">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <SlidersHorizontal className="h-5 w-5" />
+                    Filters
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {/* Status Filter */}
+                  <div className="space-y-2">
+                    <div className="text-sm font-semibold">Status</div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-all"
+                          checked={statusFilter.includes("all")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange("all", checked as boolean)
                           }
+                        />
+                        <Label
+                          htmlFor="status-all"
+                          className="cursor-pointer text-sm"
                         >
-                          {request.status?.charAt(0).toUpperCase() +
-                            request.status?.slice(1)}
-                        </Badge>
-                      </TableCell>
+                          All
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-pending"
+                          checked={statusFilter.includes("pending")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "pending",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-pending"
+                          className="cursor-pointer text-sm"
+                        >
+                          Pending
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-approved"
+                          checked={statusFilter.includes("approved")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "approved",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-approved"
+                          className="cursor-pointer text-sm"
+                        >
+                          Approved
+                        </Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="status-rejected"
+                          checked={statusFilter.includes("rejected")}
+                          onCheckedChange={(checked) =>
+                            handleStatusFilterChange(
+                              "rejected",
+                              checked as boolean
+                            )
+                          }
+                        />
+                        <Label
+                          htmlFor="status-rejected"
+                          className="cursor-pointer text-sm"
+                        >
+                          Rejected
+                        </Label>
+                      </div>
+                    </div>
+                  </div>
 
-                      <TableCell>
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => handleViewDocuments(request._id)}
-                            data-testid={`button-view-${request._id}`}
+                  {/* Clear Filters Button */}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => {
+                      setStatusFilter(["all"]);
+                    }}
+                  >
+                    Clear Filters
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </aside>
+
+          {/* Right Content - Vendor Requests Table */}
+          <div className="flex-1">
+            <Card>
+              <CardHeader>
+                <CardTitle>Vendor Requests</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    Loading requests...
+                  </div>
+                ) : error ? (
+                  <div className="text-center py-8 text-red-600">{error}</div>
+                ) : (
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Company Name</TableHead>
+                        <TableHead>Event</TableHead>
+                        <TableHead>Booth Size</TableHead>
+                        <TableHead>Attendees</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {requests
+                        .filter(
+                          (r) =>
+                            statusFilter.includes("all") ||
+                            statusFilter.includes(r.status)
+                        )
+                        .map((request) => (
+                          <TableRow
+                            key={request._id}
+                            data-testid={`row-request-${request._id}`}
                           >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          {request.status === "pending" && (
-                            <>
-                              <Button
-                                size="sm"
-                                className="bg-green-600 hover:bg-green-700 text-white"
-                                onClick={() => handleApprove(request._id)}
-                                data-testid={`button-approve-${request._id}`}
+                            <TableCell className="font-medium">
+                              {request?.createdBy?.companyName || "Unknown"}
+                            </TableCell>
+                            <TableCell>{getEventName(request)}</TableCell>
+                            <TableCell>{request?.boothSize || "-"}</TableCell>
+                            <TableCell>
+                              {Array.isArray(request?.attendees)
+                                ? request.attendees.length
+                                : 0}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  request.status === "approved"
+                                    ? "bg-green-100 text-green-700 border-green-200"
+                                    : request.status === "rejected"
+                                      ? "bg-red-100 text-red-700 border-red-200"
+                                      : "bg-yellow-100 text-yellow-800 border-yellow-200"
+                                }
                               >
-                                <CheckCircle className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="destructive"
-                                onClick={() => handleReject(request._id)}
-                                data-testid={`button-reject-${request._id}`}
-                              >
-                                <XCircle className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+                                {request.status?.charAt(0).toUpperCase() +
+                                  request.status?.slice(1)}
+                              </Badge>
+                            </TableCell>
+
+                            <TableCell>
+                              <div className="flex justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    handleViewDocuments(request._id)
+                                  }
+                                  data-testid={`button-view-${request._id}`}
+                                >
+                                  <Eye className="h-4 w-4" />
+                                </Button>
+                                {request.status === "pending" && (
+                                  <>
+                                    <Button
+                                      size="sm"
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      onClick={() => handleApprove(request._id)}
+                                      data-testid={`button-approve-${request._id}`}
+                                    >
+                                      <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="destructive"
+                                      onClick={() => handleReject(request._id)}
+                                      data-testid={`button-reject-${request._id}`}
+                                    >
+                                      <XCircle className="h-4 w-4" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                    </TableBody>
+                  </Table>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
           <DialogContent>
             <DialogHeader>

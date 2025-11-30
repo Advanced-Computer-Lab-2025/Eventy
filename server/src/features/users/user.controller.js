@@ -244,4 +244,21 @@ export default class UserController {
       return next(err);
     }
   }
+
+  /**
+   * Get count of active users
+   * GET /api/users/active/count
+   */
+  static async getActiveUsersCount(req, res, next) {
+    try {
+      const count = await UserService.getActiveUsersCount();
+
+      return res.status(200).json({
+        success: true,
+        data: { count },
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
