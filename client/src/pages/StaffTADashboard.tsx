@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   Users,
@@ -26,6 +26,12 @@ import { Badge } from "@/components/ui/badge";
 import StaffHeader from "@/components/StaffHeader";
 import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import EventCard from "@/components/EventCard";
+import EventFilters, { EventFilterState } from "@/components/EventFilters";
+import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
+import EventSort from "@/components/EventSort";
+import EmptyState from "@/components/EmptyState";
+import { useToast } from "@/hooks/use-toast";
 
 interface RegisteredEvent {
   _id: string;
@@ -56,6 +62,26 @@ export default function StaffTADashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const { toast } = useToast();
+
+  // Upcoming events states
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [allUpcomingEvents, setAllUpcomingEvents] = useState<any[]>([]);
+  const [professorOptions, setProfessorOptions] = useState<
+    { id: string; name: string }[]
+  >([]);
+  const [upcomingLoading, setUpcomingLoading] = useState(true);
+  const [upcomingError, setUpcomingError] = useState("");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [eventFilters, setEventFilters] = useState<EventFilterState>({
+    eventType: "all",
+    location: "all",
+    startDate: "",
+    endDate: "",
+    professor: "",
+    showUpcoming: true,
+    showPast: true,
+  });
 
   useEffect(() => {
     fetchUserData();
@@ -167,6 +193,39 @@ export default function StaffTADashboard() {
     }
   };
 
+  // Fetch professors for filter
+  useEffect(() => {
+    const fetchProfessors = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch("/api/users/professors", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          const professors = data.map((prof: any) => ({
+            id: prof._id || prof.id,
+            name:
+              `${prof.firstName || ""} ${prof.lastName || ""}`.trim() ||
+              prof.email,
+          }));
+          setProfessorOptions(professors);
+        }
+      } catch (error) {
+        console.error("Error fetching professors:", error);
+      }
+    };
+
+    fetchEventStats();
+    fetchRegisteredEvents();
+    fetchProfessors();
+  }, []);
+
   const getEventStats = () => {
     const total = events.length;
     const now = new Date();
@@ -177,6 +236,118 @@ export default function StaffTADashboard() {
   };
 
   const stats = getEventStats();
+
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (eventFilters.eventType !== "all") {
+      next.type = eventFilters.eventType;
+    }
+    if (eventFilters.location !== "all") {
+      next.location = eventFilters.location;
+    }
+    if (eventFilters.startDate) {
+      next.startDate = eventFilters.startDate;
+    }
+    if (eventFilters.endDate) {
+      next.endDate = eventFilters.endDate;
+    }
+    if (eventFilters.professor) {
+      (next as any).professor = eventFilters.professor;
+    }
+    return next;
+  }, [eventFilters]);
+
+  const handleSearchResults = (results: any[]) => {
+    setUpcomingEvents(results);
+    if (allUpcomingEvents.length === 0) {
+      setAllUpcomingEvents(results);
+    }
+    if (upcomingLoading) setUpcomingLoading(false);
+  };
+
+  const handleUpcomingLoading = (isLoading: boolean) => {
+    if (upcomingEvents.length === 0) {
+      setUpcomingLoading(isLoading);
+    }
+  };
+
+  const handleUpcomingError = (errorMessage: string) => {
+    setUpcomingError(errorMessage);
+  };
+
+  const handleRegisterEvent = (eventId: string) => {
+    console.log("Register for event:", eventId);
+  };
+
+  const availableLocations = useMemo(() => {
+    const filteredEvents = allUpcomingEvents.filter((event) => {
+      if (
+        eventFilters.eventType !== "all" &&
+        event.eventType !== eventFilters.eventType
+      ) {
+        return false;
+      }
+      if (eventFilters.professor) {
+        const eventProfessors = (event as any).professors || [];
+        const hasProfessor = eventProfessors.some(
+          (p: any) => String(p._id || p.id || p) === eventFilters.professor
+        );
+        if (!hasProfessor) return false;
+      }
+      return true;
+    });
+
+    const locations = filteredEvents
+      .map(
+        (event) =>
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? event.locationPreference
+            : null)
+      )
+      .filter(Boolean) as string[];
+    return Array.from(new Set(locations));
+  }, [allUpcomingEvents, eventFilters.eventType, eventFilters.professor]);
+
+  const computedProfessorOptions = useMemo(() => {
+    const filteredEvents = allUpcomingEvents.filter((event) => {
+      if (
+        eventFilters.eventType !== "all" &&
+        event.eventType !== eventFilters.eventType
+      ) {
+        return false;
+      }
+      if (eventFilters.location !== "all") {
+        const eventLocation =
+          event.location ||
+          (event.eventType === "platform_booth"
+            ? (event as any).locationPreference
+            : "");
+        if (eventLocation !== eventFilters.location) return false;
+      }
+      return true;
+    });
+
+    const availableProfessorIds = new Set<string>();
+    filteredEvents.forEach((event) => {
+      if (event.eventType === "workshop" || event.eventType === "conference") {
+        const profs = (event as any).professors || [];
+        profs.forEach((p: any) => {
+          const id = p._id || p.id || p;
+          if (id) availableProfessorIds.add(String(id));
+        });
+      }
+    });
+
+    return professorOptions.filter((prof) =>
+      availableProfessorIds.has(prof.id)
+    );
+  }, [
+    allUpcomingEvents,
+    eventFilters.eventType,
+    eventFilters.location,
+    professorOptions,
+  ]);
 
   const quickActions = [
     {
@@ -190,19 +361,6 @@ export default function StaffTADashboard() {
         "Check past events",
         "See event details",
         "Track registration status",
-      ],
-    },
-    {
-      title: "Upcoming Events",
-      description: "Browse all upcoming campus events",
-      icon: Clock,
-      color: "bg-purple-500",
-      path: "/staff-ta/upcoming",
-      features: [
-        "See all upcoming events",
-        "Filter and search",
-        "View detailed info",
-        "Register (when available)",
       ],
     },
     {
@@ -393,6 +551,128 @@ export default function StaffTADashboard() {
                   </CardContent>
                 </Card>
               ))}
+            </div>
+          </div>
+
+          {/* Upcoming Events Section */}
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold mb-6">Upcoming Events</h2>
+
+            <div className="flex flex-col lg:flex-row gap-8">
+              <aside className="lg:w-72 flex-shrink-0">
+                <div className="sticky top-32 space-y-4">
+                  <EventFilters
+                    filters={eventFilters}
+                    onFilterChange={setEventFilters}
+                    locations={availableLocations}
+                    professors={computedProfessorOptions}
+                    userRole=""
+                  />
+                </div>
+              </aside>
+
+              <div className="flex-1">
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="flex-1">
+                    <EventSearch
+                      onSearchResults={handleSearchResults}
+                      onLoading={handleUpcomingLoading}
+                      onError={handleUpcomingError}
+                      placeholder="Search events by name, professor, or type..."
+                      className="w-full"
+                      filters={appliedFilters}
+                    />
+                  </div>
+
+                  <EventSort
+                    sortOrder={sortOrder}
+                    onSortChange={setSortOrder}
+                  />
+                </div>
+
+                {upcomingLoading ? (
+                  <p>Loading events...</p>
+                ) : upcomingError ? (
+                  <p className="text-red-500">{upcomingError}</p>
+                ) : upcomingEvents.length === 0 ? (
+                  <EmptyState />
+                ) : (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    {[...upcomingEvents]
+                      .sort((a, b) => {
+                        const aDate = a.startDate
+                          ? new Date(a.startDate).getTime()
+                          : 0;
+                        const bDate = b.startDate
+                          ? new Date(b.startDate).getTime()
+                          : 0;
+                        return sortOrder === "asc"
+                          ? aDate - bDate
+                          : bDate - aDate;
+                      })
+                      .map((event, index) => (
+                        <EventCard
+                          key={event._id || index}
+                          id={event._id || String(index)}
+                          title={event.name || "Untitled Event"}
+                          category={(event.eventType || "academic") as any}
+                          date={
+                            event.startDate
+                              ? new Date(event.startDate).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "short",
+                                    month: "long",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "TBA"
+                          }
+                          time={
+                            event.startDate
+                              ? new Date(event.startDate).toLocaleTimeString(
+                                  "en-US",
+                                  {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                  }
+                                )
+                              : "TBA"
+                          }
+                          location={
+                            event.location ||
+                            (event.eventType === "platform_booth"
+                              ? event.locationPreference
+                              : null) ||
+                            "Unknown location"
+                          }
+                          attendees={
+                            Array.isArray(event.attendees)
+                              ? event.attendees.length
+                              : event.attendeesCount || 0
+                          }
+                          price={event.price || 0}
+                          image={event.bannerImage || event.image}
+                          description={event.description}
+                          startDate={event.startDate}
+                          endDate={event.endDate}
+                          durationWeeks={event.durationWeeks}
+                          capacity={event.capacity}
+                          registrationDeadline={event.registrationDeadline}
+                          vendors={event.vendors || []}
+                          showDetailedView={true}
+                          onRegister={() => handleRegisterEvent(event._id)}
+                          onShare={() => console.log("Share:", event.name)}
+                          onViewDetails={() =>
+                            console.log("View details:", event.name)
+                          }
+                        />
+                      ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
