@@ -49,6 +49,7 @@ interface RatingItem {
   commentRemoved?: boolean;
   createdAt?: string;
   deletedAt?: string | null;
+  commentDeletedAt?: string | null;
 }
 
 export default function FeedbackDashboard() {
@@ -169,9 +170,10 @@ export default function FeedbackDashboard() {
         rating: f.rating,
         // ✅ Check if comment field is empty or feedback has type indicating deletion
         comment: !f.comment || !f.comment.trim() ? null : f.comment,
-        commentRemoved: !f.comment || !f.comment.trim(),
+        commentRemoved: false, // Will be determined based on deletedAt and presence of rating
         createdAt: f.createdAt,
         deletedAt: f.deletedAt || null,
+        commentDeletedAt: f.commentDeletedAt || null,
       }));
       setAllRatings(mapped);
       setRatings(mapped);
@@ -371,9 +373,9 @@ export default function FeedbackDashboard() {
                         </div>
                       </div>
 
-                      {r.deletedAt || r.commentRemoved ? (
+                      {r.commentDeletedAt || r.deletedAt ? (
                         <div className="mt-2 text-sm text-muted-foreground italic">
-                          Comment removed by admin
+                          Comment deleted by admin
                         </div>
                       ) : r.comment ? (
                         <div className="mt-2 text-sm text-foreground">
@@ -381,7 +383,7 @@ export default function FeedbackDashboard() {
                         </div>
                       ) : (
                         <div className="mt-2 text-sm text-muted-foreground italic">
-                          No comment provided
+                          No comment added
                         </div>
                       )}
 

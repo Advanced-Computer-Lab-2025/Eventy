@@ -165,6 +165,7 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
       const event = await Event.findById(feedback.eventId).select("name");
 
       feedback.comment = null;
+      feedback.commentDeletedAt = new Date();
       await feedback.save();
 
       // Send email

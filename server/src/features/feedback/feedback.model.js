@@ -28,6 +28,10 @@ const feedbackSchema = new mongoose.Schema(
       type: Date,
       default: null, // null means not deleted
     },
+    commentDeletedAt: {
+      type: Date,
+      default: null, // null means comment was not deleted by admin
+    },
   },
   {
     timestamps: true,
