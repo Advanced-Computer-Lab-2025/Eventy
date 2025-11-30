@@ -327,8 +327,13 @@ class ApplicationServiceClass {
 
       // Send notification about new platform booth event
       try {
-        const { notifyNewEvent } = await import("../events/event.service.js");
-        await notifyNewEvent(createdEvent, "platform_booth");
+        const NotificationService = (
+          await import("../notifications/notification.service.js")
+        ).default;
+        await NotificationService.notifyNewEvent(
+          createdEvent,
+          "platform_booth"
+        );
       } catch (error) {
         console.error(
           "Error sending platform booth event notification:",
