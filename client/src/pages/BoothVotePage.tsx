@@ -8,7 +8,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface PollOption {
   _id: string;
@@ -38,7 +39,9 @@ export default function BoothVotePage() {
   const [polls, setPolls] = useState<Poll[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedOptions, setSelectedOptions] = useState<Record<string, string>>({});
+  const [selectedOptions, setSelectedOptions] = useState<
+    Record<string, string>
+  >({});
   const [submittingPollId, setSubmittingPollId] = useState<string | null>(null);
 
   const role = getRoleFromToken();
@@ -65,8 +68,8 @@ export default function BoothVotePage() {
           throw new Error(
             `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(
               0,
-              80,
-            )}...`,
+              80
+            )}...`
           );
         }
 
@@ -129,8 +132,8 @@ export default function BoothVotePage() {
         throw new Error(
           `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(
             0,
-            80,
-          )}...`,
+            80
+          )}...`
         );
       }
 
@@ -147,13 +150,17 @@ export default function BoothVotePage() {
       // Update local polls with server response
       const updatedPoll = body.data as Poll;
       setPolls((prev) =>
-        prev.map((p) => (p._id === updatedPoll._id ? { ...p, ...updatedPoll } : p)),
+        prev.map((p) =>
+          p._id === updatedPoll._id ? { ...p, ...updatedPoll } : p
+        )
       );
     } catch (err: any) {
       toast({
         title: "Failed to submit vote",
         description:
-          err instanceof Error ? err.message : "An error occurred while voting.",
+          err instanceof Error
+            ? err.message
+            : "An error occurred while voting.",
         variant: "destructive",
       });
     } finally {
@@ -174,7 +181,8 @@ export default function BoothVotePage() {
         <div>
           <h1 className="text-4xl font-bold mb-2">Booth Vote</h1>
           <p className="text-muted-foreground">
-            Vote for the vendor you would like to see setting up a booth on campus.
+            Vote for the vendor you would like to see setting up a booth on
+            campus.
           </p>
         </div>
 
@@ -183,7 +191,9 @@ export default function BoothVotePage() {
         ) : error ? (
           <p className="text-red-600">{error}</p>
         ) : polls.length === 0 ? (
-          <p className="text-muted-foreground">There are no active booth polls at the moment.</p>
+          <p className="text-muted-foreground">
+            There are no active booth polls at the moment.
+          </p>
         ) : (
           <div className="space-y-4">
             {polls.map((poll) => (
@@ -201,8 +211,14 @@ export default function BoothVotePage() {
                         key={opt._id}
                         className="flex items-center space-x-3 rounded-md border p-3 hover:bg-accent/50"
                       >
-                        <RadioGroupItem value={opt._id} id={`${poll._id}-${opt._id}`} />
-                        <Label htmlFor={`${poll._id}-${opt._id}`} className="cursor-pointer">
+                        <RadioGroupItem
+                          value={opt._id}
+                          id={`${poll._id}-${opt._id}`}
+                        />
+                        <Label
+                          htmlFor={`${poll._id}-${opt._id}`}
+                          className="cursor-pointer"
+                        >
                           {opt.optionText}
                         </Label>
                       </div>
@@ -214,7 +230,9 @@ export default function BoothVotePage() {
                       disabled={submittingPollId === poll._id}
                       className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-5 py-2 text-sm font-semibold rounded-lg"
                     >
-                      {submittingPollId === poll._id ? "Submitting..." : "Submit Vote"}
+                      {submittingPollId === poll._id
+                        ? "Submitting..."
+                        : "Submit Vote"}
                     </Button>
                   </div>
                 </CardContent>

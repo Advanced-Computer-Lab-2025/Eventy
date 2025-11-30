@@ -50,9 +50,7 @@ function Router() {
       </Route>
 
       <Route path="/booth-vote">
-        <ProtectedRoute
-          allowedRoles={["student", "staff", "ta", "professor"]}
-        >
+        <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
           <BoothVotePage />
         </ProtectedRoute>
       </Route>

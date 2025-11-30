@@ -1,6 +1,14 @@
 "use client";
 
-import { Search, Bell, LayoutGrid, User, Home, LogOut, Store } from "lucide-react";
+import {
+  Search,
+  Bell,
+  LayoutGrid,
+  User,
+  Home,
+  LogOut,
+  Store,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";

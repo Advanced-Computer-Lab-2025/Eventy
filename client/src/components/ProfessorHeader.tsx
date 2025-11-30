@@ -1,4 +1,12 @@
-import { Bell, User, Home, BookOpen, Dumbbell, Calendar, Store } from "lucide-react";
+import {
+  Bell,
+  User,
+  Home,
+  BookOpen,
+  Dumbbell,
+  Calendar,
+  Store,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
