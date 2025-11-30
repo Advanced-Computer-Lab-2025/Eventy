@@ -16,6 +16,10 @@ const transactionService = new TransactionService();
 import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import mongoose from "mongoose";
+import { differenceInHours } from "date-fns";
+
+// Store the interval ID for the reminder scheduler
+let reminderInterval;
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -64,11 +68,42 @@ export async function editBazaar(id, updates) {
   if (new Date(bazaar.startDate) <= now)
     throw new ApiError(400, "Cannot edit a bazaar that has already started");
 
-  // Apply updates and save
-  Object.assign(bazaar, updates);
-  await bazaar.save();
+  // Build update object with only allowed fields
+  // Note: attendees field is intentionally NOT included - it's managed through applications
+  const allowedUpdates = {};
+  if (updates.name !== undefined) allowedUpdates.name = updates.name;
+  if (updates.description !== undefined)
+    allowedUpdates.description = updates.description;
+  if (updates.location !== undefined)
+    allowedUpdates.location = updates.location;
+  if (updates.startDate !== undefined)
+    allowedUpdates.startDate = updates.startDate;
+  if (updates.endDate !== undefined) allowedUpdates.endDate = updates.endDate;
+  if (updates.registrationDeadline !== undefined)
+    allowedUpdates.registrationDeadline = updates.registrationDeadline;
+  if (updates.status !== undefined) allowedUpdates.status = updates.status;
+  if (updates.capacity !== undefined)
+    allowedUpdates.capacity = updates.capacity;
+  if (updates.bannerImage !== undefined)
+    allowedUpdates.bannerImage = updates.bannerImage;
+  if (updates.extraResources !== undefined)
+    allowedUpdates.extraResources = updates.extraResources;
+  if (updates.startTime !== undefined)
+    allowedUpdates.startTime = updates.startTime;
+  if (updates.endTime !== undefined) allowedUpdates.endTime = updates.endTime;
+  if (updates.restrictedRoles !== undefined)
+    allowedUpdates.restrictedRoles = updates.restrictedRoles;
 
-  return bazaar;
+  // Use findByIdAndUpdate instead of save() to only validate updated fields
+  // This prevents validation errors on existing corrupted fields like attendees
+  const updatedBazaar = await Event.findByIdAndUpdate(id, allowedUpdates, {
+    new: true,
+    runValidators: true,
+  });
+
+  if (!updatedBazaar) throw new ApiError(404, "Bazaar not found after update");
+
+  return updatedBazaar;
 }
 
 // ✅ Export properly for ESM
@@ -332,6 +367,7 @@ export const updateTripService = async (tripId, updateData, user) => {
   const savedTrip = await trip.save();
   return savedTrip;
 };
+
 /**
  * Register an authenticated user (Student, Staff, TA, or Professor)
  * to a workshop or trip event.
@@ -363,7 +399,13 @@ export const registerUserToEvent = async (user, eventId) => {
   event.attendees.push(user._id);
   await event.save();
 
-  return { message: "Successfully registered for the event." };
+  // Return the updated event document so callers can use it immediately
+  const updatedEvent = await Event.findById(eventId).populate(
+    "attendees",
+    "firstName lastName email role"
+  );
+
+  return updatedEvent;
 };
 
 export const getEventsByUser = async (userId) => {
@@ -395,7 +437,7 @@ export const getUpcomingEventsService = async (
   }
 
   const events = await Event.find(filter)
-    .populate("professors", "name email") // now Mongoose knows User schema
+    .populate("professors", "firstName lastName email") // now Mongoose knows User schema
     .populate("createdBy", "name email companyName")
     .lean();
 
@@ -644,9 +686,6 @@ export const searchEvents = async ({
     }
   }
 
-  // Date filtering: enforce strict bounds
-  // If startDate filter is set: event.startDate >= filter.startDate (no event can start before)
-  // If endDate filter is set: event.endDate <= filter.endDate (no event can end after)
   // Platform booths have startDate and endDate assigned in updateApplicationStatus, so they can be filtered normally
   if (startDate instanceof Date && !Number.isNaN(startDate.getTime())) {
     const startOfDay = new Date(startDate);
@@ -764,6 +803,7 @@ export const requestWorkshopEdits = async (workshopId, revisionComments) => {
 export const getEventById = async (eventId, userRole = null) => {
   const event = await Event.findById(eventId)
     .populate("attendees", "name email role")
+    .populate("professors", "firstName lastName email")
     .populate("createdBy", "name email role");
   if (!event) {
     throw new ApiError(404, "Event not found");
@@ -781,6 +821,7 @@ export const getEventById = async (eventId, userRole = null) => {
 
   return event;
 };
+
 export const getAllTripsService = async () => {
   const trips = await Event.find({ eventType: "trip" })
     .select(
@@ -793,13 +834,17 @@ export const getAllTripsService = async () => {
 
 export const getAllWorkshopsService = async (userRole) => {
   // ✅ 3. Fetch all workshops from the database
-  const workshops = await Event.find({ eventType: "workshop" }).sort({
-    createdAt: -1,
-  });
+  const workshops = await Event.find({ eventType: "workshop" })
+    .populate("createdBy", "firstName lastName email")
+    .populate("professors", "firstName lastName email")
+    .sort({
+      createdAt: -1,
+    });
 
   // ✅ 4. Return response
   return workshops;
 };
+
 export async function getAllEvents() {
   try {
     const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
@@ -1920,6 +1965,466 @@ export const getSalesReport = async (options = {}) => {
     totalPages: Math.ceil(totals.totalEvents / limit),
     events: paginatedEvents,
   };
+};
+
+/**
+ * Sends reminder notifications for upcoming events
+ * @param {Object} event - The event to send reminders for
+ * @param {Date} reminderTime - When the reminder should be sent
+ */
+async function sendEventReminder(event, reminderTime, reminderType) {
+  try {
+    // Get all users registered for this event
+    const eventWithAttendees = await Event.findById(event._id).populate(
+      "attendees",
+      "email notificationPreferences"
+    );
+
+    if (!eventWithAttendees?.attendees?.length) return;
+
+    // Filter out users who have disabled notifications
+    const usersToNotify = eventWithAttendees.attendees.filter(
+      (user) => user.notificationPreferences !== false
+    );
+
+    if (!usersToNotify.length) return;
+
+    // Calculate time until event
+    const eventStart = new Date(event.startDate);
+    const timeUntilEvent = differenceInHours(eventStart, reminderTime);
+    // Use reminderType for message
+    await NotificationService.createNotification({
+      title: `⏰ Event Reminder: ${event.name}`,
+      message: `The event \"${event.name}\" is starting in ${reminderType}.`,
+      link: `/events/${event._id}`,
+      recipients: usersToNotify.map((user) => user._id),
+      event: event._id,
+      notificationType: "event_reminder",
+    });
+
+    console.log(
+      `Sent ${reminderType} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
+    );
+  } catch (error) {
+    console.error(`Error sending reminder for event ${event._id}:`, error);
+  }
+}
+
+/**
+ * Schedules reminders for all upcoming events
+ */
+export async function scheduleEventReminders() {
+  try {
+    const now = new Date();
+    console.log(
+      `[Scheduler] Running event reminder check at ${now.toISOString()}`
+    );
+
+    // Find all upcoming events starting within the next 25 hours
+    const upcomingEvents = await Event.find({
+      startDate: {
+        $gt: now,
+        $lte: new Date(now.getTime() + 25 * 60 * 60 * 1000), // 25 hours from now
+      },
+      status: "approved",
+      deletedAt: null,
+    });
+    console.log(
+      `[Scheduler] Found ${upcomingEvents.length} upcoming events in the next 25 hours.`
+    );
+
+    for (const event of upcomingEvents) {
+      const eventStart = new Date(event.startDate);
+      const diffMs = eventStart.getTime() - now.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      const diffHours = diffMs / (1000 * 60 * 60);
+      console.log(
+        `[Scheduler] Event '${event.name}' (${event._id}) starts at ${eventStart.toISOString()} (${diffDays.toFixed(2)} days, ${diffHours.toFixed(2)} hours from now)`
+      );
+
+      // 1-day reminder: send if exactly 1 day left or less than 1 day and not sent yet
+      if (
+        Math.abs(diffDays - 1) < 0.05 ||
+        (diffDays < 1 && !event.reminder1DaySent && diffHours > 1)
+      ) {
+        if (!event.reminder1DaySent) {
+          console.log(
+            `[Scheduler] Sending 1-day reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 day");
+          await Event.findByIdAndUpdate(event._id, { reminder1DaySent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-day reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
+      }
+      // 1-hour reminder: send if exactly 1 hour left or less than 1 hour and not sent yet
+      else if (
+        Math.abs(diffHours - 1) < 0.05 ||
+        (diffHours < 1 && !event.reminder1HourSent && diffHours > 0)
+      ) {
+        if (!event.reminder1HourSent) {
+          console.log(
+            `[Scheduler] Sending 1-hour reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 hour");
+          await Event.findByIdAndUpdate(event._id, { reminder1HourSent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-hour reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
+      } else {
+        console.log(
+          `[Scheduler] No reminder needed for event '${event.name}' (${event._id}) at this time.`
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error scheduling event reminders:", error);
+  }
+}
+
+/**
+ * Starts the reminder scheduler to run every 30 minutes
+ */
+export function startReminderScheduler() {
+  // Run immediately on start
+  console.log(
+    `[Scheduler] Starting event reminder scheduler at ${new Date().toISOString()}`
+  );
+  scheduleEventReminders();
+
+  // Then run every 5 minutes
+  reminderInterval = setInterval(
+    () => {
+      console.log(
+        `[Scheduler] Triggered event reminder scheduler at ${new Date().toISOString()}`
+      );
+      scheduleEventReminders();
+    },
+    5 * 60 * 1000
+  );
+
+  console.log("Event reminder scheduler started (interval: 5 minutes)");
+}
+
+/**
+ * Stops the reminder scheduler
+ */
+export function stopReminderScheduler() {
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+    console.log("Event reminder scheduler stopped");
+  }
+}
+
+/**
+ * Export sales report with formatting similar to attendees report
+ * @param {Object} options - Filter and format options
+ * @returns {Object} - Buffer, filename, and mimeType for download
+ */
+export const exportSalesReport = async (options = {}) => {
+  const {
+    eventType,
+    startDate,
+    endDate,
+    sortOrder = "desc",
+    format = "xlsx",
+  } = options;
+
+  const validFormats = ["xlsx"];
+  if (!validFormats.includes(format.toLowerCase())) {
+    throw new ApiError(
+      400,
+      `Invalid format. Supported formats: ${validFormats.join(", ")}`
+    );
+  }
+
+  // Fetch all sales data without pagination
+  const reportData = await getSalesReport({
+    eventType,
+    startDate,
+    endDate,
+    sortOrder,
+    page: 1,
+    limit: 999999,
+  });
+
+  const allEvents = reportData.events;
+  const timestamp = new Date().toISOString().split("T")[0];
+
+  let buffer, mimeType, filename;
+
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Sales Report", {
+    views: [{ state: "frozen", xSplit: 0, ySplit: 2 }],
+  });
+
+  // Title row (Row 1)
+  worksheet.mergeCells("A1:J1");
+  const titleCell = worksheet.getCell("A1");
+  titleCell.value = "Sales Report";
+  titleCell.font = {
+    name: "Calibri",
+    size: 18,
+    bold: true,
+    color: { argb: "FF210051" },
+  };
+  titleCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  worksheet.getRow(1).height = 35;
+
+  // Header row (Row 2) with strong borders
+  const headerRow = worksheet.getRow(2);
+  headerRow.values = [
+    "Event Name",
+    "Type",
+    "Start Date",
+    "End Date",
+    "Transactions",
+    "Gross Revenue",
+    "Refunds",
+    "Net Revenue",
+    "Wallet Payments",
+    "Card Payments",
+  ];
+  headerRow.font = {
+    name: "Calibri",
+    size: 12,
+    bold: true,
+    color: { argb: "FFFFFFFF" },
+  };
+  headerRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  headerRow.height = 30;
+
+  // Apply styling to header cells with strong borders
+  ["A2", "B2", "C2", "D2", "E2", "F2", "G2", "H2", "I2", "J2"].forEach(
+    (cellAddress) => {
+      const cell = worksheet.getCell(cellAddress);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FF210051" },
+      };
+      cell.border = {
+        top: { style: "medium", color: { argb: "FF000000" } },
+        left: { style: "medium", color: { argb: "FF000000" } },
+        bottom: { style: "medium", color: { argb: "FF000000" } },
+        right: { style: "medium", color: { argb: "FF000000" } },
+      };
+    }
+  );
+
+  // Add autofilter to all columns
+  const lastDataRowIndex = allEvents.length + 2;
+  worksheet.autoFilter = {
+    from: { row: 2, column: 1 },
+    to: { row: lastDataRowIndex, column: 10 },
+  };
+
+  // Format date helper
+  const formatDate = (dateString) => {
+    if (!dateString) return "TBA";
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return "TBA";
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    });
+  };
+
+  // Data rows (starting from Row 3) with clear borders
+  allEvents.forEach((event, index) => {
+    const rowIndex = index + 3;
+    const dataRow = worksheet.getRow(rowIndex);
+    dataRow.values = [
+      event.name || "-",
+      event.eventType || "-",
+      formatDate(event.startDate),
+      formatDate(event.endDate),
+      event.transactionCount || 0,
+      event.grossRevenue || 0,
+      event.totalRefunds || 0,
+      event.totalRevenue || 0,
+      event.walletPayments || 0,
+      event.cardPayments || 0,
+    ];
+
+    dataRow.font = {
+      name: "Calibri",
+      size: 11,
+      color: { argb: "FF1A202C" },
+    };
+    dataRow.alignment = {
+      vertical: "middle",
+      horizontal: "left",
+    };
+    dataRow.height = 22;
+
+    // Alternating row colors
+    const fillColor = index % 2 === 0 ? "FFF9FAFB" : "FFFFFFFF";
+
+    ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+      const cell = worksheet.getCell(`${col}${rowIndex}`);
+      cell.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: fillColor },
+      };
+      // Strong visible borders for all cells
+      cell.border = {
+        top: { style: "thin", color: { argb: "FF000000" } },
+        left: { style: "thin", color: { argb: "FF000000" } },
+        bottom: { style: "thin", color: { argb: "FF000000" } },
+        right: { style: "thin", color: { argb: "FF000000" } },
+      };
+
+      // Format currency columns
+      if (["F", "G", "H", "I", "J"].includes(col)) {
+        cell.numFmt = "$#,##0.00";
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "right",
+        };
+      }
+
+      // Center align specific columns
+      if (["B", "C", "D", "E"].includes(col)) {
+        cell.alignment = {
+          vertical: "middle",
+          horizontal: "center",
+        };
+      }
+    });
+  });
+
+  // Add bottom border to last data row
+  const lastDataRow = allEvents.length + 2;
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${lastDataRow}`);
+    cell.border = {
+      ...cell.border,
+      bottom: { style: "medium", color: { argb: "FF000000" } },
+    };
+  });
+
+  // Total row at the bottom
+  const totalRowIndex = allEvents.length + 3;
+  const totalRow = worksheet.getRow(totalRowIndex);
+  totalRow.values = [
+    `Total Events: ${allEvents.length}`,
+    "",
+    "",
+    "",
+    "",
+    reportData.grossRevenue || 0,
+    reportData.totalRefunds || 0,
+    reportData.netRevenue || 0,
+    reportData.paymentBreakdown.wallet || 0,
+    reportData.paymentBreakdown.card || 0,
+  ];
+  totalRow.font = {
+    name: "Calibri",
+    size: 11,
+    bold: true,
+    color: { argb: "FF000000" },
+  };
+  totalRow.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  totalRow.height = 25;
+
+  ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J"].forEach((col) => {
+    const cell = worksheet.getCell(`${col}${totalRowIndex}`);
+    cell.fill = {
+      type: "pattern",
+      pattern: "solid",
+      fgColor: { argb: "FFE8E8E8" },
+    };
+    cell.border = {
+      top: { style: "thin", color: { argb: "FF000000" } },
+      left: { style: "thin", color: { argb: "FF000000" } },
+      bottom: { style: "thin", color: { argb: "FF000000" } },
+      right: { style: "thin", color: { argb: "FF000000" } },
+    };
+
+    // Format currency columns in total row
+    if (["F", "G", "H", "I", "J"].includes(col)) {
+      cell.numFmt = "$#,##0.00";
+      cell.alignment = {
+        vertical: "middle",
+        horizontal: "right",
+      };
+    }
+  });
+
+  // Footer (only spans table columns)
+  const footerRowIndex = totalRowIndex + 2;
+  worksheet.getRow(footerRowIndex - 1).height = 10;
+
+  worksheet.mergeCells(`A${footerRowIndex}:J${footerRowIndex}`);
+  const footerCell = worksheet.getCell(`A${footerRowIndex}`);
+  footerCell.value = `Report generated by Eventy | ${new Date().getFullYear()} © All rights reserved`;
+  footerCell.font = {
+    name: "Calibri",
+    size: 9,
+    italic: true,
+    color: { argb: "FF9CA3AF" },
+  };
+  footerCell.alignment = {
+    vertical: "middle",
+    horizontal: "center",
+  };
+  footerCell.border = {
+    top: { style: "thin", color: { argb: "FFE5E7EB" } },
+  };
+  worksheet.getRow(footerRowIndex).height = 25;
+
+  // Set column widths for better readability
+  worksheet.getColumn(1).width = 30; // Event Name
+  worksheet.getColumn(2).width = 15; // Type
+  worksheet.getColumn(3).width = 12; // Start Date
+  worksheet.getColumn(4).width = 12; // End Date
+  worksheet.getColumn(5).width = 12; // Transactions
+  worksheet.getColumn(6).width = 15; // Gross Revenue
+  worksheet.getColumn(7).width = 12; // Refunds
+  worksheet.getColumn(8).width = 15; // Net Revenue
+  worksheet.getColumn(9).width = 15; // Wallet Payments
+  worksheet.getColumn(10).width = 15; // Card Payments
+
+  // Set print options
+  worksheet.pageSetup = {
+    paperSize: 9, // A4
+    orientation: "landscape",
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: {
+      left: 0.7,
+      right: 0.7,
+      top: 0.75,
+      bottom: 0.75,
+      header: 0.3,
+      footer: 0.3,
+    },
+  };
+
+  // Generate buffer
+  buffer = await workbook.xlsx.writeBuffer();
+  mimeType =
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+  filename = `sales_report_${timestamp}.xlsx`;
+
+  return { buffer, filename, mimeType };
 };
 
 /**

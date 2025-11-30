@@ -1,27 +1,5 @@
 import mongoose from "mongoose";
 
-const feedbackCommentSchema = new mongoose.Schema(
-  {
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
-    body: {
-      type: String,
-      required: true,
-      maxlength: 1000,
-    },
-    deletedAt: {
-      type: Date,
-      default: null,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
-
 const feedbackSchema = new mongoose.Schema(
   {
     eventId: {
@@ -40,11 +18,19 @@ const feedbackSchema = new mongoose.Schema(
       min: 1,
       max: 5,
     },
-
-    comments: [feedbackCommentSchema],
+    comment: {
+      type: String,
+      required: false,
+      maxlength: 1000,
+      trim: true,
+    },
     deletedAt: {
       type: Date,
       default: null, // null means not deleted
+    },
+    commentDeletedAt: {
+      type: Date,
+      default: null, // null means comment was not deleted by admin
     },
   },
   {
@@ -52,12 +38,13 @@ const feedbackSchema = new mongoose.Schema(
   }
 );
 
-// Ensure one feedback per user per event (only for non-deleted feedback)
+// Ensure one rating per user per event (only for non-deleted feedback that contains a rating)
 feedbackSchema.index(
   { eventId: 1, userId: 1 },
   {
     unique: true,
-    partialFilterExpression: { deletedAt: null },
+    name: "rating_unique_per_user_event",
+    partialFilterExpression: { deletedAt: null, rating: { $gte: 1 } },
   }
 );
 

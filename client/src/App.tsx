@@ -10,11 +10,13 @@ import SignUp from "@/pages/SignUp";
 import Login from "@/pages/Login";
 import AdminUsers from "@/pages/AdminUsers";
 import AdminDashboardPage from "@/pages/AdminDashboardPage";
-import AdminRatings from "@/pages/AdminRatings";
+import FeedbackDashboard from "@/pages/FeedbackDashboard";
 import CreateConference from "@/pages/CreateConference";
 import EditConference from "@/pages/EditConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
 import CreateTrip from "@/pages/CreateTrip";
+import CreateTripForm from "@/pages/CreateTripForm";
+import EditTrip from "@/pages/EditTrip";
 import CreateBazaar from "@/pages/CreateBazaar";
 import VendorDashboard from "@/pages/VendorDashboard";
 import SportsFacilities from "@/pages/SportsFacilities";
@@ -37,6 +39,7 @@ import SalesReport from "@/components/SalesReportPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 function Router() {
@@ -55,23 +58,25 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
+      <Route path="/booth-vote">
+        <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
+          <BoothVotePage />
+        </ProtectedRoute>
+      </Route>
+
       <Route path="/admin">
         <ProtectedRoute allowedRoles={["admin"]}>
           <AdminDashboardPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/admin/ratings">
-        <ProtectedRoute
-          allowedRoles={[
-            "admin",
-            "events_office",
-            "student",
-            "staff",
-            "ta",
-            "professor",
-          ]}
-        >
-          <AdminRatings />
+      <Route path="/admin/feedback">
+        <ProtectedRoute allowedRoles={["admin"]}>
+          <FeedbackDashboard />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/feedback">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <FeedbackDashboard />
         </ProtectedRoute>
       </Route>
       <Route path="/events-office/create/conference">
@@ -110,9 +115,19 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/trip">
+      <Route path="/trips">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <CreateTrip />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/create/trip">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateTripForm />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/events/trip/edit/:id">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EditTrip />
         </ProtectedRoute>
       </Route>
       <Route path="/staff-ta">

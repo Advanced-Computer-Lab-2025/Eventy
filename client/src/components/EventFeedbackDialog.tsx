@@ -28,8 +28,8 @@ interface Comment {
     lastName?: string;
     email?: string;
   } | null;
-  rating: number;
-  comment: string;
+  rating?: number;
+  comment?: string;
   createdAt: string;
 }
 
@@ -142,10 +142,14 @@ export default function EventFeedbackDialog({
   const validateForm = () => {
     let isValid = true;
 
-    // Validate rating
-    if (rating < 1 || rating > 5) {
-      setRatingError("Please select a rating between 1 and 5");
-      isValid = false;
+    // Validate rating if provided
+    if (rating !== 0) {
+      if (rating < 1 || rating > 5) {
+        setRatingError("Please select a rating between 1 and 5");
+        isValid = false;
+      } else {
+        setRatingError("");
+      }
     } else {
       setRatingError("");
     }
@@ -156,6 +160,18 @@ export default function EventFeedbackDialog({
       isValid = false;
     } else {
       setCommentError("");
+    }
+
+    // Require at least rating or non-empty comment
+    if (rating === 0 && comment.trim().length === 0) {
+      isValid = false;
+      if (!ratingError && !commentError) {
+        toast({
+          title: "Validation",
+          description: "Provide at least a rating or a non-empty comment",
+          variant: "destructive",
+        });
+      }
     }
 
     return isValid;
@@ -169,6 +185,13 @@ export default function EventFeedbackDialog({
     try {
       setSubmitting(true);
       const token = localStorage.getItem("token");
+      const body: any = {
+        eventId,
+      };
+      // Only include rating if user hasn't already rated and selected a rating
+      if (!hasSubmitted && rating > 0) body.rating = rating;
+      if (comment.trim().length > 0) body.comment = comment;
+
       const response = await fetch(
         `http://localhost:4000/api/feedback/events/${eventId}`,
         {
@@ -177,11 +200,7 @@ export default function EventFeedbackDialog({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({
-            eventId,
-            rating,
-            comment,
-          }),
+          body: JSON.stringify(body),
         }
       );
 
@@ -193,7 +212,7 @@ export default function EventFeedbackDialog({
       // Clear form and refresh feedback
       setRating(0);
       setComment("");
-      setHasSubmitted(true);
+      setHasSubmitted((prev) => prev || typeof body.rating === "number");
       fetchUserFeedback();
       fetchFeedback();
 
@@ -224,7 +243,7 @@ export default function EventFeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] max-h-[95vh] flex flex-col pb-3 pt-4 px-4">
         <DialogHeader>
           <DialogTitle>Event Feedback</DialogTitle>
           <DialogDescription>
@@ -241,68 +260,76 @@ export default function EventFeedbackDialog({
                 <div className="h-4 bg-muted-foreground/20 rounded w-2/3 mx-auto"></div>
               </div>
             </div>
-          ) : hasSubmitted ? (
-            <div className="bg-muted rounded-lg p-6 text-center space-y-4">
-              <div className="text-lg font-medium">
-                You've already submitted feedback
-              </div>
-              {userFeedback && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-center gap-1 text-yellow-400">
-                    {[...Array(5)].map((_, index) => (
-                      <Star
-                        key={index}
-                        className={`w-5 h-5 ${
-                          index < userFeedback.rating
-                            ? "fill-current"
-                            : "text-muted"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                  {userFeedback.comment && (
-                    <p className="text-sm text-muted-foreground italic">
-                      "{userFeedback.comment}"
-                    </p>
-                  )}
-                  <p className="text-xs text-muted-foreground">
-                    Submitted on {formatDate(userFeedback.createdAt)}
-                  </p>
-                </div>
-              )}
-            </div>
           ) : (
             <>
-              {/* Rating Section */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Your Rating *</label>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => {
-                        setRating(index);
-                        setRatingError("");
-                      }}
-                      onMouseEnter={() => setHoverRating(index)}
-                      onMouseLeave={() => setHoverRating(0)}
-                      className="focus:outline-none"
-                    >
-                      <Star
-                        className={`w-6 h-6 ${
-                          index <= (hoverRating || rating)
-                            ? "fill-yellow-400 text-yellow-400"
-                            : "text-muted-foreground"
-                        }`}
-                      />
-                    </button>
-                  ))}
+              {hasSubmitted && userFeedback && (
+                <div
+                  className={`bg-muted rounded-lg text-center space-y-2 ${
+                    !userFeedback.comment || userFeedback.comment.length < 40
+                      ? "p-3"
+                      : "p-6"
+                  }`}
+                >
+                  <div className="text-lg font-medium">
+                    You've already rated this event
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-center gap-1 text-yellow-400">
+                      {[...Array(5)].map((_, index) => (
+                        <Star
+                          key={index}
+                          className={`w-5 h-5 ${
+                            index < (userFeedback.rating || 0)
+                              ? "fill-current"
+                              : "text-muted"
+                          }`}
+                        />
+                      ))}
+                    </div>
+                    {userFeedback.comment && (
+                      <p className="text-sm text-muted-foreground italic">
+                        "{userFeedback.comment}"
+                      </p>
+                    )}
+                    <p className="text-xs text-muted-foreground">
+                      Submitted on {formatDate(userFeedback.createdAt)}
+                    </p>
+                  </div>
                 </div>
-                {ratingError && (
-                  <p className="text-sm text-destructive">{ratingError}</p>
-                )}
-              </div>
+              )}
+
+              {/* Rating Section (only show if not already rated) */}
+              {!hasSubmitted && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Your Rating</label>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((index) => (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          setRating(index);
+                          setRatingError("");
+                        }}
+                        onMouseEnter={() => setHoverRating(index)}
+                        onMouseLeave={() => setHoverRating(0)}
+                        className="focus:outline-none"
+                      >
+                        <Star
+                          className={`w-6 h-6 ${
+                            index <= (hoverRating || rating)
+                              ? "fill-yellow-400 text-yellow-400"
+                              : "text-muted-foreground"
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                  {ratingError && (
+                    <p className="text-sm text-destructive">{ratingError}</p>
+                  )}
+                </div>
+              )}
 
               {/* Comment Section */}
               <div className="space-y-2">
@@ -342,9 +369,13 @@ export default function EventFeedbackDialog({
               <Button
                 onClick={handleSubmit}
                 className="w-full"
-                disabled={rating === 0 || submitting || comment.length > 1000}
+                disabled={
+                  submitting ||
+                  comment.length > 1000 ||
+                  (rating === 0 && comment.trim().length === 0)
+                }
               >
-                {submitting ? "Submitting..." : "Submit Feedback"}
+                {submitting ? "Submitting..." : "Submit"}
               </Button>
             </>
           )}
@@ -382,21 +413,25 @@ export default function EventFeedbackDialog({
                             {formatDate(comment.createdAt)}
                           </span>
                         </div>
-                        <div className="flex items-center gap-1 text-yellow-400">
-                          {[...Array(5)].map((_, index) => (
-                            <Star
-                              key={index}
-                              className={`w-4 h-4 ${
-                                index < comment.rating
-                                  ? "fill-current"
-                                  : "text-muted"
-                              }`}
-                            />
-                          ))}
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-1">
-                          {comment.comment}
-                        </p>
+                        {typeof comment.rating === "number" && (
+                          <div className="flex items-center gap-1 text-yellow-400">
+                            {[...Array(5)].map((_, index) => (
+                              <Star
+                                key={index}
+                                className={`w-4 h-4 ${
+                                  index < (comment.rating || 0)
+                                    ? "fill-current"
+                                    : "text-muted"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {comment.comment && (
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {comment.comment}
+                          </p>
+                        )}
                       </div>
                     );
                   })

@@ -9,6 +9,7 @@ import {
   Gift,
   Wallet,
   Star,
+  Store,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -50,7 +51,10 @@ export default function StudentHeader({
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setLocation("/home")}
+          >
             <Logo size="xl" />
           </div>
 
@@ -123,6 +127,16 @@ export default function StudentHeader({
             onClick={() => setLocation("/admin/ratings")}
           >
             <Star className="h-4 w-4" /> Ratings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-2"
+            onClick={() => setLocation("/booth-vote")}
+            data-testid="button-nav-booth-vote"
+          >
+            <Store className="h-4 w-4" />
+            Booth Voting
           </Button>
         </div>
       </div>

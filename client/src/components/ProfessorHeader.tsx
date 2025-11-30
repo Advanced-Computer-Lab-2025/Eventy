@@ -1,8 +1,11 @@
 import {
+  Bell,
+  User,
   Home,
   BookOpen,
   Dumbbell,
   Calendar,
+  Store,
   Heart,
   Gift,
   Star,
@@ -48,7 +51,10 @@ export default function ProfessorHeader({
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setLocation("/professor")}
+          >
             <Logo size="xl" />
           </div>
 
@@ -111,22 +117,22 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
+            className={`gap-2 ${location === "/booth-vote" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/booth-vote")}
+            data-testid="button-nav-booth-vote"
+          >
+            <Store className="h-4 w-4" />
+            Booth Voting
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             className={`gap-2 ${location === "/favorites" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/favorites")}
             data-testid="button-nav-favorites"
           >
             <Heart className="h-4 w-4" />
             Favorites
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/admin/ratings")}
-            data-testid="button-nav-ratings"
-          >
-            <Star className="h-4 w-4" />
-            Ratings
           </Button>
           <Button
             variant="ghost"

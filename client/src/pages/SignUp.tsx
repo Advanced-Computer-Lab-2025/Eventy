@@ -62,6 +62,18 @@ export default function SignUp() {
     return studentIdPattern.test(id);
   };
 
+  const validateStudentEmail = (email: string): boolean => {
+    // require firstname.lastname@student.guc.edu.eg
+    const pattern = /^[a-zA-Z]+\.[a-zA-Z]+@student\.guc\.edu\.eg$/i;
+    return pattern.test(email);
+  };
+
+  const validateStaffEmail = (email: string): boolean => {
+    // require firstname.lastname@guc.edu.eg (covers staff/ta/professor)
+    const pattern = /^[a-zA-Z]+\.[a-zA-Z]+@guc\.edu\.eg$/i;
+    return pattern.test(email);
+  };
+
   const validateStaffId = (id: string): boolean => {
     const staffIdPattern = /^\d{4}$/;
     return staffIdPattern.test(id);
@@ -76,6 +88,16 @@ export default function SignUp() {
         title: "Invalid Student ID",
         description:
           "Student ID must follow the format XX-XXXX (e.g., 58-1001)",
+      });
+      return;
+    }
+
+    if (!validateStudentEmail(studentForm.email)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Student Email",
+        description:
+          "Student email must be in the form firstname.lastname@student.guc.edu.eg",
       });
       return;
     }
@@ -117,6 +139,16 @@ export default function SignUp() {
         variant: "destructive",
         title: "Invalid Staff ID",
         description: "Staff ID must be exactly 4 digits (e.g., 1234)",
+      });
+      return;
+    }
+
+    if (!validateStaffEmail(staffForm.email)) {
+      toast({
+        variant: "destructive",
+        title: "Invalid Staff Email",
+        description:
+          "Staff email must be in the form firstname.lastname@guc.edu.eg",
       });
       return;
     }

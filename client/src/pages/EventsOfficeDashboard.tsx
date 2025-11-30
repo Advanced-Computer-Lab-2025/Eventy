@@ -1157,7 +1157,7 @@ export default function EventsOfficeDashboard() {
                               className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
                               onClick={() => {
                                 setIsCreateEventDialogOpen(false);
-                                setLocation("/create/trip");
+                                setLocation("/events-office/create/trip");
                               }}
                             >
                               <Plane className="h-4 w-4" />
@@ -1424,11 +1424,34 @@ export default function EventsOfficeDashboard() {
                                 price={event.price}
                                 showDetailedView={true}
                                 canDelete={false}
-                                {...(isPastEvent && {
-                                  onArchive: () =>
-                                    handleArchiveEvent(event._id),
-                                  isArchiving: archivingId === event._id,
-                                })}
+                                hideRegisterButton={true}
+                                fillButtonWidth={true}
+                                onViewDetails={() => handleCardClick(event._id)}
+                                {...(isPastEvent
+                                  ? {
+                                      onArchive: () =>
+                                        handleArchiveEvent(event._id),
+                                      isArchiving: archivingId === event._id,
+                                    }
+                                  : ["trip", "conference", "bazaar"].includes(
+                                        event.eventType
+                                      )
+                                    ? {
+                                        onEdit: () => {
+                                          const editRoutes: Record<
+                                            string,
+                                            string
+                                          > = {
+                                            conference: `/events-office/events/conference/edit/${event._id}`,
+                                            trip: `/events-office/events/trip/edit/${event._id}`,
+                                            bazaar: `/create/bazaar?id=${event._id}`,
+                                          };
+                                          const route =
+                                            editRoutes[event.eventType];
+                                          if (route) setLocation(route);
+                                        },
+                                      }
+                                    : {})}
                               />
                             </div>
                           );
@@ -1459,78 +1482,6 @@ export default function EventsOfficeDashboard() {
               </Card>
             </div>
           </div>
-
-          {/* Existing Bazaars */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Bazaars</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BazaarList
-                bazaars={formattedBazaars}
-                showFilters={true}
-                onEdit={(id: string) => setLocation(`/create/bazaar?id=${id}`)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Conferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Conferences</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Input
-                  placeholder="Search conferences..."
-                  value={confSearch}
-                  onChange={(e) => setConfSearch(e.target.value)}
-                />
-              </div>
-              {loadingConfs ? (
-                <p>Loading conferences...</p>
-              ) : filteredConfs.length === 0 ? (
-                <p className="text-muted-foreground">No conferences found.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredConfs.map((c: any) => (
-                    <div
-                      key={c._id}
-                      className="border rounded-lg p-4 flex flex-col gap-2"
-                    >
-                      <div className="font-semibold line-clamp-2">
-                        {c.name || "Untitled Conference"}
-                      </div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">
-                        {c.description}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {c.startDate
-                          ? new Date(c.startDate).toLocaleString()
-                          : "TBA"}
-                        {c.endDate
-                          ? ` - ${new Date(c.endDate).toLocaleString()}`
-                          : ""}
-                      </div>
-                      <div className="pt-2">
-                        <Button
-                          variant="outline"
-                          onClick={() =>
-                            setLocation(
-                              `/events-office/events/conference/edit/${c._id}`
-                            )
-                          }
-                          className="w-full justify-center"
-                        >
-                          <Edit className="h-4 w-4 mr-2" /> Edit
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </main>
       <EventDetailsDialog
