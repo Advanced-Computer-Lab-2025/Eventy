@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import Header from "@/components/Header";
 import StaffHeader from "@/components/StaffHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
+import StudentHeader from "@/components/StudentHeader";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -25,17 +26,6 @@ interface Poll {
   userVoteOptionId?: string | null;
 }
 
-function getRoleFromToken(): string | null {
-  try {
-    const token = localStorage.getItem("token");
-    if (!token) return null;
-    const payload = JSON.parse(atob(token.split(".")[1]));
-    return payload?.role || null;
-  } catch {
-    return null;
-  }
-}
-
 export default function BoothVotePage() {
   const { toast } = useToast();
   const [polls, setPolls] = useState<Poll[]>([]);
@@ -45,8 +35,20 @@ export default function BoothVotePage() {
     Record<string, string>
   >({});
   const [submittingPollId, setSubmittingPollId] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string>("");
 
-  const role = getRoleFromToken();
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        const role = (parsed?.role || "").toLowerCase();
+        setUserRole(role);
+      }
+    } catch (err) {
+      console.error("Error parsing user data:", err);
+    }
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -192,9 +194,17 @@ export default function BoothVotePage() {
   };
 
   const renderHeader = () => {
-    if (role === "professor") return <ProfessorHeader />;
-    if (role === "staff" || role === "ta") return <StaffHeader />;
-    return <Header showHomeTop homeHref="/home" />;
+    switch (userRole) {
+      case "student":
+        return <StudentHeader />;
+      case "staff":
+      case "ta":
+        return <StaffHeader />;
+      case "professor":
+        return <ProfessorHeader />;
+      default:
+        return <Header showHomeTop homeHref="/home" />;
+    }
   };
 
   return (
