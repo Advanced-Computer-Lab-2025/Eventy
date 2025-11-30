@@ -6,7 +6,9 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { CheckCircle2 } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -113,6 +115,17 @@ export default function BoothVotePage() {
       return;
     }
 
+    const currentPoll = polls.find((p) => p._id === pollId);
+    const wasChangingVote = !!currentPoll?.userVoteOptionId;
+    const previousVoteId = currentPoll?.userVoteOptionId;
+
+    // Optimistic update - update UI immediately
+    setPolls((prev) =>
+      prev.map((p) =>
+        p._id === pollId ? { ...p, userVoteOptionId: optionId } : p
+      )
+    );
+
     try {
       setSubmittingPollId(pollId);
       const token = localStorage.getItem("token");
@@ -139,21 +152,31 @@ export default function BoothVotePage() {
 
       const body = await res.json();
       if (!res.ok) {
+        // Revert optimistic update on error
+        setPolls((prev) =>
+          prev.map((p) =>
+            p._id === pollId
+              ? { ...p, userVoteOptionId: previousVoteId || undefined }
+              : p
+          )
+        );
         throw new Error(body.message || "Failed to submit vote");
       }
 
-      toast({
-        title: "Vote submitted",
-        description: "Your vote has been recorded for this booth poll.",
-      });
-
-      // Update local polls with server response
+      // Update with server response (in case server has additional data)
       const updatedPoll = body.data as Poll;
       setPolls((prev) =>
         prev.map((p) =>
           p._id === updatedPoll._id ? { ...p, ...updatedPoll } : p
         )
       );
+
+      toast({
+        title: wasChangingVote ? "Vote updated" : "Vote submitted",
+        description: wasChangingVote
+          ? "Your vote has been successfully changed."
+          : "Your vote has been recorded for this booth poll.",
+      });
     } catch (err: any) {
       toast({
         title: "Failed to submit vote",
@@ -196,48 +219,105 @@ export default function BoothVotePage() {
           </p>
         ) : (
           <div className="space-y-4">
-            {polls.map((poll) => (
-              <Card key={poll._id}>
-                <CardHeader>
-                  <CardTitle>{poll.question}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <RadioGroup
-                    value={selectedOptions[poll._id] || ""}
-                    onValueChange={(val) => handleSelect(poll._id, val)}
-                  >
-                    {poll.options.map((opt) => (
-                      <div
-                        key={opt._id}
-                        className="flex items-center space-x-3 rounded-md border p-3 hover:bg-accent/50"
-                      >
-                        <RadioGroupItem
-                          value={opt._id}
-                          id={`${poll._id}-${opt._id}`}
-                        />
-                        <Label
-                          htmlFor={`${poll._id}-${opt._id}`}
-                          className="cursor-pointer"
+            {polls.map((poll) => {
+              const hasVoted = !!poll.userVoteOptionId;
+              const votedOption = poll.options.find(
+                (opt) => opt._id === poll.userVoteOptionId
+              );
+              const isChangingVote =
+                hasVoted &&
+                selectedOptions[poll._id] &&
+                selectedOptions[poll._id] !== poll.userVoteOptionId;
+
+              return (
+                <Card key={poll._id}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{poll.question}</CardTitle>
+                      {hasVoted && (
+                        <Badge
+                          variant="secondary"
+                          className="flex items-center gap-1.5 bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
                         >
-                          {opt.optionText}
-                        </Label>
-                      </div>
-                    ))}
-                  </RadioGroup>
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={() => handleVote(poll._id)}
-                      disabled={submittingPollId === poll._id}
-                      className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-5 py-2 text-sm font-semibold rounded-lg"
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Voted
+                        </Badge>
+                      )}
+                    </div>
+                    {hasVoted && votedOption && (
+                      <p className="text-sm text-muted-foreground mt-2">
+                        You voted for:{" "}
+                        <span className="font-semibold text-foreground">
+                          {votedOption.optionText}
+                        </span>
+                      </p>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <RadioGroup
+                      value={selectedOptions[poll._id] || ""}
+                      onValueChange={(val) => handleSelect(poll._id, val)}
                     >
-                      {submittingPollId === poll._id
-                        ? "Submitting..."
-                        : "Submit Vote"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                      {poll.options.map((opt) => {
+                        const isVotedOption = opt._id === poll.userVoteOptionId;
+                        const isSelected =
+                          selectedOptions[poll._id] === opt._id;
+
+                        return (
+                          <div
+                            key={opt._id}
+                            className={`flex items-center space-x-3 rounded-md border p-3 hover:bg-accent/50 ${
+                              isVotedOption
+                                ? "border-green-500 bg-green-50 dark:bg-green-950/20"
+                                : isSelected
+                                  ? "border-primary bg-accent"
+                                  : ""
+                            }`}
+                          >
+                            <RadioGroupItem
+                              value={opt._id}
+                              id={`${poll._id}-${opt._id}`}
+                            />
+                            <Label
+                              htmlFor={`${poll._id}-${opt._id}`}
+                              className="cursor-pointer flex-1 flex items-center justify-between"
+                            >
+                              <span>{opt.optionText}</span>
+                              {isVotedOption && (
+                                <Badge
+                                  variant="outline"
+                                  className="ml-2 border-green-500 text-green-700 dark:text-green-400"
+                                >
+                                  Your vote
+                                </Badge>
+                              )}
+                            </Label>
+                          </div>
+                        );
+                      })}
+                    </RadioGroup>
+                    {(!hasVoted || isChangingVote) && (
+                      <div className="flex justify-end">
+                        <Button
+                          onClick={() => handleVote(poll._id)}
+                          disabled={
+                            submittingPollId === poll._id ||
+                            !selectedOptions[poll._id]
+                          }
+                          className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white px-5 py-2 text-sm font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {submittingPollId === poll._id
+                            ? "Submitting..."
+                            : isChangingVote
+                              ? "Change Vote"
+                              : "Submit Vote"}
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
       </main>
