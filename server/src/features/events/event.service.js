@@ -415,10 +415,7 @@ export const getUpcomingEventsService = async (
   const filter = {
     status: "approved",
     deletedAt: null,
-    $or: [
-      { startDate: { $gte: now } }, // Regular events with future startDate
-      { eventType: "platform_booth" }, // Platform booths (may not have startDate)
-    ],
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
   };
 
   // Filter out events where the user's role is restricted
