@@ -26,6 +26,7 @@ export default function CreatePrivilegedUserForm({
     email: "",
     password: "",
     role: "admin" as "admin" | "events_office",
+    studentStaffId: "",
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,8 +58,24 @@ export default function CreatePrivilegedUserForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
       {error && <p className="text-sm text-red-500">{error}</p>}
+
+      {/* Hidden dummy fields to prevent autofill */}
+      <input
+        type="email"
+        name="fake-email"
+        autoComplete="email"
+        style={{ display: "none" }}
+        tabIndex={-1}
+      />
+      <input
+        type="text"
+        name="fake-username"
+        autoComplete="username"
+        style={{ display: "none" }}
+        tabIndex={-1}
+      />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -87,6 +104,23 @@ export default function CreatePrivilegedUserForm({
             required
           />
         </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="studentStaffId">
+          ID <span className="text-red-500">*</span>
+        </Label>
+        <Input
+          id="studentStaffId"
+          name="staff-identifier"
+          type="text"
+          placeholder="ex: ac-1234"
+          value={form.studentStaffId}
+          onChange={(e) => setForm({ ...form, studentStaffId: e.target.value })}
+          autoComplete="off"
+          data-form-type="other"
+          required
+        />
       </div>
 
       <div className="space-y-2">
