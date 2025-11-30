@@ -33,7 +33,10 @@ export default function AdminHeader() {
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2 -ml-6">
+          <div
+            className="flex items-center gap-2 -ml-6 cursor-pointer"
+            onClick={() => setLocation("/admin")}
+          >
             <Logo size="xl" />
           </div>
 
