@@ -6,7 +6,7 @@ import { favoriteEventSchema } from "./user.validation.js";
 
 class UserService {
   async createManagementAccount(data) {
-    const { firstName, lastName, email, password, role } = data;
+    const { firstName, lastName, email, password, role, studentStaffId } = data;
 
     if (!["admin", "events_office"].includes(role)) {
       throw new Error(
@@ -33,6 +33,7 @@ class UserService {
       existingUser.status = "active";
       existingUser.deletedAt = null;
       existingUser.isVerified = true;
+      existingUser.studentStaffId = studentStaffId;
       await existingUser.save();
       newUser = existingUser;
     } else {
@@ -43,6 +44,7 @@ class UserService {
         password: hashedPassword,
         role,
         status: "active",
+        studentStaffId,
       });
     }
 

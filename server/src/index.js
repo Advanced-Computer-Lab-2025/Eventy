@@ -1,6 +1,7 @@
 import "dotenv/config"; // Make sure this is at the very top
 import app from "./app.js";
 import connectDB from "./config/db.js";
+import { startReminderScheduler } from "./features/events/event.service.js";
 import { initCertificateScheduler } from "./utils/certificate-scheduler.js";
 import Feedback from "./features/feedback/feedback.model.js";
 
@@ -40,6 +41,10 @@ const startServer = async () => {
   // Start the Express server
   const server = app.listen(PORT, () => {
     console.log(`Server listening on port ${PORT}`);
+
+    // Start the event reminder scheduler
+    startReminderScheduler();
+    console.log("Event reminder scheduler started");
   });
 
   // handle listen errors (EADDRINUSE)

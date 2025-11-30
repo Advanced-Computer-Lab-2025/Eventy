@@ -9,7 +9,6 @@ export default function NotFound() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="w-full flex items-center justify-center pt-20 px-4">
         <Card className="w-full max-w-lg mx-4 overflow-visible">
           <CardContent className="pt-12 pb-8 overflow-visible">

@@ -70,6 +70,18 @@ export default function CreateWorkshop() {
 
     (async () => {
       try {
+        // Validate registration deadline (must be today or in the future)
+        const todayIso = new Date().toISOString().slice(0, 10);
+        if (formData.deadline && formData.deadline < todayIso) {
+          toast({
+            title: "Invalid registration deadline",
+            description:
+              "Registration deadline must be today or a future date.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
         const baseUrl =
           (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
         const res = await fetch(`${baseUrl}/api/users/professors`, {

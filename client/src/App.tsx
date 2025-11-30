@@ -15,6 +15,8 @@ import CreateConference from "@/pages/CreateConference";
 import EditConference from "@/pages/EditConference";
 import CreateWorkshop from "@/pages/CreateWorkshop";
 import CreateTrip from "@/pages/CreateTrip";
+import CreateTripForm from "@/pages/CreateTripForm";
+import EditTrip from "@/pages/EditTrip";
 import CreateBazaar from "@/pages/CreateBazaar";
 import VendorDashboard from "@/pages/VendorDashboard";
 import SportsFacilities from "@/pages/SportsFacilities";
@@ -37,6 +39,7 @@ import SalesReport from "@/components/SalesReportPage";
 import FavoritesPage from "@/pages/FavoritesPage";
 
 import EventsOfficeReportPage from "@/pages/EventsReportPage";
+import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 function Router() {
@@ -52,6 +55,12 @@ function Router() {
       <Route path="/home">
         <ProtectedRoute allowedRoles={["student"]}>
           <Home />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/booth-vote">
+        <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
+          <BoothVotePage />
         </ProtectedRoute>
       </Route>
 
@@ -106,9 +115,19 @@ function Router() {
           <EditWorkshop />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/trip">
+      <Route path="/trips">
         <ProtectedRoute allowedRoles={["events_office"]}>
           <CreateTrip />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/create/trip">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateTripForm />
+        </ProtectedRoute>
+      </Route>
+      <Route path="/events-office/events/trip/edit/:id">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <EditTrip />
         </ProtectedRoute>
       </Route>
       <Route path="/staff-ta">

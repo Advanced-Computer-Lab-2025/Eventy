@@ -101,6 +101,22 @@ export default function MyEvents() {
     };
 
     fetchEvents();
+
+    // Listen for registrations happening elsewhere in the app and refetch
+    const onRegistered = (e: any) => {
+      try {
+        // If the event was passed and user already has it, skip; otherwise refetch
+        fetchEvents();
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    window.addEventListener("event:registered", onRegistered as any);
+
+    return () => {
+      window.removeEventListener("event:registered", onRegistered as any);
+    };
   }, []);
 
   // Fetch full event details by ID

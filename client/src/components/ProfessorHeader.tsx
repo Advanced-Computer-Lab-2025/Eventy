@@ -1,8 +1,11 @@
 import {
+  Bell,
+  User,
   Home,
   BookOpen,
   Dumbbell,
   Calendar,
+  Store,
   Heart,
   Gift,
   Star,
@@ -107,6 +110,16 @@ export default function ProfessorHeader({
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/booth-vote" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/booth-vote")}
+            data-testid="button-nav-booth-vote"
+          >
+            <Store className="h-4 w-4" />
+            Booth Voting
           </Button>
           <Button
             variant="ghost"

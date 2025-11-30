@@ -9,6 +9,7 @@ import {
   Clock,
   DollarSign,
   ArchiveRestore,
+  Edit,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -115,6 +116,7 @@ export interface EventCardProps {
   isArchiving?: boolean;
   onUnarchive?: () => void;
   isUnarchiving?: boolean;
+  onEdit?: () => void;
   canDelete?: boolean;
   className?: string;
   allowCancellation?: boolean;
@@ -157,6 +159,7 @@ export default function EventCard({
   isArchiving = false,
   onUnarchive,
   isUnarchiving = false,
+  onEdit,
   canDelete = false,
   status,
   className,
@@ -279,13 +282,28 @@ export default function EventCard({
         });
         return;
       }
+      const data = await res.json().catch(() => null);
+
       toast({
         title: "Registered!",
         description: "You are now registered for this event.",
       });
 
+      // Update local UI state
       setRegistered(true);
       setLocalAttendeeCount((prev) => prev + 1);
+
+      // Dispatch a custom event so other parts of the app (e.g. MyEvents)
+      // can react and refetch their data if needed
+      try {
+        window.dispatchEvent(
+          new CustomEvent("event:registered", {
+            detail: { eventId: id, event: data?.event || null },
+          })
+        );
+      } catch (e) {
+        // ignore if dispatch not supported
+      }
     } catch {
       toast({
         title: "Error",
@@ -594,13 +612,14 @@ export default function EventCard({
               </div>
 
               {/* ACTION BUTTONS (Detailed View) */}
-              <div className="flex gap-2 mt-auto">
+              <div className="flex gap-2 mt-auto w-full">
                 {registered && startDate && new Date() > new Date(startDate) ? (
                   <>
                     <div className="flex gap-2 flex-1 justify-center">
                       {onViewDetails && (
                         <Button
                           variant="outline"
+                          className={canRegister ? "flex-1" : "w-full"}
                           onClick={(e) => {
                             e.stopPropagation();
                             onViewDetails();
@@ -644,36 +663,103 @@ export default function EventCard({
                   </>
                 ) : registered ? (
                   allowCancellation ? (
-                    <Button
-                      className="flex-1"
-                      variant="destructive"
-                      onClick={() => setShowCancelDialog(true)}
-                      disabled={isCanceling}
-                    >
-                      {isCanceling ? "Canceling..." : "Cancel Registration"}
-                    </Button>
+                    <div className="flex flex-col gap-2 w-full">
+                      {onViewDetails && (
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDetails();
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      )}
+                      <Button
+                        className="w-full"
+                        variant="destructive"
+                        onClick={() => setShowCancelDialog(true)}
+                        disabled={isCanceling}
+                      >
+                        {isCanceling ? "Canceling..." : "Cancel Registration"}
+                      </Button>
+                    </div>
                   ) : (
-                    <Button className="flex-1" disabled>
-                      Registered
-                    </Button>
+                    <div className="flex gap-2 w-full items-center">
+                      <Button className="flex-1" disabled>
+                        Registered
+                      </Button>
+                      {onViewDetails && (
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onViewDetails();
+                          }}
+                        >
+                          View Details
+                        </Button>
+                      )}
+                      {canShowFavorites && (
+                        <div
+                          className="relative flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FavoriteButton eventId={id} />
+                        </div>
+                      )}
+                    </div>
                   )
+                ) : onEdit ? (
+                  <Button
+                    className={canRegister ? "flex-1" : "w-full"}
+                    onClick={() => onEdit()}
+                    data-testid={`button-edit-${id}`}
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Edit
+                  </Button>
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&
                   isBeforeDeadline &&
                   !isArchived ? (
-                  <Button
-                    className="flex-1"
-                    onClick={() =>
-                      requiresPayment
-                        ? setShowPaymentDialog(true)
-                        : handleDirectRegister()
-                    }
-                    data-testid={`button-register-${id}`}
-                    disabled={!canRegister}
-                  >
-                    Register
-                  </Button>
+                  <div className="flex gap-2 w-full items-center">
+                    {onViewDetails && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    )}
+                    <Button
+                      className="flex-1"
+                      onClick={() =>
+                        requiresPayment
+                          ? setShowPaymentDialog(true)
+                          : handleDirectRegister()
+                      }
+                      data-testid={`button-register-${id}`}
+                      disabled={!canRegister}
+                    >
+                      Register
+                    </Button>
+                    {canShowFavorites && (
+                      <div
+                        className="relative flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FavoriteButton eventId={id} />
+                      </div>
+                    )}
+                  </div>
                 ) : null}
 
                 {onArchive && (
@@ -701,21 +787,42 @@ export default function EventCard({
                     )}
                   </Button>
                 )}
-                <div className="flex gap-2 justify-center items-center w-full">
-                  {onViewDetails && (
-                    <Button
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onViewDetails();
-                      }}
-                    >
-                      View Details
-                    </Button>
+                {onViewDetails &&
+                  !(
+                    showRegisterButton &&
+                    !hideRegisterButton &&
+                    isRegisterable &&
+                    isBeforeDeadline &&
+                    !isArchived &&
+                    !registered
+                  ) &&
+                  !registered && (
+                    <div className="flex gap-2 w-full items-center">
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                      {canShowFavorites && (
+                        <div
+                          className="relative flex-shrink-0"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          <FavoriteButton eventId={id} />
+                        </div>
+                      )}
+                    </div>
                   )}
-                  {onUnarchive && (
+                {onUnarchive && (
+                  <div className="flex gap-2 w-full items-center">
                     <Button
                       variant="outline"
+                      className="flex-1"
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
@@ -736,9 +843,16 @@ export default function EventCard({
                         </>
                       )}
                     </Button>
-                  )}
-                  {canShowFavorites && <FavoriteButton eventId={id} />}
-                </div>
+                    {canShowFavorites && (
+                      <div
+                        className="relative flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <FavoriteButton eventId={id} />
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </>
@@ -876,7 +990,7 @@ export default function EventCard({
                     </>
                   ) : registered ? (
                     allowCancellation ? (
-                      <>
+                      <div className="flex flex-col gap-2 w-full">
                         {onViewDetails && (
                           <Button
                             variant="outline"
@@ -887,31 +1001,6 @@ export default function EventCard({
                             }}
                           >
                             View Details
-                          </Button>
-                        )}
-                        {onUnarchive && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              try {
-                                await onUnarchive();
-                              } catch (err) {
-                                // parent handles errors
-                              }
-                            }}
-                            disabled={isUnarchiving}
-                            data-testid={`button-unarchive-compact-${id}`}
-                          >
-                            {isUnarchiving ? (
-                              "Unarchiving..."
-                            ) : (
-                              <>
-                                <ArchiveRestore className="h-4 w-4 mr-1" />
-                                Unarchive
-                              </>
-                            )}
                           </Button>
                         )}
                         <Button
@@ -922,24 +1011,6 @@ export default function EventCard({
                         >
                           {isCanceling ? "Canceling..." : "Cancel Registration"}
                         </Button>
-                      </>
-                    ) : (
-                      <>
-                        <Button className="w-full" disabled>
-                          Registered
-                        </Button>
-                        {onViewDetails && (
-                          <Button
-                            variant="outline"
-                            className="w-full"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onViewDetails();
-                            }}
-                          >
-                            View Details
-                          </Button>
-                        )}
                         {onUnarchive && (
                           <Button
                             variant="outline"
@@ -965,7 +1036,58 @@ export default function EventCard({
                             )}
                           </Button>
                         )}
-                      </>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2 w-full items-center">
+                        <Button className="flex-1" disabled>
+                          Registered
+                        </Button>
+                        {onViewDetails && (
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewDetails();
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        )}
+                        {canShowFavorites && (
+                          <div
+                            className="relative flex-shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FavoriteButton eventId={id} />
+                          </div>
+                        )}
+                        {onUnarchive && (
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              try {
+                                await onUnarchive();
+                              } catch (err) {
+                                // parent handles errors
+                              }
+                            }}
+                            disabled={isUnarchiving}
+                            data-testid={`button-unarchive-compact-${id}`}
+                          >
+                            {isUnarchiving ? (
+                              "Unarchiving..."
+                            ) : (
+                              <>
+                                <ArchiveRestore className="h-4 w-4 mr-1" />
+                                Unarchive
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
                     )
                   ) : (
                     showRegisterButton &&
@@ -973,18 +1095,40 @@ export default function EventCard({
                     isRegisterable &&
                     isBeforeDeadline &&
                     !isArchived && (
-                      <Button
-                        onClick={() =>
-                          requiresPayment
-                            ? setShowPaymentDialog(true)
-                            : handleDirectRegister()
-                        }
-                        className="w-full"
-                        data-testid={`button-register-${id}`}
-                        disabled={!canRegister}
-                      >
-                        Register
-                      </Button>
+                      <div className="flex gap-2 w-full items-center">
+                        {onViewDetails && (
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onViewDetails();
+                            }}
+                          >
+                            View Details
+                          </Button>
+                        )}
+                        <Button
+                          onClick={() =>
+                            requiresPayment
+                              ? setShowPaymentDialog(true)
+                              : handleDirectRegister()
+                          }
+                          className="flex-1"
+                          data-testid={`button-register-${id}`}
+                          disabled={!canRegister}
+                        >
+                          Register
+                        </Button>
+                        {canShowFavorites && (
+                          <div
+                            className="relative flex-shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <FavoriteButton eventId={id} />
+                          </div>
+                        )}
+                      </div>
                     )
                   )}
                   {onArchive && (
@@ -1009,14 +1153,6 @@ export default function EventCard({
                     </Button>
                   )}
                   <div className="flex items-center gap-2 ml-auto">
-                    {canShowFavorites && (
-                      <div
-                        className="relative"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        <FavoriteButton eventId={id} />
-                      </div>
-                    )}
                     <Button
                       variant="outline"
                       size="icon"
