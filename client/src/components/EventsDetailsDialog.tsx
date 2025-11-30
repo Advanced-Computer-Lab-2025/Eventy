@@ -10,6 +10,11 @@ import {
   FileText,
   User,
   AlignLeft,
+  DollarSign,
+  Globe,
+  AlertCircle,
+  Landmark,
+  LayoutGrid,
 } from "lucide-react";
 import CategoryBadge from "./CategoryBadge";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,27 +33,40 @@ export default function EventDetailsDialog({
 }: EventDetailsDialogProps) {
   if (!event) return null;
 
-  // Helper to format date and time separately
-  const formatDateTime = (dateString: string) => {
+  // --- Date Formatting Logic based on Schema ---
+  const formatDate = (dateString: string) => {
     if (!dateString) return null;
-    const date = new Date(dateString);
-    return {
-      fullDate: date.toLocaleDateString("en-US", {
-        weekday: "short",
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }),
-      time: date.toLocaleTimeString("en-US", {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-    };
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
-  const start = formatDateTime(event.startDate);
-  const end = formatDateTime(event.endDate);
+  // Use the explicit time string from DB, or fallback to extracting from Date object
+  const startTime =
+    event.startTime ||
+    (event.startDate
+      ? new Date(event.startDate).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null);
+  const endTime =
+    event.endTime ||
+    (event.endDate
+      ? new Date(event.endDate).toLocaleTimeString("en-US", {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : null);
 
+  const startDateStr = formatDate(event.startDate);
+  const endDateStr = formatDate(event.endDate);
+  const deadlineStr = formatDate(event.registrationDeadline);
+
+  // --- Animation ---
   const contentAnimation = {
     hidden: { opacity: 0, y: 10 },
     visible: {
@@ -63,23 +81,17 @@ export default function EventDetailsDialog({
       <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#1D1825] border-purple-100 dark:border-[#6A33B8]/30 shadow-2xl shadow-purple-900/20">
         <AnimatePresence mode="wait">
           <motion.div
-            key={event.id}
+            key={event._id || event.id} // Handle Mongoose _id
             initial="hidden"
             animate="visible"
             variants={contentAnimation}
             className="flex flex-col max-h-[85vh]"
           >
-            {/* --- Header Section --- */}
+            {/* ================= HEADER ================= */}
             <div className="relative p-6 pb-2 shrink-0">
-              {/* Purple Glow Gradient */}
               <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#6A33B8]/10 to-transparent pointer-events-none" />
 
-              {/* 
-                  Added pr-12 (padding-right) here to ensure content doesn't 
-                  go under the Close 'X' button 
-              */}
               <div className="relative z-10 space-y-1 pr-12">
-                {/* Title and Badge Row - Now aligned to start to avoid corner collision */}
                 <div className="flex flex-wrap items-center gap-3">
                   <DialogTitle className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
                     {event.name}
@@ -89,70 +101,66 @@ export default function EventDetailsDialog({
                   </div>
                 </div>
 
-                {/* Location Badge */}
                 <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/70 pt-2">
                   <MapPin className="w-4 h-4 text-[#6A33B8] dark:text-[#9F7AEA]" />
-                  <span>{event.location}</span>
+                  <span>{event.location || "Location TBD"}</span>
                 </div>
               </div>
             </div>
 
-            {/* --- Scrollable Body with Themed Scrollbar --- */}
+            {/* ================= BODY ================= */}
             <div
               className="
               overflow-y-auto p-6 pt-2 space-y-6 pr-4
-              
-              /* Scrollbar Styling */
               [&::-webkit-scrollbar]:w-1.5
               [&::-webkit-scrollbar-track]:bg-transparent
-              
-              /* Light Mode Scrollbar */
               [&::-webkit-scrollbar-thumb]:bg-gray-200
               [&::-webkit-scrollbar-thumb]:rounded-full
-              
-              /* Dark Mode Scrollbar */
               dark:[&::-webkit-scrollbar-thumb]:bg-[#6A33B8]/10
               dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#6A33B8]/40
-              
               transition-colors
             "
             >
-              {/* Date & Time Grid */}
+              {/* 1. Dates Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {start && (
+                {startDateStr && (
                   <div className="flex flex-col p-3 rounded-xl bg-purple-50/50 dark:bg-[#130F19] border border-purple-100 dark:border-[#6A33B8]/20">
                     <span className="text-xs font-semibold uppercase text-[#6A33B8] dark:text-[#D6BCFA] mb-1">
                       Start
                     </span>
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-purple-50">
                       <Calendar className="w-4 h-4 opacity-70" />
-                      {start.fullDate}
+                      {startDateStr}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
-                      <Clock className="w-4 h-4 opacity-70" />
-                      {start.time}
-                    </div>
+                    {startTime && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
+                        <Clock className="w-4 h-4 opacity-70" />
+                        {startTime}
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {end && (
+                {endDateStr && (
                   <div className="flex flex-col p-3 rounded-xl bg-purple-50/50 dark:bg-[#130F19] border border-purple-100 dark:border-[#6A33B8]/20">
                     <span className="text-xs font-semibold uppercase text-[#6A33B8] dark:text-[#D6BCFA] mb-1">
                       End
                     </span>
                     <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-purple-50">
                       <Calendar className="w-4 h-4 opacity-70" />
-                      {end.fullDate}
+                      {endDateStr}
                     </div>
-                    <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
-                      <Clock className="w-4 h-4 opacity-70" />
-                      {end.time}
-                    </div>
+                    {endTime && (
+                      <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
+                        <Clock className="w-4 h-4 opacity-70" />
+                        {endTime}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
 
-              {/* Description */}
+              {/* 2. Description */}
               <div className="space-y-2">
                 <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100">
                   <AlignLeft className="w-4 h-4 text-[#6A33B8] dark:text-[#A78BFA]" />{" "}
@@ -163,39 +171,106 @@ export default function EventDetailsDialog({
                 </div>
               </div>
 
-              {/* Dynamic Grid for Details */}
+              {/* 3. Detailed Info Grid (Dynamic based on Schema) */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Registration Deadline */}
+                {deadlineStr && (
+                  <DetailCard
+                    icon={AlertCircle}
+                    label="Reg. Deadline"
+                    value={deadlineStr}
+                    className="border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10"
+                    iconClass="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20"
+                  />
+                )}
+
+                {/* Price (Trips & Workshops) - In Dollars */}
+                {event.price !== undefined && event.price !== null && (
+                  <DetailCard
+                    icon={DollarSign}
+                    label="Price"
+                    value={`$${event.price}`}
+                  />
+                )}
+
+                {/* Capacity */}
                 {event.capacity && (
                   <DetailCard
                     icon={Users}
                     label="Capacity"
-                    value={`${event.capacity} People`}
+                    value={`${event.capacity} Attendees`}
                   />
                 )}
+
+                {/* Faculty (Workshops) */}
                 {event.faculty && (
                   <DetailCard
-                    icon={Briefcase}
+                    icon={GraduationCap}
                     label="Faculty"
                     value={event.faculty}
                   />
                 )}
+
+                {/* Conference Website URL */}
+                {event.websiteUrl && (
+                  <a
+                    href={event.websiteUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                  >
+                    <DetailCard
+                      icon={Globe}
+                      label="Conference Site"
+                      value="Visit Website"
+                      isLink
+                    />
+                  </a>
+                )}
+
+                {/* Funding Source (Workshops & Conferences) */}
                 {event.fundingSource && (
                   <DetailCard
-                    icon={Wallet}
-                    label="Funding"
-                    value={event.fundingSource}
+                    icon={Landmark}
+                    label="Funding Source"
+                    value={
+                      event.fundingSource === "guc"
+                        ? "Internal (GUC)"
+                        : "External"
+                    }
                   />
                 )}
+
+                {/* Required Budget (Workshops & Conferences) - In Dollars */}
+                {event.requiredBudget && (
+                  <DetailCard
+                    icon={Wallet}
+                    label="Required Budget"
+                    value={`$${event.requiredBudget.toLocaleString()}`}
+                  />
+                )}
+
+                {/* Platform Booth Details */}
+                {event.eventType === "platform_booth" && event.boothSize && (
+                  <DetailCard
+                    icon={LayoutGrid}
+                    label="Booth Size"
+                    value={event.boothSize}
+                  />
+                )}
+
+                {/* Extra Resources */}
                 {event.extraResources && (
                   <DetailCard
                     icon={FileText}
-                    label="Extra Resources"
+                    label="Required Resources"
                     value={event.extraResources}
+                    className="sm:col-span-2"
                   />
                 )}
               </div>
 
-              {/* Agenda Section */}
+              {/* 4. Agenda (Workshops & Conferences) */}
               {event.agenda && (
                 <div className="bg-slate-50 dark:bg-[#130F19] rounded-xl p-4 border border-slate-200 dark:border-[#6A33B8]/20">
                   <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100 mb-2">
@@ -208,12 +283,12 @@ export default function EventDetailsDialog({
                 </div>
               )}
 
-              {/* Professors Section */}
+              {/* 5. Professors (Workshops & Conferences) */}
               {event.professors && event.professors.length > 0 && (
                 <div className="pt-2">
                   <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100 mb-3">
-                    <GraduationCap className="w-4 h-4 text-[#6A33B8] dark:text-[#A78BFA]" />
-                    Invited Professors
+                    <Briefcase className="w-4 h-4 text-[#6A33B8] dark:text-[#A78BFA]" />
+                    Participating Professors
                   </h4>
                   <div className="flex flex-wrap gap-2">
                     {event.professors.map((prof: any, index: number) => (
@@ -225,9 +300,12 @@ export default function EventDetailsDialog({
                           <User size={12} />
                         </div>
                         <span className="text-slate-700 dark:text-purple-100">
-                          {prof.firstName && prof.lastName
-                            ? `${prof.firstName} ${prof.lastName}`
-                            : prof.name || "Professor"}
+                          {/* Handle Populated User Object vs ID string */}
+                          {typeof prof === "object"
+                            ? prof.firstName && prof.lastName
+                              ? `${prof.firstName} ${prof.lastName}`
+                              : prof.name || prof.username
+                            : "Professor Details Unavailable"}
                         </span>
                       </div>
                     ))}
@@ -242,18 +320,35 @@ export default function EventDetailsDialog({
   );
 }
 
-// Helper component
-function DetailCard({ icon: Icon, label, value }: any) {
+// --- Dynamic Detail Card Component ---
+function DetailCard({
+  icon: Icon,
+  label,
+  value,
+  className = "",
+  iconClass = "",
+  isLink = false,
+}: any) {
+  const baseClasses =
+    "flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19] transition-all";
+  const linkClasses = isLink
+    ? "group-hover:border-[#6A33B8] group-hover:bg-purple-50 dark:group-hover:bg-[#6A33B8]/10 cursor-pointer"
+    : "";
+  const defaultIconClass =
+    "p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0";
+
   return (
-    <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19]">
-      <div className="p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0">
+    <div className={`${baseClasses} ${className} ${linkClasses}`}>
+      <div className={iconClass || defaultIconClass}>
         <Icon size={18} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-slate-500 dark:text-purple-300/60 uppercase tracking-wide mb-0.5">
           {label}
         </p>
-        <p className="text-sm font-medium text-slate-900 dark:text-purple-50 break-words whitespace-pre-wrap">
+        <p
+          className={`text-sm font-medium text-slate-900 dark:text-purple-50 break-words whitespace-pre-wrap ${isLink ? "underline decoration-dotted underline-offset-4" : ""}`}
+        >
           {value}
         </p>
       </div>
