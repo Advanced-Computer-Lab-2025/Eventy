@@ -30,7 +30,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-// 1. IMPORT THE DIALOG
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 
 const API_BASE_URL =
@@ -178,7 +177,6 @@ export default function EventCard({
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
 
-  // 2. INTERNAL STATE FOR DIALOG
   const [internalDetailsOpen, setInternalDetailsOpen] = useState(false);
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
@@ -218,20 +216,17 @@ export default function EventCard({
     }
   };
 
-  // 3. INTERNAL HANDLER FOR VIEW DETAILS
   const handleViewDetailsClick = async (e?: React.MouseEvent) => {
     if (e) {
       e.stopPropagation();
       e.preventDefault();
     }
 
-    // Use parent handler if provided
     if (onViewDetails) {
       onViewDetails();
       return;
     }
 
-    // Otherwise fetch internally
     setInternalDetailsOpen(true);
     setIsFetchingDetails(true);
 
@@ -268,6 +263,9 @@ export default function EventCard({
   }, [attendees]);
 
   const isPlatformBooth = /booth|platform_booth/i.test(String(category));
+
+  // Helper to identify conferences
+  const isConference = /conference/i.test(String(category));
 
   const isRegisterable =
     !isPlatformBooth && /workshop|trip|conference/i.test(String(category));
@@ -463,8 +461,6 @@ export default function EventCard({
           className || ""
         }`}
         data-testid={`card-event-${id}`}
-        // Optional: Clicking card opens details
-        // onClick={handleViewDetailsClick}
       >
         <div className="relative aspect-[16/9] overflow-hidden bg-muted">
           <img
@@ -522,8 +518,8 @@ export default function EventCard({
                     </div>
                   </div>
 
-                  {/* Location */}
-                  {location && (
+                  {/* Location - HIDE IF CONFERENCE */}
+                  {location && !isConference && (
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
                       <span>{location}</span>
@@ -877,10 +873,13 @@ export default function EventCard({
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <div className="flex flex-col gap-1">
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      <span className="line-clamp-1">{location}</span>
-                    </div>
+                    {/* HIDE IF CONFERENCE */}
+                    {!isConference && location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span className="line-clamp-1">{location}</span>
+                      </div>
+                    )}
                     {inlinePriceLabel && (
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <DollarSign className="h-4 w-4" />
