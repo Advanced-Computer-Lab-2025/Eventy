@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Info } from "lucide-react";
+import { Info, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface CreateEventFormValues {
@@ -276,6 +276,7 @@ export default function CreateEventForm({
             <div className="space-y-2">
               <Label htmlFor="startTime">Start Time</Label>
               <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   id="startTime"
                   type="time"
@@ -289,20 +290,6 @@ export default function CreateEventForm({
                   }}
                   className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4l3 3"
-                  ></path>
-                </svg>
               </div>
               {errors.startTime && (
                 <p className="text-sm text-red-500">{errors.startTime}</p>
@@ -351,6 +338,7 @@ export default function CreateEventForm({
             <div className="space-y-2">
               <Label htmlFor="endTime">End Time</Label>
               <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                 <Input
                   id="endTime"
                   type="time"
@@ -364,20 +352,6 @@ export default function CreateEventForm({
                   }}
                   className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                 />
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 8v4l3 3"
-                  ></path>
-                </svg>
               </div>
               {errors.endTime && (
                 <p className="text-sm text-red-500">{errors.endTime}</p>
