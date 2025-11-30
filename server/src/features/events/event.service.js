@@ -1609,7 +1609,7 @@ export const getSalesReport = async (options = {}) => {
  * @param {Object} event - The newly created event
  * @param {string} eventType - The type of event (e.g., 'bazaar', 'workshop', 'trip', 'conference')
  */
-async function notifyNewEvent(event, eventType) {
+export async function notifyNewEvent(event, eventType) {
   try {
     // Get all users who should be notified
     const users = await User.find({
@@ -1629,15 +1629,40 @@ async function notifyNewEvent(event, eventType) {
       platform_booth: "Platform Booth",
     };
 
-    // Create notification data
-    const notificationData = {
-      title: `New ${eventTypeNames[eventType] || "Event"} Added`,
-      message: `A new ${eventTypeNames[eventType] || "event"} "${event.name}" has been added.`,
-      link: `/events/${event._id}`,
-      recipients: users.map((user) => user._id),
-      event: event._id,
-      notificationType: "new_event",
-    };
+    let notificationData;
+    if (eventType === "platform_booth") {
+      // Custom notification for platform booth creation
+      let vendorName = "Vendor";
+      try {
+        const vendor = await User.findById(event.createdBy).select(
+          "companyName firstName"
+        );
+        vendorName = vendor?.companyName || vendor?.firstName || "Vendor";
+      } catch (err) {
+        console.error(
+          "Error looking up vendor for platform booth notification:",
+          err
+        );
+      }
+      notificationData = {
+        title: `New Platform Booth Created`,
+        message: `A new platform booth for ${vendorName} has been created at location "${event.locationPreference}" for ${event.durationWeeks} week(s).`,
+        link: `/events/${event._id}`,
+        recipients: users.map((user) => user._id),
+        event: event._id,
+        notificationType: "new_platform_booth",
+      };
+    } else {
+      // Default notification for other event types
+      notificationData = {
+        title: `New ${eventTypeNames[eventType] || "Event"} Added`,
+        message: `A new ${eventTypeNames[eventType] || "event"} "${event.name}" has been added.`,
+        link: `/events/${event._id}`,
+        recipients: users.map((user) => user._id),
+        event: event._id,
+        notificationType: "new_event",
+      };
+    }
 
     // Create notification
     await NotificationService.createNotification(notificationData);

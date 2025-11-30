@@ -249,6 +249,17 @@ class ApplicationServiceClass {
 
       const createdEvent = await Event.create(eventData);
       eventId = createdEvent._id;
+
+      // Send notification about new platform booth event
+      try {
+        const { notifyNewEvent } = await import("../events/event.service.js");
+        await notifyNewEvent(createdEvent, "platform_booth");
+      } catch (error) {
+        console.error(
+          "Error sending platform booth event notification:",
+          error
+        );
+      }
     }
 
     // Now update the application status and event field atomically
