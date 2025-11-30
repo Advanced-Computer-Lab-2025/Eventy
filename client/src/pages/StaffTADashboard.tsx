@@ -309,6 +309,14 @@ export default function StaffTADashboard() {
     return Array.from(new Set(locations));
   }, [allUpcomingEvents, eventFilters.eventType, eventFilters.professor]);
 
+  // Only show professors when event type is workshop
+  const filteredProfessorOptions = useMemo(() => {
+    if (eventFilters.eventType === "workshop") {
+      return professorOptions;
+    }
+    return [];
+  }, [eventFilters.eventType, professorOptions]);
+
   const quickActions = [
     {
       title: "My Events",
@@ -525,7 +533,7 @@ export default function StaffTADashboard() {
                     filters={eventFilters}
                     onFilterChange={setEventFilters}
                     locations={availableLocations}
-                    professors={professorOptions}
+                    professors={filteredProfessorOptions}
                     userRole=""
                   />
                 </div>
