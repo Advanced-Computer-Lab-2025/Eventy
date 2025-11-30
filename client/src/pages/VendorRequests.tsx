@@ -362,7 +362,7 @@ export default function VendorRequests() {
         {/* Sidebar Layout with Filters */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Left Sidebar - Filters */}
-          <aside className="lg:w-72 flex-shrink-0">
+          <aside className="lg:w-64 flex-shrink-0">
             <div className="sticky top-32">
               <Card>
                 <CardHeader>
