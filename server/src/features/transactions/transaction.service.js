@@ -7,6 +7,7 @@ import {
   sendPaymentReceipt,
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
+import NotificationService from "../notifications/notification.service.js";
 
 const stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
 
@@ -196,6 +197,19 @@ export class TransactionService {
                 paymentStatus: "paid",
                 event: createdEvent._id,
               });
+
+              // Send notification about new platform booth event
+              try {
+                await NotificationService.notifyNewEvent(
+                  createdEvent,
+                  "platform_booth"
+                );
+              } catch (error) {
+                console.error(
+                  "Error sending platform booth event notification:",
+                  error
+                );
+              }
             } else {
               // For non-booth applications or booths that already have events, just update payment status
               await Application.findByIdAndUpdate(applicationId, {
@@ -288,6 +302,19 @@ export class TransactionService {
             paymentStatus: "paid",
             event: createdEvent._id,
           });
+
+          // Send notification about new platform booth event
+          try {
+            await NotificationService.notifyNewEvent(
+              createdEvent,
+              "platform_booth"
+            );
+          } catch (error) {
+            console.error(
+              "Error sending platform booth event notification:",
+              error
+            );
+          }
         } else {
           // For non-booth applications or booths that already have events, just update payment status
           await Application.findByIdAndUpdate(applicationId, {
