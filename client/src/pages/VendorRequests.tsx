@@ -647,7 +647,16 @@ export default function VendorRequests() {
                   ) : null}
                   <div>
                     <div className="font-medium">Company</div>
-                    <div>{selected?.createdBy?.companyName || "Unknown"}</div>
+                    <div className="flex items-center gap-2">
+                      <span>
+                        {selected?.createdBy?.companyName || "Unknown"}
+                      </span>
+                      {selected?.createdBy?.email && (
+                        <span className="text-sm text-muted-foreground">
+                          • {selected.createdBy.email}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -673,10 +682,6 @@ export default function VendorRequests() {
                         : "-"}
                     </div>
                   </div>
-                </div>
-                <div>
-                  <div className="font-medium">Company Email</div>
-                  <div>{selected?.createdBy?.email || "-"}</div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
