@@ -665,9 +665,7 @@ export default function StaffTADashboard() {
                           showDetailedView={true}
                           onRegister={() => handleRegisterEvent(event._id)}
                           onShare={() => console.log("Share:", event.name)}
-                          onViewDetails={() =>
-                            console.log("View details:", event.name)
-                          }
+                          onViewDetails={() => handleCardClick(event._id)}
                         />
                       ))}
                   </div>
