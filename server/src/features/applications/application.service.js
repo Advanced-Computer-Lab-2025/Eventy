@@ -325,59 +325,8 @@ class ApplicationServiceClass {
 
     let eventId = application.event;
 
-    // If approving a platform booth application, create the event and link it
-    if (
-      status === "approved" &&
-      application.type === "booth" &&
-      !application.event
-    ) {
-      const vendor = application.createdBy;
-      const eventName = `${
-        vendor.firstName || vendor.companyName || "Vendor"
-      }'s platform booth`;
-
-      // Calculate start and end dates based on approval time and duration
-      // Start date is when the application is accepted/approved
-      const startDate = new Date(); // Current timestamp when approved
-
-      // End date is start date plus the duration in weeks
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + application.durationWeeks * 7);
-
-      const eventData = {
-        name: eventName,
-        eventType: "platform_booth",
-        boothSize: application.boothSize,
-        durationWeeks: application.durationWeeks,
-        locationPreference: application.locationPreference,
-        location: application.locationPreference, // Set location from locationPreference
-        startDate: startDate, // Set start date
-        endDate: endDate, // Set end date
-        attendees: application.attendees,
-        createdBy: vendor._id,
-        application: application._id,
-        status: "approved",
-      };
-
-      const createdEvent = await Event.create(eventData);
-      eventId = createdEvent._id;
-
-      // Send notification about new platform booth event
-      try {
-        const NotificationService = (
-          await import("../notifications/notification.service.js")
-        ).default;
-        await NotificationService.notifyNewEvent(
-          createdEvent,
-          "platform_booth"
-        );
-      } catch (error) {
-        console.error(
-          "Error sending platform booth event notification:",
-          error
-        );
-      }
-    }
+    // Note: Platform booth events are now created when payment is confirmed,
+    // not when the application is approved. See transaction.service.js confirmStripePayment method.
 
     // Now update the application status and event field atomically
     // When approving, set paymentStatus to "pending" (payment required)

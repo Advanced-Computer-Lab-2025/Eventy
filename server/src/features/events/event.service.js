@@ -421,12 +421,14 @@ export const getUpcomingEventsService = async (
   includeVendors = false,
   userRole = null
 ) => {
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Filter out events where the user's role is restricted
@@ -450,12 +452,14 @@ export const getUpcomingEventsWithVendors = async (
   includeVendors = true,
   userRole = null
 ) => {
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Filter out events where the user's role is restricted
@@ -543,12 +547,14 @@ export const searchEvents = async ({
   professor,
 }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Platform booths should also respect startDate >= now, just like regular events
+  // Platform booths should also respect startDate >= today, just like regular events
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Additional filters will be added to $and array

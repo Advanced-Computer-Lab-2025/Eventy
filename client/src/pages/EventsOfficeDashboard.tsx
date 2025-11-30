@@ -148,14 +148,26 @@ export default function EventsOfficeDashboard() {
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
-    // Booth events don't have endDate, so they're always considered "upcoming"
     let isUpcoming = false;
     let isPast = false;
 
     if (isBoothEvent) {
-      // Booth events are always considered upcoming
-      isUpcoming = true;
-      isPast = false;
+      // Platform booths now have startDate and endDate
+      // Check if both dates have passed
+      if (event.startDate && event.endDate) {
+        const eventStartDate = new Date(event.startDate);
+        const eventEndDate = new Date(event.endDate);
+        eventEndDate.setUTCHours(23, 59, 59, 999);
+        // Both start and end dates must have passed for it to be past
+        isPast =
+          eventStartDate.getTime() < now.getTime() &&
+          eventEndDate.getTime() < now.getTime();
+        isUpcoming = !isPast;
+      } else {
+        // If booth doesn't have dates yet, consider it upcoming
+        isUpcoming = true;
+        isPast = false;
+      }
     } else if (event.endDate) {
       const eventEndDate = new Date(event.endDate);
       eventEndDate.setUTCHours(23, 59, 59, 999);
@@ -1356,34 +1368,34 @@ export default function EventsOfficeDashboard() {
                                     : event.eventType || "academic"
                                 }
                                 date={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? `Active for ${event.durationWeeks} week${
-                                        event.durationWeeks > 1 ? "s" : ""
-                                      }`
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleDateString("en-US", {
-                                          weekday: "short",
-                                          month: "long",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? `Active for ${event.durationWeeks} week${
+                                          event.durationWeeks > 1 ? "s" : ""
+                                        }`
                                       : "TBA"
                                 }
                                 time={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? ""
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleTimeString("en-US", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? ""
                                       : "TBA"
                                 }
                                 location={

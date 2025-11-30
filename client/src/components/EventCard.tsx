@@ -488,12 +488,7 @@ export default function EventCard({
                   <div className="flex items-start text-muted-foreground">
                     <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      {isPlatformBooth && durationWeeks ? (
-                        <div>
-                          Active for {durationWeeks} week
-                          {durationWeeks > 1 ? "s" : ""}
-                        </div>
-                      ) : startDate && endDate ? (
+                      {startDate && endDate ? (
                         <div>
                           {formatDate(startDate)}, {formatTime(startDate)} →{" "}
                           {formatDate(endDate)}, {formatTime(endDate)}
@@ -501,6 +496,11 @@ export default function EventCard({
                       ) : startDate ? (
                         <div>
                           {formatDate(startDate)}, {formatTime(startDate)}
+                        </div>
+                      ) : isPlatformBooth && durationWeeks ? (
+                        <div>
+                          Active for {durationWeeks} week
+                          {durationWeeks > 1 ? "s" : ""}
                         </div>
                       ) : null}
                     </div>

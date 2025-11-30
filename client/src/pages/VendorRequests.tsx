@@ -219,6 +219,14 @@ export default function VendorRequests() {
     ) {
       return request.event.name;
     }
+
+    // For platform booth applications that are pending (no event created yet),
+    // generate the event name from the vendor's information
+    if (request?.type === "booth" && !request.event) {
+      const vendorName = request?.createdBy?.companyName || "Vendor";
+      return `${vendorName}'s platform booth`;
+    }
+
     // If event is just an ID string or null/undefined, return N/A
     return "N/A";
   };

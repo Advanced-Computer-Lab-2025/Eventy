@@ -7,6 +7,7 @@ import {
   sendPaymentReceipt,
   sendVendorPaymentReceipt,
 } from "../auth/email.service.js";
+import NotificationService from "../notifications/notification.service.js";
 
 const stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
 
@@ -146,11 +147,76 @@ export class TransactionService {
       // Prevent updating if already completed
       if (transaction.status === "completed") {
         // Ensure application paymentStatus is set to "paid" if needed
+        // and create platform booth event if payment was just confirmed
         if (transaction.relatedEntity?.type === "Application") {
           const applicationId = transaction.relatedEntity.id;
-          await Application.findByIdAndUpdate(applicationId, {
-            paymentStatus: "paid",
-          });
+          const application =
+            await Application.findById(applicationId).populate("createdBy");
+
+          if (application) {
+            // If this is a platform booth application and event doesn't exist yet,
+            // create it with start date = payment confirmation date
+            if (
+              application.type === "booth" &&
+              application.paymentStatus !== "paid" &&
+              !application.event
+            ) {
+              const vendor = application.createdBy;
+              const eventName = `${
+                vendor.firstName || vendor.companyName || "Vendor"
+              }'s platform booth`;
+
+              // Start date is when payment is confirmed
+              const startDate = new Date();
+
+              // End date is start date plus the duration in weeks
+              const endDate = new Date(startDate);
+              endDate.setDate(
+                endDate.getDate() + application.durationWeeks * 7
+              );
+
+              const eventData = {
+                name: eventName,
+                eventType: "platform_booth",
+                boothSize: application.boothSize,
+                durationWeeks: application.durationWeeks,
+                locationPreference: application.locationPreference,
+                location: application.locationPreference,
+                startDate: startDate,
+                endDate: endDate,
+                attendees: application.attendees,
+                createdBy: vendor._id,
+                application: application._id,
+                status: "approved",
+              };
+
+              const createdEvent = await Event.create(eventData);
+
+              // Update application with event reference and payment status
+              await Application.findByIdAndUpdate(applicationId, {
+                paymentStatus: "paid",
+                event: createdEvent._id,
+              });
+
+              // Send notification about new platform booth event
+              try {
+                await NotificationService.notifyNewEvent(
+                  createdEvent,
+                  "platform_booth"
+                );
+              } catch (error) {
+                console.error(
+                  "Error sending platform booth event notification:",
+                  error
+                );
+              }
+            } else {
+              // For non-booth applications or booths that already have events, just update payment status
+              await Application.findByIdAndUpdate(applicationId, {
+                paymentStatus: "paid",
+              });
+            }
+          }
         }
         return { message: "Payment already confirmed", transaction };
       }
@@ -187,9 +253,79 @@ export class TransactionService {
       if (transaction.relatedEntity?.type === "Application") {
         // Update application paymentStatus to "paid"
         const applicationId = transaction.relatedEntity.id;
-        await Application.findByIdAndUpdate(applicationId, {
-          paymentStatus: "paid",
-        });
+        const application =
+          await Application.findById(applicationId).populate("createdBy");
+
+        if (!application) {
+          throw new Error("Application not found");
+        }
+
+        // If this is a platform booth application and payment is confirmed,
+        // create the event with start date = payment confirmation date
+        // and end date = start date + duration
+        if (
+          application.type === "booth" &&
+          application.paymentStatus !== "paid" &&
+          !application.event
+        ) {
+          const vendor = application.createdBy;
+          const eventName = `${
+            vendor.firstName || vendor.companyName || "Vendor"
+          }'s platform booth`;
+
+          // Start date is when payment is confirmed
+          const startDate = new Date();
+
+          // End date is start date plus the duration in weeks
+          const endDate = new Date(startDate);
+          endDate.setDate(endDate.getDate() + application.durationWeeks * 7);
+
+          const eventData = {
+            name: eventName,
+            eventType: "platform_booth",
+            boothSize: application.boothSize,
+            durationWeeks: application.durationWeeks,
+            locationPreference: application.locationPreference,
+            location: application.locationPreference,
+            startDate: startDate,
+            endDate: endDate,
+            attendees: application.attendees,
+            createdBy: vendor._id,
+            application: application._id,
+            status: "approved",
+          };
+
+          const createdEvent = await Event.create(eventData);
+
+          // Update application with event reference and payment status
+          await Application.findByIdAndUpdate(applicationId, {
+            paymentStatus: "paid",
+            event: createdEvent._id,
+          });
+
+          // Send notification about new platform booth event
+          try {
+            await NotificationService.notifyNewEvent(
+              createdEvent,
+              "platform_booth"
+            );
+          } catch (error) {
+            console.error(
+              "Error sending platform booth event notification:",
+              error
+            );
+          }
+        } else {
+          // For non-booth applications or booths that already have events, just update payment status
+          await Application.findByIdAndUpdate(applicationId, {
+            paymentStatus: "paid",
+          });
+        }
+
+        // Get the updated application for email
+        const updatedApplication = await Application.findById(applicationId)
+          .populate("event", "name location")
+          .populate("createdBy", "companyName");
 
         // Get Stripe receipt URL from the payment intent
         let stripeReceiptUrl = null;
@@ -209,20 +345,17 @@ export class TransactionService {
           // Continue without receipt URL - email will still be sent
         }
 
-        // Get vendor and application details for email
+        // Get vendor details for email
         const vendor = await User.findById(transaction.userId).select(
           "email firstName lastName name companyName role"
         );
-        const application = await Application.findById(applicationId)
-          .populate("event", "name location")
-          .populate("createdBy", "companyName");
 
         // Send vendor payment receipt email (don't await to avoid blocking the response)
-        if (vendor && application) {
+        if (vendor && updatedApplication) {
           sendVendorPaymentReceipt(
             vendor.toObject(),
             transaction,
-            application.toObject(),
+            updatedApplication.toObject(),
             stripeReceiptUrl
           ).catch(console.error);
         }
