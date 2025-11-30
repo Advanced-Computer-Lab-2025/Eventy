@@ -365,20 +365,17 @@ export default function NotificationsPopover() {
                   </p>
                 </div>
                 <div className="text-right space-y-1">
-                  <div className="flex items-center gap-2 justify-end">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      {selectedNotification.sender
-                        ? ["events_office", "admin"].includes(
-                            selectedNotification.sender.role
-                          )
-                          ? selectedNotification.sender.role
-                              .replace("_", " ")
-                              .toUpperCase()
-                          : `${selectedNotification.sender.firstName || ""} ${selectedNotification.sender.lastName || ""}`.trim()
-                        : "System"}
-                    </p>
-                  </div>
+                  <p className="text-sm font-medium">
+                    {selectedNotification.sender
+                      ? ["events_office", "admin"].includes(
+                          selectedNotification.sender.role
+                        )
+                        ? selectedNotification.sender.role
+                            .replace("_", " ")
+                            .toUpperCase()
+                        : `${selectedNotification.sender.firstName || ""} ${selectedNotification.sender.lastName || ""}`.trim()
+                      : ""}
+                  </p>
                 </div>
               </div>
 
