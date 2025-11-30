@@ -12,6 +12,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { resetFavoritesCache } from "../hooks/useFavorites";
 
 export default function ProfileMenu() {
   const [, setLocation] = useLocation();
@@ -19,6 +20,8 @@ export default function ProfileMenu() {
     firstName?: string;
     lastName?: string;
     email?: string;
+    role?: string;
+    companyName?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -33,9 +36,23 @@ export default function ProfileMenu() {
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    resetFavoritesCache(); // ✅ Reset favorites cache on logout
     setUser(null);
     setLocation("/login");
   };
+
+  const getInitials = () => {
+    if (!user) return "";
+    if (user.role !== "vendor") {
+      const first = user.firstName?.[0] || "";
+      const last = user.lastName?.[0] || "";
+      return (first + last).toUpperCase() || "";
+    } else {
+      return user.companyName?.[0]?.toUpperCase() || "";
+    }
+  };
+
+  const initials = getInitials();
 
   return (
     <DropdownMenu>
@@ -52,22 +69,30 @@ export default function ProfileMenu() {
 
       <DropdownMenuContent
         align="end"
-        className="w-64 p-2 rounded-xl shadow-lg bg-background border border-border"
+        className="w-80 p-2 rounded-xl shadow-lg bg-background border border-border"
       >
         <div className="flex items-center gap-3 px-3 py-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-            <User className="h-5 w-5 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+            {initials ? (
+              <span className="text-sm font-semibold text-primary">
+                {initials}
+              </span>
+            ) : (
+              <User className="h-5 w-5 text-primary" />
+            )}
           </div>
-          <div>
-            <DropdownMenuLabel className="text-sm font-semibold">
+          <div className="min-w-0 flex-1">
+            <DropdownMenuLabel className="text-sm font-semibold px-0">
               {(() => {
                 if (!user) return "Guest";
-                // Prefer companyName for vendors, otherwise fall back to first+last name
-                if ((user as any).companyName) return (user as any).companyName;
-                return (
-                  `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
-                  "Guest"
-                );
+                if (user.role !== "vendor") {
+                  return (
+                    `${user.firstName || ""} ${user.lastName || ""}`.trim() ||
+                    "Guest"
+                  );
+                } else {
+                  return user.companyName || "Guest";
+                }
               })()}
             </DropdownMenuLabel>
             <div className="text-xs text-muted-foreground">

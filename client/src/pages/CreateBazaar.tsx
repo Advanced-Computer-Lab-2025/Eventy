@@ -1,12 +1,23 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin } from "lucide-react";
+import { Calendar, MapPin, Info } from "lucide-react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 
 export default function CreateBazaar() {
@@ -24,8 +35,18 @@ export default function CreateBazaar() {
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loadingExisting, setLoadingExisting] = useState(false);
+  const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
+
+  const availableRoles = [
+    { value: "student", label: "Students" },
+    { value: "staff", label: "Staff" },
+    { value: "ta", label: "Teaching Assistants" },
+    { value: "professor", label: "Professors" },
+    { value: "vendor", label: "Vendors" },
+  ];
 
   const API_BASE_URL =
     import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -88,16 +109,37 @@ export default function CreateBazaar() {
         setSubmitting(false);
         return;
       }
-      const payload = {
+      // Build payload with merged ISO dates and separate time fields
+      const startTimeValue =
+        formData.startTime && formData.startTime.trim()
+          ? formData.startTime.trim()
+          : "00:00";
+      const endTimeValue =
+        formData.endTime && formData.endTime.trim()
+          ? formData.endTime.trim()
+          : "00:00";
+
+      const payload: any = {
         name: formData.name,
         description: formData.description,
         location: formData.location,
-        startDate: `${formData.startDate}T${formData.startTime}:00.000Z`,
-        endDate: `${formData.endDate}T${formData.endTime}:00.000Z`,
+        startDate: `${formData.startDate}T${startTimeValue}:00.000Z`,
+        endDate: `${formData.endDate}T${endTimeValue}:00.000Z`,
+        startTime: startTimeValue, // Required by backend model
+        endTime: endTimeValue, // Required by backend model
         registrationDeadline: formData.deadline
           ? `${formData.deadline}T23:59:59.000Z`
           : undefined,
       };
+
+      // Add restricted roles
+      // When editing, always send restrictedRoles (even if empty) to clear restrictions
+      // When creating, only send if there are restrictions
+      if (editingId) {
+        payload.restrictedRoles = restrictedRoles;
+      } else if (restrictedRoles.length > 0) {
+        payload.restrictedRoles = restrictedRoles;
+      }
 
       const url = editingId
         ? `${API_BASE_URL}/api/events/bazaars/${editingId}`
@@ -121,9 +163,28 @@ export default function CreateBazaar() {
             (editingId ? "Failed to update bazaar" : "Failed to create bazaar")
         );
 
-      setLocation("/events-office/dashboard");
+      const isEdit = Boolean(editingId);
+      toast({
+        title: isEdit ? "Bazaar updated" : "Bazaar created",
+        description: isEdit
+          ? "The bazaar was updated successfully."
+          : "The bazaar was created successfully.",
+      });
+
+      // Small delay to allow toast to be visible before redirect
+      setTimeout(() => {
+        setLocation("/events-office/dashboard");
+      }, 1000);
     } catch (err: any) {
-      setError(err.message || "Something went wrong");
+      const errorMessage = err.message || "Something went wrong";
+      setError(errorMessage);
+      toast({
+        title: editingId
+          ? "Failed to update bazaar"
+          : "Failed to create bazaar",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setSubmitting(false);
     }
@@ -170,6 +231,7 @@ export default function CreateBazaar() {
           description: b.description || "",
           deadline: toDate(b.registrationDeadline),
         });
+        setRestrictedRoles(b.restrictedRoles || []);
       } catch (e: any) {
         setError(e.message || "Failed to load bazaar");
       } finally {
@@ -339,21 +401,63 @@ export default function CreateBazaar() {
                   required
                 />
               </div>
+
+              {/* Restrict Access Section */}
+              <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                <div className="flex items-start gap-2">
+                  <Info className="h-5 w-5 text-purple-600 mt-0.5" />
+                  <div className="flex-1">
+                    <Label className="text-base font-semibold">
+                      Restrict Access (Optional)
+                    </Label>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Select which roles should NOT be able to view or register
+                      for this bazaar
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+                  {availableRoles.map((role) => (
+                    <div
+                      key={role.value}
+                      className="flex items-center space-x-2"
+                    >
+                      <Checkbox
+                        id={`restrict-${role.value}`}
+                        checked={restrictedRoles.includes(role.value)}
+                        onCheckedChange={(checked) => {
+                          setRestrictedRoles(
+                            checked
+                              ? [...restrictedRoles, role.value]
+                              : restrictedRoles.filter((r) => r !== role.value)
+                          );
+                        }}
+                      />
+                      <Label
+                        htmlFor={`restrict-${role.value}`}
+                        className="text-sm font-normal cursor-pointer"
+                      >
+                        {role.label}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          <div className="flex gap-4">
+          <div className="flex justify-end gap-4">
             <Button
               type="button"
               variant="outline"
-              onClick={() => setLocation("/events-office/dashboard")}
-              className="flex-1"
+              onClick={() => setShowCancelDialog(true)}
+              className="min-w-[120px]"
             >
               Cancel
             </Button>
             <Button
               type="submit"
-              className="flex-1"
+              className="min-w-[120px]"
               data-testid="button-submit-bazaar"
               disabled={submitting}
             >
@@ -367,6 +471,27 @@ export default function CreateBazaar() {
             </Button>
           </div>
         </form>
+
+        {/* Cancel Confirmation Dialog */}
+        <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Discard changes?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Do you want to discard your changes and return to the Events
+                Office dashboard? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Continue Editing</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => setLocation("/events-office/dashboard")}
+              >
+                Discard Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </main>
     </div>
   );

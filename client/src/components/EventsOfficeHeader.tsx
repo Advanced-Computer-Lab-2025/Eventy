@@ -1,23 +1,54 @@
 import {
-  Bell,
   Home,
-  CalendarDays,
-  Store,
   CheckCircle2,
   Plane,
   ClipboardList,
   Dumbbell,
   Archive,
   FileText,
+  PieChart,
+  Gift,
+  Star,
+  ChevronDown,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import NotificationsPopover from "./NotificationsPopover";
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 
 export default function EventsOfficeHeader() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    companyName?: string;
+  } | null>(null);
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   const goHome = () => setLocation("/events-office/dashboard");
 
@@ -29,16 +60,18 @@ export default function EventsOfficeHeader() {
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              data-testid="button-notifications"
-            >
-              <Bell className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-3">
+            <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.role && (user?.firstName || user?.email) && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName || user.email?.split("@")[0] || "User"} /{" "}
+                  {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -46,7 +79,7 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/events-office/dashboard" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={goHome}
             data-testid="button-nav-home"
           >
@@ -56,82 +89,113 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/bazaar")}
-            data-testid="button-nav-bazaars"
-          >
-            <Store className="h-4 w-4" />
-            Bazaars
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/events-office/create/conference")}
-            data-testid="button-nav-conferences"
-          >
-            <CalendarDays className="h-4 w-4" />
-            Conferences
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
-          >
-            <Plane className="h-4 w-4" />
-            Trips
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/approvals/workshops")}
-            data-testid="button-nav-approvals"
+          <DropdownMenu
+            open={isApprovalsOpen}
+            onOpenChange={setIsApprovalsOpen}
           >
-            <CheckCircle2 className="h-4 w-4" />
-            Approvals
-          </Button>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent ${location === "/approvals/workshops" || location === "/vendor-requests" ? "underline decoration-primary decoration-2" : ""}`}
+                data-testid="button-nav-approvals"
+                onMouseEnter={() => setIsApprovalsOpen(true)}
+              >
+                <CheckCircle2 className="h-4 w-4" />
+                Approvals
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onMouseLeave={() => setIsApprovalsOpen(false)}
+            >
+              <DropdownMenuItem
+                onClick={() => setLocation("/approvals/workshops")}
+                className="cursor-pointer"
+              >
+                <CheckCircle2 className="mr-2 h-4 w-4" />
+                Workshop Approvals
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLocation("/vendor-requests")}
+                className="cursor-pointer"
+              >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                Vendor Requests
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/vendor-requests")}
-            data-testid="button-nav-vendor-requests"
-          >
-            <ClipboardList className="h-4 w-4" />
-            Vendor Requests
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/events-office/archived" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/events-office/archived")}
             data-testid="button-nav-archived"
           >
             <Archive className="h-4 w-4" />
             Archived
           </Button>
+          <DropdownMenu open={isReportsOpen} onOpenChange={setIsReportsOpen}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={`gap-2 cursor-pointer focus-visible:ring-0 hover:bg-accent ${location === "/reports/attendees" || location === "/reports/sales" ? "underline decoration-primary decoration-2" : ""}`}
+                data-testid="button-nav-reports"
+                onMouseEnter={() => setIsReportsOpen(true)}
+              >
+                <FileText className="h-4 w-4" />
+                Reports
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent
+              align="start"
+              onMouseLeave={() => setIsReportsOpen(false)}
+            >
+              <DropdownMenuItem
+                onClick={() => setLocation("/reports/attendees")}
+                className="cursor-pointer"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Attendees Report
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setLocation("/reports/sales")}
+                className="cursor-pointer"
+              >
+                <FileText className="mr-2 h-4 w-4" />
+                Sales Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
-            onClick={() => setLocation("/reports/attendees")}
-            data-testid="button-nav-reports"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
           >
-            <FileText className="h-4 w-4" />
-            Attendees Report
+            <Gift className="h-4 w-4" />
+            Loyalty Partners
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
           </Button>
         </div>
       </div>

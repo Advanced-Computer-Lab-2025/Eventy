@@ -1,9 +1,12 @@
 import { useEffect, useState } from "react";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
 import { getEventImage } from "@/lib/eventImages";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import { useToast } from "@/hooks/use-toast";
+import EmptyState from "@/components/EmptyState";
+import { Archive } from "lucide-react";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -15,6 +18,8 @@ export default function ArchivedEvents() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [unarchiving, setUnarchiving] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
@@ -71,23 +76,81 @@ export default function ArchivedEvents() {
     fetchAllEvents();
   }, []);
 
+  const handleUnarchive = async (eventId: string) => {
+    try {
+      setUnarchiving(eventId);
+      const token = localStorage.getItem("token");
+
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/${eventId}/unarchive`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          credentials: "include",
+        }
+      );
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Failed to unarchive event");
+      }
+
+      toast({
+        title: "Event unarchived",
+        description: "The event has been restored",
+      });
+
+      // Remove the event from the list
+      setEvents((prev) => prev.filter((e) => e._id !== eventId));
+    } catch (err: any) {
+      toast({
+        title: "Unarchive failed",
+        description: err.message || "Failed to unarchive event",
+        variant: "destructive",
+      });
+    } finally {
+      setUnarchiving(null);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <EventsOfficeHeader />
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Archived Events</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p>Loading archived events...</p>
-            ) : error ? (
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold">Archived Events</h1>
+          <p className="text-muted-foreground">
+            View and manage archived events
+          </p>
+        </div>
+
+        {loading ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">
+                Loading archived events...
+              </p>
+            </CardContent>
+          </Card>
+        ) : error ? (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
               <p className="text-red-500">{error}</p>
-            ) : events.length === 0 ? (
-              <p className="text-muted-foreground">No archived events found.</p>
-            ) : (
+            </CardContent>
+          </Card>
+        ) : events.length === 0 ? (
+          <EmptyState
+            title="No archived events"
+            description="Events that have ended will appear here once they are archived."
+            icon={Archive}
+          />
+        ) : (
+          <Card>
+            <CardContent className="pt-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                 {events.map((event: any) => (
                   <EventCard
@@ -95,6 +158,7 @@ export default function ArchivedEvents() {
                     id={event._id}
                     title={event.name || "Untitled Event"}
                     category={event.eventType as any}
+                    status={event.status}
                     date={
                       event.startDate
                         ? new Date(event.startDate).toLocaleDateString(
@@ -120,7 +184,13 @@ export default function ArchivedEvents() {
                           )
                         : "TBA"
                     }
-                    location={event.location || "Unknown location"}
+                    location={
+                      event.location ||
+                      (event.eventType === "platform_booth"
+                        ? event.locationPreference
+                        : null) ||
+                      "Unknown location"
+                    }
                     attendees={
                       Array.isArray(event.attendees)
                         ? event.attendees.length
@@ -134,18 +204,21 @@ export default function ArchivedEvents() {
                     description={event.description}
                     startDate={event.startDate}
                     endDate={event.endDate}
+                    durationWeeks={event.durationWeeks}
                     capacity={event.capacity || -1}
                     vendors={event.vendors || []}
+                    price={event.price}
                     showDetailedView={true}
                     onViewDetails={() => handleCardClick(event._id)}
-                    // Archived events must not be deletable from the UI
+                    onUnarchive={() => handleUnarchive(event._id)}
+                    isUnarchiving={unarchiving === event._id}
                     canDelete={false}
                   />
                 ))}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
       </main>
 
       <EventDetailsDialog

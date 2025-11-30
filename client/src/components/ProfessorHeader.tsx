@@ -6,13 +6,18 @@ import {
   Dumbbell,
   Calendar,
   Store,
+  Heart,
+  Gift,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+import WalletPopover from "./WalletPopover"; // Import the WalletPopover
 import { useLocation } from "wouter";
+import { useEffect, useState } from "react";
 
 interface ProfessorHeaderProps {
   homeHref?: string;
@@ -21,7 +26,26 @@ interface ProfessorHeaderProps {
 export default function ProfessorHeader({
   homeHref = "/professor",
 }: ProfessorHeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const [user, setUser] = useState<{
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    role?: string;
+    companyName?: string;
+  } | null>(null);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setUser(parsed);
+      }
+    } catch (err) {
+      // ignore
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
@@ -31,10 +55,18 @@ export default function ProfessorHeader({
             <Logo size="xl" />
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 md:gap-2">
+            <WalletPopover /> {/* <-- Replaced dialog button with this */}
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+            {user?.role && user?.firstName && (
+              <div className="hidden md:flex items-center gap-2 ml-2">
+                <span className="text-sm font-medium text-foreground">
+                  {user.firstName} / {user.role.replace(/_/g, " ")}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -42,7 +74,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation(homeHref)}
             data-testid="button-nav-home"
           >
@@ -52,17 +84,17 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/professor/workshops" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/professor/workshops")}
             data-testid="button-nav-workshops"
           >
             <BookOpen className="h-4 w-4" />
-            Workshops
+            My Workshops
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/my-events" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/my-events")}
             data-testid="button-nav-my-events"
           >
@@ -72,7 +104,7 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/sports" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/sports")}
             data-testid="button-nav-sports"
           >
@@ -82,12 +114,42 @@ export default function ProfessorHeader({
           <Button
             variant="ghost"
             size="sm"
-            className="gap-2"
+            className={`gap-2 ${location === "/booth-vote" ? "underline decoration-primary decoration-2" : ""}`}
             onClick={() => setLocation("/booth-vote")}
             data-testid="button-nav-booth-vote"
           >
             <Store className="h-4 w-4" />
             Booth Vote
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/favorites" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/favorites")}
+            data-testid="button-nav-favorites"
+          >
+            <Heart className="h-4 w-4" />
+            Favorites
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/admin/ratings")}
+            data-testid="button-nav-ratings"
+          >
+            <Star className="h-4 w-4" />
+            Ratings
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/loyalty-partners" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/loyalty-partners")}
+            data-testid="button-nav-loyalty-partners"
+          >
+            <Gift className="h-4 w-4" />
+            Loyalty Partners
           </Button>
         </div>
       </div>

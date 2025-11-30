@@ -1,7 +1,10 @@
+import mongoose from "mongoose";
 import { User } from "./user.model.js";
 import {
   UserValidation,
   createManagementAccountSchema,
+  toggleBlockUserSchema,
+  favoriteEventSchema,
 } from "./user.validation.js";
 import {
   sendRegistrationEmail,
@@ -127,6 +130,133 @@ export default class UserController {
     try {
       const users = await UserService.getAllUsers(req); // ✅ Pass req here
       res.status(200).json({ status: "success", data: users });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  /**
+   * Toggle user block status
+   * PATCH /api/users/:userId/block-status
+   * Body: { action: 'block' | 'unblock' }
+   */
+  static async toggleBlockStatus(req, res, next) {
+    try {
+      const { userId } = req.params;
+      const { action } = req.body;
+
+      // Validate request
+      const { error } = toggleBlockUserSchema.validate({ userId, action });
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.details[0].message,
+        });
+      }
+
+      // Call service to handle the block/unblock logic
+      const result = await UserService.toggleBlockStatus(
+        req.user._id, // current admin's ID
+        userId, // target user's ID
+        action // 'block' or 'unblock'
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: {
+          userId: result.userId,
+          status: result.status,
+        },
+      });
+    } catch (err) {
+      // Pass the error to the error handling middleware
+      next(err);
+    }
+  }
+
+  /**
+   * Add an event to user's favorites
+   * POST /api/users/favorites
+   * Body: { eventId: string }
+   */
+  static async addToFavorites(req, res, next) {
+    try {
+      const { eventId } = req.body;
+      const userId = req.user._id;
+
+      const result = await UserService.addToFavorites(
+        userId,
+        eventId,
+        req.user.role
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result.data,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  /**
+   * Remove an event from user's favorites
+   * DELETE /api/users/favorites/:eventId
+   */
+  static async removeFromFavorites(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id;
+
+      const result = await UserService.removeFromFavorites(
+        userId,
+        eventId,
+        req.user.role
+      );
+
+      return res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result.data,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  /**
+   * Get user's favorite events
+   * GET /api/users/favorites
+   */
+  static async getFavoriteEvents(req, res, next) {
+    try {
+      const userId = req.user._id;
+
+      const result = await UserService.getFavoriteEvents(userId, req.user.role);
+
+      return res.status(200).json({
+        success: true,
+        data: result.data,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  /**
+   * Get count of active users
+   * GET /api/users/active/count
+   */
+  static async getActiveUsersCount(req, res, next) {
+    try {
+      const count = await UserService.getActiveUsersCount();
+
+      return res.status(200).json({
+        success: true,
+        data: { count },
+      });
     } catch (err) {
       next(err);
     }

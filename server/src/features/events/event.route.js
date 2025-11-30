@@ -99,6 +99,14 @@ router.patch(
   eventsController.archiveEvent.bind(eventsController)
 );
 
+// Unarchive event (only Events Office)
+router.patch(
+  "/:id/unarchive",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.unarchiveEvent.bind(eventsController)
+);
+
 // Edit a workshop that needs revision
 router.patch(
   "/workshops/:workshopId",
@@ -177,7 +185,14 @@ router.get(
 router.get(
   "/past",
   authMiddleware,
-  roleMiddleware(["events_office", "admin"]),
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getPastEvents.bind(eventsController)
 );
 
@@ -239,6 +254,83 @@ router.post(
   authMiddleware,
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.registerForEvent.bind(eventsController)
+);
+
+// Get registered users for a specific event (events_office only)
+router.get(
+  "/registered-users/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.getEventRegisteredUsers.bind(eventsController)
+);
+
+// Export registered users for a specific event (events_office only)
+// Supports query param ?format=xlsx|pdf|csv (default: xlsx)
+router.get(
+  "/export-registered/:eventId",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.exportEventRegisteredUsers.bind(eventsController)
+);
+// PATCH /events/:id/cancel
+router.patch(
+  "/:eventId/cancel",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.cancelEventRegistration.bind(eventsController)
+);
+// Get attendees count for an event
+router.get(
+  "/reports/attendees",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]), // only authorized roles can view reports
+  eventsController.getAttendeesReport.bind(eventsController)
+);
+
+router.patch(
+  "/:id/restrict-access",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.restrictAccess.bind(eventsController)
+);
+
+router.get(
+  "/reports/sales",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.getSalesReport.bind(eventsController)
+);
+
+// Send workshop certificates to attendees (professor or events office only)
+router.post(
+  "/:workshopId/send-certificates",
+  authMiddleware,
+  roleMiddleware(["professor", "events_office"]),
+  eventsController.sendWorkshopCertificates.bind(eventsController)
+);
+
+// Send certificates for all completed workshops (events office only)
+router.post(
+  "/send-all-certificates",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.sendAllCompletedWorkshopCertificates.bind(eventsController)
+);
+
+// Manually trigger certificate scheduler job (events office/admin only)
+router.post(
+  "/trigger-certificate-job",
+  authMiddleware,
+  roleMiddleware(["events_office", "admin"]),
+  eventsController.triggerCertificateScheduler.bind(eventsController)
+);
+
+// Add this BEFORE the /:eventId route to avoid conflicts
+router.get(
+  "/approved/count",
+  authMiddleware,
+  roleMiddleware(["admin", "events_office"]),
+  eventsController.getApprovedEventsCount.bind(eventsController)
 );
 
 export default router;

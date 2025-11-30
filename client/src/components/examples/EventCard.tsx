@@ -5,6 +5,7 @@ export default function EventCardExample() {
     <div className="p-6 max-w-sm">
       <EventCard
         id="1"
+        ee
         title="AI & Machine Learning Workshop"
         category="academic"
         date="March 15, 2024"

@@ -26,10 +26,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 import Logo from "@/components/Logo";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
+import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
 import EventFeedbackDialog from "@/components/EventFeedbackDialog";
 
-// Helper to get token (adjust as needed)
+// Helper to get token
 const getToken = () => localStorage.getItem("token");
 
 interface RegisteredEvent {
@@ -41,6 +42,11 @@ interface RegisteredEvent {
   endDate: string;
   bannerImage?: string;
   status?: string;
+  price?: number;
+  attendeesCount?: number;
+  attendees?: string[]; // Assuming backend returns array of IDs
+  durationWeeks?: number;
+  locationPreference?: string;
 }
 
 export default function MyEvents() {
@@ -69,7 +75,6 @@ export default function MyEvents() {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        // For local testing, you can just hardcode this
         const apiBaseUrl = "http://localhost:4000";
 
         const res = await fetch(`${apiBaseUrl}/api/events/me/events`, {
@@ -98,32 +103,29 @@ export default function MyEvents() {
     fetchEvents();
   }, []);
 
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case "bazaar":
-        return Store;
-      case "workshop":
-        return GraduationCap;
-      case "trip":
-        return Route;
-      case "conference":
-        return Megaphone;
-      default:
-        return Megaphone;
-    }
-  };
-
-  const handleCancelRegistration = (eventId: string) => {
-    alert(
-      `Registration cancelled for event ${eventId}. Amount will be refunded.`
-    );
-  };
-
-  const handleRemoveFavorite = (eventId: string) => {
-    alert(`Removed event ${eventId} from favorites.`);
-  };
-
   // Fetch full event details by ID
+  const formatEventDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatEventTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatBoothDate = (durationWeeks: number) => {
+    return `Active for ${durationWeeks} week${durationWeeks > 1 ? "s" : ""}`;
+  };
+
   const handleCardClick = async (eventId: string) => {
     setDetailsLoading(true);
     setDialogOpen(true);
@@ -145,74 +147,13 @@ export default function MyEvents() {
     }
   };
 
-  const getStatusClasses = (status: string) => {
-    switch (status) {
-      case "approved":
-        return "bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/20";
-      case "pending":
-        return "bg-yellow-500/15 text-yellow-700 dark:text-yellow-400 border border-yellow-500/20";
-      case "rejected":
-        return "bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/20";
-      case "needs_revision":
-        return "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/20";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Use appropriate header based on user role */}
       {userRole === "professor" ? (
         <ProfessorHeader homeHref="/professor" />
       ) : userRole === "staff" || userRole === "ta" ? (
-        <div className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
-          <div className="max-w-7xl mx-auto px-4 md:px-6">
-            <div className="flex h-16 items-center justify-between gap-4">
-              <div className="flex items-center gap-2">
-                <Logo size="xl" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon">
-                  <Bell className="h-5 w-5" />
-                </Button>
-                <ThemeToggle />
-                <Button variant="ghost" size="icon">
-                  <UserIcon className="h-5 w-5" />
-                </Button>
-              </div>
-            </div>
-            <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={() => setLocation("/staff-ta")}
-              >
-                <Home className="h-4 w-4" />
-                Home
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={() => setLocation("/my-events")}
-              >
-                <Calendar className="h-4 w-4" />
-                My Events
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="gap-2"
-                onClick={() => setLocation("/sports")}
-              >
-                <Dumbbell className="h-4 w-4" />
-                Sports Facilities
-              </Button>
-            </div>
-          </div>
-        </div>
+        <StaffHeader />
       ) : (
         <StudentHeader />
       )}
@@ -233,33 +174,66 @@ export default function MyEvents() {
             </p>
           ) : (
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {registeredEvents.map((event) => (
-                <EventCard
-                  key={event._id}
-                  id={event._id}
-                  title={event.name}
-                  category={event.eventType}
-                  date={new Date(event.startDate).toLocaleDateString()}
-                  time={new Date(event.startDate).toLocaleTimeString([], {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                  location={event.location}
-                  attendees={0}
-                  image={event.bannerImage}
-                  startDate={event.startDate}
-                  endDate={event.endDate}
-                  showActions={true}
-                  isRegistered={true}
-                  onViewDetails={() => handleCardClick(event._id)}
-                  onSave={() => {}}
-                  onShare={() => {}}
-                  onFeedback={() => {
-                    setSelectedEventForFeedback(event);
-                    setFeedbackDialogOpen(true);
-                  }}
-                />
-              ))}
+              {registeredEvents.map((event) => {
+                const isBoothEvent =
+                  String(event.eventType).toLowerCase() === "platform_booth";
+                return (
+                  <EventCard
+                    key={event._id}
+                    id={event._id}
+                    title={event.name}
+                    category={event.eventType}
+                    date={
+                      isBoothEvent && event.durationWeeks
+                        ? formatBoothDate(event.durationWeeks)
+                        : formatEventDate(event.startDate)
+                    }
+                    time={
+                      isBoothEvent && event.durationWeeks
+                        ? ""
+                        : formatEventTime(event.startDate)
+                    }
+                    location={
+                      event.location ||
+                      (isBoothEvent ? event.locationPreference : null) ||
+                      "Unknown location"
+                    }
+                    // FIX: Pass actual attendee data
+                    attendees={
+                      event.attendees
+                        ? event.attendees.length
+                        : event.attendeesCount || 0
+                    }
+                    image={event.bannerImage}
+                    startDate={event.startDate}
+                    endDate={event.endDate}
+                    durationWeeks={event.durationWeeks}
+                    showActions={true}
+                    isRegistered={true}
+                    hideRegisterButton={
+                      userRole === "student" ||
+                      userRole === "professor" ||
+                      userRole === "staff" ||
+                      userRole === "ta"
+                    }
+                    price={event.price || 0}
+                    allowCancellation={true}
+                    showAttendeeCount={false}
+                    inlinePriceWithLocation
+                    // CALLBACK to remove from list instantly
+                    onUnregister={() => {
+                      setRegisteredEvents((prev) =>
+                        prev.filter((e) => e._id !== event._id)
+                      );
+                    }}
+                    onViewDetails={() => handleCardClick(event._id)}
+                    onFeedback={() => {
+                      setSelectedEventForFeedback(event);
+                      setFeedbackDialogOpen(true);
+                    }}
+                  />
+                );
+              })}
             </div>
           )}
         </div>

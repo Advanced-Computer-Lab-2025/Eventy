@@ -8,6 +8,7 @@ import {
   Home,
   LogOut,
   Store,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,7 +43,7 @@ export default function Header({
   showHomeTop = false,
   hideBottomNav = false,
 }: HeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -102,6 +103,11 @@ export default function Header({
           )}
 
           <div className="flex items-center gap-2">
+            {user?.firstName && (
+              <span className="hidden md:inline-block text-sm font-medium text-foreground">
+                {user.firstName}
+              </span>
+            )}
             <Button
               variant="ghost"
               size="icon"
@@ -122,7 +128,7 @@ export default function Header({
               <Button
                 variant="ghost"
                 size="sm"
-                className="gap-2"
+                className={`gap-2 ${location === homeHref ? "underline decoration-primary decoration-2" : ""}`}
                 onClick={() => setLocation(homeHref)}
                 data-testid="button-nav-home"
               >
@@ -139,6 +145,16 @@ export default function Header({
                 >
                   <LayoutGrid className="h-4 w-4" />
                   All Events
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
+                  onClick={() => setLocation("/admin/ratings")}
+                  data-testid="button-nav-ratings"
+                >
+                  <Star className="h-4 w-4" />
+                  Ratings
                 </Button>
                 <Button
                   variant="ghost"

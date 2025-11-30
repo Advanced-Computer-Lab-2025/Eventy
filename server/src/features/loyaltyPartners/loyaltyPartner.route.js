@@ -7,13 +7,45 @@ import { applyLoyaltyProgramSchema } from "./loyaltyPartner.validation.js";
 
 const router = express.Router();
 
-// POST /api/loyaltyPartner/apply
+// GET /api/loyalty-partners/status
+router.get(
+  "/status",
+  authMiddleware,
+  role(["vendor"]),
+  LoyaltyPartnerController.getStatus
+);
+
+// POST /api/loyalty-partners/apply
 router.post(
   "/apply",
   authMiddleware,
   role(["vendor"]),
   validate(applyLoyaltyProgramSchema),
   LoyaltyPartnerController.apply
+);
+
+// DELETE /api/loyalty-partners/cancel
+router.delete(
+  "/cancel",
+  authMiddleware,
+  role(["vendor"]),
+  LoyaltyPartnerController.cancel
+);
+
+// GET /api/loyalty-partners/status
+router.get(
+  "/status",
+  authMiddleware,
+  role(["vendor"]),
+  LoyaltyPartnerController.getStatus
+);
+
+// GET /api/loyalty-partners/partners
+router.get(
+  "/partners",
+  authMiddleware,
+  role(["student", "staff", "ta", "professor", "events_office", "admin"]),
+  LoyaltyPartnerController.getPartners
 );
 
 export default router;

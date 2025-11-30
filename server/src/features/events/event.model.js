@@ -81,6 +81,9 @@ const eventSchema = new Schema(
       { type: Schema.Types.ObjectId, ref: "User" }, // Students/Staff who registered
     ],
 
+    // Track which attendees have received workshop attendance certificates
+    certificatesSent: [{ type: Schema.Types.ObjectId, ref: "User" }],
+
     capacity: { type: Number },
 
     bannerImage: { type: String }, // URL to the banner image
@@ -102,6 +105,15 @@ const eventSchema = new Schema(
         return this.archivedAt !== null;
       },
     },
+
+    // Array of roles that are restricted from accessing this event
+    restrictedRoles: [
+      {
+        type: String,
+        enum: ["student", "staff", "ta", "professor", "vendor"],
+        default: [],
+      },
+    ],
 
     price: {
       type: Number,
@@ -143,7 +155,7 @@ const eventSchema = new Schema(
         },
       ],
       required: function () {
-        return this.eventType === "workshop";
+        return this.eventType === "workshop" || this.eventType === "conference";
       },
       validate: {
         validator: function (value) {
@@ -208,5 +220,6 @@ eventSchema.index({ archivedBy: 1 }); // Index for archive auditing
 eventSchema.index({ status: 1, startDate: 1, deletedAt: 1, archivedAt: 1 }); // For upcoming/active events query
 eventSchema.index({ archivedAt: 1, archivedBy: 1 }); // For archive auditing queries
 eventSchema.index({ name: "text", description: "text" }); // Text index for name and description search
+eventSchema.index({ restrictedRoles: 1 }); // Index for checking role restrictions
 
 export const Event = mongoose.model("Event", eventSchema);
