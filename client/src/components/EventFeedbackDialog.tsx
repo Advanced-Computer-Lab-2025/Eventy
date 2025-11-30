@@ -243,7 +243,7 @@ export default function EventFeedbackDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col">
+      <DialogContent className="sm:max-w-[600px] max-h-[95vh] flex flex-col pb-3 pt-4 px-4">
         <DialogHeader>
           <DialogTitle>Event Feedback</DialogTitle>
           <DialogDescription>
@@ -263,11 +263,17 @@ export default function EventFeedbackDialog({
           ) : (
             <>
               {hasSubmitted && userFeedback && (
-                <div className="bg-muted rounded-lg p-6 text-center space-y-4">
+                <div
+                  className={`bg-muted rounded-lg text-center space-y-2 ${
+                    !userFeedback.comment || userFeedback.comment.length < 40
+                      ? "p-3"
+                      : "p-6"
+                  }`}
+                >
                   <div className="text-lg font-medium">
                     You've already rated this event
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <div className="flex items-center justify-center gap-1 text-yellow-400">
                       {[...Array(5)].map((_, index) => (
                         <Star
