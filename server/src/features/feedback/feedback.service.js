@@ -60,38 +60,54 @@ export async function submitFeedbackService(
     );
   }
 
-  // Create the feedback document. store comment (if provided) as a subdocument
-  const feedbackData = {
-    eventId,
-    userId,
-    rating,
-    comments: [],
-  };
-
-  if (comment && comment.trim()) {
-    feedbackData.comments.push({
-      userId,
-      body: comment.trim(),
-    });
-  }
+  // Create the feedback document (single optional rating, single optional comment)
+  const feedbackData = { eventId, userId };
+  if (typeof rating === "number") feedbackData.rating = rating;
+  if (comment && String(comment).trim())
+    feedbackData.comment = String(comment).trim();
 
   const feedback = await Feedback.create(feedbackData);
 
-  // return populated feedback for consistency with other endpoints
-  return await Feedback.findById(feedback._id)
-    .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email");
+  return await Feedback.findById(feedback._id).populate(
+    "userId",
+    "firstName lastName email"
+  );
 }
 
 export async function getEventFeedbackService(eventId) {
   const feedback = await Feedback.find({ eventId, deletedAt: null })
     .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email")
     .sort("-createdAt");
 
-  const ratings = feedback.map((f) => f.rating);
+  const ratings = feedback
+    .map((f) => (typeof f.rating === "number" ? f.rating : null))
+    .filter((v) => typeof v === "number");
   const averageRating =
-    ratings.length > 0 ? ratings.reduce((a, b) => a + b) / ratings.length : 0;
+    ratings.length > 0
+      ? ratings.reduce((a, b) => a + (b || 0), 0) / ratings.length
+      : 0;
+
+  return {
+    feedback,
+    averageRating,
+    totalReviews: feedback.length,
+  };
+}
+
+export async function getEventFeedbackServiceAdmin(eventId) {
+  const feedback = await Feedback.find({ eventId })
+    .populate("userId", "firstName lastName email")
+    .sort("-createdAt");
+
+  // Average computed only from non-deleted ratings
+  const ratings = feedback
+    .filter((f) => f.deletedAt === null)
+    .map((f) => (typeof f.rating === "number" ? f.rating : null))
+    .filter((v) => typeof v === "number");
+  const averageRating =
+    ratings.length > 0
+      ? ratings.reduce((a, b) => a + (b || 0), 0) / ratings.length
+      : 0;
 
   return {
     feedback,
@@ -101,15 +117,14 @@ export async function getEventFeedbackService(eventId) {
 }
 
 export async function getUserEventFeedbackService(userId, eventId) {
-  const feedback = await Feedback.findOne({
+  const ratingDoc = await Feedback.findOne({
     eventId,
     userId,
     deletedAt: null,
-  })
-    .populate("userId", "firstName lastName email")
-    .populate("comments.userId", "firstName lastName email");
+    rating: { $exists: true },
+  }).populate("userId", "firstName lastName email");
 
-  return feedback;
+  return ratingDoc;
 }
 
 export async function deleteCommentByAdmin(adminId, feedbackId) {
@@ -141,7 +156,7 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
   }
 
   // Check if comment exists and not already deleted
-  if (!feedback.comment || !feedback.comment.trim()) {
+  if (!feedback.comment || !String(feedback.comment).trim()) {
     throw new ApiError(404, "No comment found for this feedback.");
   }
 
@@ -155,17 +170,8 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
   const commentBody = feedback.comment;
   const commentAuthor = feedback.userId;
 
-  // Delete the comment (clear the field)
-  feedback.comment = "";
-
-  // Update the type field based on what remains
-  if (feedback.rating) {
-    // If rating exists, change type to "rating"
-    feedback.type = "rating";
-  } else {
-    // If no rating, soft-delete entire feedback
-    feedback.deletedAt = new Date();
-  }
+  // Soft-delete the feedback entry (preserve original comment text in DB)
+  feedback.deletedAt = new Date();
 
   await feedback.save();
 
