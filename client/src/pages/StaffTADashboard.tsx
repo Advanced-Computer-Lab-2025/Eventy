@@ -317,37 +317,6 @@ export default function StaffTADashboard() {
     return [];
   }, [eventFilters.eventType, professorOptions]);
 
-  const quickActions = [
-    {
-      title: "My Events",
-      description: "View and manage your registered events",
-      icon: Calendar,
-      color: "bg-blue-500",
-      path: "/my-events",
-      features: [
-        "View upcoming events",
-        "Check past events",
-        "See event details",
-        "Track registration status",
-      ],
-    },
-    {
-      title: "Sports Facilities",
-      description: "View gym schedule and fitness sessions",
-      icon: Dumbbell,
-      color: "bg-green-500",
-      path: "/sports",
-      activities: [
-        "Yoga",
-        "Pilates",
-        "Aerobics",
-        "Zumba",
-        "Cross Circuit",
-        "Kick-boxing",
-      ],
-    },
-  ];
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -443,83 +412,6 @@ export default function StaffTADashboard() {
                 </p>
               </CardContent>
             </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold mb-4">Quick Access</h2>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {quickActions.map((action) => (
-                <Card
-                  key={action.title}
-                  className="hover:shadow-lg transition-shadow flex flex-col"
-                >
-                  <CardHeader>
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`${action.color} p-3 rounded-lg`}>
-                          <action.icon className="h-6 w-6 text-white" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-xl">
-                            {action.title}
-                          </CardTitle>
-                          <CardDescription className="mt-1">
-                            {action.description}
-                          </CardDescription>
-                        </div>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="flex-1 flex flex-col">
-                    <div className="flex-1">
-                      {action.features && (
-                        <ul className="space-y-2 mb-4">
-                          {action.features.map((feature, idx) => (
-                            <li
-                              key={idx}
-                              className="flex items-center text-sm text-muted-foreground"
-                            >
-                              <div className="h-1.5 w-1.5 rounded-full bg-primary mr-2" />
-                              {feature}
-                            </li>
-                          ))}
-                        </ul>
-                      )}
-                      {action.activities && (
-                        <div className="mb-4">
-                          <p className="text-sm text-muted-foreground mb-3">
-                            Access the gym schedule to view monthly fitness
-                            sessions and book your preferred time slots.
-                          </p>
-                          <p className="text-sm font-medium mb-3">
-                            Available Sessions:
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {action.activities.map((activity, idx) => (
-                              <Badge
-                                key={idx}
-                                variant="secondary"
-                                className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800"
-                              >
-                                {activity}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                    <Button
-                      className="w-full mt-auto"
-                      onClick={() => setLocation(action.path)}
-                    >
-                      Access {action.title}
-                      <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
           </div>
 
           {/* Upcoming Events Section */}
