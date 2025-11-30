@@ -122,16 +122,18 @@ export default function DocumentViewer({
             </div>
           )}
         </div>
-        <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleDownload}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Download
-          </Button>
-        </DialogFooter>
+        {(isImage || isPdf) && !error && (
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={handleDownload}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Download
+            </Button>
+          </DialogFooter>
+        )}
       </DialogContent>
     </Dialog>
   );
