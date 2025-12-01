@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { Calendar, MapPin, Image as ImageIcon } from "lucide-react";
+import {
+  Calendar as CalendarIcon,
+  MapPin,
+  Image as ImageIcon,
+} from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +23,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface CreateEventDialogProps {
   open: boolean;
@@ -31,10 +43,17 @@ export default function CreateEventDialog({
   onOpenChange,
   onSubmit,
 }: CreateEventDialogProps) {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    title: string;
+    category: string;
+    date: Date | undefined;
+    time: string;
+    location: string;
+    description: string;
+  }>({
     title: "",
     category: "",
-    date: "",
+    date: undefined,
     time: "",
     location: "",
     description: "",
@@ -116,20 +135,33 @@ export default function CreateEventDialog({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date">Date</Label>
-              <div className="relative">
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="date"
-                  type="date"
-                  className="pl-10"
-                  value={formData.date}
-                  onChange={(e) =>
-                    setFormData({ ...formData, date: e.target.value })
-                  }
-                  data-testid="input-date"
-                  required
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.date && "text-muted-foreground"
+                    )}
+                    data-testid="input-date"
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.date ? (
+                      format(formData.date, "dd/MM/yyyy")
+                    ) : (
+                      <span>dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.date}
+                    onSelect={(date) => setFormData({ ...formData, date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
