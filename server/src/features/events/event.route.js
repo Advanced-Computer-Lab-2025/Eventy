@@ -196,6 +196,14 @@ router.get(
   eventsController.getPastEvents.bind(eventsController)
 );
 
+// Get archived events - Events Office only
+router.get(
+  "/archived",
+  authMiddleware,
+  roleMiddleware(["events_office"]),
+  eventsController.getArchivedEvents.bind(eventsController)
+);
+
 // Search events ( new feature)
 router.get(
   "/search",

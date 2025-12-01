@@ -462,7 +462,9 @@ export default function AdminDashboardPage() {
             title="Active Users"
             value={activeUsersLoading ? "-" : activeUsersCount.toString()}
             icon={Users}
-            themed={true}
+            valueColor="text-foreground"
+            iconColor="text-muted-foreground"
+            description="Users active in last 24 hours"
           />
           <StatCard
             title="Upcoming Events"
@@ -470,13 +472,17 @@ export default function AdminDashboardPage() {
               totalUpcomingCount === null ? "-" : totalUpcomingCount.toString()
             }
             icon={Calendar}
-            themed={true}
+            valueColor="text-blue-600"
+            iconColor="text-blue-600"
+            description="Coming soon"
           />
           <StatCard
             title="Approved Events"
             value={approvedLoading ? "-" : approvedEventsCount.toString()}
             icon={TrendingUp}
-            themed={true}
+            valueColor="text-green-600"
+            iconColor="text-green-600"
+            description="Successfully approved"
           />
         </div>
 

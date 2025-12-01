@@ -344,6 +344,7 @@ export default function StaffUpcomingEvents() {
                         capacity={event.capacity}
                         registrationDeadline={event.registrationDeadline}
                         vendors={event.vendors || []}
+                        eventData={event}
                         showDetailedView={true}
 
                         // --- CHANGES MADE HERE ---

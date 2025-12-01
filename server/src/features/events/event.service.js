@@ -389,6 +389,25 @@ export const registerUserToEvent = async (user, eventId) => {
     throw new ApiError(409, "You are already registered for this event");
   }
 
+  // 3.5️⃣ Prevent professors from registering to their own workshops
+  if (
+    user.role.toLowerCase() === "professor" &&
+    event.eventType === "workshop" &&
+    event.professors &&
+    Array.isArray(event.professors)
+  ) {
+    const isProfessorInWorkshop = event.professors.some((prof) => {
+      const profId = prof?._id?.toString() || prof?.toString();
+      return profId === user._id.toString();
+    });
+    if (isProfessorInWorkshop) {
+      throw new ApiError(
+        403,
+        "You cannot register for a workshop where you are listed as a professor"
+      );
+    }
+  }
+
   // 4️⃣ Check if event has reached its capacity (if it has a limit)
   if (event.capacity && event.attendees.length >= event.capacity) {
     throw new ApiError(409, "Event is full");

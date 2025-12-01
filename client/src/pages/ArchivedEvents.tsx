@@ -48,8 +48,8 @@ export default function ArchivedEvents() {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        // Fetch past events from the server and keep only archived ones
-        const res = await fetch(`${API_BASE_URL}/api/events/past`, {
+        // Fetch archived events from the server
+        const res = await fetch(`${API_BASE_URL}/api/events/archived`, {
           headers: {
             "Content-Type": "application/json",
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -64,8 +64,7 @@ export default function ArchivedEvents() {
 
         const data = await res.json();
         const items = Array.isArray(data.data) ? data.data : [];
-        // Keep only events that are archived
-        setEvents(items.filter((e: any) => e.status === "archived"));
+        setEvents(items);
       } catch (err: any) {
         setError(err.message || "Failed to fetch archived events");
       } finally {

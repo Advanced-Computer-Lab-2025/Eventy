@@ -153,7 +153,26 @@ export default function EditTrip() {
         return;
       }
 
-      if (start < now) {
+      // For editing: Only validate past dates if the date was actually changed
+      // Allow keeping the existing date even if it's in the past
+      const originalStartDate = trip?.startDate
+        ? new Date(trip.startDate)
+        : null;
+      const originalStartTime = trip?.startTime || "";
+      const originalStart =
+        originalStartDate && originalStartTime
+          ? new Date(
+              `${originalStartDate.toISOString().split("T")[0]}T${originalStartTime}:00`
+            )
+          : null;
+
+      // Check if the date/time was actually changed
+      const dateChanged =
+        !originalStart ||
+        Math.abs(start.getTime() - originalStart.getTime()) > 1000; // 1 second tolerance
+
+      // Only validate past dates if the date was changed to a new past date
+      if (dateChanged && start < now) {
         toast({
           title: "Start date in the past",
           description: "Trip start date/time cannot be in the past.",
@@ -185,8 +204,17 @@ export default function EditTrip() {
 
       const payload = {
         ...formData,
-        price: parseFloat(formData.price),
-        capacity: parseInt(formData.capacity, 10),
+        // Normalize numeric fields to avoid floating/locale issues
+        price: (() => {
+          const p = Number(String(formData.price).trim());
+          if (Number.isNaN(p)) return undefined;
+          return Math.round(p * 100) / 100; // keep two decimals
+        })(),
+        capacity: (() => {
+          const c = Number(String(formData.capacity).trim());
+          if (Number.isNaN(c)) return undefined;
+          return Math.max(1, Math.round(c));
+        })(),
         restrictedRoles,
       };
 
@@ -415,6 +443,8 @@ export default function EditTrip() {
                     onChange={(e) =>
                       setFormData({ ...formData, capacity: e.target.value })
                     }
+                    step={1}
+                    min={1}
                     className="pl-10"
                     required
                     placeholder="Maximum number of attendees"

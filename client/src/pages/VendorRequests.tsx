@@ -8,6 +8,17 @@ import {
   Download,
   FileText,
   MoreVertical,
+  Building2,
+  Calendar,
+  Users,
+  MapPin,
+  LayoutGrid,
+  Clock,
+  Mail,
+  User,
+  FileCheck,
+  Image as ImageIcon,
+  Tag,
 } from "lucide-react";
 import Header from "@/components/Header";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
@@ -44,6 +55,8 @@ import {
 } from "@/components/ui/select";
 import { useLocation } from "wouter";
 import DocumentViewer from "@/components/DocumentViewer";
+import { motion, AnimatePresence } from "framer-motion";
+import { Badge as StatusBadge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -190,46 +203,48 @@ export default function VendorRequests() {
     }
   }, []);
 
+  const fetchApplications = async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await fetch(`http://localhost:4000/api/applications`, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      const contentType = res.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await res.text();
+        throw new Error(
+          `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(0, 50)}...`
+        );
+      }
+
+      const body = await res.json();
+      if (!res.ok) {
+        throw new Error(body.message || "Failed to fetch applications");
+      }
+
+      const apps = Array.isArray(body.data) ? body.data : [];
+      setRequests(apps);
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load applications"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!token) return; // Wait for token to be loaded
-
-    const fetchApplications = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(`http://localhost:4000/api/applications`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          credentials: "include",
-        });
-
-        const contentType = res.headers.get("content-type");
-        if (!contentType || !contentType.includes("application/json")) {
-          const text = await res.text();
-          throw new Error(
-            `Server Error: Expected JSON, got non-JSON (Status: ${res.status}). Preview: ${text.substring(0, 50)}...`
-          );
-        }
-
-        const body = await res.json();
-        if (!res.ok) {
-          throw new Error(body.message || "Failed to fetch applications");
-        }
-
-        const apps = Array.isArray(body.data) ? body.data : [];
-        setRequests(apps);
-      } catch (err: unknown) {
-        setError(
-          err instanceof Error ? err.message : "Failed to load applications"
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
     fetchApplications();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   // Helper function to get event name from request
@@ -267,11 +282,8 @@ export default function VendorRequests() {
     try {
       const updatedApp = await updateVendorStatus(requestId, "approved", token);
       if (updatedApp) {
-        setRequests((prev) =>
-          prev.map((r) =>
-            r._id === requestId ? { ...r, status: "approved" } : r
-          )
-        );
+        // Refresh the applications list to get the latest data
+        await fetchApplications();
         toast({
           title: "Request approved",
           description: "The vendor request has been approved.",
@@ -304,11 +316,8 @@ export default function VendorRequests() {
     try {
       const updatedApp = await updateVendorStatus(requestId, "rejected", token);
       if (updatedApp) {
-        setRequests((prev) =>
-          prev.map((r) =>
-            r._id === requestId ? { ...r, status: "rejected" } : r
-          )
-        );
+        // Refresh the applications list to get the latest data
+        await fetchApplications();
         toast({
           title: "Request rejected",
           description: "The vendor request has been rejected.",
@@ -650,330 +659,471 @@ export default function VendorRequests() {
         </div>
 
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent>
+          <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#1D1825] border-purple-100 dark:border-[#6A33B8]/30 shadow-2xl shadow-purple-900/20">
             <TooltipProvider delayDuration={500} skipDelayDuration={0}>
-              <DialogHeader>
-                <DialogTitle>Application Details</DialogTitle>
-                <DialogDescription>
-                  Review vendor participation request details
-                </DialogDescription>
-              </DialogHeader>
               {selected && (
-                <div className="space-y-4 text-sm">
-                  <div className="flex items-start gap-3">
-                    {selected?.createdBy?.companyLogoUrl ? (
-                      <img
-                        src={selected.createdBy.companyLogoUrl}
-                        alt="Company Logo"
-                        className="w-12 h-12 rounded border object-cover"
-                      />
-                    ) : null}
-                    <div>
-                      <div className="font-medium">Company</div>
-                      <div className="flex items-center gap-2">
-                        <span>
-                          {selected?.createdBy?.companyName || "Unknown"}
-                        </span>
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={selected._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.25, ease: "easeOut" }}
+                    className="flex flex-col max-h-[85vh]"
+                  >
+                    {/* Header */}
+                    <div className="relative p-6 pb-2 shrink-0">
+                      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#6A33B8]/10 to-transparent pointer-events-none" />
+                      <div className="relative z-10 space-y-1 pr-12">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <DialogTitle className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                            {selected?.createdBy?.companyName ||
+                              "Vendor Application"}
+                          </DialogTitle>
+                          <div className="mt-1">
+                            <StatusBadge
+                              variant={
+                                selected.status === "approved"
+                                  ? "default"
+                                  : selected.status === "rejected"
+                                    ? "destructive"
+                                    : "secondary"
+                              }
+                              className={
+                                selected.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
+                                  : ""
+                              }
+                            >
+                              {selected.status?.charAt(0).toUpperCase() +
+                                selected.status?.slice(1)}
+                            </StatusBadge>
+                          </div>
+                        </div>
                         {selected?.createdBy?.email && (
-                          <span className="text-sm text-muted-foreground">
-                            • {selected.createdBy.email}
-                          </span>
+                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/70 pt-2">
+                            <Mail className="w-4 h-4 text-[#6A33B8] dark:text-[#9F7AEA]" />
+                            <span>{selected.createdBy.email}</span>
+                          </div>
                         )}
                       </div>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="font-medium">Event</div>
-                      <div>{getEventName(selected)}</div>
-                    </div>
-                    <div>
-                      <div className="font-medium">Type</div>
-                      <div className="capitalize">{selected?.type || "-"}</div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="font-medium">Booth Size</div>
-                      <div>{selected?.boothSize || "-"}</div>
-                    </div>
-                    <div>
-                      <div className="font-medium">Created At</div>
-                      <div>
-                        {selected?.createdAt
-                          ? new Date(selected.createdAt).toLocaleString()
-                          : "-"}
+
+                    {/* Body */}
+                    <div
+                      className="
+                      overflow-y-auto p-6 pt-2 space-y-6 pr-4
+                      [&::-webkit-scrollbar]:w-1.5
+                      [&::-webkit-scrollbar-track]:bg-transparent
+                      [&::-webkit-scrollbar-thumb]:bg-gray-200
+                      [&::-webkit-scrollbar-thumb]:rounded-full
+                      dark:[&::-webkit-scrollbar-thumb]:bg-[#6A33B8]/10
+                      dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#6A33B8]/40
+                      transition-colors
+                    "
+                    >
+                      {/* Company Logo */}
+                      {selected?.createdBy?.companyLogoUrl && (
+                        <div className="flex justify-center">
+                          <img
+                            src={selected.createdBy.companyLogoUrl}
+                            alt="Company Logo"
+                            className="w-24 h-24 rounded-lg border-2 border-purple-200 dark:border-[#6A33B8]/30 object-cover shadow-md"
+                          />
+                        </div>
+                      )}
+
+                      {/* Details Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {/* Event */}
+                        <VendorDetailCard
+                          icon={Building2}
+                          label="Event"
+                          value={getEventName(selected)}
+                        />
+
+                        {/* Type */}
+                        <VendorDetailCard
+                          icon={Tag}
+                          label="Type"
+                          value={
+                            selected?.type
+                              ? selected.type.charAt(0).toUpperCase() +
+                                selected.type.slice(1)
+                              : "-"
+                          }
+                        />
+
+                        {/* Booth Size */}
+                        <VendorDetailCard
+                          icon={LayoutGrid}
+                          label="Booth Size"
+                          value={selected?.boothSize || "-"}
+                        />
+
+                        {/* Duration */}
+                        {selected?.durationWeeks && (
+                          <VendorDetailCard
+                            icon={Clock}
+                            label="Duration"
+                            value={`${selected.durationWeeks} week${selected.durationWeeks > 1 ? "s" : ""}`}
+                          />
+                        )}
+
+                        {/* Location Preference */}
+                        {selected?.locationPreference && (
+                          <VendorDetailCard
+                            icon={MapPin}
+                            label="Location Preference"
+                            value={selected.locationPreference}
+                          />
+                        )}
+
+                        {/* Created At */}
+                        <VendorDetailCard
+                          icon={Calendar}
+                          label="Created At"
+                          value={
+                            selected?.createdAt
+                              ? new Date(selected.createdAt).toLocaleDateString(
+                                  "en-US",
+                                  {
+                                    weekday: "short",
+                                    month: "short",
+                                    day: "numeric",
+                                    year: "numeric",
+                                  }
+                                )
+                              : "-"
+                          }
+                        />
                       </div>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <div className="font-medium">Company Logo</div>
-                      {selected?.createdBy?.companyLogoUrl ? (
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="text-sm text-muted-foreground">
-                            Uploaded{" "}
-                            {selected?.createdBy?.createdAt
-                              ? new Date(
-                                  selected.createdBy.createdAt
-                                ).toLocaleDateString("en-US", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "-"}
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  if (!selected?.createdBy?.companyLogoUrl)
-                                    return;
-                                  const urlPath =
-                                    selected.createdBy.companyLogoUrl.split(
-                                      "?"
-                                    )[0];
-                                  const extension =
-                                    urlPath.split(".").pop() || "jpg";
-                                  const companyName =
-                                    selected.createdBy.companyName || "Vendor";
-                                  handleViewDocument(
-                                    selected.createdBy.companyLogoUrl,
-                                    `Company Logo - ${companyName}`,
-                                    `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
-                                  );
-                                }}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View file
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  if (!selected?.createdBy?.companyLogoUrl)
-                                    return;
-                                  const urlPath =
-                                    selected.createdBy.companyLogoUrl.split(
-                                      "?"
-                                    )[0];
-                                  const extension =
-                                    urlPath.split(".").pop() || "jpg";
-                                  const companyName =
-                                    selected.createdBy.companyName || "company";
-                                  handleDownloadDocument(
-                                    selected.createdBy.companyLogoUrl,
-                                    `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
-                                  );
-                                }}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download file
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm mt-1">
-                          -
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div className="font-medium">Tax Card</div>
-                      {selected?.createdBy?.taxCardUrl ? (
-                        <div className="flex items-center justify-between mt-1">
-                          <div className="text-sm text-muted-foreground">
-                            Uploaded{" "}
-                            {selected?.createdBy?.createdAt
-                              ? new Date(
-                                  selected.createdBy.createdAt
-                                ).toLocaleDateString("en-US", {
-                                  day: "numeric",
-                                  month: "short",
-                                  year: "numeric",
-                                })
-                              : "-"}
-                          </div>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  if (!selected?.createdBy?.taxCardUrl) return;
-                                  const urlPath =
-                                    selected.createdBy.taxCardUrl.split("?")[0];
-                                  const extension =
-                                    urlPath.split(".").pop() || "pdf";
-                                  const companyName =
-                                    selected.createdBy.companyName || "Vendor";
-                                  handleViewDocument(
-                                    selected.createdBy.taxCardUrl,
-                                    `Tax Card - ${companyName}`,
-                                    `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
-                                  );
-                                }}
-                              >
-                                <Eye className="mr-2 h-4 w-4" />
-                                View file
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                className="cursor-pointer"
-                                onClick={() => {
-                                  if (!selected?.createdBy?.taxCardUrl) return;
-                                  const urlPath =
-                                    selected.createdBy.taxCardUrl.split("?")[0];
-                                  const extension =
-                                    urlPath.split(".").pop() || "pdf";
-                                  const companyName =
-                                    selected.createdBy.companyName || "company";
-                                  handleDownloadDocument(
-                                    selected.createdBy.taxCardUrl,
-                                    `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
-                                  );
-                                }}
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Download file
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </div>
-                      ) : (
-                        <div className="text-muted-foreground text-sm mt-1">
-                          -
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-medium mb-2">Attendees</div>
-                    {Array.isArray(selected?.attendees) &&
-                    selected.attendees.length > 0 ? (
+
+                      {/* Documents Section */}
                       <div className="space-y-3">
-                        {selected.attendees.map((attendee, index) => (
-                          <div
-                            key={`${attendee.name}-${attendee.email}-${index}`}
-                            className="border rounded-lg p-3 space-y-2"
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <div className="font-medium">
-                                  {attendee.name}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {attendee.email}
-                                </div>
-                              </div>
-                              {attendee.individualID ? (
-                                <div className="flex items-center gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      const urlPath =
-                                        attendee.individualID!.split("?")[0];
-                                      const extension =
-                                        urlPath.split(".").pop() || "jpg";
-                                      handleViewDocument(
-                                        attendee.individualID!,
-                                        `ID Card - ${attendee.name}`,
-                                        `${attendee.name.replace(
-                                          /\s+/g,
-                                          "_"
-                                        )}_ID.${extension}`
-                                      );
-                                    }}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Eye className="h-3 w-3" />
-                                    View ID
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    onClick={() => {
-                                      const urlPath =
-                                        attendee.individualID!.split("?")[0];
-                                      const extension =
-                                        urlPath.split(".").pop() || "jpg";
-                                      handleDownloadDocument(
-                                        attendee.individualID!,
-                                        `${attendee.name.replace(
-                                          /\s+/g,
-                                          "_"
-                                        )}_ID.${extension}`
-                                      );
-                                    }}
-                                    className="flex items-center gap-1"
-                                  >
-                                    <Download className="h-3 w-3" />
-                                    Download
-                                  </Button>
+                        <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100">
+                          <FileText className="w-4 h-4 text-[#6A33B8] dark:text-[#A78BFA]" />
+                          Documents
+                        </h4>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          {/* Company Logo Document */}
+                          <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19]">
+                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0">
+                              <ImageIcon size={18} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-slate-500 dark:text-purple-300/60 uppercase tracking-wide mb-1">
+                                Company Logo
+                              </p>
+                              {selected?.createdBy?.companyLogoUrl ? (
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm text-slate-600 dark:text-purple-200/60">
+                                    Uploaded{" "}
+                                    {selected?.createdBy?.createdAt
+                                      ? new Date(
+                                          selected.createdBy.createdAt
+                                        ).toLocaleDateString("en-US", {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                      : "-"}
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                          if (
+                                            !selected?.createdBy?.companyLogoUrl
+                                          )
+                                            return;
+                                          const urlPath =
+                                            selected.createdBy.companyLogoUrl.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "jpg";
+                                          const companyName =
+                                            selected.createdBy.companyName ||
+                                            "Vendor";
+                                          handleViewDocument(
+                                            selected.createdBy.companyLogoUrl,
+                                            `Company Logo - ${companyName}`,
+                                            `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
+                                          );
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View file
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                          if (
+                                            !selected?.createdBy?.companyLogoUrl
+                                          )
+                                            return;
+                                          const urlPath =
+                                            selected.createdBy.companyLogoUrl.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "jpg";
+                                          const companyName =
+                                            selected.createdBy.companyName ||
+                                            "company";
+                                          handleDownloadDocument(
+                                            selected.createdBy.companyLogoUrl,
+                                            `${companyName.replace(/\s+/g, "_")}_Logo.${extension}`
+                                          );
+                                        }}
+                                      >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download file
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               ) : (
-                                <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                                  <FileText className="h-3 w-3" />
-                                  No ID uploaded
-                                </div>
+                                <p className="text-sm text-muted-foreground">
+                                  Not provided
+                                </p>
                               )}
                             </div>
                           </div>
-                        ))}
+
+                          {/* Tax Card Document */}
+                          <div className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19]">
+                            <div className="p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0">
+                              <FileCheck size={18} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-xs font-medium text-slate-500 dark:text-purple-300/60 uppercase tracking-wide mb-1">
+                                Tax Card
+                              </p>
+                              {selected?.createdBy?.taxCardUrl ? (
+                                <div className="flex items-center justify-between">
+                                  <div className="text-sm text-slate-600 dark:text-purple-200/60">
+                                    Uploaded{" "}
+                                    {selected?.createdBy?.createdAt
+                                      ? new Date(
+                                          selected.createdBy.createdAt
+                                        ).toLocaleDateString("en-US", {
+                                          day: "numeric",
+                                          month: "short",
+                                          year: "numeric",
+                                        })
+                                      : "-"}
+                                  </div>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <MoreVertical className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                          if (!selected?.createdBy?.taxCardUrl)
+                                            return;
+                                          const urlPath =
+                                            selected.createdBy.taxCardUrl.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "pdf";
+                                          const companyName =
+                                            selected.createdBy.companyName ||
+                                            "Vendor";
+                                          handleViewDocument(
+                                            selected.createdBy.taxCardUrl,
+                                            `Tax Card - ${companyName}`,
+                                            `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
+                                          );
+                                        }}
+                                      >
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View file
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem
+                                        className="cursor-pointer"
+                                        onClick={() => {
+                                          if (!selected?.createdBy?.taxCardUrl)
+                                            return;
+                                          const urlPath =
+                                            selected.createdBy.taxCardUrl.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "pdf";
+                                          const companyName =
+                                            selected.createdBy.companyName ||
+                                            "company";
+                                          handleDownloadDocument(
+                                            selected.createdBy.taxCardUrl,
+                                            `${companyName.replace(/\s+/g, "_")}_TaxCard.${extension}`
+                                          );
+                                        }}
+                                      >
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Download file
+                                      </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-muted-foreground">
+                                  Not provided
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <div>-</div>
+
+                      {/* Attendees Section */}
+                      {Array.isArray(selected?.attendees) &&
+                        selected.attendees.length > 0 && (
+                          <div className="space-y-3">
+                            <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100">
+                              <Users className="w-4 h-4 text-[#6A33B8] dark:text-[#A78BFA]" />
+                              Attendees ({selected.attendees.length})
+                            </h4>
+                            <div className="space-y-2">
+                              {selected.attendees.map((attendee, index) => (
+                                <div
+                                  key={`${attendee.name}-${attendee.email}-${index}`}
+                                  className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#130F19] border border-slate-200 dark:border-[#6A33B8]/20"
+                                >
+                                  <div className="w-8 h-8 rounded-full bg-purple-100 dark:bg-[#6A33B8]/20 text-purple-600 dark:text-[#D6BCFA] flex items-center justify-center shrink-0">
+                                    <User size={16} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-sm text-slate-900 dark:text-purple-50">
+                                      {attendee.name}
+                                    </div>
+                                    <TooltipProvider>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <div className="text-xs text-slate-600 dark:text-purple-200/60 truncate">
+                                            {attendee.email}
+                                          </div>
+                                        </TooltipTrigger>
+                                        {attendee.email.length > 30 && (
+                                          <TooltipContent>
+                                            <p>{attendee.email}</p>
+                                          </TooltipContent>
+                                        )}
+                                      </Tooltip>
+                                    </TooltipProvider>
+                                  </div>
+                                  {attendee.individualID ? (
+                                    <div className="flex items-center gap-1">
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const urlPath =
+                                            attendee.individualID!.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "jpg";
+                                          handleViewDocument(
+                                            attendee.individualID!,
+                                            `ID Card - ${attendee.name}`,
+                                            `${attendee.name.replace(/\s+/g, "_")}_ID.${extension}`
+                                          );
+                                        }}
+                                        className="h-8"
+                                      >
+                                        <Eye className="h-3 w-3 mr-1" />
+                                        View
+                                      </Button>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => {
+                                          const urlPath =
+                                            attendee.individualID!.split(
+                                              "?"
+                                            )[0];
+                                          const extension =
+                                            urlPath.split(".").pop() || "jpg";
+                                          handleDownloadDocument(
+                                            attendee.individualID!,
+                                            `${attendee.name.replace(/\s+/g, "_")}_ID.${extension}`
+                                          );
+                                        }}
+                                        className="h-8"
+                                      >
+                                        <Download className="h-3 w-3 mr-1" />
+                                        Download
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                      <FileText className="h-3 w-3" />
+                                      No ID
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                    </div>
+
+                    {/* Footer Actions */}
+                    {selected?.status === "pending" && (
+                      <div className="p-6 pt-4 border-t border-slate-200 dark:border-[#6A33B8]/20 flex gap-3 justify-end">
+                        <Button
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                          onClick={async () => {
+                            const updatedApp = await handleApprove(
+                              selected._id
+                            );
+                            if (updatedApp) {
+                              setDetailsOpen(false);
+                              // fetchApplications is already called in handleApprove
+                            }
+                          }}
+                          data-testid={`dialog-approve-${selected._id}`}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          variant="destructive"
+                          onClick={async () => {
+                            const updatedApp = await handleReject(selected._id);
+                            if (updatedApp) {
+                              setSelected({ ...selected, status: "rejected" });
+                              setDetailsOpen(false);
+                            }
+                          }}
+                          data-testid={`dialog-reject-${selected._id}`}
+                        >
+                          Reject
+                        </Button>
+                      </div>
                     )}
-                  </div>
-                  {selected?.status === "pending" && (
-                    <DialogFooter>
-                      <Button
-                        className="bg-green-600 hover:bg-green-700 text-white"
-                        onClick={async () => {
-                          const updatedApp = await handleApprove(selected._id);
-                          if (updatedApp) {
-                            setSelected({ ...selected, status: "approved" });
-                            setDetailsOpen(false);
-                          }
-                        }}
-                        data-testid={`dialog-approve-${selected._id}`}
-                      >
-                        Approve
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={async () => {
-                          const updatedApp = await handleReject(selected._id);
-                          if (updatedApp) {
-                            setSelected({ ...selected, status: "rejected" });
-                            setDetailsOpen(false);
-                          }
-                        }}
-                        data-testid={`dialog-reject-${selected._id}`}
-                      >
-                        Reject
-                      </Button>
-                    </DialogFooter>
-                  )}
-                </div>
+                  </motion.div>
+                </AnimatePresence>
               )}
             </TooltipProvider>
           </DialogContent>
@@ -990,6 +1140,37 @@ export default function VendorRequests() {
           />
         )}
       </main>
+    </div>
+  );
+}
+
+// Helper component for vendor detail cards
+function VendorDetailCard({
+  icon: Icon,
+  label,
+  value,
+  className = "",
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19] ${className}`}
+    >
+      <div className="p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0">
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-slate-500 dark:text-purple-300/60 uppercase tracking-wide mb-0.5">
+          {label}
+        </p>
+        <p className="text-sm font-medium text-slate-900 dark:text-purple-50 break-words">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

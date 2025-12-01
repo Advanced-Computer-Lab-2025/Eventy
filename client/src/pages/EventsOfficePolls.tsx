@@ -53,11 +53,14 @@ interface BoothRequest {
   boothSize: "2x2" | "4x4";
   durationWeeks?: number;
   createdAt: string;
-  createdBy?: {
-    companyName?: string;
-    firstName?: string;
-    lastName?: string;
-  };
+  createdBy?:
+    | {
+        _id?: string;
+        companyName?: string;
+        firstName?: string;
+        lastName?: string;
+      }
+    | string;
 }
 
 export default function EventsOfficePolls() {
@@ -219,6 +222,37 @@ export default function EventsOfficePolls() {
         title: "Invalid selection",
         description:
           "All selected requests must have the same booth location to create a poll.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Check that all applications are from different vendors
+    const vendorIds = selectedRequests
+      .map((r) => {
+        if (typeof r.createdBy === "string") {
+          return r.createdBy;
+        }
+        const vendorId = r.createdBy?._id || (r.createdBy as any)?._id;
+        return vendorId ? String(vendorId) : null;
+      })
+      .filter((id) => id !== null);
+
+    if (vendorIds.length !== selectedRequests.length) {
+      toast({
+        title: "Invalid selection",
+        description: "All applications must have a valid vendor.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const uniqueVendorIds = new Set(vendorIds);
+    if (uniqueVendorIds.size !== vendorIds.length) {
+      toast({
+        title: "Invalid selection",
+        description:
+          "Polls can only be created between different vendors. All selected applications must be from different vendors.",
         variant: "destructive",
       });
       return;
