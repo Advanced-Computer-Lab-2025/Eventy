@@ -76,6 +76,7 @@ User authentication system supporting multi-role access (Student, Vendor, Admin)
 <img src="https://github.com/user-attachments/assets/ef1ba7fd-10ab-4469-9cd6-1405eeed070b" width="800" alt="Login Page" />
 
 <br>
+
 ### Event Registration & Stripe Payment
 Secure, integrated checkout experience supporting card payments and digital wallets.
 
