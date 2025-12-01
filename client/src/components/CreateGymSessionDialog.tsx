@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Calendar, Clock, Users, Dumbbell } from "lucide-react";
+import { Calendar as CalendarIcon, Clock, Users, Dumbbell } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -19,6 +19,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 type CreateGymSessionDialogProps = {
   open: boolean;
@@ -41,8 +49,15 @@ export default function CreateGymSessionDialog({
   onSuccess,
 }: CreateGymSessionDialogProps) {
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    date: "",
+  const [formData, setFormData] = useState<{
+    date: Date | undefined;
+    time: string;
+    duration: string;
+    type: string;
+    instructor: string;
+    maxParticipants: string;
+  }>({
+    date: undefined,
     time: "",
     duration: "",
     type: "",
@@ -53,6 +68,16 @@ export default function CreateGymSessionDialog({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.date) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -79,7 +104,7 @@ export default function CreateGymSessionDialog({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            date: formData.date,
+            date: format(formData.date, "yyyy-MM-dd"),
             time: convertTo12Hour(formData.time),
             duration: parseInt(formData.duration),
             type: formData.type.toLowerCase(),
@@ -103,11 +128,11 @@ export default function CreateGymSessionDialog({
       });
 
       // Get the created session date
-      const createdDate = new Date(formData.date);
+      const createdDate = formData.date;
 
       // Reset form
       setFormData({
-        date: "",
+        date: undefined,
         time: "",
         duration: "",
         type: "",
@@ -116,7 +141,7 @@ export default function CreateGymSessionDialog({
       });
 
       onOpenChange(false);
-      if (onSuccess) {
+      if (onSuccess && createdDate) {
         onSuccess(createdDate);
       }
     } catch (error) {
@@ -136,7 +161,7 @@ export default function CreateGymSessionDialog({
 
   const handleCancel = () => {
     setFormData({
-      date: "",
+      date: undefined,
       time: "",
       duration: "",
       type: "",
@@ -188,36 +213,32 @@ export default function CreateGymSessionDialog({
               <Label htmlFor="date">
                 Date <span className="text-red-500">*</span>
               </Label>
-              <div
-                className="relative cursor-pointer"
-                onClick={() =>
-                  (
-                    document.getElementById("date") as HTMLInputElement
-                  )?.showPicker?.()
-                }
-              >
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-                <Input
-                  id="date"
-                  type="date"
-                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  value={formData.date}
-                  onChange={(e) => {
-                    // Ensure year is only 4 digits
-                    const dateValue = e.target.value;
-                    if (dateValue) {
-                      const [year, month, day] = dateValue.split("-");
-                      if (year && year.length === 4) {
-                        setFormData({ ...formData, date: dateValue });
-                      }
-                    } else {
-                      setFormData({ ...formData, date: dateValue });
-                    }
-                  }}
-                  max="9999-12-31"
-                  required
-                />
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !formData.date && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {formData.date ? (
+                      format(formData.date, "dd/MM/yyyy")
+                    ) : (
+                      <span>dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={formData.date}
+                    onSelect={(date) => setFormData({ ...formData, date })}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             {/* Time */}

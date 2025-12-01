@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +11,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
+import { CalendarIcon } from "lucide-react";
 
 type GymSession = {
   _id: string;
@@ -30,7 +39,7 @@ type EditGymSessionDialogProps = {
 };
 
 type EditFormData = {
-  date?: string;
+  date?: Date;
   startTime?: string;
   durationMinutes?: number;
 };
@@ -73,17 +82,18 @@ export default function EditGymSessionDialog({
     register,
     handleSubmit,
     reset,
+    control,
     formState: { errors },
   } = useForm<EditFormData>();
 
   useEffect(() => {
     if (session && open) {
-      // Format date for input (YYYY-MM-DD)
-      const formattedDate = new Date(session.date).toISOString().split("T")[0];
+      // Parse date as Date object
+      const parsedDate = new Date(session.date);
       // Convert 12-hour time to 24-hour for input field
       const formattedTime = convertTo24HourFormat(session.startTime);
       reset({
-        date: formattedDate,
+        date: parsedDate,
         startTime: formattedTime,
         durationMinutes: session.durationMinutes,
       });
@@ -103,7 +113,7 @@ export default function EditGymSessionDialog({
 
       // Transform field names to match API contract (time and duration)
       const updateData: any = {};
-      if (data.date) updateData.date = data.date;
+      if (data.date) updateData.date = format(data.date, "yyyy-MM-dd");
       if (data.startTime) {
         // Convert 24-hour format (HH:MM) to 12-hour format (hh:mm AM/PM)
         updateData.time = convertTo12HourFormat(data.startTime);
@@ -159,9 +169,6 @@ export default function EditGymSessionDialog({
       .join(" ");
   };
 
-  // Get today's date in YYYY-MM-DD format for min attribute
-  const today = new Date().toISOString().split("T")[0];
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
@@ -177,14 +184,39 @@ export default function EditGymSessionDialog({
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 mt-4">
           <div className="space-y-2">
             <Label htmlFor="date">Date</Label>
-            <Input
-              id="date"
-              type="date"
-              min={today}
-              {...register("date")}
-              disabled={isSubmitting}
-              className="cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-              onClick={(e) => e.currentTarget.showPicker?.()}
+            <Controller
+              name="date"
+              control={control}
+              render={({ field }) => (
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !field.value && "text-muted-foreground"
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {field.value ? (
+                        format(field.value, "dd/MM/yyyy")
+                      ) : (
+                        <span>dd/mm/yyyy</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={field.value}
+                      onSelect={field.onChange}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              )}
             />
             {errors.date && (
               <p className="text-sm text-destructive">{errors.date.message}</p>

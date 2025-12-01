@@ -12,7 +12,15 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Gift, X } from "lucide-react";
+import { Gift, X, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface LoyaltyProgramDialogProps {
   open: boolean;
@@ -38,7 +46,7 @@ export default function LoyaltyProgramDialog({
   const [discountRate, setDiscountRate] = useState<number | "">("");
   const [promoCode, setPromoCode] = useState<string>("");
   const [terms, setTerms] = useState<string>("");
-  const [expiryDate, setExpiryDate] = useState<string>("");
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [vendorStatus, setVendorStatus] = useState<VendorStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
@@ -169,7 +177,7 @@ export default function LoyaltyProgramDialog({
             discountRate: Number(discountRate),
             promoCode,
             termsAndConditions: terms,
-            expiryDate,
+            expiryDate: format(expiryDate, "yyyy-MM-dd"),
           }),
         }
       );
@@ -335,13 +343,33 @@ export default function LoyaltyProgramDialog({
               </div>
               <div className="space-y-1">
                 <Label htmlFor="expiryDate">Expiry Date</Label>
-                <Input
-                  id="expiryDate"
-                  type="date"
-                  value={expiryDate}
-                  min={new Date().toISOString().split("T")[0]}
-                  onChange={(e) => setExpiryDate(e.target.value)}
-                />
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !expiryDate && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {expiryDate ? (
+                        format(expiryDate, "dd/MM/yyyy")
+                      ) : (
+                        <span>dd/mm/yyyy</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={expiryDate}
+                      onSelect={setExpiryDate}
+                      disabled={(date) => date < new Date()}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
@@ -382,13 +410,33 @@ export default function LoyaltyProgramDialog({
             </div>
             <div className="space-y-2">
               <Label htmlFor="expiryDate">Expiry Date</Label>
-              <Input
-                id="expiryDate"
-                type="date"
-                value={expiryDate}
-                min={new Date().toISOString().split("T")[0]}
-                onChange={(e) => setExpiryDate(e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !expiryDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {expiryDate ? (
+                      format(expiryDate, "dd/MM/yyyy")
+                    ) : (
+                      <span>dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={expiryDate}
+                    onSelect={setExpiryDate}
+                    disabled={(date) => date < new Date()}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         )}
