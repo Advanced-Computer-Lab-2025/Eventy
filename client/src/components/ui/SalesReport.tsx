@@ -362,9 +362,7 @@ export default function SalesReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Events Starting From
-              </label>
+              <label className="text-sm font-medium">Start Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -395,7 +393,7 @@ export default function SalesReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Event End Date</label>
+              <label className="text-sm font-medium">End Date</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
