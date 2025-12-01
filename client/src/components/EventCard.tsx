@@ -125,6 +125,9 @@ export interface EventCardProps {
   hideRegisterButton?: boolean;
   showAttendeeCount?: boolean;
   inlinePriceWithLocation?: boolean;
+  // NEW PROPS
+  eventData?: any;
+  inlineShareButton?: boolean;
 }
 
 export default function EventCard({
@@ -169,6 +172,8 @@ export default function EventCard({
   onUnregister,
   showAttendeeCount = true,
   inlinePriceWithLocation = false,
+  eventData,
+  inlineShareButton = false, // Defaults to false (My Events style)
 }: EventCardProps & { price?: number }) {
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
@@ -225,6 +230,13 @@ export default function EventCard({
 
     if (onViewDetails) {
       onViewDetails();
+      return;
+    }
+
+    // FIX: Use passed eventData if available to avoid fetch error
+    if (eventData) {
+      setInternalEventDetails(eventData);
+      setInternalDetailsOpen(true);
       return;
     }
 
@@ -467,6 +479,25 @@ export default function EventCard({
       : null;
   const showStandalonePrice =
     hasPrice && formattedPrice && !inlinePriceWithLocation;
+
+  const ShareButton = () => (
+    <Button
+      variant={inlineShareButton ? "ghost" : "outline"}
+      size={inlineShareButton ? "icon" : "icon"}
+      className={
+        inlineShareButton
+          ? "shrink-0 text-muted-foreground hover:text-foreground"
+          : ""
+      }
+      onClick={(e) => {
+        e.stopPropagation();
+        handleShare();
+      }}
+      data-testid={`button-share-${id}`}
+    >
+      <Share2 className="h-4 w-4" />
+    </Button>
+  );
 
   if (isDeleted) return null;
 
@@ -888,7 +919,7 @@ export default function EventCard({
           </>
         ) : (
           <>
-            {/* --- COMPACT VIEW --- */}
+            {/* --- COMPACT VIEW (used in My Events & Favorites) --- */}
             <CardContent className="p-4 flex-1 flex flex-col">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -914,7 +945,6 @@ export default function EventCard({
 
                 <div className="flex items-center gap-4 text-sm text-muted-foreground flex-wrap">
                   <div className="flex flex-col gap-1">
-                    {/* HIDE IF CONFERENCE */}
                     {!isConference && location && (
                       <div className="flex items-center gap-1">
                         <MapPin className="h-4 w-4" />
@@ -976,13 +1006,16 @@ export default function EventCard({
                   startDate &&
                   new Date() > new Date(startDate) ? (
                     <>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        onClick={handleViewDetailsClick}
-                      >
-                        View Details
-                      </Button>
+                      <div className="flex gap-2 w-full items-center">
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={handleViewDetailsClick}
+                        >
+                          View Details
+                        </Button>
+                        {inlineShareButton && <ShareButton />}
+                      </div>
                       {onUnarchive && (
                         <Button
                           variant="outline"
@@ -1019,13 +1052,16 @@ export default function EventCard({
                   ) : registered ? (
                     allowCancellation ? (
                       <div className="flex flex-col gap-2 w-full">
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={handleViewDetailsClick}
-                        >
-                          View Details
-                        </Button>
+                        <div className="flex gap-2 w-full items-center">
+                          <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={handleViewDetailsClick}
+                          >
+                            View Details
+                          </Button>
+                          {inlineShareButton && <ShareButton />}
+                        </div>
                         <Button
                           className="w-full"
                           variant="destructive"
@@ -1080,6 +1116,7 @@ export default function EventCard({
                             <FavoriteButton eventId={id} />
                           </div>
                         )}
+                        {inlineShareButton && <ShareButton />}
                         {onUnarchive && (
                           <Button
                             variant="outline"
@@ -1108,41 +1145,64 @@ export default function EventCard({
                       </div>
                     )
                   ) : (
-                    showRegisterButton &&
-                    !hideRegisterButton &&
-                    isRegisterable &&
-                    isBeforeDeadline &&
-                    !isArchived && (
-                      <div className="flex gap-2 w-full items-center">
-                        <Button
-                          variant="outline"
-                          className="flex-1"
-                          onClick={handleViewDetailsClick}
-                        >
-                          View Details
-                        </Button>
-                        <Button
-                          onClick={() =>
-                            requiresPayment
-                              ? setShowPaymentDialog(true)
-                              : handleDirectRegister()
-                          }
-                          className="flex-1"
-                          data-testid={`button-register-${id}`}
-                          disabled={!canRegister}
-                        >
-                          Register
-                        </Button>
-                        {canShowFavorites && (
-                          <div
-                            className="relative flex-shrink-0"
-                            onClick={(e) => e.stopPropagation()}
+                    <>
+                      {showRegisterButton &&
+                      !hideRegisterButton &&
+                      isRegisterable &&
+                      isBeforeDeadline &&
+                      !isArchived ? (
+                        <div className="flex gap-2 w-full items-center">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={handleViewDetailsClick}
                           >
-                            <FavoriteButton eventId={id} />
-                          </div>
-                        )}
-                      </div>
-                    )
+                            View Details
+                          </Button>
+                          <Button
+                            onClick={() =>
+                              requiresPayment
+                                ? setShowPaymentDialog(true)
+                                : handleDirectRegister()
+                            }
+                            className="flex-1"
+                            data-testid={`button-register-${id}`}
+                            disabled={!canRegister}
+                          >
+                            Register
+                          </Button>
+                          {canShowFavorites && (
+                            <div
+                              className="relative flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <FavoriteButton eventId={id} />
+                            </div>
+                          )}
+                          {inlineShareButton && <ShareButton />}
+                        </div>
+                      ) : (
+                        // Fallback: If not registered and register button is hidden/unavailable (FAVORITES)
+                        <div className="flex gap-2 w-full items-center">
+                          <Button
+                            variant="outline"
+                            className="flex-1"
+                            onClick={handleViewDetailsClick}
+                          >
+                            View Details
+                          </Button>
+                          {canShowFavorites && (
+                            <div
+                              className="relative flex-shrink-0"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <FavoriteButton eventId={id} />
+                            </div>
+                          )}
+                          {inlineShareButton && <ShareButton />}
+                        </div>
+                      )}
+                    </>
                   )}
                   {onArchive && (
                     <Button
@@ -1165,19 +1225,14 @@ export default function EventCard({
                       Archive
                     </Button>
                   )}
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleShare();
-                      }}
-                      data-testid={`button-share-${id}`}
-                    >
-                      <Share2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+
+                  {/* BOTTOM FLOATING SHARE BUTTON (For My Events) */}
+                  {!inlineShareButton && (
+                    <div className="flex items-center gap-2 ml-auto">
+                      <ShareButton />
+                    </div>
+                  )}
+
                   {canShowDelete && !hasRegistrations && (
                     <Button
                       variant="destructive"

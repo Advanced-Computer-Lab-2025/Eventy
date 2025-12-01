@@ -23,7 +23,7 @@ interface EventDetailsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   event: any | null;
-  loading: boolean;
+  loading?: boolean;
 }
 
 export default function EventDetailsDialog({
