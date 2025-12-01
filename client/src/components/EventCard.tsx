@@ -860,7 +860,8 @@ export default function EventCard({
                     !registered
                   ) &&
                   !registered &&
-                  !(onEdit || onArchive || canShowDelete) ? (
+                  !(onEdit || onArchive || canShowDelete) &&
+                  !onUnarchive ? (
                   <div className="flex gap-2 w-full items-center">
                     <Button
                       variant="outline"
@@ -880,10 +881,22 @@ export default function EventCard({
                   </div>
                 ) : null}
                 {onUnarchive && (
-                  <div className="flex gap-2 w-full items-center">
+                  <div className="flex gap-2 w-full items-center justify-center">
+                    {onViewDetails && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className={onViewDetails ? "flex-1" : "w-full"}
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
