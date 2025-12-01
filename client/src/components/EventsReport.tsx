@@ -346,7 +346,7 @@ export default function EventsReport() {
                             ? new Date(event.endDate).toLocaleDateString()
                             : "TBA"}
                         </TableCell>
-                        <TableCell>{event.location || "N/A"}</TableCell>
+                        <TableCell>{event.location || "-"}</TableCell>
                         <TableCell className="text-center font-semibold">
                           {" "}
                           {/* ✅ Changed to text-center */}

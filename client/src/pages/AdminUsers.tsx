@@ -259,7 +259,7 @@ export default function AdminUsers() {
     if (user.role === "vendor" && user.companyName) {
       return user.companyName;
     }
-    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "N/A";
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "-";
   };
 
   const filteredUsers = users.filter((user) => {
