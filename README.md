@@ -70,36 +70,46 @@ The platform was built to modernize campus event management, reduce administrati
 - **Husky**: Pre-commit hooks ensure code is linted and formatted before commits
 
 ## Screenshots
+### Secure Login & Authentication
+User authentication system supporting multi-role access (Student, Vendor, Admin) with secure session management.
 
-### 1. Login & Authentication
+<img src="https://github.com/user-attachments/assets/ef1ba7fd-10ab-4469-9cd6-1405eeed070b" width="800" alt="Login Page" />
 
-![Login Page](https://via.placeholder.com/800x450?text=Login+Page)
-_User authentication with email verification support_
+<br>
+### Event Registration & Stripe Payment
+Secure, integrated checkout experience supporting card payments and digital wallets.
 
-### 2. Student Dashboard
+<img src="https://github.com/user-attachments/assets/09256220-ef2e-4ca0-9b51-3172c8858be1" width="800" alt="Stripe Payment Modal" />
+<br><br>
+<img src="https://github.com/user-attachments/assets/effdb07f-5090-45fd-b5b7-3600f34e9fdc" width="800" alt="Payment Method Selection" />
 
-![Student Dashboard](https://via.placeholder.com/800x450?text=Student+Dashboard)
-_Browse and register for events, view favorites, check notifications_
+<br>
 
-### 3. Events Office Dashboard
+### Interactive Platform Booth Booking
+Visual map interface for vendors to select and book specific booth locations.
 
-![Events Office Dashboard](https://via.placeholder.com/800x450?text=Events+Office+Dashboard)
-_Manage all events, approve workshops, review vendor applications_
+<img src="https://github.com/user-attachments/assets/dc728c6f-dc89-4974-935f-c4617926bd7c" width="800" alt="Platform Booth Booking Map" />
 
-### 4. Event Creation Form
+<br>
 
-![Event Creation](https://via.placeholder.com/800x450?text=Event+Creation+Form)
-_Create conferences, trips, bazaars with detailed information_
+### Vendor Dashboard
+Comprehensive analytics for vendors to track application status and performance.
 
-### 5. Sales Report
+<img src="https://github.com/user-attachments/assets/010e2071-1bbe-4ec4-acbb-5d32b2f55d3b" width="800" alt="Vendor Dashboard" />
 
-![Sales Report](https://via.placeholder.com/800x450?text=Sales+Report+Dashboard)
-_Comprehensive analytics with filtering and export capabilities_
+<br>
 
-### 6. Workshop Management
+### Custom 404 Page
+User-friendly error handling to guide lost users back home.
 
-![Workshop Management](https://via.placeholder.com/800x450?text=Workshop+Management)
-_Professors can create and manage workshops, track participants_
+<img src="https://github.com/user-attachments/assets/ac076c25-028d-41ba-99fc-cb7925968975" width="800" alt="404 Error Page" />
+
+### Event Details & Agenda
+Users can view comprehensive event information, including descriptions, locations, and detailed agendas before registering.
+
+<img src="https://github.com/user-attachments/assets/83e071cc-a0a0-46e1-ad00-7c51ba001135" width="800" alt="Event Details View 1" />
+<br><br>
+<img src="https://github.com/user-attachments/assets/f43d3204-f0b2-4b42-abf2-942a12789c29" width="800" alt="Event Details View 2" />
 
 ## Tech Stack & Frameworks
 
