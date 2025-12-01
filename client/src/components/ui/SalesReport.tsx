@@ -445,12 +445,26 @@ export default function SalesReport() {
                         </TableCell>
                         <TableCell>
                           {event.startDate
-                            ? new Date(event.startDate).toLocaleDateString()
+                            ? new Date(event.startDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                }
+                              )
                             : "TBA"}
                         </TableCell>
                         <TableCell>
                           {event.endDate
-                            ? new Date(event.endDate).toLocaleDateString()
+                            ? new Date(event.endDate).toLocaleDateString(
+                                "en-GB",
+                                {
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                }
+                              )
                             : "TBA"}
                         </TableCell>
                         <TableCell className="text-center">
