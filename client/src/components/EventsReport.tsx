@@ -30,9 +30,16 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Loader2, Download, CalendarIcon } from "lucide-react";
+import {
+  Loader2,
+  Download,
+  CalendarIcon,
+  AlertCircle,
+  XCircle,
+} from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -107,9 +114,16 @@ export default function EventsReport() {
 
       const data = await response.json();
       setReportData(data.data);
+      setError("");
     } catch (err: any) {
       console.error("Error fetching report:", err);
-      setError(err.message || "An error occurred");
+      const errorMessage = err.message || "An error occurred";
+      setError(errorMessage);
+      toast({
+        title: "Failed to fetch report",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -202,15 +216,6 @@ export default function EventsReport() {
     );
   }
 
-  if (error) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-red-500 mb-4">{error}</p>
-        <Button onClick={fetchReport}>Retry</Button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Summary Cards */}
@@ -244,6 +249,23 @@ export default function EventsReport() {
           <CardTitle>Filters</CardTitle>
         </CardHeader>
         <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setError("")}
+                  className="ml-2"
+                >
+                  <XCircle className="h-4 w-4" />
+                </Button>
+              </AlertDescription>
+            </Alert>
+          )}
           <div className="grid gap-4 md:grid-cols-5">
             {" "}
             {/* ✅ Changed to 5 columns */}
