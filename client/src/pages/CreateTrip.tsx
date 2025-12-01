@@ -4,9 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TripManagement() {
   const [, setLocation] = useLocation();
+  const { toast } = useToast();
   const [trips, setTrips] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
@@ -68,6 +70,20 @@ export default function TripManagement() {
   };
 
   const handleEditTrip = (tripId: string) => {
+    // Check if trip has already started before navigating
+    const trip = trips.find((t) => t._id === tripId);
+    if (trip && trip.startDate) {
+      const now = new Date();
+      const tripStartDate = new Date(trip.startDate);
+      if (tripStartDate <= now) {
+        toast({
+          title: "Cannot Edit Trip",
+          description: "Cannot edit a trip that has already started.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
     setLocation(`/events-office/events/trip/edit/${tripId}`);
   };
 

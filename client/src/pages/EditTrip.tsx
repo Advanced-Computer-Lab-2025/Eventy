@@ -89,6 +89,22 @@ export default function EditTrip() {
 
       setTrip(tripData);
 
+      // Check if trip has already started and show toast, then redirect
+      const now = new Date();
+      const tripStartDate = tripData.startDate
+        ? new Date(tripData.startDate)
+        : null;
+      if (tripStartDate && tripStartDate <= now) {
+        toast({
+          title: "Cannot Edit Trip",
+          description: "Cannot edit a trip that has already started.",
+          variant: "destructive",
+        });
+        // Redirect back immediately
+        setLocation("/events-office/dashboard");
+        return;
+      }
+
       const getTimeFromDate = (dateStr: string) => {
         if (!dateStr) return "";
         const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
@@ -234,7 +250,22 @@ export default function EditTrip() {
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.message || "Failed to update trip");
+        // Display error toast for specific error messages
+        if (data.message && data.message.includes("already started")) {
+          toast({
+            title: "Cannot Edit Trip",
+            description: "Cannot edit a trip that has already started.",
+            variant: "destructive",
+          });
+        } else {
+          toast({
+            title: "Error",
+            description: data.message || "Failed to update trip",
+            variant: "destructive",
+          });
+        }
+        setSaving(false);
+        return;
       }
 
       toast({
@@ -248,11 +279,14 @@ export default function EditTrip() {
       }, 1000);
     } catch (error: any) {
       console.error("Error updating trip:", error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update trip",
-        variant: "destructive",
-      });
+      // Only show toast if error wasn't already handled above
+      if (error.message && !error.message.includes("already started")) {
+        toast({
+          title: "Error",
+          description: error.message || "Failed to update trip",
+          variant: "destructive",
+        });
+      }
     } finally {
       setSaving(false);
     }

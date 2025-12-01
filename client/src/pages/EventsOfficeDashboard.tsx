@@ -1534,13 +1534,34 @@ export default function EventsOfficeDashboard() {
                                             // Open restrict access dialog for workshops
                                             setSelectedEventForRestrict(event);
                                             setRestrictAccessDialogOpen(true);
+                                          } else if (
+                                            event.eventType === "trip"
+                                          ) {
+                                            // Check if trip has already started before navigating
+                                            if (event.startDate) {
+                                              const now = new Date();
+                                              const tripStartDate = new Date(
+                                                event.startDate
+                                              );
+                                              if (tripStartDate <= now) {
+                                                toast({
+                                                  title: "Cannot Edit Trip",
+                                                  description:
+                                                    "Cannot edit a trip that has already started.",
+                                                  variant: "destructive",
+                                                });
+                                                return;
+                                              }
+                                            }
+                                            setLocation(
+                                              `/events-office/events/trip/edit/${event._id}`
+                                            );
                                           } else {
                                             const editRoutes: Record<
                                               string,
                                               string
                                             > = {
                                               conference: `/events-office/events/conference/edit/${event._id}`,
-                                              trip: `/events-office/events/trip/edit/${event._id}`,
                                               bazaar: `/create/bazaar?id=${event._id}`,
                                             };
                                             const route =
