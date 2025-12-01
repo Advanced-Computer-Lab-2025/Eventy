@@ -1284,6 +1284,7 @@ export default function EventsOfficeDashboard() {
                   professors={professorOptions}
                   userRole={userRole}
                   onClear={handleClearFilters}
+                  events={combinedEvents} // <--- ADDED THIS PROP
                 />
               </div>
             </aside>
