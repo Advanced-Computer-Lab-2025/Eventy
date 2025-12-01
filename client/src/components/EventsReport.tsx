@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -23,8 +24,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Loader2, Download } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Loader2, Download, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -57,8 +65,8 @@ export default function EventsReport() {
   // Filters
   const [name, setEventName] = useState("");
   const [eventType, setEventType] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState(""); // ✅ Added endDate filter
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [page, setPage] = useState(1);
   const limit = 10;
 
@@ -74,8 +82,9 @@ export default function EventsReport() {
       if (name.trim()) params.append("name", name.trim());
       if (eventType && eventType !== "all")
         params.append("eventType", eventType);
-      if (startDate) params.append("startDate", startDate);
-      if (endDate) params.append("endDate", endDate); // ✅ Added endDate to params
+      if (startDate)
+        params.append("startDate", format(startDate, "yyyy-MM-dd"));
+      if (endDate) params.append("endDate", format(endDate, "yyyy-MM-dd"));
       params.append("page", page.toString());
       params.append("limit", limit.toString());
 
@@ -113,8 +122,8 @@ export default function EventsReport() {
   const handleClearFilters = () => {
     setEventName("");
     setEventType("all");
-    setStartDate("");
-    setEndDate(""); // ✅ Added endDate to clear
+    setStartDate(undefined);
+    setEndDate(undefined);
     setPage(1);
   };
 
@@ -271,20 +280,63 @@ export default function EventsReport() {
               <label className="text-sm font-medium mb-2 block">
                 Start Date
               </label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? (
+                      format(startDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    disabled={(date) => (endDate ? date > endDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
-            {/* ✅ Added End Date Filter */}
             <div>
               <label className="text-sm font-medium mb-2 block">End Date</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? (
+                      format(endDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    disabled={(date) => (startDate ? date < startDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="flex items-end">
               <Button
