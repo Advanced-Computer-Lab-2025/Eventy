@@ -153,7 +153,26 @@ export default function EditTrip() {
         return;
       }
 
-      if (start < now) {
+      // For editing: Only validate past dates if the date was actually changed
+      // Allow keeping the existing date even if it's in the past
+      const originalStartDate = trip?.startDate
+        ? new Date(trip.startDate)
+        : null;
+      const originalStartTime = trip?.startTime || "";
+      const originalStart =
+        originalStartDate && originalStartTime
+          ? new Date(
+              `${originalStartDate.toISOString().split("T")[0]}T${originalStartTime}:00`
+            )
+          : null;
+
+      // Check if the date/time was actually changed
+      const dateChanged =
+        !originalStart ||
+        Math.abs(start.getTime() - originalStart.getTime()) > 1000; // 1 second tolerance
+
+      // Only validate past dates if the date was changed to a new past date
+      if (dateChanged && start < now) {
         toast({
           title: "Start date in the past",
           description: "Trip start date/time cannot be in the past.",
