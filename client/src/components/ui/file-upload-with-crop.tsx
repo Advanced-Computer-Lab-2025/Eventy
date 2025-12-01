@@ -35,12 +35,14 @@ export function FileUploadWithCrop({
 }: FileUploadWithCropProps) {
   const [imageToCrop, setImageToCrop] = useState<string | null>(null);
   const [originalFileName, setOriginalFileName] = useState<string>("");
+  const [originalFile, setOriginalFile] = useState<File | null>(null);
 
   const handleFileSelect = useCallback(
     (file: File) => {
       // If cropping is enabled and file is an image, show cropper
       if (enableCrop && file.type.startsWith("image/")) {
         setOriginalFileName(file.name);
+        setOriginalFile(file);
         const reader = new FileReader();
         reader.onloadend = () => {
           setImageToCrop(reader.result as string);
@@ -62,13 +64,19 @@ export function FileUploadWithCrop({
       });
       onFileSelect(croppedFile);
       setImageToCrop(null);
+      setOriginalFile(null);
     },
     [originalFileName, onFileSelect]
   );
 
   const handleCropCancel = useCallback(() => {
+    // If user cancels, use the original file without cropping
+    if (originalFile) {
+      onFileSelect(originalFile);
+    }
     setImageToCrop(null);
-  }, []);
+    setOriginalFile(null);
+  }, [originalFile, onFileSelect]);
 
   return (
     <>
