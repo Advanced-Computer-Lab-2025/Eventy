@@ -577,7 +577,6 @@ We use Postman for API endpoint testing. Below are test cases for the code examp
 
 <img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/dbf4ddd5-75c8-4020-9aa1-4a0695f27b81" />
 
-
 #### 2. Update Trip Test
 
 <img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/438250e5-632b-454a-b2a6-43818865dd1c" />
@@ -586,16 +585,13 @@ We use Postman for API endpoint testing. Below are test cases for the code examp
 
 <img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/61ca6393-2292-4b8c-acd5-9049dbbf6d95" />
 
-
 #### 4. Create Workshop Test
 
 <img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/5ea13be0-03bc-47be-b245-62dd6cf57e55" />
 
-
 #### 5. Get Upcoming Events Test
 
 <img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/2009f3c6-16e6-4ae3-bd7d-a603ac4e0648" />
-
 
 ### Validation Testing
 
@@ -610,44 +606,31 @@ const bazaarResult = validateBazaarApplication.validate(bazaarData);
 console.log("Bazaar validation:", bazaarResult.error ? "Failed" : "Passed");
 ```
 
-## How to Contribute
+## 🤝 How to Contribute
 
-We welcome contributions from the community! Here are areas where you can help:
+We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or suggesting enhancements, your help is appreciated.
 
-### High Priority Improvements
-
-1. **Implement Real-time Notifications**: Use WebSockets or Server-Sent Events for live updates
-2. **Mobile App Development**: Create React Native or Flutter mobile applications
-3. **Advanced Search**: Implement Elasticsearch for better search performance
-4. **Automated Testing**: Add Jest unit tests and integration tests
-5. **Accessibility**: Improve ARIA labels and keyboard navigation
-
-### Medium Priority
-
-6. **Multi-language Support**: Add i18n for Arabic and other languages
-7. **Dark Mode Enhancement**: Complete dark mode theming across all components
-8. **Analytics Dashboard**: More detailed charts and metrics using Chart.js or Recharts
-9. **Calendar Integration**: Export events to Google Calendar, Outlook, etc.
-10. **Advanced Filters**: Add more granular filtering options
-
-### Contribution Guidelines
+### Quick Start
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feat/your-feature-name`
-3. Follow the existing code style and naming conventions
-4. Write clear commit messages
-5. Add tests for new features (when possible)
-6. Update documentation as needed
-7. Submit a pull request with a detailed description
+2. Create a feature branch (`git checkout -b feat/amazing-feature`)
+3. Make your changes
+4. Commit with clear messages (`git commit -m 'feat: add amazing feature'`)
+5. Push to your branch (`git push origin feat/amazing-feature`)
+6. Open a Pull Request
 
-### Code Review Process
+### Areas We Need Help With
 
-- All PRs must pass ESLint and Prettier checks
-- At least one approval from a maintainer is required
-- CI/CD checks must pass before merging
-- Address all review comments before merging
+- Real-time notifications implementation
+- Mobile app development
+- Automated testing
+- Accessibility improvements
+- Multi-language support
+- Performance optimizations
 
-## Credits & Resources
+For detailed guidelines on contributing, including code style, issue creation, and the review process, please see our [**Contributing Guide**](CONTRIBUTING.md).
+
+## 🙏 Credits & Resources
 
 ### Documentation References
 
