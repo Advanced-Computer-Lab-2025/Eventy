@@ -3,7 +3,7 @@ import { useFavorites } from "../hooks/useFavorites";
 import { Card, CardContent } from "../components/ui/card";
 import { Button } from "../components/ui/button";
 import { Heart, Loader2, AlertCircle } from "lucide-react";
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Alert, AlertDescription } from "../components/ui/alert";
 import { useToast } from "../hooks/use-toast";
 import Header from "../components/Header";
@@ -24,7 +24,6 @@ export default function FavoritesPage() {
   } = useFavorites();
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [, setLocation] = useLocation();
 
   useEffect(() => {
     const user = localStorage.getItem("user");
@@ -238,7 +237,9 @@ export default function FavoritesPage() {
                   showDetailedView={false}
                   showAttendees={false}
                   showRegisterButton={false}
-                  onViewDetails={() => setLocation(`/events/${event._id}`)}
+                  // NEW PROPS
+                  eventData={event}
+                  inlineShareButton={true}
                 />
               );
             })}
