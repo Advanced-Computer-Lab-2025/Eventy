@@ -183,7 +183,8 @@ export default function ApprovedLoyaltyPartnersPage() {
         <div className="mb-6">
           <h1 className="text-3xl font-bold">GUC Loyalty Program Partners</h1>
           <p className="text-muted-foreground">
-            View all approved vendors participating in the loyalty program
+            Discover exclusive discounts and special offers from our partner
+            vendors
           </p>
         </div>
 

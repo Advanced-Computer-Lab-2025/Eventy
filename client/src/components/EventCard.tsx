@@ -176,6 +176,7 @@ export default function EventCard({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const [internalDetailsOpen, setInternalDetailsOpen] = useState(false);
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
@@ -311,13 +312,28 @@ export default function EventCard({
         });
         return;
       }
+      const data = await res.json().catch(() => null);
+
       toast({
         title: "Registered!",
         description: "You are now registered for this event.",
       });
 
+      // Update local UI state
       setRegistered(true);
       setLocalAttendeeCount((prev) => prev + 1);
+
+      // Dispatch a custom event so other parts of the app (e.g. MyEvents)
+      // can react and refetch their data if needed
+      try {
+        window.dispatchEvent(
+          new CustomEvent("event:registered", {
+            detail: { eventId: id, event: data?.event || null },
+          })
+        );
+      } catch (e) {
+        // ignore if dispatch not supported
+      }
     } catch {
       toast({
         title: "Error",
@@ -500,12 +516,7 @@ export default function EventCard({
                   <div className="flex items-start text-muted-foreground">
                     <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      {isPlatformBooth && durationWeeks ? (
-                        <div>
-                          Active for {durationWeeks} week
-                          {durationWeeks > 1 ? "s" : ""}
-                        </div>
-                      ) : startDate && endDate ? (
+                      {startDate && endDate ? (
                         <div>
                           {formatDate(startDate)}, {formatTime(startDate)} →{" "}
                           {formatDate(endDate)}, {formatTime(endDate)}
@@ -513,6 +524,11 @@ export default function EventCard({
                       ) : startDate ? (
                         <div>
                           {formatDate(startDate)}, {formatTime(startDate)}
+                        </div>
+                      ) : isPlatformBooth && durationWeeks ? (
+                        <div>
+                          Active for {durationWeeks} week
+                          {durationWeeks > 1 ? "s" : ""}
                         </div>
                       ) : null}
                     </div>
@@ -709,15 +725,67 @@ export default function EventCard({
                       )}
                     </div>
                   )
-                ) : onEdit ? (
-                  <Button
-                    className={canRegister ? "flex-1" : "w-full"}
-                    onClick={() => onEdit()}
-                    data-testid={`button-edit-${id}`}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+                ) : onEdit || onArchive || canShowDelete ? (
+                  <div className="flex gap-2 w-full items-center">
+                    {onEdit && (
+                      <Button
+                        className="flex-1"
+                        onClick={() => onEdit()}
+                        data-testid={`button-edit-${id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                    {onArchive && (
+                      <Button
+                        className="flex-1"
+                        onClick={async (e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          try {
+                            await onArchive();
+                          } catch (err) {
+                            // parent handles errors
+                          }
+                        }}
+                        disabled={isArchiving}
+                        data-testid={`button-archive-${id}`}
+                      >
+                        {isArchiving ? (
+                          "Archiving..."
+                        ) : (
+                          <>
+                            <Archive className="h-4 w-4 mr-1" />
+                            Archive
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {onViewDetails && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    )}
+                    {canShowDelete && (
+                      <Trash2
+                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0"
+                        onClick={(e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          setShowDeleteDialog(true);
+                        }}
+                        data-testid={`button-delete-event-${id}`}
+                      />
+                    )}
+                  </div>
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&
@@ -754,32 +822,7 @@ export default function EventCard({
                   </div>
                 ) : null}
 
-                {onArchive && (
-                  <Button
-                    className={canRegister ? "flex-1" : "w-full"}
-                    onClick={async (e) => {
-                      if ((e as any).stopPropagation)
-                        (e as any).stopPropagation();
-                      try {
-                        await onArchive();
-                      } catch (err) {
-                        // parent handles errors
-                      }
-                    }}
-                    disabled={isArchiving}
-                    data-testid={`button-archive-${id}`}
-                  >
-                    {isArchiving ? (
-                      "Archiving..."
-                    ) : (
-                      <>
-                        <Archive className="h-4 w-4 mr-1" />
-                        Archive
-                      </>
-                    )}
-                  </Button>
-                )}
-                {/* 4. UPDATED CHECK: Show view details button if not registered, regardless of prop */}
+                {/* Show view details button if not registered, regardless of prop */}
                 {!(
                   showRegisterButton &&
                   !hideRegisterButton &&
@@ -1219,7 +1262,7 @@ export default function EventCard({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* 5. ADD THE DIALOG RENDER HERE */}
+      {/* Event Details Dialog */}
       <EventDetailsDialog
         open={internalDetailsOpen}
         onOpenChange={(open) => {
@@ -1229,6 +1272,34 @@ export default function EventCard({
         event={internalEventDetails}
         loading={isFetchingDetails}
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this event? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                setShowDeleteDialog(false);
+                if (onDelete) {
+                  onDelete(id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }

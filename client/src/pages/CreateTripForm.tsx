@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Calendar, MapPin, Users, Info } from "lucide-react";
+import { Calendar, MapPin, Users, Info, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -140,6 +140,19 @@ export default function CreateTripForm() {
 
       // registrationDeadline -> full ISO date (backend expects Date)
       if (formData.registrationDeadline) {
+        // Validate registration deadline (must be today or in the future)
+        const todayIso = new Date().toISOString().slice(0, 10);
+        if (formData.registrationDeadline < todayIso) {
+          toast({
+            title: "Invalid registration deadline",
+            description:
+              "Registration deadline must be today or a future date.",
+            variant: "destructive",
+          });
+          setLoading(false);
+          return;
+        }
+
         payload.registrationDeadline = new Date(
           formData.registrationDeadline
         ).toISOString();
@@ -273,17 +286,21 @@ export default function CreateTripForm() {
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="startDate"
                       type="date"
-                      className="pl-10"
+                      min={new Date().toISOString().split("T")[0]}
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       value={formData.startDate}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           startDate: e.target.value,
                         })
+                      }
+                      onClick={(e) =>
+                        (e.currentTarget as HTMLInputElement).showPicker?.()
                       }
                       data-testid="input-start-date"
                       required
@@ -293,16 +310,23 @@ export default function CreateTripForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="startTime">Start Time</Label>
-                  <Input
-                    id="startTime"
-                    type="time"
-                    value={formData.startTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, startTime: e.target.value })
-                    }
-                    data-testid="input-start-time"
-                    required
-                  />
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="startTime"
+                      type="time"
+                      value={formData.startTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, startTime: e.target.value })
+                      }
+                      onClick={(e) =>
+                        (e.currentTarget as HTMLInputElement).showPicker?.()
+                      }
+                      data-testid="input-start-time"
+                      required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -310,14 +334,18 @@ export default function CreateTripForm() {
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="endDate"
                       type="date"
-                      className="pl-10"
+                      min={new Date().toISOString().split("T")[0]}
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       value={formData.endDate}
                       onChange={(e) =>
                         setFormData({ ...formData, endDate: e.target.value })
+                      }
+                      onClick={(e) =>
+                        (e.currentTarget as HTMLInputElement).showPicker?.()
                       }
                       data-testid="input-end-date"
                       required
@@ -327,16 +355,23 @@ export default function CreateTripForm() {
 
                 <div className="space-y-2">
                   <Label htmlFor="endTime">End Time</Label>
-                  <Input
-                    id="endTime"
-                    type="time"
-                    value={formData.endTime}
-                    onChange={(e) =>
-                      setFormData({ ...formData, endTime: e.target.value })
-                    }
-                    data-testid="input-end-time"
-                    required
-                  />
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                    <Input
+                      id="endTime"
+                      type="time"
+                      value={formData.endTime}
+                      onChange={(e) =>
+                        setFormData({ ...formData, endTime: e.target.value })
+                      }
+                      onClick={(e) =>
+                        (e.currentTarget as HTMLInputElement).showPicker?.()
+                      }
+                      data-testid="input-end-time"
+                      required
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -376,17 +411,21 @@ export default function CreateTripForm() {
                 <div className="space-y-2">
                   <Label htmlFor="deadline">Registration Deadline</Label>
                   <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
                     <Input
                       id="deadline"
                       type="date"
-                      className="pl-10"
+                      min={new Date().toISOString().split("T")[0]}
+                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
                       value={formData.registrationDeadline}
                       onChange={(e) =>
                         setFormData({
                           ...formData,
                           registrationDeadline: e.target.value,
                         })
+                      }
+                      onClick={(e) =>
+                        (e.currentTarget as HTMLInputElement).showPicker?.()
                       }
                       data-testid="input-deadline"
                       required

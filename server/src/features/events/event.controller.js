@@ -569,11 +569,16 @@ export class EventsController {
       const user = req.user; // expects at least { _id, role, ... }
       const eventId = req.params.id;
 
-      await eventService.registerUserToEvent(user, eventId);
+      const updatedEvent = await eventService.registerUserToEvent(
+        user,
+        eventId
+      );
 
-      return res
-        .status(200)
-        .json({ message: "Successfully registered for the event." });
+      // Return the updated event so the client can update UI without refetch
+      return res.status(200).json({
+        message: "Successfully registered for the event.",
+        event: updatedEvent,
+      });
     } catch (err) {
       // If the service threw an error object with statusCode, use it
       if (err && err.statusCode) {
@@ -707,17 +712,23 @@ export class EventsController {
   }
 
   // GET /api/events/past - returns events whose endDate is before or equal to now
+  // For platform booths, both startDate and endDate must have passed
   async getPastEvents(req, res, next) {
     try {
       // Require authenticated user (role middleware on route will enforce role)
       if (!req.user) throw new ApiError(401, "Unauthorized");
 
+      // Use end of today for comparison so events ending today are included
       const now = new Date();
+      now.setHours(23, 59, 59, 999);
 
       // Use service.getEvents with a filter for events that have ended
+      // For platform booths, we need both startDate and endDate to have passed
       const events = await eventService.getEvents({
-        endDate: { $lte: now },
+        status: "approved",
         deletedAt: null,
+        endDate: { $lte: now }, // End date has passed
+        startDate: { $lte: now }, // Start date has also passed (for platform booths)
       });
 
       return res

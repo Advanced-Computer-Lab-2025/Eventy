@@ -16,6 +16,10 @@ const transactionService = new TransactionService();
 import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import mongoose from "mongoose";
+import { differenceInHours } from "date-fns";
+
+// Store the interval ID for the reminder scheduler
+let reminderInterval;
 
 export async function createBazaar(data, user) {
   // Check user role
@@ -362,6 +366,7 @@ export const updateTripService = async (tripId, updateData, user) => {
   const savedTrip = await trip.save();
   return savedTrip;
 };
+
 /**
  * Register an authenticated user (Student, Staff, TA, or Professor)
  * to a workshop or trip event.
@@ -393,7 +398,13 @@ export const registerUserToEvent = async (user, eventId) => {
   event.attendees.push(user._id);
   await event.save();
 
-  return { message: "Successfully registered for the event." };
+  // Return the updated event document so callers can use it immediately
+  const updatedEvent = await Event.findById(eventId).populate(
+    "attendees",
+    "firstName lastName email role"
+  );
+
+  return updatedEvent;
 };
 
 export const getEventsByUser = async (userId) => {
@@ -409,12 +420,14 @@ export const getUpcomingEventsService = async (
   includeVendors = false,
   userRole = null
 ) => {
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Filter out events where the user's role is restricted
@@ -438,12 +451,14 @@ export const getUpcomingEventsWithVendors = async (
   includeVendors = true,
   userRole = null
 ) => {
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
 
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Filter out events where the user's role is restricted
@@ -531,12 +546,14 @@ export const searchEvents = async ({
   professor,
 }) => {
   // Build a flexible filter - only search upcoming events like getUpcomingEventsService
-  // Platform booths should also respect startDate >= now, just like regular events
+  // Platform booths should also respect startDate >= today, just like regular events
+  // Use start of today for comparison so events starting today are included
   const now = new Date();
+  now.setHours(0, 0, 0, 0);
   const filter = {
     status: "approved",
     deletedAt: null,
-    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= now
+    startDate: { $gte: now }, // All events (including platform booths) must have startDate >= today
   };
 
   // Additional filters will be added to $and array
@@ -1551,15 +1568,27 @@ export const cancelEventRegistration = async (eventId, userId) => {
   );
   await event.save();
 
-  // Refund logic
-  const refund = await transactionService.refundUserForEvent(userId, event._id);
-
-  return {
-    eventId,
-    refundedAmount: refund.amount,
-    paymentMethod: refund.paymentMethod,
-    transactionId: refund._id,
-  };
+  // Only process refund if event has a price
+  if (event.price && !isNaN(event.price) && Number(event.price) > 0) {
+    const refund = await transactionService.refundUserForEvent(
+      userId,
+      event._id
+    );
+    return {
+      eventId,
+      refundedAmount: refund.amount,
+      paymentMethod: refund.paymentMethod,
+      transactionId: refund._id,
+    };
+  } else {
+    return {
+      eventId,
+      refundedAmount: 0,
+      paymentMethod: null,
+      transactionId: null,
+      message: "No refund issued as event has no price.",
+    };
+  }
 };
 
 export const restrictAccess = async (eventId, rolesToRestrict, user) => {
@@ -1948,6 +1977,159 @@ export const getSalesReport = async (options = {}) => {
     events: paginatedEvents,
   };
 };
+
+/**
+ * Sends reminder notifications for upcoming events
+ * @param {Object} event - The event to send reminders for
+ * @param {Date} reminderTime - When the reminder should be sent
+ */
+async function sendEventReminder(event, reminderTime, reminderType) {
+  try {
+    // Get all users registered for this event
+    const eventWithAttendees = await Event.findById(event._id).populate(
+      "attendees",
+      "email notificationPreferences"
+    );
+
+    if (!eventWithAttendees?.attendees?.length) return;
+
+    // Filter out users who have disabled notifications
+    const usersToNotify = eventWithAttendees.attendees.filter(
+      (user) => user.notificationPreferences !== false
+    );
+
+    if (!usersToNotify.length) return;
+
+    // Calculate time until event
+    const eventStart = new Date(event.startDate);
+    const timeUntilEvent = differenceInHours(eventStart, reminderTime);
+    // Use reminderType for message
+    await NotificationService.createNotification({
+      title: `⏰ Event Reminder: ${event.name}`,
+      message: `The event \"${event.name}\" is starting in ${reminderType}.`,
+      link: `/events/${event._id}`,
+      recipients: usersToNotify.map((user) => user._id),
+      event: event._id,
+      notificationType: "event_reminder",
+    });
+
+    console.log(
+      `Sent ${reminderType} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
+    );
+  } catch (error) {
+    console.error(`Error sending reminder for event ${event._id}:`, error);
+  }
+}
+
+/**
+ * Schedules reminders for all upcoming events
+ */
+export async function scheduleEventReminders() {
+  try {
+    const now = new Date();
+    console.log(
+      `[Scheduler] Running event reminder check at ${now.toISOString()}`
+    );
+
+    // Find all upcoming events starting within the next 25 hours
+    const upcomingEvents = await Event.find({
+      startDate: {
+        $gt: now,
+        $lte: new Date(now.getTime() + 25 * 60 * 60 * 1000), // 25 hours from now
+      },
+      status: "approved",
+      deletedAt: null,
+    });
+    console.log(
+      `[Scheduler] Found ${upcomingEvents.length} upcoming events in the next 25 hours.`
+    );
+
+    for (const event of upcomingEvents) {
+      const eventStart = new Date(event.startDate);
+      const diffMs = eventStart.getTime() - now.getTime();
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      const diffHours = diffMs / (1000 * 60 * 60);
+      console.log(
+        `[Scheduler] Event '${event.name}' (${event._id}) starts at ${eventStart.toISOString()} (${diffDays.toFixed(2)} days, ${diffHours.toFixed(2)} hours from now)`
+      );
+
+      // 1-day reminder: send if exactly 1 day left or less than 1 day and not sent yet
+      if (
+        Math.abs(diffDays - 1) < 0.05 ||
+        (diffDays < 1 && !event.reminder1DaySent && diffHours > 1)
+      ) {
+        if (!event.reminder1DaySent) {
+          console.log(
+            `[Scheduler] Sending 1-day reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 day");
+          await Event.findByIdAndUpdate(event._id, { reminder1DaySent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-day reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
+      }
+      // 1-hour reminder: send if exactly 1 hour left or less than 1 hour and not sent yet
+      else if (
+        Math.abs(diffHours - 1) < 0.05 ||
+        (diffHours < 1 && !event.reminder1HourSent && diffHours > 0)
+      ) {
+        if (!event.reminder1HourSent) {
+          console.log(
+            `[Scheduler] Sending 1-hour reminder for event '${event.name}' (${event._id})`
+          );
+          await sendEventReminder(event, now, "1 hour");
+          await Event.findByIdAndUpdate(event._id, { reminder1HourSent: true });
+        } else {
+          console.log(
+            `[Scheduler] 1-hour reminder already sent for event '${event.name}' (${event._id})`
+          );
+        }
+      } else {
+        console.log(
+          `[Scheduler] No reminder needed for event '${event.name}' (${event._id}) at this time.`
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error scheduling event reminders:", error);
+  }
+}
+
+/**
+ * Starts the reminder scheduler to run every 30 minutes
+ */
+export function startReminderScheduler() {
+  // Run immediately on start
+  console.log(
+    `[Scheduler] Starting event reminder scheduler at ${new Date().toISOString()}`
+  );
+  scheduleEventReminders();
+
+  // Then run every 5 minutes
+  reminderInterval = setInterval(
+    () => {
+      console.log(
+        `[Scheduler] Triggered event reminder scheduler at ${new Date().toISOString()}`
+      );
+      scheduleEventReminders();
+    },
+    5 * 60 * 1000
+  );
+
+  console.log("Event reminder scheduler started (interval: 5 minutes)");
+}
+
+/**
+ * Stops the reminder scheduler
+ */
+export function stopReminderScheduler() {
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+    console.log("Event reminder scheduler stopped");
+  }
+}
 
 /**
  * Export sales report with formatting similar to attendees report

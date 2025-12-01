@@ -49,6 +49,7 @@ interface EventFiltersProps {
   onSortChange?: (order: "asc" | "desc") => void;
   userRole?: string;
   onClear?: () => void;
+  events?: any[];
 }
 
 export default function EventFilters({
@@ -60,6 +61,7 @@ export default function EventFilters({
   onSortChange,
   userRole,
   onClear,
+  events,
 }: EventFiltersProps) {
   const today = useMemo(() => {
     const now = new Date();
@@ -67,10 +69,103 @@ export default function EventFilters({
     return now.toISOString().split("T")[0];
   }, []);
 
+  // ------------------------------------------------------------------
+  // 1. FILTER LOCATIONS (based on selected Professor)
+  // ------------------------------------------------------------------
   const locationOptions = useMemo(() => {
+    // If a professor is selected, filter available locations
+    if (
+      events &&
+      events.length > 0 &&
+      filters.professor &&
+      filters.professor !== "all"
+    ) {
+      const selectedProfId = String(filters.professor);
+
+      const professorEvents = events.filter((event) => {
+        // Check singular 'professor'
+        const pSingle =
+          event.professor?._id ||
+          event.professor?.id ||
+          event.professorId ||
+          event.professor;
+        if (pSingle && String(pSingle) === selectedProfId) return true;
+
+        // Check plural 'professors'
+        if (Array.isArray(event.professors)) {
+          return event.professors.some((p: any) => {
+            const pId = p?._id || p?.id || p;
+            return String(pId) === selectedProfId;
+          });
+        }
+        return false;
+      });
+
+      const uniqueFilteredLocations = Array.from(
+        new Set(
+          professorEvents
+            .map((e) => e.location || e.locationPreference)
+            .filter(Boolean)
+        )
+      );
+
+      return ["all", ...uniqueFilteredLocations];
+    }
+
+    // Default: Show all locations
     const unique = Array.from(new Set(locations.filter(Boolean)));
     return ["all", ...unique];
-  }, [locations]);
+  }, [locations, filters.professor, events]);
+
+  // ------------------------------------------------------------------
+  // 2. FILTER PROFESSORS (based on selected Location)
+  // ------------------------------------------------------------------
+  const filteredProfessors = useMemo(() => {
+    // If a location is selected, filter available professors
+    if (
+      events &&
+      events.length > 0 &&
+      filters.location &&
+      filters.location !== "all"
+    ) {
+      const selectedLocation = filters.location;
+      const relevantProfessorIds = new Set<string>();
+
+      // Find all events at this location
+      const locationEvents = events.filter(
+        (e) =>
+          e.location === selectedLocation ||
+          e.locationPreference === selectedLocation
+      );
+
+      // Extract professor IDs from these events
+      locationEvents.forEach((event) => {
+        // Check singular 'professor'
+        const pSingle =
+          event.professor?._id ||
+          event.professor?.id ||
+          event.professorId ||
+          event.professor;
+        if (pSingle) relevantProfessorIds.add(String(pSingle));
+
+        // Check plural 'professors'
+        if (Array.isArray(event.professors)) {
+          event.professors.forEach((p: any) => {
+            const pId = p?._id || p?.id || p;
+            if (pId) relevantProfessorIds.add(String(pId));
+          });
+        }
+      });
+
+      // Return only professors that exist in our relevant IDs set
+      return professors.filter((p) => relevantProfessorIds.has(String(p.id)));
+    }
+
+    // Default: Show all professors
+    return professors;
+  }, [professors, filters.location, events]);
+
+  // ------------------------------------------------------------------
 
   const updateFilters = (changes: Partial<EventFilterState>) => {
     onFilterChange({ ...filters, ...changes });
@@ -192,9 +287,9 @@ export default function EventFilters({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All professors</SelectItem>
-                {professors.length === 0
+                {filteredProfessors.length === 0
                   ? null
-                  : professors.map((p) => (
+                  : filteredProfessors.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
                       </SelectItem>

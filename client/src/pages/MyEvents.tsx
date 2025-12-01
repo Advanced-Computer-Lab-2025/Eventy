@@ -101,6 +101,22 @@ export default function MyEvents() {
     };
 
     fetchEvents();
+
+    // Listen for registrations happening elsewhere in the app and refetch
+    const onRegistered = (e: any) => {
+      try {
+        // If the event was passed and user already has it, skip; otherwise refetch
+        fetchEvents();
+      } catch (err) {
+        // ignore
+      }
+    };
+
+    window.addEventListener("event:registered", onRegistered as any);
+
+    return () => {
+      window.removeEventListener("event:registered", onRegistered as any);
+    };
   }, []);
 
   // Fetch full event details by ID
@@ -122,8 +138,18 @@ export default function MyEvents() {
     });
   };
 
-  const formatBoothDate = (durationWeeks: number) => {
-    return `Active for ${durationWeeks} week${durationWeeks > 1 ? "s" : ""}`;
+  const formatBoothDate = (event: any) => {
+    // If platform booth has startDate and endDate, show dates
+    if (event.startDate && event.endDate) {
+      const start = formatEventDate(event.startDate);
+      const end = formatEventDate(event.endDate);
+      return `${start} - ${end}`;
+    }
+    // Otherwise fall back to duration
+    if (event.durationWeeks) {
+      return `Active for ${event.durationWeeks} week${event.durationWeeks > 1 ? "s" : ""}`;
+    }
+    return "TBA";
   };
 
   const handleCardClick = async (eventId: string) => {
@@ -184,12 +210,12 @@ export default function MyEvents() {
                     title={event.name}
                     category={event.eventType}
                     date={
-                      isBoothEvent && event.durationWeeks
-                        ? formatBoothDate(event.durationWeeks)
+                      isBoothEvent
+                        ? formatBoothDate(event)
                         : formatEventDate(event.startDate)
                     }
                     time={
-                      isBoothEvent && event.durationWeeks
+                      isBoothEvent && !event.startDate
                         ? ""
                         : formatEventTime(event.startDate)
                     }

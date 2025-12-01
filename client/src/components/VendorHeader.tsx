@@ -17,7 +17,7 @@ export default function VendorHeader({
   activeTab = "upcoming",
   onTabChange,
 }: VendorHeaderProps) {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
 
   const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(false);
   const [user, setUser] = useState<{
@@ -64,7 +64,16 @@ export default function VendorHeader({
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => {
+              if (location !== "/vendor/dashboard") {
+                setLocation("/vendor/dashboard");
+              } else {
+                window.location.hash = "upcoming";
+              }
+            }}
+          >
             <Logo size="xl" />
           </div>
 

@@ -12,6 +12,7 @@ import { getEventImage } from "@/lib/eventImages";
 import EventSort from "@/components/EventSort";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventCountBadge from "@/components/EventCountBadge";
+import EventsDetailsDialog from "@/components/EventsDetailsDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -60,6 +61,9 @@ export default function AdminDashboardPage() {
   const [eventTypeFilter, setEventTypeFilter] = useState<
     "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
   >("all");
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [detailsLoading, setDetailsLoading] = useState(false);
 
   useEffect(() => {
     const fetchConferences = async () => {
@@ -90,6 +94,64 @@ export default function AdminDashboardPage() {
 
     fetchConferences();
   }, []);
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      // 204 No Content is success
+      if (res.status === 204) {
+        // Refresh the events list
+        setUpcomingEvents((prev) => prev.filter((e) => e._id !== eventId));
+        setAllEvents((prev) => prev.filter((e) => e._id !== eventId));
+        return;
+      }
+
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const data = await res.json();
+          throw new Error(data.message || "Failed to delete event");
+        }
+        throw new Error("Failed to delete event");
+      }
+
+      // Refresh the events list
+      setUpcomingEvents((prev) => prev.filter((e) => e._id !== eventId));
+      setAllEvents((prev) => prev.filter((e) => e._id !== eventId));
+    } catch (err: any) {
+      console.error(err.message || "Failed to delete event");
+    }
+  };
+
+  const handleCardClick = async (eventId: string) => {
+    setDetailsLoading(true);
+    setDialogOpen(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Failed to fetch event details");
+      const data = await res.json();
+      setSelectedEvent(data.data);
+    } catch (err) {
+      setSelectedEvent(null);
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const fetchUpcomingEvents = async () => {
@@ -561,6 +623,14 @@ export default function AdminDashboardPage() {
                       capacity={-1}
                       vendors={e.vendors || []}
                       showDetailedView={true}
+                      hideRegisterButton={true}
+                      canDelete={
+                        (Array.isArray(e.attendees)
+                          ? e.attendees.length
+                          : e.attendeesCount || 0) === 0
+                      }
+                      onDelete={() => handleDeleteEvent(e._id)}
+                      onViewDetails={() => handleCardClick(e._id)}
                     />
                   ))}
               </div>
@@ -568,6 +638,12 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       </main>
+      <EventsDetailsDialog
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        event={selectedEvent}
+        loading={detailsLoading}
+      />
     </div>
   );
 }
