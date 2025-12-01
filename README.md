@@ -575,86 +575,27 @@ We use Postman for API endpoint testing. Below are test cases for the code examp
 
 #### 1. Edit Bazaar Test
 
-![Postman Test - Edit Bazaar](https://via.placeholder.com/800x400?text=Postman+Test+-+Edit+Bazaar)
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/dbf4ddd5-75c8-4020-9aa1-4a0695f27b81" />
 
-```javascript
-// Test: PATCH /api/events/bazaars/:id
-pm.test("Bazaar updated successfully", function () {
-  pm.response.to.have.status(200);
-  var jsonData = pm.response.json();
-  pm.expect(jsonData.data.name).to.eql("Updated Bazaar Name");
-});
-
-pm.test("Cannot edit started bazaar", function () {
-  pm.response.to.have.status(400);
-  pm.expect(pm.response.json().message).to.include("already started");
-});
-```
 
 #### 2. Update Trip Test
 
-![Postman Test - Update Trip](https://via.placeholder.com/800x400?text=Postman+Test+-+Update+Trip)
-
-```javascript
-// Test: PATCH /api/events/edit/trips/:tripId
-pm.test("Trip updated successfully", function () {
-  pm.response.to.have.status(200);
-  var jsonData = pm.response.json();
-  pm.expect(jsonData.eventType).to.eql("trip");
-});
-
-pm.test("Cannot edit trip that has started", function () {
-  pm.response.to.have.status(403);
-});
-```
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/438250e5-632b-454a-b2a6-43818865dd1c" />
 
 #### 3. Edit Workshop Test
 
-![Postman Test - Edit Workshop](https://via.placeholder.com/800x400?text=Postman+Test+-+Edit+Workshop)
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/61ca6393-2292-4b8c-acd5-9049dbbf6d95" />
 
-```javascript
-// Test: PATCH /api/events/workshops/:id
-pm.test("Workshop edited and status set to pending", function () {
-  pm.response.to.have.status(200);
-  var jsonData = pm.response.json();
-  pm.expect(jsonData.status).to.eql("pending");
-});
-
-pm.test("Only creator can edit workshop", function () {
-  pm.response.to.have.status(403);
-  pm.expect(pm.response.json().message).to.include("your own workshops");
-});
-```
 
 #### 4. Create Workshop Test
 
-![Postman Test - Create Workshop](https://via.placeholder.com/800x400?text=Postman+Test+-+Create+Workshop)
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/5ea13be0-03bc-47be-b245-62dd6cf57e55" />
 
-```javascript
-// Test: POST /api/events/workshops
-pm.test("Workshop created with pending status", function () {
-  pm.response.to.have.status(201);
-  var jsonData = pm.response.json();
-  pm.expect(jsonData.data.eventType).to.eql("workshop");
-  pm.expect(jsonData.data.status).to.eql("pending");
-});
-```
 
 #### 5. Get Upcoming Events Test
 
-![Postman Test - Upcoming Events](https://via.placeholder.com/800x400?text=Postman+Test+-+Upcoming+Events)
+<img width="1920" height="1020" alt="image" src="https://github.com/user-attachments/assets/2009f3c6-16e6-4ae3-bd7d-a603ac4e0648" />
 
-```javascript
-// Test: GET /api/events/upcoming
-pm.test("Returns only approved upcoming events", function () {
-  pm.response.to.have.status(200);
-  var jsonData = pm.response.json();
-  jsonData.forEach((event) => {
-    pm.expect(event.status).to.eql("approved");
-    pm.expect(new Date(event.startDate)).to.be.above(new Date());
-  });
-});
-```
 
 ### Validation Testing
 
