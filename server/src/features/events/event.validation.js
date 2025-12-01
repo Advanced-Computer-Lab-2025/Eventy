@@ -210,12 +210,6 @@ export const createWorkshopSchema = Joi.object({
       "array.min": "Professors list must contain at least one ID",
       "string.hex": "Professor IDs must be valid ObjectIds",
     }),
-
-  price: Joi.number().positive().required().messages({
-    "any.required": "Workshop price is required",
-    "number.base": "Price must be a number",
-    "number.positive": "Price must be a positive number",
-  }),
 });
 
 export const updateWorkshopSchema = Joi.object({

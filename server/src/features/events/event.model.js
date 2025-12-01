@@ -18,7 +18,9 @@ const eventSchema = new Schema(
     location: {
       type: String,
       required: function () {
-        return this.eventType !== "platform_booth";
+        return (
+          this.eventType !== "platform_booth" && this.eventType !== "conference"
+        );
       },
     },
     startDate: {
