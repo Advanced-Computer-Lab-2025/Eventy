@@ -46,7 +46,11 @@ export const createConferenceSchema = Joi.object({
     .uri()
     .message("Invalid website URL format")
     .optional(),
-  requiredBudget: Joi.number().positive().required(),
+  requiredBudget: Joi.number().min(0).required().messages({
+    "any.required": "Required budget is required",
+    "number.base": "Required budget must be a number",
+    "number.min": "Required budget must be zero or a positive number",
+  }),
   fundingSource: Joi.string().valid("external", "guc").required(),
   extraResources: Joi.string().optional(),
   agenda: Joi.string().optional(),
@@ -76,7 +80,10 @@ export const updateConferenceSchema = Joi.object({
   startDate: Joi.date().optional(),
   endDate: Joi.date().optional(),
   websiteUrl: Joi.string().uri().optional(),
-  requiredBudget: Joi.number().positive().optional(),
+  requiredBudget: Joi.number().min(0).optional().messages({
+    "number.base": "Required budget must be a number",
+    "number.min": "Required budget must be zero or a positive number",
+  }),
   fundingSource: Joi.string().valid("external", "guc").optional(),
   extraResources: Joi.string().optional(),
   agenda: Joi.string().optional(),
@@ -174,9 +181,10 @@ export const createWorkshopSchema = Joi.object({
     "string.base": "Agenda must be text",
   }),
 
-  requiredBudget: Joi.number().required().messages({
+  requiredBudget: Joi.number().min(0).required().messages({
     "any.required": "Required budget is required",
     "number.base": "Required budget must be a number",
+    "number.min": "Required budget must be zero or a positive number",
   }),
 
   fundingSource: Joi.string().valid("external", "guc").required().messages({
@@ -235,7 +243,10 @@ export const updateWorkshopSchema = Joi.object({
   }),
   capacity: Joi.number().integer().min(1).optional(),
   agenda: Joi.string().optional(),
-  requiredBudget: Joi.number().positive().optional(),
+  requiredBudget: Joi.number().min(0).optional().messages({
+    "number.base": "Required budget must be a number",
+    "number.min": "Required budget must be zero or a positive number",
+  }),
   fundingSource: Joi.string().valid("external", "guc").optional(),
   extraResources: Joi.string().optional(),
   faculty: Joi.string().optional(),
