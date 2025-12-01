@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -17,7 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Download } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { Loader2, Download, CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import * as XLSX from "xlsx";
 
 const API_BASE_URL =
@@ -65,8 +73,8 @@ export default function SalesReport() {
 
   // Filter states
   const [eventType, setEventType] = useState("all");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [startDate, setStartDate] = useState<Date | undefined>(undefined);
+  const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [page, setPage] = useState(1);
   const limit = 10;
@@ -87,11 +95,11 @@ export default function SalesReport() {
       }
 
       if (startDate) {
-        params.append("startDate", startDate);
+        params.append("startDate", format(startDate, "yyyy-MM-dd"));
       }
 
       if (endDate) {
-        params.append("endDate", endDate);
+        params.append("endDate", format(endDate, "yyyy-MM-dd"));
       }
 
       params.append("sortOrder", sortOrder);
@@ -129,8 +137,8 @@ export default function SalesReport() {
 
   const handleClearFilters = () => {
     setEventType("all");
-    setStartDate("");
-    setEndDate("");
+    setStartDate(undefined);
+    setEndDate(undefined);
     setSortOrder("desc");
     setPage(1);
   };
@@ -149,11 +157,11 @@ export default function SalesReport() {
       }
 
       if (startDate) {
-        params.append("startDate", startDate);
+        params.append("startDate", format(startDate, "yyyy-MM-dd"));
       }
 
       if (endDate) {
-        params.append("endDate", endDate);
+        params.append("endDate", format(endDate, "yyyy-MM-dd"));
       }
 
       params.append("sortOrder", sortOrder);
@@ -354,25 +362,65 @@ export default function SalesReport() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Events Starting From
-              </label>
-              <Input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                max={endDate || undefined}
-              />
+              <label className="text-sm font-medium">Start Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {startDate ? (
+                      format(startDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={startDate}
+                    onSelect={setStartDate}
+                    disabled={(date) => (endDate ? date > endDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">Event End Date</label>
-              <Input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                min={startDate || undefined}
-              />
+              <label className="text-sm font-medium">End Date</label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {endDate ? (
+                      format(endDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={endDate}
+                    onSelect={setEndDate}
+                    disabled={(date) => (startDate ? date < startDate : false)}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="flex items-end">
