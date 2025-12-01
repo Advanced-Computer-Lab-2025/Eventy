@@ -7,6 +7,7 @@ import { sendVendorApplicationStatusEmail } from "../auth/email.service.js";
 import { Event } from "../events/event.model.js";
 import { User } from "../users/user.model.js";
 import NotificationService from "../notifications/notification.service.js"; // Import NotificationService
+import Poll from "../polls/poll.model.js";
 
 class ApplicationServiceClass {
   /**
@@ -348,6 +349,84 @@ class ApplicationServiceClass {
 
     if (!updatedApplication) {
       throw new Error("Application not found");
+    }
+
+    // If application is approved, check if it's part of a poll and reject other applications in that poll
+    if (status === "approved") {
+      try {
+        // Find active polls that include this application
+        const polls = await Poll.find({
+          isActive: true,
+          "context.type": "booth_conflict",
+          relatedApplications: objectId,
+        });
+
+        // For each poll, reject all other applications
+        for (const poll of polls) {
+          if (
+            poll.relatedApplications &&
+            Array.isArray(poll.relatedApplications)
+          ) {
+            const otherApplicationIds = poll.relatedApplications.filter(
+              (appId) => appId.toString() !== applicationId.toString()
+            );
+
+            // Reject all other applications in the poll
+            for (const otherAppId of otherApplicationIds) {
+              try {
+                const otherApp = await Application.findById(otherAppId);
+                // Only reject if still pending
+                if (otherApp && otherApp.status === "pending") {
+                  await Application.findByIdAndUpdate(otherAppId, {
+                    status: "rejected",
+                  });
+
+                  // Send email notification for rejected application
+                  const populatedOtherApp = await Application.findById(
+                    otherAppId
+                  )
+                    .populate({
+                      path: "createdBy",
+                      select: "email companyName firstName lastName name role",
+                    })
+                    .populate({
+                      path: "event",
+                      select: "name description startDate endDate location",
+                    });
+
+                  if (populatedOtherApp && populatedOtherApp.createdBy) {
+                    try {
+                      await sendVendorApplicationStatusEmail(
+                        populatedOtherApp.createdBy,
+                        populatedOtherApp
+                      );
+                    } catch (error) {
+                      console.error("Failed to send rejection email:", error);
+                    }
+                  }
+                }
+              } catch (error) {
+                // Log error but continue with other applications
+                console.error(
+                  `Failed to reject application ${otherAppId}:`,
+                  error
+                );
+              }
+            }
+
+            // End the poll since one application has been approved
+            poll.isActive = false;
+            poll.deletedAt = new Date();
+            await poll.save();
+          }
+        }
+      } catch (error) {
+        // Log error but don't fail the approval if poll check fails
+        console.error(
+          "Error checking/rejecting other applications in poll:",
+          error
+        );
+      }
     }
 
     // Populate vendor and event data for email notification
