@@ -250,8 +250,8 @@ export default function VendorRequests() {
       return `${vendorName}'s platform booth`;
     }
 
-    // If event is just an ID string or null/undefined, return N/A
-    return "N/A";
+    // If event is just an ID string or null/undefined, return -
+    return "-";
   };
 
   const handleApprove = async (requestId: string) => {
