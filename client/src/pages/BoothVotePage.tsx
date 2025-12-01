@@ -288,20 +288,22 @@ export default function BoothVotePage() {
                               value={opt._id}
                               id={`${poll._id}-${opt._id}`}
                             />
-                            <Label
-                              htmlFor={`${poll._id}-${opt._id}`}
-                              className="cursor-pointer flex-1 flex items-center justify-between"
-                            >
-                              <span>{opt.optionText}</span>
+                            <div className="flex-1 flex items-center justify-between">
+                              <Label
+                                htmlFor={`${poll._id}-${opt._id}`}
+                                className="cursor-pointer flex-1"
+                              >
+                                {opt.optionText}
+                              </Label>
                               {isVotedOption && (
                                 <Badge
                                   variant="outline"
-                                  className="ml-2 border-green-500 text-green-700 dark:text-green-400"
+                                  className="ml-2 border-green-500 text-green-700 dark:text-green-400 cursor-default pointer-events-none"
                                 >
                                   Your vote
                                 </Badge>
                               )}
-                            </Label>
+                            </div>
                           </div>
                         );
                       })}
