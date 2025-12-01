@@ -461,18 +461,19 @@ export default function ProfessorDashboard() {
                         description={event.description}
                         startDate={event.startDate}
                         endDate={event.endDate}
+                        // --- UPDATED HERE ---
+                        // Pass raw strings for time fix
+                        dbStartTime={event.startTime}
+                        dbEndTime={event.endTime}
+                        // --------------------
+
                         durationWeeks={event.durationWeeks}
                         capacity={event.capacity}
                         registrationDeadline={event.registrationDeadline}
                         vendors={event.vendors || []}
                         showDetailedView={true}
                         eventData={event}
-                        // --- CHANGES MADE HERE ---
-                        // 1. Added handleRegisterEvent to prevent undefined error
                         onRegister={() => handleRegisterEvent(event._id)}
-                        // 2. REMOVED onViewDetails prop.
-                        // By removing it, EventCard falls back to its internal logic
-                        // and opens the EventDetailsDialog properly.
                       />
                     ))}
                 </div>
