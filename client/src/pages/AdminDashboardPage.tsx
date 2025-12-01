@@ -625,6 +625,12 @@ export default function AdminDashboardPage() {
                       description={e.description}
                       startDate={e.startDate}
                       endDate={e.endDate}
+                      // --- UPDATED HERE ---
+                      // Pass raw strings for time fix
+                      dbStartTime={e.startTime}
+                      dbEndTime={e.endTime}
+                      // --------------------
+
                       durationWeeks={e.durationWeeks}
                       capacity={-1}
                       vendors={e.vendors || []}
