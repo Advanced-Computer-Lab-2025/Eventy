@@ -107,6 +107,26 @@ class PollServiceClass {
       );
     }
 
+    // Ensure all applications are from different vendors
+    const vendorIds = applications
+      .map((app) => {
+        const vendorId = app.createdBy?._id || app.createdBy;
+        return vendorId ? vendorId.toString() : null;
+      })
+      .filter((id) => id !== null);
+
+    if (vendorIds.length !== applications.length) {
+      throw new ApiError(400, "All applications must have a valid vendor");
+    }
+
+    const uniqueVendorIds = new Set(vendorIds);
+    if (uniqueVendorIds.size !== vendorIds.length) {
+      throw new ApiError(
+        400,
+        "Polls can only be created between different vendors. All selected applications must be from different vendors."
+      );
+    }
+
     // Prevent duplicate active polls for the exact same set of applications
     const existingPoll = await Poll.findOne({
       isActive: true,
