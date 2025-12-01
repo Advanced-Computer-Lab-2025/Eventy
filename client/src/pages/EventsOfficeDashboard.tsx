@@ -55,6 +55,7 @@ import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
+import RestrictAccessDialog from "@/components/RestrictAccessDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -92,6 +93,10 @@ export default function EventsOfficeDashboard() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
+  const [restrictAccessDialogOpen, setRestrictAccessDialogOpen] =
+    useState(false);
+  const [selectedEventForRestrict, setSelectedEventForRestrict] =
+    useState<any>(null);
 
   // Past events states
   const [pastEvents, setPastEvents] = useState<any[]>([]);
@@ -444,6 +449,26 @@ export default function EventsOfficeDashboard() {
           err.message || "An error occurred while deleting the event.",
         variant: "destructive",
       });
+    }
+  };
+
+  const handleRestrictSuccess = async () => {
+    // Refresh the events to show updated restrictions
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUpcomingEvents(data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to refresh events", err);
     }
   };
 
@@ -1484,22 +1509,31 @@ export default function EventsOfficeDashboard() {
                                         handleArchiveEvent(event._id),
                                       isArchiving: archivingId === event._id,
                                     }
-                                  : ["trip", "conference", "bazaar"].includes(
-                                        event.eventType
-                                      )
+                                  : [
+                                        "trip",
+                                        "conference",
+                                        "bazaar",
+                                        "workshop",
+                                      ].includes(event.eventType)
                                     ? {
                                         onEdit: () => {
-                                          const editRoutes: Record<
-                                            string,
-                                            string
-                                          > = {
-                                            conference: `/events-office/events/conference/edit/${event._id}`,
-                                            trip: `/events-office/events/trip/edit/${event._id}`,
-                                            bazaar: `/create/bazaar?id=${event._id}`,
-                                          };
-                                          const route =
-                                            editRoutes[event.eventType];
-                                          if (route) setLocation(route);
+                                          if (event.eventType === "workshop") {
+                                            // Open restrict access dialog for workshops
+                                            setSelectedEventForRestrict(event);
+                                            setRestrictAccessDialogOpen(true);
+                                          } else {
+                                            const editRoutes: Record<
+                                              string,
+                                              string
+                                            > = {
+                                              conference: `/events-office/events/conference/edit/${event._id}`,
+                                              trip: `/events-office/events/trip/edit/${event._id}`,
+                                              bazaar: `/create/bazaar?id=${event._id}`,
+                                            };
+                                            const route =
+                                              editRoutes[event.eventType];
+                                            if (route) setLocation(route);
+                                          }
                                         },
                                       }
                                     : {})}
@@ -1552,6 +1586,14 @@ export default function EventsOfficeDashboard() {
           // Optionally navigate to sports facilities page
           // setLocation("/sports");
         }}
+      />
+      <RestrictAccessDialog
+        open={restrictAccessDialogOpen}
+        onOpenChange={setRestrictAccessDialogOpen}
+        eventId={selectedEventForRestrict?._id || null}
+        eventName={selectedEventForRestrict?.name || ""}
+        currentRestrictedRoles={selectedEventForRestrict?.restrictedRoles || []}
+        onSuccess={handleRestrictSuccess}
       />
     </div>
   );
