@@ -180,7 +180,7 @@ export default function EventDetailsDialog({
                     label="Reg. Deadline"
                     value={deadlineStr}
                     className="border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10"
-                    iconClass="text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/20"
+                    iconClass="text-red-600 dark:text-red-400"
                   />
                 )}
 
