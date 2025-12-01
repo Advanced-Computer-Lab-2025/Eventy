@@ -320,9 +320,7 @@ export default function FeedbackDashboard() {
                   attendees={0}
                   showAttendees={false}
                   showActions={false}
-                  className={`h-full ${
-                    selectedEvent === ev.id ? "ring-2 ring-primary" : ""
-                  }`}
+                  className="h-full"
                 />
                 {/* Rating Badge Overlay */}
                 {ev.averageRating !== undefined && ev.averageRating > 0 && (
