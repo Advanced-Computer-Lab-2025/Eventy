@@ -1569,15 +1569,27 @@ export const cancelEventRegistration = async (eventId, userId) => {
   );
   await event.save();
 
-  // Refund logic
-  const refund = await transactionService.refundUserForEvent(userId, event._id);
-
-  return {
-    eventId,
-    refundedAmount: refund.amount,
-    paymentMethod: refund.paymentMethod,
-    transactionId: refund._id,
-  };
+  // Only process refund if event has a price
+  if (event.price && !isNaN(event.price) && Number(event.price) > 0) {
+    const refund = await transactionService.refundUserForEvent(
+      userId,
+      event._id
+    );
+    return {
+      eventId,
+      refundedAmount: refund.amount,
+      paymentMethod: refund.paymentMethod,
+      transactionId: refund._id,
+    };
+  } else {
+    return {
+      eventId,
+      refundedAmount: 0,
+      paymentMethod: null,
+      transactionId: null,
+      message: "No refund issued as event has no price.",
+    };
+  }
 };
 
 export const restrictAccess = async (eventId, rolesToRestrict, user) => {
