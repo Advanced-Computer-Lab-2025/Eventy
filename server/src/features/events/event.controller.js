@@ -739,6 +739,28 @@ export class EventsController {
     }
   }
 
+  // GET /api/events/archived - returns all archived events
+  async getArchivedEvents(req, res, next) {
+    try {
+      // Require authenticated user (role middleware on route will enforce role)
+      if (!req.user) throw new ApiError(401, "Unauthorized");
+
+      // Get all archived events
+      const events = await eventService.getEvents({
+        status: "archived",
+        deletedAt: null,
+      });
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Archived events fetched successfully")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getEventById(req, res, next) {
     try {
       const { eventId } = req.params;
