@@ -262,7 +262,7 @@ export const updateTripSchema = Joi.object({
   name: Joi.string(),
   description: Joi.string(),
   location: Joi.string(),
-  startDate: Joi.date().greater("now"),
+  startDate: Joi.date(),
   endDate: Joi.date(),
   startTime: Joi.string()
     .pattern(/^([01]\d|2[0-3]):([0-5]\d)$/)
