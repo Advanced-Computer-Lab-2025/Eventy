@@ -142,74 +142,92 @@ _Professors can create and manage workshops, track participants_
 - **Drizzle ORM** - Type-safe database queries (PostgreSQL)
 
 ## Features
+### User Management & Authentication
 
-### User Management
-
-- **Multi-role Authentication**: Support for Students, Professors, Staff, TAs, Events Office, Vendors, and Admins
-- **Email Verification**: Secure account activation via email links
-- **Wallet System**: Digital wallet for event payments and loyalty rewards
-- **Favorites**: Bookmark favorite events for quick access
+-   **Domain-Restricted Sign Up**: Mandatory GUC email (`@guc.edu.eg`) for Students, Staff, TAs, and Professors.
+-   **Role Verification Workflow**:
+    -   Students: Auto-verified via email link.
+    -   Staff/TAs/Professors: Request an account → **Admin manually verifies role** → Verification email sent.
+-   **Admin Management**: Root Admin can create and delete other Admin and Event Office accounts.
+-   **Account Status**: View active/blocked status; Admin can block users.
 
 ### Event Management
 
-- **Conference Creation**: Events Office can create and manage conferences
-- **Workshop System**: Professors create workshops; Events Office approves them
-- **Trip Organization**: Create trips with itineraries, pricing, and capacity limits
-- **Bazaar Management**: Organize bazaars with vendor booth applications
-- **Event Filtering & Search**: Filter by type, date, category, location and participating professors(if any)
-- **Event Registration**: Students can register and pay for events
-- **QR Code Attendance**: Generate QR codes for event check-ins
-- **Event Archival**: Archiving of past events by Events Office
+-   **Conference Creation**: Events Office creates conferences with agendas, website links, and funding sources.
+-   **Workshop Workflow**:
+    -   Professors submit proposals (details, budget, funding source).
+    -   Events Office reviews: **Accept, Reject, or Request Edits**.
+    -   Professor tracks status and edits if necessary.
+-   **Trip Organization**: Events Office creates trips with itineraries, pricing, and capacity limits.
+-   **Bazaar Management**: Events Office sets schedules and location details for upcoming bazaars.
+-   **Advanced Search & Filtering**: Sort by date; Filter by type, category, location, and **Professor Name** (for workshops/conferences).
+-   **Event Archival**: Auto-archive past events; manual deletion allowed only if 0 registrants.
+-   **Access Control**: Restrict specific events to specific roles (e.g., "Students Only").
 
 ### Vendor & Application System
 
-- **Vendor Applications**: Apply for bazaar booths or platform booth spaces
-- **Application Approval Workflow**: Events Office reviews and approves applications
-- **Document Upload**: Vendors upload required documentation
-- **Payment Processing**: Integrated Stripe payment for applications
+-   **Application Workflows**:
+    -   **Bazaars**: Apply with booth size (2x2, 4x4) and team details.
+    -   **Platform Booths**: Apply with duration (1-4 weeks), location preference, and booth size.
+-   **Document Management**: Upload Tax Card, Company Logo, and **IDs of all attending team members**.
+-   **Payment Rules**:
+    -   Integrated Stripe payment.
+    -   **Strict Deadline**: Vendors must pay within **3 days** of acceptance or application is void.
+-   **Visitor Management**: Vendors receive QR codes for their registered staff/visitors.
 
-### Sports & Facilities
+### Sports, Gym & Facilities
 
-- **Facility Booking**: Browse and book sports facilities (gym, courts, etc.)
-- **Gym Schedule Viewer**: View available time slots and sessions
+-   **Facility Booking (Students)**: View availability and reserve courts (Tennis, Football, Basketball).
+-   **Gym Session Management (Events Office)**:
+    -   **Create Sessions**: Define type (Yoga, Zumba, etc.), instructor, time, and capacity.
+    -   **Edit/Cancel**: Modify times or cancel sessions (triggers auto-notification to registrants).
+-   **Session Registration**: Users book spots in specific gym classes.
 
-### Feedback & Ratings
+### Wallet & Payment System
 
-- **Event Feedback**: Attendees can view and provide feedback after events
-- **Rating System**: Rate events and workshops
+-   **Digital Wallet**: Store refunded credit for future use.
+-   **Payment Processing**: Credit/Debit card (Stripe) or Wallet balance.
+-   **Refund Policy**:
+    -   Users can cancel registration.
+    -   **Constraint**: Refund is only processed if cancelled **at least 2 weeks** before the event.
 
-### Loyalty & Rewards
+### Social, Feedback & Moderation
 
-- **Loyalty Program**: Partner businesses offer discounts & promotion codes to students
+-   **Ratings & Comments**: Users can rate and comment on attended events.
+-   **Moderation System**:
+    -   Admins can **delete inappropriate comments**.
+    -   **Auto-Warning**: System sends a warning email to the user whose comment was deleted.
+-   **Favorites**: Bookmark events for quick access.
 
-### Notifications
+### Loyalty Program
 
-- **In-App Notifications**: Real-time updates for applications, events, approvals
-- **Email Notifications**: Event confirmations, reminders, and updates
-- **Notification Center**: View all notifications in one place
-
-### Reporting & Analytics
-
-- **Sales Reports**: Revenue analytics with filtering and export
-- **Attendee Reports**: Track event attendance and participation
-- **Export to Excel/CSV**: Download reports in multiple formats
-- **Certificate Generation**: Automated certificates for workshop completion
+-   **Vendor Partnership**: Vendors apply to become loyalty partners.
+-   **Offer Management**: Vendors submit discount rates, promo codes, and terms for approval.
+-   **Public Listing**: Users browse a list of all active loyalty partners and codes.
 
 ### Polling System
 
-- **Create Polls**: Events Office creates polls for booth competitions
-- **Vote on Booths**: Students vote for their favorite platform booths
-- **Poll Results**: Events Office can view real-time poll results and winners
+-   **Booth Competitions**: Events Office creates polls for conflicting vendor slots.
+-   **Student Voting**: Students vote for their preferred vendor/booth.
+-   **Real-time Results**: Events Office views results to decide the winner.
 
-### Access Control
+### Notifications
 
-- **Role-Based Permissions**: Different capabilities based on user roles
-- **Event Access Restriction**: Limit events to specific roles (students only, staff only, etc.)
-- **Admin Controls**: Block/unblock users, manage system settings
+-   **In-App & Email**:
+    -   **Registration**: Confirmations and QR codes.
+    -   **Reminders**: Sent **1 day** and **1 hour** prior to event.
+    -   **Updates**: Alerts for gym cancellations, workshop approvals, or loyalty additions.
+-   **Warning System**: Alerts for policy violations (comments).
 
+### Reporting & Analytics
+
+-   **Sales Reports**: Revenue analytics filtered by event type/date; sortable by revenue amount.
+-   **Attendance Reports**: Track participant numbers and remaining spots.
+-   **Data Export**: Events Office can export registrant names to **.xlsx (Excel)**.
+-   **Certificate Generation**: Automated certificates emailed upon workshop completion.
 ## Code Examples
 
-### 1. Edit Bazaar Service
+### 1. Edit Bazaar Service Function
 
 ```javascript
 // server/src/features/events/event.service.js
@@ -245,38 +263,62 @@ export async function editBazaar(id, updates) {
 }
 ```
 
-### 2. Update Trip Service
+### 2. Update Trip Service Function
 
 ```javascript
 // server/src/features/events/event.service.js
-export const updateTripService = async (tripId, updateData, user) => {
-  // 1. Fetch trip
-  const trip = await Event.findById(tripId);
-  if (!trip || trip.eventType !== "trip") {
-    throw new ApiError(404, "Trip not found");
+export const createTrip = async (tripData, createdBy) => {
+  if (isNaN(tripData.price)) {
+    throw new ApiError(400, "Price must be a valid number");
   }
 
-  // 2. Prevent editing if start date passed
-  const now = new Date();
-  if (trip.startDate <= now) {
-    throw new ApiError(403, "Cannot edit a trip that has already started");
+  // Validate required fields
+  if (!tripData.startTime) {
+    throw new ApiError(400, "Start time is required");
   }
 
-  // 3. Apply updates dynamically
-  Object.keys(updateData).forEach((key) => {
-    trip[key] = updateData[key];
+  if (!tripData.endTime) {
+    throw new ApiError(400, "End time is required");
+  }
+
+  // Extract date and time fields
+  const startDateTime = new Date(tripData.startDate);
+  const endDateTime = new Date(tripData.endDate);
+
+  // Validate date format
+  if (isNaN(startDateTime.getTime())) {
+    throw new ApiError(400, "Invalid start date format");
+  }
+
+  if (isNaN(endDateTime.getTime())) {
+    throw new ApiError(400, "Invalid end date format");
+  }
+
+  // Ensure end date is after start date
+  if (endDateTime <= startDateTime) {
+    throw new ApiError(400, "End date must be after start date");
+  }
+
+  const newTrip = await Event.create({
+    ...tripData,
+    eventType: "trip",
+    createdBy,
+    restrictedRoles: tripData.restrictedRoles || [],
   });
 
-  // 4. Validate before saving
-  await trip.validate();
+  // Send notification about new trip
+  try {
+    await NotificationService.notifyNewEvent(newTrip, "trip");
+  } catch (error) {
+    console.error("Error sending trip notification:", error);
+    // Don't fail the request if notification fails
+  }
 
-  // 5. Save updated trip
-  const savedTrip = await trip.save();
-  return savedTrip;
+  return newTrip;
 };
 ```
 
-### 3. Edit Workshop Service
+### 3. Edit Workshop Service Function
 
 ```javascript
 // server/src/features/events/event.service.js
@@ -321,7 +363,7 @@ export async function editWorkshop(workshopId, updateData, user) {
 }
 ```
 
-### 4. Create Workshop Service
+### 4. Create Workshop Service Function
 
 ```javascript
 // server/src/features/events/event.service.js
@@ -346,7 +388,7 @@ export const createWorkshop = async (workshopData, professorId) => {
 };
 ```
 
-### 5. Get Upcoming Events Service
+### 5. Get Upcoming Events Service Function
 
 ```javascript
 // server/src/features/events/event.service.js
@@ -410,7 +452,7 @@ export const getUpcomingEventsService = async (
 
 3. **Set up environment variables**
 
-   Create a `.env` file in the root directory:
+   Create a `.env` file in the server directory:
 
    ```env
    # Database
@@ -435,8 +477,16 @@ export const getUpcomingEventsService = async (
    # Frontend URL
    CLIENT_URL=http://localhost:5000
    ```
-
-4. **Run the application**
+   Create a `.env` file in the client directory:
+   ```env
+   # Backend Connection
+   VITE_API_BASE_URL=http://localhost:4000
+   VITE_WS_BASE_URL=ws://localhost:4000
+  
+   # Stripe Payment
+   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxx
+   ```
+5. **Run the application**
 
    ```bash
    # Run separately:
@@ -448,7 +498,7 @@ export const getUpcomingEventsService = async (
    npm run dev
    ```
 
-5. **Access the application**
+6. **Access the application**
    - Frontend: http://localhost:5000
    - Backend API: http://localhost:4000
 
@@ -466,6 +516,7 @@ Register a new user account
   "lastName": "Doe",
   "email": "john.doe@guc.edu.eg",
   "password": "SecurePass123",
+  "studentStaffId": "20270001",
   "role": "student"
 }
 ```
@@ -483,11 +534,11 @@ Authenticate and receive JWT token
 
 ### Event Routes
 
-#### GET `/api/events?eventType=workshop&status=approved`
+#### GET `/api/events/search?professor=68f6a06399af7c0983e76535`
 
 Retrieve filtered list of events
 
-- Query params: `eventType`, `status`, `startDate`, `endDate`, `page`, `limit`
+- Query params: `eventType`, `professor`, `startDate`, `endDate`, `location`, `name`
 
 #### POST `/api/events/workshops`
 
@@ -533,20 +584,19 @@ Assign role to a pending user
 
 ### Transaction Routes
 
-#### POST `/api/transactions/top-up`
+#### POST `/api/transactions/pay/:eventId`
 
-Add funds to user wallet
+Pay for a workshop or a trip
 
 ```json
 {
-  "amount": 50.0,
-  "paymentMethodId": "pm_1234567890"
+  "paymentMethod": "credit_card"
 }
 ```
 
-#### GET `/api/transactions/wallet-balance`
+#### GET `/api/transactions/me`
 
-Get current wallet balance for authenticated user
+Get all transactions for authenticated user
 
 ### Facility Routes
 
@@ -554,18 +604,8 @@ Get current wallet balance for authenticated user
 
 Get all available court bookings
 
-#### POST `/api/facilities/sessions`
-
-Create a gym session
-
-```json
-{
-  "facilityId": "facility123",
-  "startTime": "2025-01-20T09:00:00Z",
-  "endTime": "2025-01-20T10:00:00Z",
-  "capacity": 20
-}
-```
+#### PATCH `/api/facilities/gym/sessions/:id/cancel`
+Cancel a gym session
 
 ## Tests
 
