@@ -16,17 +16,15 @@ interface Event {
   location?: string;
   locationPreference?: string;
   attendeesCount?: number;
-  attendees?: string[]; // List of IDs
+  attendees?: string[];
   capacity?: number;
   registrationDeadline?: string;
   image?: string;
   bannerImage?: string;
   description?: string;
   professors?: any[];
+  price?: number;
   durationWeeks?: number;
-  price?: number; // Added price
-  durationWeeks?: number;
-  locationPreference?: string;
   vendors?: Array<{
     vendorId?: string;
     vendorName?: string;
@@ -99,22 +97,15 @@ export default function StaffUpcomingEvents() {
     setError(errorMessage);
   };
 
-  const handleFilterChange = (newFilters: any) => {
-    setEventFilters(newFilters);
-  };
-
   // Compute unique locations dynamically based on current filters
   const availableLocations = useMemo(() => {
-    // Filter events by current eventType and professor (excluding location filter)
     const filteredEvents = allEvents.filter((event) => {
-      // Filter by event type
       if (
         eventFilters.eventType !== "all" &&
         event.eventType !== eventFilters.eventType
       ) {
         return false;
       }
-      // Filter by professor
       if (eventFilters.professor) {
         const eventProfessors = (event as any).professors || [];
         const hasProfessor = eventProfessors.some(
@@ -138,16 +129,13 @@ export default function StaffUpcomingEvents() {
   }, [allEvents, eventFilters.eventType, eventFilters.professor]);
 
   const computedProfessorOptions = useMemo(() => {
-    // Filter events by current eventType and location (excluding professor filter)
     const filteredEvents = allEvents.filter((event) => {
-      // Filter by event type
       if (
         eventFilters.eventType !== "all" &&
         event.eventType !== eventFilters.eventType
       ) {
         return false;
       }
-      // Filter by location
       if (eventFilters.location !== "all") {
         const eventLocation =
           event.location ||
@@ -159,7 +147,6 @@ export default function StaffUpcomingEvents() {
       return true;
     });
 
-    // Get all professor IDs from filtered events
     const availableProfessorIds = new Set<string>();
     filteredEvents.forEach((event) => {
       if (event.eventType === "workshop" || event.eventType === "conference") {
@@ -171,7 +158,6 @@ export default function StaffUpcomingEvents() {
       }
     });
 
-    // Filter API professors to only include those available in filtered events
     return professorOptions.filter((prof) =>
       availableProfessorIds.has(prof.id)
     );
@@ -182,12 +168,10 @@ export default function StaffUpcomingEvents() {
     professorOptions,
   ]);
 
-  // Clear invalid filter selections when options change
   useEffect(() => {
     let needsUpdate = false;
     const newFilters = { ...eventFilters };
 
-    // Clear location if it's no longer available
     if (
       eventFilters.location !== "all" &&
       !availableLocations.includes(eventFilters.location)
@@ -196,7 +180,6 @@ export default function StaffUpcomingEvents() {
       needsUpdate = true;
     }
 
-    // Clear professor if it's no longer available
     const allProfessorOptions =
       professorOptions.length > 0 ? professorOptions : computedProfessorOptions;
     if (
@@ -252,7 +235,7 @@ export default function StaffUpcomingEvents() {
 
       <main className="pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-          {/* Header Section - Full Width */}
+          {/* Header Section */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
             <p className="text-muted-foreground">Browse all upcoming events</p>
@@ -362,11 +345,10 @@ export default function StaffUpcomingEvents() {
                         registrationDeadline={event.registrationDeadline}
                         vendors={event.vendors || []}
                         showDetailedView={true}
-                        onRegister={() => handleRegisterEvent(event._id)}
-                        onShare={() => console.log("Share:", event.name)}
-                        onViewDetails={() =>
-                          console.log("View details:", event.name)
-                        }
+
+                        // --- CHANGES MADE HERE ---
+                        // Removed onViewDetails, onShare, and onRegister props.
+                        // EventCard will now use its internal logic for these actions.
                       />
                     ))}
                 </div>
