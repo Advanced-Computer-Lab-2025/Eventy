@@ -374,9 +374,9 @@ export default function SalesReport() {
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {startDate ? (
-                      format(startDate, "PPP")
+                      format(startDate, "dd/MM/yyyy")
                     ) : (
-                      <span>Pick a date</span>
+                      <span>dd/mm/yyyy</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -405,9 +405,9 @@ export default function SalesReport() {
                   >
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? (
-                      format(endDate, "PPP")
+                      format(endDate, "dd/MM/yyyy")
                     ) : (
-                      <span>Pick a date</span>
+                      <span>dd/mm/yyyy</span>
                     )}
                   </Button>
                 </PopoverTrigger>
