@@ -474,7 +474,7 @@ export class TransactionService {
   }
 
   async payForApplication({ userId, applicationId, paymentMethod }) {
-    // Check if user already paid for this application and hasn't been refunded
+    // Check if user already paid for this application
     const existingPayment = await Transaction.findOne({
       userId,
       "relatedEntity.type": "Application",
@@ -484,19 +484,8 @@ export class TransactionService {
     });
 
     if (existingPayment) {
-      // Check if there is a completed refund for this payment
-      const refundExists = await Transaction.findOne({
-        userId,
-        "relatedEntity.type": "Application",
-        "relatedEntity.id": applicationId,
-        status: "completed",
-        type: "refund",
-      });
-
-      if (!refundExists) {
-        throw new Error("You have already paid for this application.");
-      }
-      // If refund exists, allow payment to proceed
+      // No refunds for applications, so block re-payment
+      throw new Error("You have already paid for this application.");
     }
 
     const application = await Application.findById(applicationId)
