@@ -466,6 +466,7 @@ export default function ProfessorDashboard() {
                         registrationDeadline={event.registrationDeadline}
                         vendors={event.vendors || []}
                         showDetailedView={true}
+                        eventData={event}
                         // --- CHANGES MADE HERE ---
                         // 1. Added handleRegisterEvent to prevent undefined error
                         onRegister={() => handleRegisterEvent(event._id)}

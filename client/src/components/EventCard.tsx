@@ -186,6 +186,46 @@ export default function EventCard({
   const [internalDetailsOpen, setInternalDetailsOpen] = useState(false);
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
+  const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
+
+  // Check if current user is a professor in this workshop
+  useEffect(() => {
+    if (category === "workshop") {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const currentUserId = payload?.id || payload?._id || "";
+          const userRole = payload?.role;
+
+          if (userRole === "professor" && currentUserId) {
+            // Check eventData first, then internalEventDetails
+            const professors =
+              eventData?.professors || internalEventDetails?.professors || [];
+            if (professors.length > 0) {
+              const isProfessor = professors.some((prof: any) => {
+                const profId =
+                  prof?._id?.toString() ||
+                  prof?.id?.toString() ||
+                  prof?.toString();
+                return profId === currentUserId.toString();
+              });
+              setIsProfessorInWorkshop(isProfessor);
+            } else {
+              setIsProfessorInWorkshop(false);
+            }
+          } else {
+            setIsProfessorInWorkshop(false);
+          }
+        }
+      } catch (err) {
+        // If parsing fails, continue without the check
+        setIsProfessorInWorkshop(false);
+      }
+    } else {
+      setIsProfessorInWorkshop(false);
+    }
+  }, [category, eventData, internalEventDetails]);
 
   // Share handler
   const handleShare = async () => {
@@ -464,7 +504,11 @@ export default function EventCard({
   const isArchived = status === "archived";
 
   const canRegister =
-    isRegisterable && isBeforeDeadline && hasCapacity && !isArchived;
+    isRegisterable &&
+    isBeforeDeadline &&
+    hasCapacity &&
+    !isArchived &&
+    !isProfessorInWorkshop;
 
   const hasPrice = typeof price === "number" && price > 0;
   const formattedPrice = hasPrice
@@ -821,7 +865,8 @@ export default function EventCard({
                   !hideRegisterButton &&
                   isRegisterable &&
                   isBeforeDeadline &&
-                  !isArchived ? (
+                  !isArchived &&
+                  !isProfessorInWorkshop ? (
                   <div className="flex gap-2 w-full items-center">
                     <Button
                       variant="outline"
@@ -857,6 +902,7 @@ export default function EventCard({
                     isRegisterable &&
                     isBeforeDeadline &&
                     !isArchived &&
+                    !isProfessorInWorkshop &&
                     !registered
                   ) &&
                   !registered &&
@@ -1163,7 +1209,8 @@ export default function EventCard({
                       !hideRegisterButton &&
                       isRegisterable &&
                       isBeforeDeadline &&
-                      !isArchived ? (
+                      !isArchived &&
+                      !isProfessorInWorkshop ? (
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
