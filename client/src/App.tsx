@@ -94,7 +94,6 @@ function Router() {
           <AdminUsers />
         </ProtectedRoute>
       </Route>
-      <Route path="/create/workshop" component={CreateWorkshop} />
       <Route path="/professor">
         <ProtectedRoute allowedRoles={["professor"]}>
           <ProfessorDashboard />
@@ -141,7 +140,11 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/create/bazaar" component={CreateBazaar} />
+      <Route path="/create/bazaar">
+        <ProtectedRoute allowedRoles={["events_office"]}>
+          <CreateBazaar />
+        </ProtectedRoute>
+      </Route>
       <Route path="/vendor/dashboard">
         <ProtectedRoute allowedRoles={["vendor"]}>
           <VendorDashboard />
@@ -199,13 +202,16 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/approvals/workshops" component={WorkshopApprovals} />
       <Route path="/vendor-requests">
         <ProtectedRoute allowedRoles={["admin", "events_office"]}>
           <VendorRequests />
         </ProtectedRoute>
       </Route>
-      <Route path="/events" component={EventListPage} />
+      <Route path="/events">
+        <ProtectedRoute allowedRoles={["admin", "events_office"]}>
+          <EventListPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route path="/favorites">
         <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
