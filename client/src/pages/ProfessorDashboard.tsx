@@ -2,25 +2,15 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   GraduationCap,
-  Calendar,
   Dumbbell,
   BookOpen,
-  ArrowRight,
   FolderOpen,
   Clock,
   CheckCircle2,
   AlertCircle,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
@@ -47,7 +37,7 @@ export default function ProfessorDashboard() {
   const [professorOptions, setProfessorOptions] = useState<
     { id: string; name: string }[]
   >([]);
-  const [locationOptions, setLocationOptions] = useState<string[]>([]);
+
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
@@ -137,16 +127,13 @@ export default function ProfessorDashboard() {
 
   // Compute unique locations dynamically based on current filters
   const computedLocationOptions = useMemo(() => {
-    // Filter events by current eventType and professor (excluding location filter)
     const filteredEvents = allEvents.filter((event) => {
-      // Filter by event type
       if (
         filters.eventType !== "all" &&
         event.eventType !== filters.eventType
       ) {
         return false;
       }
-      // Filter by professor
       if (filters.professor) {
         const eventProfessors = (event as any).professors || [];
         const hasProfessor = eventProfessors.some(
@@ -169,18 +156,15 @@ export default function ProfessorDashboard() {
     return Array.from(new Set(locations));
   }, [allEvents, filters.eventType, filters.professor]);
 
-  // Compute professor options dynamically by filtering API professors based on available events
+  // Compute professor options dynamically
   const computedProfessorOptions = useMemo(() => {
-    // Filter events by current eventType and location (excluding professor filter)
     const filteredEvents = allEvents.filter((event) => {
-      // Filter by event type
       if (
         filters.eventType !== "all" &&
         event.eventType !== filters.eventType
       ) {
         return false;
       }
-      // Filter by location
       if (filters.location !== "all") {
         const eventLocation =
           event.location ||
@@ -192,7 +176,6 @@ export default function ProfessorDashboard() {
       return true;
     });
 
-    // Get all professor IDs from filtered events
     const availableProfessorIds = new Set<string>();
     filteredEvents.forEach((event) => {
       if (event.eventType === "workshop" || event.eventType === "conference") {
@@ -204,18 +187,15 @@ export default function ProfessorDashboard() {
       }
     });
 
-    // Filter API professors to only include those available in filtered events
     return professorOptions.filter((prof) =>
       availableProfessorIds.has(prof.id)
     );
   }, [allEvents, filters.eventType, filters.location, professorOptions]);
 
-  // Clear invalid filter selections when options change
   useEffect(() => {
     let needsUpdate = false;
     const newFilters = { ...filters };
 
-    // Clear location if it's no longer available
     if (
       filters.location !== "all" &&
       !computedLocationOptions.includes(filters.location)
@@ -224,7 +204,6 @@ export default function ProfessorDashboard() {
       needsUpdate = true;
     }
 
-    // Clear professor if it's no longer available
     if (
       filters.professor &&
       !computedProfessorOptions.some((p) => p.id === filters.professor)
@@ -256,7 +235,6 @@ export default function ProfessorDashboard() {
   const stats = getWorkshopStats();
 
   const handleSearchResults = (searchResults: any[]) => {
-    // Sort events to show workshops first
     const sortedResults = [...searchResults].sort((a, b) => {
       if (a.eventType === "workshop" && b.eventType !== "workshop") return -1;
       if (a.eventType !== "workshop" && b.eventType === "workshop") return 1;
@@ -264,12 +242,10 @@ export default function ProfessorDashboard() {
     });
     setEvents(sortedResults);
 
-    // If this is the first load (allEvents is empty), store all events for location computation
     if (allEvents.length === 0) {
       setAllEvents(sortedResults);
     }
 
-    // Only disable loading after first results
     if (events.length === 0) {
       setLoading(false);
     }
@@ -285,29 +261,11 @@ export default function ProfessorDashboard() {
     setError(errorMessage);
   };
 
-  const quickActions = [
-    {
-      title: "Workshop Management",
-      icon: BookOpen,
-      color: "bg-blue-500",
-      path: "/professor/workshops",
-      features: ["Create & edit workshops", "Track approval status"],
-    },
-    {
-      title: "Sports Facilities",
-      icon: Dumbbell,
-      color: "bg-green-500",
-      path: "/sports",
-      activities: [
-        "Yoga",
-        "Pilates",
-        "Aerobics",
-        "Zumba",
-        "Cross Circuit",
-        "Kick-boxing",
-      ],
-    },
-  ];
+  // Helper function to handle registration (placeholder logic)
+  const handleRegisterEvent = (eventId: string) => {
+    console.log("Registering for event:", eventId);
+    // Add logic here if professors need to register for events
+  };
 
   if (loading) {
     return (
@@ -410,7 +368,7 @@ export default function ProfessorDashboard() {
                 onFilterChange={setFilters}
                 locations={computedLocationOptions}
                 professors={computedProfessorOptions}
-                userRole=""
+                userRole="professor"
               />
             </div>
           </aside>{" "}
@@ -508,12 +466,12 @@ export default function ProfessorDashboard() {
                         registrationDeadline={event.registrationDeadline}
                         vendors={event.vendors || []}
                         showDetailedView={true}
-                        onRegister={() =>
-                          console.log(handleRegisterEvent(event._id))
-                        }
-                        onViewDetails={() =>
-                          console.log("View details:", event.name)
-                        }
+                        // --- CHANGES MADE HERE ---
+                        // 1. Added handleRegisterEvent to prevent undefined error
+                        onRegister={() => handleRegisterEvent(event._id)}
+                        // 2. REMOVED onViewDetails prop.
+                        // By removing it, EventCard falls back to its internal logic
+                        // and opens the EventDetailsDialog properly.
                       />
                     ))}
                 </div>
