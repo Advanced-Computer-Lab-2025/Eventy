@@ -69,13 +69,17 @@ function Router() {
           <AdminDashboardPage />
         </ProtectedRoute>
       </Route>
-      <Route path="/admin/feedback">
-        <ProtectedRoute allowedRoles={["admin"]}>
-          <FeedbackDashboard />
-        </ProtectedRoute>
-      </Route>
-      <Route path="/events-office/feedback">
-        <ProtectedRoute allowedRoles={["events_office"]}>
+      <Route path="/feedback">
+        <ProtectedRoute
+          allowedRoles={[
+            "admin",
+            "events_office",
+            "student",
+            "staff",
+            "ta",
+            "professor",
+          ]}
+        >
           <FeedbackDashboard />
         </ProtectedRoute>
       </Route>

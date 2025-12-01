@@ -9,6 +9,7 @@ import {
   Gift,
   Wallet,
   Store,
+  Star,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -128,6 +129,16 @@ export default function StudentHeader({
           >
             <Store className="h-4 w-4" />
             Booth Voting
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/feedback" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/feedback")}
+            data-testid="button-nav-feedback"
+          >
+            <Star className="h-4 w-4" />
+            Feedback
           </Button>
         </div>
       </div>

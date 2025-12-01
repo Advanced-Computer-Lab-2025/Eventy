@@ -193,8 +193,8 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/events-office/feedback" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/events-office/feedback")}
+            className={`gap-2 ${location === "/feedback" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/feedback")}
             data-testid="button-nav-ratings"
           >
             <Star className="h-4 w-4" />

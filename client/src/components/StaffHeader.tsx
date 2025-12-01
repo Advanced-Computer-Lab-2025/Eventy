@@ -133,6 +133,16 @@ export default function StaffHeader({
             <Gift className="h-4 w-4" />
             Loyalty Partners
           </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/feedback" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/feedback")}
+            data-testid="button-nav-feedback"
+          >
+            <Star className="h-4 w-4" />
+            Feedback
+          </Button>
         </div>
       </div>
     </header>
