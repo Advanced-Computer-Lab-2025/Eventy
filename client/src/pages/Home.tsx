@@ -17,6 +17,8 @@ interface Event {
   eventType?: string;
   startDate?: string;
   endDate?: string;
+  startTime?: string; // Added for DB time string
+  endTime?: string; // Added for DB time string
   location?: string;
   locationPreference?: string;
   attendeesCount?: number;
@@ -37,7 +39,6 @@ interface Event {
     boothSize?: string;
     attendees?: number;
   }>;
-  durationWeeks?: number;
 }
 
 export default function Home() {
@@ -372,11 +373,17 @@ export default function Home() {
                         description={event.description}
                         startDate={event.startDate}
                         endDate={event.endDate}
+                        // --- UPDATED HERE ---
+                        // Pass the raw strings from the DB to fix the time issue
+                        dbStartTime={event.startTime}
+                        dbEndTime={event.endTime}
+                        // --------------------
+
                         durationWeeks={event.durationWeeks}
                         capacity={event.capacity}
                         registrationDeadline={event.registrationDeadline}
                         eventData={event}
-                        onRegister={() => handleRegisterEvent(event._id)}
+                        onRegister={() => console.log("Register:", event._id)}
                         showDetailedView={true}
                         onSave={() => console.log("Save:", event.name)}
                         onShare={() => console.log("Share:", event.name)}

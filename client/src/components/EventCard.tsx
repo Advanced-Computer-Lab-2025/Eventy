@@ -96,6 +96,8 @@ export interface EventCardProps {
   description?: string;
   startDate?: string;
   endDate?: string;
+  dbStartTime?: string;
+  dbEndTime?: string;
   durationWeeks?: number;
   capacity?: number;
   registrationDeadline?: string;
@@ -125,7 +127,6 @@ export interface EventCardProps {
   hideRegisterButton?: boolean;
   showAttendeeCount?: boolean;
   inlinePriceWithLocation?: boolean;
-  // NEW PROPS
   eventData?: any;
   inlineShareButton?: boolean;
 }
@@ -143,6 +144,8 @@ export default function EventCard({
   description,
   startDate,
   endDate,
+  dbStartTime,
+  dbEndTime,
   durationWeeks,
   capacity,
   registrationDeadline,
@@ -173,7 +176,7 @@ export default function EventCard({
   showAttendeeCount = true,
   inlinePriceWithLocation = false,
   eventData,
-  inlineShareButton = false, // Defaults to false (My Events style)
+  inlineShareButton = false,
 }: EventCardProps & { price?: number }) {
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
@@ -187,6 +190,27 @@ export default function EventCard({
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
+
+  // --- HELPER TO CONVERT 24H STRING TO 12H ---
+  const formatStringTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+
+    // If string is in HH:mm format (e.g. "23:52" or "09:30")
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hoursStr, minutesStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const suffix = hours >= 12 ? "PM" : "AM";
+
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+
+      return `${hours}:${minutesStr} ${suffix}`;
+    }
+
+    // Return original if it doesn't match expected format
+    return timeStr;
+  };
+  // --------------------------------------------
 
   // Check if current user is a professor in this workshop
   useEffect(() => {
@@ -593,12 +617,17 @@ export default function EventCard({
                     <div className="flex-1">
                       {startDate && endDate ? (
                         <div>
-                          {formatDate(startDate)}, {formatTime(startDate)} →{" "}
-                          {formatDate(endDate)}, {formatTime(endDate)}
+                          {formatDate(startDate)}, {/* APPLY HELPER HERE */}
+                          {formatStringTime(dbStartTime) ||
+                            formatTime(startDate)}{" "}
+                          → {formatDate(endDate)},{" "}
+                          {formatStringTime(dbEndTime) || formatTime(endDate)}
                         </div>
                       ) : startDate ? (
                         <div>
-                          {formatDate(startDate)}, {formatTime(startDate)}
+                          {formatDate(startDate)},{" "}
+                          {formatStringTime(dbStartTime) ||
+                            formatTime(startDate)}
                         </div>
                       ) : isPlatformBooth && durationWeeks ? (
                         <div>
