@@ -175,6 +175,7 @@ export default function EventCard({
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   // Share handler
   const handleShare = async () => {
@@ -712,15 +713,67 @@ export default function EventCard({
                       )}
                     </div>
                   )
-                ) : onEdit ? (
-                  <Button
-                    className={canRegister ? "flex-1" : "w-full"}
-                    onClick={() => onEdit()}
-                    data-testid={`button-edit-${id}`}
-                  >
-                    <Edit className="h-4 w-4 mr-1" />
-                    Edit
-                  </Button>
+                ) : onEdit || onArchive || canShowDelete ? (
+                  <div className="flex gap-2 w-full items-center">
+                    {onEdit && (
+                      <Button
+                        className="flex-1"
+                        onClick={() => onEdit()}
+                        data-testid={`button-edit-${id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                    )}
+                    {onArchive && (
+                      <Button
+                        className="flex-1"
+                        onClick={async (e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          try {
+                            await onArchive();
+                          } catch (err) {
+                            // parent handles errors
+                          }
+                        }}
+                        disabled={isArchiving}
+                        data-testid={`button-archive-${id}`}
+                      >
+                        {isArchiving ? (
+                          "Archiving..."
+                        ) : (
+                          <>
+                            <Archive className="h-4 w-4 mr-1" />
+                            Archive
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {onViewDetails && (
+                      <Button
+                        variant="outline"
+                        className="flex-1"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onViewDetails();
+                        }}
+                      >
+                        View Details
+                      </Button>
+                    )}
+                    {canShowDelete && (
+                      <Trash2
+                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0"
+                        onClick={(e) => {
+                          if ((e as any).stopPropagation)
+                            (e as any).stopPropagation();
+                          setShowDeleteDialog(true);
+                        }}
+                        data-testid={`button-delete-event-${id}`}
+                      />
+                    )}
+                  </div>
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&
@@ -762,31 +815,6 @@ export default function EventCard({
                   </div>
                 ) : null}
 
-                {onArchive && (
-                  <Button
-                    className={canRegister ? "flex-1" : "w-full"}
-                    onClick={async (e) => {
-                      if ((e as any).stopPropagation)
-                        (e as any).stopPropagation();
-                      try {
-                        await onArchive();
-                      } catch (err) {
-                        // parent handles errors
-                      }
-                    }}
-                    disabled={isArchiving}
-                    data-testid={`button-archive-${id}`}
-                  >
-                    {isArchiving ? (
-                      "Archiving..."
-                    ) : (
-                      <>
-                        <Archive className="h-4 w-4 mr-1" />
-                        Archive
-                      </>
-                    )}
-                  </Button>
-                )}
                 {onViewDetails &&
                   !(
                     showRegisterButton &&
@@ -796,7 +824,8 @@ export default function EventCard({
                     !isArchived &&
                     !registered
                   ) &&
-                  !registered && (
+                  !registered &&
+                  !(onEdit || onArchive || canShowDelete) && (
                     <div className="flex gap-2 w-full items-center">
                       <Button
                         variant="outline"
@@ -1242,6 +1271,34 @@ export default function EventCard({
               className="bg-red-600 hover:bg-red-700 text-white"
             >
               {isCanceling ? "Canceling..." : "Yes, Cancel"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Event</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this event? This action cannot be
+              undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async (e) => {
+                e.preventDefault();
+                setShowDeleteDialog(false);
+                if (onDelete) {
+                  onDelete(id);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Delete
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

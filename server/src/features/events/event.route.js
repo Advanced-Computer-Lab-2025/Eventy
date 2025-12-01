@@ -27,9 +27,9 @@ router.patch(
   roleMiddleware(["events_office"]),
   eventsController.editBazaar.bind(eventsController)
 );
-// DELETE /api/admin/events/:eventId - Delete an event
+// DELETE /api/events/:eventId - Delete an event (for admin/events_office)
 router.delete(
-  "/admin/events/:eventId",
+  "/:eventId",
   authMiddleware,
   roleMiddleware(["events_office", "admin"]),
   eventsController.deleteEvent.bind(eventsController)

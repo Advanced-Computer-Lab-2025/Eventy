@@ -388,6 +388,65 @@ export default function EventsOfficeDashboard() {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      // 204 No Content is success
+      if (res.status === 204) {
+        // Remove the deleted event from the list
+        setUpcomingEvents((prevEvents) =>
+          prevEvents.filter((e) => e._id !== eventId)
+        );
+        setPastEvents((prevEvents) =>
+          prevEvents.filter((e) => e._id !== eventId)
+        );
+
+        toast({
+          title: "Event deleted",
+          description: "The event has been successfully deleted.",
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const error = await res.json();
+          throw new Error(error.message || "Failed to delete event");
+        }
+        throw new Error("Failed to delete event");
+      }
+
+      // Remove the deleted event from the list
+      setUpcomingEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+      setPastEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+
+      toast({
+        title: "Event deleted",
+        description: "The event has been successfully deleted.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to delete event",
+        description:
+          err.message || "An error occurred while deleting the event.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const fetchPastEvents = async () => {
     setPastEventsLoading(true);
     try {
@@ -1411,9 +1470,13 @@ export default function EventsOfficeDashboard() {
                                 vendors={event.vendors || []}
                                 price={event.price}
                                 showDetailedView={true}
-                                canDelete={false}
+                                canDelete={
+                                  (Array.isArray(event.attendees)
+                                    ? event.attendees.length
+                                    : event.attendeesCount || 0) === 0
+                                }
+                                onDelete={() => handleDeleteEvent(event._id)}
                                 hideRegisterButton={true}
-                                fillButtonWidth={true}
                                 onViewDetails={() => handleCardClick(event._id)}
                                 {...(isPastEvent
                                   ? {
