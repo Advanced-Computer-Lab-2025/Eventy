@@ -198,13 +198,9 @@ export default function WorkshopManagement() {
             <CardContent className="flex flex-col items-center justify-center py-12">
               <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No workshops yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first workshop to get started
+              <p className="text-muted-foreground">
+                You haven't created any workshops yet
               </p>
-              <Button onClick={() => setLocation("/professor/create-workshop")}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Workshop
-              </Button>
             </CardContent>
           </Card>
         ) : (

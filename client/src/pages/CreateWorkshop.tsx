@@ -61,12 +61,29 @@ export default function CreateWorkshop() {
   >([]);
 
   const [selectedProfessors, setSelectedProfessors] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
+
+    // Get current user ID from localStorage
+    try {
+      const userStr = localStorage.getItem("user");
+      if (userStr) {
+        const user = JSON.parse(userStr);
+        const userId = user._id || user.id;
+        setCurrentUserId(userId);
+        // Auto-select current user in professors list
+        if (userId && !selectedProfessors.includes(userId)) {
+          setSelectedProfessors([userId]);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to parse user from localStorage", err);
+    }
 
     (async () => {
       try {
@@ -411,32 +428,43 @@ export default function CreateWorkshop() {
                       No professors found
                     </p>
                   ) : (
-                    professorsOptions.map((p) => (
-                      <div key={p.id} className="flex items-center space-x-2">
-                        <Checkbox
-                          id={p.id}
-                          checked={selectedProfessors.includes(p.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedProfessors((prev) => [...prev, p.id]);
-                            } else {
-                              setSelectedProfessors((prev) =>
-                                prev.filter((id) => id !== p.id)
-                              );
-                            }
-                          }}
-                        />
-                        <Label
-                          htmlFor={p.id}
-                          className="text-sm cursor-pointer"
-                        >
-                          {p.name}{" "}
-                          <span className="text-muted-foreground text-xs">
-                            ({p.email})
-                          </span>
-                        </Label>
-                      </div>
-                    ))
+                    professorsOptions.map((p) => {
+                      const isCurrentUser = p.id === currentUserId;
+                      return (
+                        <div key={p.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={p.id}
+                            checked={selectedProfessors.includes(p.id)}
+                            disabled={isCurrentUser}
+                            onCheckedChange={(checked) => {
+                              // Prevent deselection of current user
+                              if (isCurrentUser) return;
+
+                              if (checked) {
+                                setSelectedProfessors((prev) => [
+                                  ...prev,
+                                  p.id,
+                                ]);
+                              } else {
+                                setSelectedProfessors((prev) =>
+                                  prev.filter((id) => id !== p.id)
+                                );
+                              }
+                            }}
+                          />
+                          <Label
+                            htmlFor={p.id}
+                            className={`text-sm ${isCurrentUser ? "cursor-default" : "cursor-pointer"}`}
+                          >
+                            {p.name}
+                            {isCurrentUser && " (You)"}{" "}
+                            <span className="text-muted-foreground text-xs">
+                              ({p.email})
+                            </span>
+                          </Label>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
