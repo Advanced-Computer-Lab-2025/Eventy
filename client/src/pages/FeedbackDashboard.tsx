@@ -38,6 +38,8 @@ interface EventItem {
   category?: EventCategory | string;
   startDate?: string;
   location?: string;
+  averageRating?: number;
+  totalReviews?: number;
 }
 
 interface RatingItem {
@@ -110,15 +112,25 @@ export default function FeedbackDashboard() {
           mapped.map((m: any) => api.get(`/feedback/events/${m.id}`))
         )
           .then((fbResults) => {
-            const eventsWithFeedback = mapped.filter((m: any, idx: number) => {
-              const res = fbResults[idx];
-              if (res.status !== "fulfilled") return false;
-              const data = (res as any).value?.data?.data;
-              const feedback = data?.feedback || [];
-              return Array.isArray(feedback) && feedback.length > 0;
-            });
+            const eventsWithFeedback = mapped
+              .map((m: any, idx: number) => {
+                const res = fbResults[idx];
+                if (res.status !== "fulfilled") return null;
+                const data = (res as any).value?.data?.data;
+                const feedback = data?.feedback || [];
+                if (!Array.isArray(feedback) || feedback.length === 0) {
+                  return null;
+                }
 
-            setEvents(eventsWithFeedback as EventItem[]);
+                return {
+                  ...m,
+                  averageRating: data?.averageRating || 0,
+                  totalReviews: data?.totalReviews || feedback.length,
+                };
+              })
+              .filter((e): e is EventItem => e !== null);
+
+            setEvents(eventsWithFeedback);
             setSelectedEvent((prev) => {
               if (
                 prev &&
@@ -281,7 +293,7 @@ export default function FeedbackDashboard() {
                   setSelectedEvent(ev.id);
                   setDialogOpen(true);
                 }}
-                className="cursor-pointer"
+                className="cursor-pointer h-full relative group"
               >
                 <EventCard
                   id={ev.id}
@@ -308,10 +320,26 @@ export default function FeedbackDashboard() {
                   attendees={0}
                   showAttendees={false}
                   showActions={false}
-                  className={
+                  className={`h-full ${
                     selectedEvent === ev.id ? "ring-2 ring-primary" : ""
-                  }
+                  }`}
                 />
+                {/* Rating Badge Overlay */}
+                {ev.averageRating !== undefined && ev.averageRating > 0 && (
+                  <div className="absolute top-3 right-3 bg-background/95 backdrop-blur-sm border rounded-lg px-3 py-2 shadow-lg flex items-center gap-2 z-10">
+                    <div className="flex items-center gap-1">
+                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                      <span className="font-semibold text-sm">
+                        {ev.averageRating.toFixed(1)}
+                      </span>
+                    </div>
+                    <div className="h-4 w-px bg-border" />
+                    <span className="text-xs text-muted-foreground">
+                      {ev.totalReviews || 0}{" "}
+                      {ev.totalReviews === 1 ? "review" : "reviews"}
+                    </span>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -373,19 +401,21 @@ export default function FeedbackDashboard() {
                         </div>
                       </div>
 
-                      {r.commentDeletedAt || r.deletedAt ? (
-                        <div className="mt-2 text-sm text-muted-foreground italic">
-                          Comment deleted by admin
-                        </div>
-                      ) : r.comment ? (
-                        <div className="mt-2 text-sm text-foreground">
-                          {r.comment}
-                        </div>
-                      ) : (
-                        <div className="mt-2 text-sm text-muted-foreground italic">
-                          No comment added
-                        </div>
-                      )}
+                      <div className="mt-3">
+                        {r.commentDeletedAt || r.deletedAt ? (
+                          <div className="text-sm text-muted-foreground italic">
+                            Comment deleted by admin
+                          </div>
+                        ) : r.comment ? (
+                          <div className="text-sm text-foreground">
+                            {r.comment}
+                          </div>
+                        ) : (
+                          <div className="text-sm text-muted-foreground italic">
+                            No comment added
+                          </div>
+                        )}
+                      </div>
 
                       {currentUser?.role === "admin" &&
                         !r.deletedAt &&
