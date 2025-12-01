@@ -820,36 +820,34 @@ export default function EventCard({
                       </div>
                     )}
                   </div>
-                ) : null}
-
-                {/* Show view details button if not registered, regardless of prop */}
-                {!(
-                  showRegisterButton &&
-                  !hideRegisterButton &&
-                  isRegisterable &&
-                  isBeforeDeadline &&
-                  !isArchived &&
-                  !registered
-                ) &&
-                  !registered && (
-                    <div className="flex gap-2 w-full items-center">
-                      <Button
-                        variant="outline"
-                        className="flex-1"
-                        onClick={handleViewDetailsClick}
+                ) : !(
+                    showRegisterButton &&
+                    !hideRegisterButton &&
+                    isRegisterable &&
+                    isBeforeDeadline &&
+                    !isArchived &&
+                    !registered
+                  ) &&
+                  !registered &&
+                  !(onEdit || onArchive || canShowDelete) ? (
+                  <div className="flex gap-2 w-full items-center">
+                    <Button
+                      variant="outline"
+                      className="flex-1"
+                      onClick={handleViewDetailsClick}
+                    >
+                      View Details
+                    </Button>
+                    {canShowFavorites && (
+                      <div
+                        className="relative flex-shrink-0"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        View Details
-                      </Button>
-                      {canShowFavorites && (
-                        <div
-                          className="relative flex-shrink-0"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <FavoriteButton eventId={id} />
-                        </div>
-                      )}
-                    </div>
-                  )}
+                        <FavoriteButton eventId={id} />
+                      </div>
+                    )}
+                  </div>
+                ) : null}
                 {onUnarchive && (
                   <div className="flex gap-2 w-full items-center">
                     <Button
