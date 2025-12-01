@@ -580,6 +580,12 @@ export default function StaffTADashboard() {
                           description={event.description}
                           startDate={event.startDate}
                           endDate={event.endDate}
+                          // --- UPDATED HERE ---
+                          // Pass raw strings for time fix
+                          dbStartTime={event.startTime}
+                          dbEndTime={event.endTime}
+                          // --------------------
+
                           durationWeeks={event.durationWeeks}
                           capacity={event.capacity}
                           registrationDeadline={event.registrationDeadline}
