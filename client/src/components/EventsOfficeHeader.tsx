@@ -56,7 +56,10 @@ export default function EventsOfficeHeader() {
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => setLocation("/events-office/dashboard")}
+          >
             <Logo size="xl" />
           </div>
 
@@ -85,16 +88,6 @@ export default function EventsOfficeHeader() {
           >
             <Home className="h-4 w-4" />
             Dashboard
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`gap-2 ${location === "/create/trip" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/create/trip")}
-            data-testid="button-nav-trips"
-          >
-            <Plane className="h-4 w-4" />
-            Trips
           </Button>
           <Button
             variant="ghost"
@@ -200,12 +193,12 @@ export default function EventsOfficeHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/admin/ratings" ? "underline decoration-primary decoration-2" : ""}`}
-            onClick={() => setLocation("/admin/ratings")}
+            className={`gap-2 ${location === "/events-office/feedback" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/events-office/feedback")}
             data-testid="button-nav-ratings"
           >
             <Star className="h-4 w-4" />
-            Ratings
+            Feedback
           </Button>
         </div>
       </div>

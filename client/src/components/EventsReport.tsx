@@ -317,10 +317,10 @@ export default function EventsReport() {
                       <TableHead>End Date</TableHead>{" "}
                       {/* ✅ Added End Date column */}
                       <TableHead>Location</TableHead>
-                      <TableHead className="text-left">
+                      <TableHead className="text-center">
                         Attendees
                       </TableHead>{" "}
-                      {/* ✅ Changed to text-left */}
+                      {/* ✅ Changed to text-center */}
                       <TableHead className="text-right">Export</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -331,7 +331,9 @@ export default function EventsReport() {
                           {event.name}
                         </TableCell>
                         <TableCell className="capitalize">
-                          {event.eventType}
+                          {event.eventType === "platform_booth"
+                            ? "Platform Booth"
+                            : event.eventType}
                         </TableCell>
                         <TableCell>
                           {event.startDate
@@ -344,42 +346,44 @@ export default function EventsReport() {
                             ? new Date(event.endDate).toLocaleDateString()
                             : "TBA"}
                         </TableCell>
-                        <TableCell>{event.location || "N/A"}</TableCell>
-                        <TableCell className="text-left font-semibold">
+                        <TableCell>{event.location || "-"}</TableCell>
+                        <TableCell className="text-center font-semibold">
                           {" "}
-                          {/* ✅ Changed to text-left */}
+                          {/* ✅ Changed to text-center */}
                           {event.attendeesCount}
                         </TableCell>
                         <TableCell className="text-right">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0"
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleExport(event._id, event.name, "pdf")
-                                }
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Export as PDF
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleExport(event._id, event.name, "xlsx")
-                                }
-                              >
-                                <Download className="mr-2 h-4 w-4" />
-                                Export as XLSX
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {event.eventType !== "conference" && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 w-8 p-0"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleExport(event._id, event.name, "pdf")
+                                  }
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Export as PDF
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleExport(event._id, event.name, "xlsx")
+                                  }
+                                >
+                                  <Download className="mr-2 h-4 w-4" />
+                                  Export as XLSX
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
                         </TableCell>
                       </TableRow>
                     ))}

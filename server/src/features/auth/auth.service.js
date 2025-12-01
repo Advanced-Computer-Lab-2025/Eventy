@@ -69,7 +69,7 @@ export const signUpUser = async (data) => {
     isVerified:
       normalizedRole === "student" ? false : isAcademic ? false : true,
     roleVerifiedByAdmin: false,
-    role: normalizedRole,
+    role: isAcademic ? null : normalizedRole, // Staff/TA/Professor get null, admin assigns later
   };
 
   // ✅ Step 7: Create and save user
@@ -217,6 +217,7 @@ export const loginUser = async (data) => {
       email: user.email,
       role: user.role,
       firstName: user.firstName,
+      lastName: user.lastName,
       companyName: user.companyName,
     },
     token,

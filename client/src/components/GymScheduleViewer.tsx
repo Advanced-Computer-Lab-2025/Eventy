@@ -166,6 +166,7 @@ export default function GymScheduleViewer({
       title: "Success",
       description: "Successfully registered for the gym session.",
     });
+    fetchGymSessions(); // Refresh the sessions list
   };
 
   const handleEditClick = (session: GymSession) => {

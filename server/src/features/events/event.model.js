@@ -18,7 +18,9 @@ const eventSchema = new Schema(
     location: {
       type: String,
       required: function () {
-        return this.eventType !== "platform_booth";
+        return (
+          this.eventType !== "platform_booth" && this.eventType !== "conference"
+        );
       },
     },
     startDate: {
@@ -200,6 +202,9 @@ const eventSchema = new Schema(
         return this.eventType === "platform_booth";
       },
     },
+    // Reminder tracking fields
+    reminder1DaySent: { type: Boolean, default: false },
+    reminder1HourSent: { type: Boolean, default: false },
     // timestamps option for mongoose schema
   },
   { timestamps: true }

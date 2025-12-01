@@ -109,6 +109,20 @@ export default function VendorApplicationDialog({
       }
     }
 
+    // Check for duplicate emails (case-insensitive)
+    const emails = validAttendees.map((attendee) =>
+      attendee.email.toLowerCase()
+    );
+    const uniqueEmails = new Set(emails);
+    if (emails.length !== uniqueEmails.size) {
+      toast({
+        title: "Validation Error",
+        description: "All attendees must have unique email addresses.",
+        variant: "destructive",
+      });
+      return false;
+    }
+
     // Check for attendees without ID
     const attendeesWithoutID = validAttendees.filter(
       (attendee) => !attendee.individualID

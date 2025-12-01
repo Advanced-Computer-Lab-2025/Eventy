@@ -82,7 +82,7 @@ export default function ProfileMenu() {
             )}
           </div>
           <div className="min-w-0 flex-1">
-            <DropdownMenuLabel className="text-sm font-semibold">
+            <DropdownMenuLabel className="text-sm font-semibold px-0">
               {(() => {
                 if (!user) return "Guest";
                 if (user.role !== "vendor") {

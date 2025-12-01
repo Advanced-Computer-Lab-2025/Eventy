@@ -55,6 +55,7 @@ import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
+import RestrictAccessDialog from "@/components/RestrictAccessDialog";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -92,6 +93,10 @@ export default function EventsOfficeDashboard() {
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
+  const [restrictAccessDialogOpen, setRestrictAccessDialogOpen] =
+    useState(false);
+  const [selectedEventForRestrict, setSelectedEventForRestrict] =
+    useState<any>(null);
 
   // Past events states
   const [pastEvents, setPastEvents] = useState<any[]>([]);
@@ -148,14 +153,26 @@ export default function EventsOfficeDashboard() {
 
     const now = new Date();
     const isBoothEvent = event.eventType === "platform_booth";
-    // Booth events don't have endDate, so they're always considered "upcoming"
     let isUpcoming = false;
     let isPast = false;
 
     if (isBoothEvent) {
-      // Booth events are always considered upcoming
-      isUpcoming = true;
-      isPast = false;
+      // Platform booths now have startDate and endDate
+      // Check if both dates have passed
+      if (event.startDate && event.endDate) {
+        const eventStartDate = new Date(event.startDate);
+        const eventEndDate = new Date(event.endDate);
+        eventEndDate.setUTCHours(23, 59, 59, 999);
+        // Both start and end dates must have passed for it to be past
+        isPast =
+          eventStartDate.getTime() < now.getTime() &&
+          eventEndDate.getTime() < now.getTime();
+        isUpcoming = !isPast;
+      } else {
+        // If booth doesn't have dates yet, consider it upcoming
+        isUpcoming = true;
+        isPast = false;
+      }
     } else if (event.endDate) {
       const eventEndDate = new Date(event.endDate);
       eventEndDate.setUTCHours(23, 59, 59, 999);
@@ -385,6 +402,85 @@ export default function EventsOfficeDashboard() {
       });
     } finally {
       setArchivingId(null);
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+        method: "DELETE",
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+
+      // 204 No Content is success
+      if (res.status === 204) {
+        // Remove the deleted event from the list
+        setUpcomingEvents((prevEvents) =>
+          prevEvents.filter((e) => e._id !== eventId)
+        );
+        setPastEvents((prevEvents) =>
+          prevEvents.filter((e) => e._id !== eventId)
+        );
+
+        toast({
+          title: "Event deleted",
+          description: "The event has been successfully deleted.",
+        });
+        return;
+      }
+
+      if (!res.ok) {
+        const contentType = res.headers.get("content-type");
+        if (contentType && contentType.includes("application/json")) {
+          const error = await res.json();
+          throw new Error(error.message || "Failed to delete event");
+        }
+        throw new Error("Failed to delete event");
+      }
+
+      // Remove the deleted event from the list
+      setUpcomingEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+      setPastEvents((prevEvents) =>
+        prevEvents.filter((e) => e._id !== eventId)
+      );
+
+      toast({
+        title: "Event deleted",
+        description: "The event has been successfully deleted.",
+      });
+    } catch (err: any) {
+      toast({
+        title: "Failed to delete event",
+        description:
+          err.message || "An error occurred while deleting the event.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRestrictSuccess = async () => {
+    // Refresh the events to show updated restrictions
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/upcoming`, {
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setUpcomingEvents(data.data || []);
+      }
+    } catch (err) {
+      console.error("Failed to refresh events", err);
     }
   };
 
@@ -1145,7 +1241,7 @@ export default function EventsOfficeDashboard() {
                               className="bg-gradient-to-r from-purple-600 to-purple-700 text-white flex items-center justify-center gap-2"
                               onClick={() => {
                                 setIsCreateEventDialogOpen(false);
-                                setLocation("/create/trip");
+                                setLocation("/events-office/create/trip");
                               }}
                             >
                               <Plane className="h-4 w-4" />
@@ -1272,6 +1368,7 @@ export default function EventsOfficeDashboard() {
                   professors={professorOptions}
                   userRole={userRole}
                   onClear={handleClearFilters}
+                  events={combinedEvents} // <--- ADDED THIS PROP
                 />
               </div>
             </aside>
@@ -1356,34 +1453,34 @@ export default function EventsOfficeDashboard() {
                                     : event.eventType || "academic"
                                 }
                                 date={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? `Active for ${event.durationWeeks} week${
-                                        event.durationWeeks > 1 ? "s" : ""
-                                      }`
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleDateString("en-US", {
-                                          weekday: "short",
-                                          month: "long",
-                                          day: "numeric",
-                                          year: "numeric",
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleDateString("en-US", {
+                                        weekday: "short",
+                                        month: "long",
+                                        day: "numeric",
+                                        year: "numeric",
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? `Active for ${event.durationWeeks} week${
+                                          event.durationWeeks > 1 ? "s" : ""
+                                        }`
                                       : "TBA"
                                 }
                                 time={
-                                  event.eventType === "platform_booth" &&
-                                  event.durationWeeks
-                                    ? ""
-                                    : event.startDate
-                                      ? new Date(
-                                          event.startDate
-                                        ).toLocaleTimeString("en-US", {
-                                          hour: "2-digit",
-                                          minute: "2-digit",
-                                          hour12: true,
-                                        })
+                                  event.startDate
+                                    ? new Date(
+                                        event.startDate
+                                      ).toLocaleTimeString("en-US", {
+                                        hour: "2-digit",
+                                        minute: "2-digit",
+                                        hour12: true,
+                                      })
+                                    : event.eventType === "platform_booth" &&
+                                        event.durationWeeks
+                                      ? ""
                                       : "TBA"
                                 }
                                 location={
@@ -1411,12 +1508,48 @@ export default function EventsOfficeDashboard() {
                                 vendors={event.vendors || []}
                                 price={event.price}
                                 showDetailedView={true}
-                                canDelete={false}
-                                {...(isPastEvent && {
-                                  onArchive: () =>
-                                    handleArchiveEvent(event._id),
-                                  isArchiving: archivingId === event._id,
-                                })}
+                                canDelete={
+                                  (Array.isArray(event.attendees)
+                                    ? event.attendees.length
+                                    : event.attendeesCount || 0) === 0
+                                }
+                                onDelete={() => handleDeleteEvent(event._id)}
+                                hideRegisterButton={true}
+                                onViewDetails={() => handleCardClick(event._id)}
+                                {...(isPastEvent
+                                  ? {
+                                      onArchive: () =>
+                                        handleArchiveEvent(event._id),
+                                      isArchiving: archivingId === event._id,
+                                    }
+                                  : [
+                                        "trip",
+                                        "conference",
+                                        "bazaar",
+                                        "workshop",
+                                      ].includes(event.eventType)
+                                    ? {
+                                        onEdit: () => {
+                                          if (event.eventType === "workshop") {
+                                            // Open restrict access dialog for workshops
+                                            setSelectedEventForRestrict(event);
+                                            setRestrictAccessDialogOpen(true);
+                                          } else {
+                                            const editRoutes: Record<
+                                              string,
+                                              string
+                                            > = {
+                                              conference: `/events-office/events/conference/edit/${event._id}`,
+                                              trip: `/events-office/events/trip/edit/${event._id}`,
+                                              bazaar: `/create/bazaar?id=${event._id}`,
+                                            };
+                                            const route =
+                                              editRoutes[event.eventType];
+                                            if (route) setLocation(route);
+                                          }
+                                        },
+                                      }
+                                    : {})}
                               />
                             </div>
                           );
@@ -1447,78 +1580,6 @@ export default function EventsOfficeDashboard() {
               </Card>
             </div>
           </div>
-
-          {/* Existing Bazaars */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Existing Bazaars</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <BazaarList
-                bazaars={formattedBazaars}
-                showFilters={true}
-                onEdit={(id: string) => setLocation(`/create/bazaar?id=${id}`)}
-              />
-            </CardContent>
-          </Card>
-
-          {/* Conferences */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Conferences</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center gap-3">
-                <Input
-                  placeholder="Search conferences..."
-                  value={confSearch}
-                  onChange={(e) => setConfSearch(e.target.value)}
-                />
-              </div>
-              {loadingConfs ? (
-                <p>Loading conferences...</p>
-              ) : filteredConfs.length === 0 ? (
-                <p className="text-muted-foreground">No conferences found.</p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {filteredConfs.map((c: any) => (
-                    <div
-                      key={c._id}
-                      className="border rounded-lg p-4 flex flex-col gap-2"
-                    >
-                      <div className="font-semibold line-clamp-2">
-                        {c.name || "Untitled Conference"}
-                      </div>
-                      <div className="text-sm text-muted-foreground line-clamp-2">
-                        {c.description}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {c.startDate
-                          ? new Date(c.startDate).toLocaleString()
-                          : "TBA"}
-                        {c.endDate
-                          ? ` - ${new Date(c.endDate).toLocaleString()}`
-                          : ""}
-                      </div>
-                      <div className="pt-2">
-                        <Button
-                          variant="outline"
-                          onClick={() =>
-                            setLocation(
-                              `/events-office/events/conference/edit/${c._id}`
-                            )
-                          }
-                          className="w-full justify-center"
-                        >
-                          <Edit className="h-4 w-4 mr-2" /> Edit
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
         </div>
       </main>
       <EventDetailsDialog
@@ -1538,6 +1599,14 @@ export default function EventsOfficeDashboard() {
           // Optionally navigate to sports facilities page
           // setLocation("/sports");
         }}
+      />
+      <RestrictAccessDialog
+        open={restrictAccessDialogOpen}
+        onOpenChange={setRestrictAccessDialogOpen}
+        eventId={selectedEventForRestrict?._id || null}
+        eventName={selectedEventForRestrict?.name || ""}
+        currentRestrictedRoles={selectedEventForRestrict?.restrictedRoles || []}
+        onSuccess={handleRestrictSuccess}
       />
     </div>
   );

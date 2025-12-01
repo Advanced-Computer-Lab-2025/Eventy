@@ -204,7 +204,7 @@ export default function NotificationsPopover() {
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 bg-purple-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-background">
+              <span className="absolute top-0 right-0 h-[18px] w-[18px] bg-purple-600 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-[1.6px] border-background">
                 {unreadCount > 9 ? "9+" : unreadCount}
               </span>
             )}
@@ -365,20 +365,17 @@ export default function NotificationsPopover() {
                   </p>
                 </div>
                 <div className="text-right space-y-1">
-                  <div className="flex items-center gap-2 justify-end">
-                    <User className="h-4 w-4 text-muted-foreground" />
-                    <p className="text-sm font-medium">
-                      {selectedNotification.sender
-                        ? ["events_office", "admin"].includes(
-                            selectedNotification.sender.role
-                          )
-                          ? selectedNotification.sender.role
-                              .replace("_", " ")
-                              .toUpperCase()
-                          : `${selectedNotification.sender.firstName || ""} ${selectedNotification.sender.lastName || ""}`.trim()
-                        : "System"}
-                    </p>
-                  </div>
+                  <p className="text-sm font-medium">
+                    {selectedNotification.sender
+                      ? ["events_office", "admin"].includes(
+                          selectedNotification.sender.role
+                        )
+                        ? selectedNotification.sender.role
+                            .replace("_", " ")
+                            .toUpperCase()
+                        : `${selectedNotification.sender.firstName || ""} ${selectedNotification.sender.lastName || ""}`.trim()
+                      : ""}
+                  </p>
                 </div>
               </div>
 

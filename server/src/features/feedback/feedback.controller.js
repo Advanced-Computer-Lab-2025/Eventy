@@ -1,6 +1,7 @@
 import {
   submitFeedbackService,
   getEventFeedbackService,
+  getEventFeedbackServiceAdmin,
   getUserEventFeedbackService,
   deleteCommentByAdmin,
 } from "./feedback.service.js";
@@ -18,7 +19,7 @@ export const submitFeedback = async (req, res) => {
     if (error) {
       return res.status(400).json({
         success: false,
-        message: error.details[0].message,
+        message: error.details?.[0]?.message || error.message,
       });
     }
 
@@ -33,10 +34,29 @@ export const submitFeedback = async (req, res) => {
     if (error && error.code === 11000) {
       return res.status(400).json({
         success: false,
-        message: "You have already submitted feedback for this event",
+        message: "You have already submitted a rating for this event",
       });
     }
 
+    if (error instanceof ApiError) {
+      return res.status(error.statusCode || 500).json({
+        success: false,
+        message: error.message,
+      });
+    }
+
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Get all feedback for an event including soft-deleted entries (admin/events_office)
+export const getEventFeedbackAll = async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const data = await getEventFeedbackServiceAdmin(eventId);
+
+    return res.status(200).json({ success: true, data });
+  } catch (error) {
     if (error instanceof ApiError) {
       return res.status(error.statusCode || 500).json({
         success: false,

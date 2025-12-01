@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Info } from "lucide-react";
+import { Info, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export interface CreateEventFormValues {
@@ -37,6 +37,9 @@ interface CreateEventFormProps {
   title?: string;
   initialValues?: Partial<CreateEventFormValues>;
   initialProfessors?: string[];
+  hideSubmitButton?: boolean;
+  formId?: string;
+  onCancel?: () => void;
 }
 
 export default function CreateEventForm({
@@ -51,6 +54,9 @@ export default function CreateEventForm({
   title = "Event Information",
   initialValues = {},
   initialProfessors = [],
+  hideSubmitButton = false,
+  formId,
+  onCancel,
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
@@ -208,7 +214,7 @@ export default function CreateEventForm({
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} id={formId}>
       <Card className="mb-6">
         <CardHeader>
           <CardTitle>{title}</CardTitle>
@@ -231,16 +237,37 @@ export default function CreateEventForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
-              <Input
-                id="startDate"
-                type="date"
-                min={todayLocal()}
-                value={values.startDate}
-                onChange={(e) =>
-                  setValues({ ...values, startDate: e.target.value })
-                }
-                required
-              />
+              <div className="relative">
+                <input type="hidden" />
+                <Input
+                  id="startDate"
+                  type="date"
+                  min={todayLocal()}
+                  value={values.startDate}
+                  onChange={(e) =>
+                    setValues({ ...values, startDate: e.target.value })
+                  }
+                  required
+                  onClick={(e) => {
+                    (e.currentTarget as HTMLInputElement).showPicker?.();
+                  }}
+                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"
+                  ></path>
+                </svg>
+              </div>
               {errors.startDate && (
                 <p className="text-sm text-red-500">{errors.startDate}</p>
               )}
@@ -248,15 +275,22 @@ export default function CreateEventForm({
 
             <div className="space-y-2">
               <Label htmlFor="startTime">Start Time</Label>
-              <Input
-                id="startTime"
-                type="time"
-                value={values.startTime}
-                onChange={(e) =>
-                  setValues({ ...values, startTime: e.target.value })
-                }
-                required
-              />
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                <Input
+                  id="startTime"
+                  type="time"
+                  value={values.startTime}
+                  onChange={(e) =>
+                    setValues({ ...values, startTime: e.target.value })
+                  }
+                  required
+                  onClick={(e) => {
+                    (e.currentTarget as HTMLInputElement).showPicker?.();
+                  }}
+                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+              </div>
               {errors.startTime && (
                 <p className="text-sm text-red-500">{errors.startTime}</p>
               )}
@@ -266,16 +300,36 @@ export default function CreateEventForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
-              <Input
-                id="endDate"
-                type="date"
-                min={values.startDate || todayLocal()}
-                value={values.endDate}
-                onChange={(e) =>
-                  setValues({ ...values, endDate: e.target.value })
-                }
-                required
-              />
+              <div className="relative">
+                <Input
+                  id="endDate"
+                  type="date"
+                  min={values.startDate || todayLocal()}
+                  value={values.endDate}
+                  onChange={(e) =>
+                    setValues({ ...values, endDate: e.target.value })
+                  }
+                  required
+                  onClick={(e) => {
+                    (e.currentTarget as HTMLInputElement).showPicker?.();
+                  }}
+                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+                <svg
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
+                  aria-hidden="true"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"
+                  ></path>
+                </svg>
+              </div>
               {errors.endDate && (
                 <p className="text-sm text-red-500">{errors.endDate}</p>
               )}
@@ -283,15 +337,22 @@ export default function CreateEventForm({
 
             <div className="space-y-2">
               <Label htmlFor="endTime">End Time</Label>
-              <Input
-                id="endTime"
-                type="time"
-                value={values.endTime}
-                onChange={(e) =>
-                  setValues({ ...values, endTime: e.target.value })
-                }
-                required
-              />
+              <div className="relative">
+                <Clock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
+                <Input
+                  id="endTime"
+                  type="time"
+                  value={values.endTime}
+                  onChange={(e) =>
+                    setValues({ ...values, endTime: e.target.value })
+                  }
+                  required
+                  onClick={(e) => {
+                    (e.currentTarget as HTMLInputElement).showPicker?.();
+                  }}
+                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+                />
+              </div>
               {errors.endTime && (
                 <p className="text-sm text-red-500">{errors.endTime}</p>
               )}
@@ -488,11 +549,24 @@ export default function CreateEventForm({
         </CardContent>
       </Card>
 
-      <div className="flex gap-4">
-        <Button type="submit" disabled={submitting} className="flex-1">
-          {submitLabel}
-        </Button>
-      </div>
+      {!hideSubmitButton && (
+        <div className="flex gap-4">
+          {onCancel && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="flex-1"
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={submitting} className="flex-1">
+            {submitLabel}
+          </Button>
+        </div>
+      )}
     </form>
   );
 }

@@ -10,6 +10,33 @@ import NotificationService from "../notifications/notification.service.js"; // I
 
 class ApplicationServiceClass {
   /**
+   * Checks and updates overdue status for an approved application
+   * This runs automatically when applications are fetched
+   * @param {Document} application - The application document
+   * @returns {Promise<Document>} The application with updated paymentStatus if needed
+   */
+  async checkAndUpdateOverdueStatus(application) {
+    // Only check approved applications that haven't been paid
+    if (
+      application.status === "approved" &&
+      application.paymentStatus === "pending"
+    ) {
+      const approvalDate = new Date(application.updatedAt);
+      const currentDate = new Date();
+      const daysSinceApproval = Math.floor(
+        (currentDate - approvalDate) / (1000 * 60 * 60 * 24)
+      );
+
+      // If more than 3 days have passed, mark as overdue
+      if (daysSinceApproval > 3) {
+        application.paymentStatus = "overdue";
+        await application.save();
+      }
+    }
+    return application;
+  }
+
+  /**
    * Creates a new application in the database.
    * @param {object} applicationData - The data for the new application.
    * @param {Array} applicationData.attendees - Array of attendee objects, each containing:
@@ -196,10 +223,15 @@ class ApplicationServiceClass {
     })
       .populate({
         path: "createdBy",
-        select: "companyName email companyLogoUrl taxCardUrl status",
+        select: "companyName email companyLogoUrl taxCardUrl status createdAt",
       })
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 });
+
+    // Check and update overdue status for each application automatically
+    for (const app of applications) {
+      await this.checkAndUpdateOverdueStatus(app);
+    }
 
     // Filter out applications for events that have already passed
     const currentDate = new Date();
@@ -233,6 +265,11 @@ class ApplicationServiceClass {
       // Populate 'event' with specific fields from the linked Event/Bazaar document
       .populate("event", "name description startDate endDate location")
       .sort({ createdAt: -1 }); // Sort by newest first
+
+    // Check and update overdue status for each application automatically
+    for (const app of applications) {
+      await this.checkAndUpdateOverdueStatus(app);
+    }
 
     // Filter out applications for events that have already passed
     const currentDate = new Date();
@@ -288,43 +325,8 @@ class ApplicationServiceClass {
 
     let eventId = application.event;
 
-    // If approving a platform booth application, create the event and link it
-    if (
-      status === "approved" &&
-      application.type === "booth" &&
-      !application.event
-    ) {
-      const vendor = application.createdBy;
-      const eventName = `${
-        vendor.firstName || vendor.companyName || "Vendor"
-      }'s platform booth`;
-
-      // Calculate start and end dates based on approval time and duration
-      // Start date is when the application is accepted/approved
-      const startDate = new Date(); // Current timestamp when approved
-
-      // End date is start date plus the duration in weeks
-      const endDate = new Date(startDate);
-      endDate.setDate(endDate.getDate() + application.durationWeeks * 7);
-
-      const eventData = {
-        name: eventName,
-        eventType: "platform_booth",
-        boothSize: application.boothSize,
-        durationWeeks: application.durationWeeks,
-        locationPreference: application.locationPreference,
-        location: application.locationPreference, // Set location from locationPreference
-        startDate: startDate, // Set start date
-        endDate: endDate, // Set end date
-        attendees: application.attendees,
-        createdBy: vendor._id,
-        application: application._id,
-        status: "approved",
-      };
-
-      const createdEvent = await Event.create(eventData);
-      eventId = createdEvent._id;
-    }
+    // Note: Platform booth events are now created when payment is confirmed,
+    // not when the application is approved. See transaction.service.js confirmStripePayment method.
 
     // Now update the application status and event field atomically
     // When approving, set paymentStatus to "pending" (payment required)

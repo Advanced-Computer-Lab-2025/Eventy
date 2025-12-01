@@ -29,6 +29,7 @@ export const createManagementAccountSchema = Joi.object({
     .required(),
   password: Joi.string().min(6).required(),
   role: Joi.string().valid("admin", "events_office").required(),
+  studentStaffId: Joi.string().required(),
 });
 
 export const deleteUserSchema = Joi.object({

@@ -259,7 +259,7 @@ export default function AdminUsers() {
     if (user.role === "vendor" && user.companyName) {
       return user.companyName;
     }
-    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "N/A";
+    return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "-";
   };
 
   const filteredUsers = users.filter((user) => {
@@ -428,7 +428,7 @@ export default function AdminUsers() {
                         </Badge>
                       </div>
                     </TableCell>
-                    <TableCell>{user.studentStaffId || "N/A"}</TableCell>
+                    <TableCell>{user.studentStaffId || "-"}</TableCell>
                     <TableCell>
                       <div className="w-20">
                         {user.status === "active" ? (
@@ -540,7 +540,7 @@ export default function AdminUsers() {
                       <TableCell>
                         <Badge variant="outline">Unassigned</Badge>
                       </TableCell>
-                      <TableCell>{user.studentStaffId || "N/A"}</TableCell>
+                      <TableCell>{user.studentStaffId || "-"}</TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
