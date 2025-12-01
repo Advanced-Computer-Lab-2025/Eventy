@@ -1550,8 +1550,6 @@ export const cancelEventRegistration = async (eventId, userId) => {
   const twoWeeksBefore = new Date(event.startDate);
   twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
 
-  console.log("twoWeeksBefore:", twoWeeksBefore);
-  console.log("now:", now);
   if (now > twoWeeksBefore) {
     throw new ApiError(
       400,
