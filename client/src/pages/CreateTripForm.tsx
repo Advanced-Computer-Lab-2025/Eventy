@@ -1,15 +1,30 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Calendar, MapPin, Users, Info, Clock } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  Info,
+  Clock,
+  CalendarIcon,
+} from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 
 export default function CreateTripForm() {
   const { toast } = useToast();
@@ -19,13 +34,13 @@ export default function CreateTripForm() {
     name: "",
     location: "",
     price: "",
-    startDate: "",
+    startDate: undefined as Date | undefined,
     startTime: "",
-    endDate: "",
+    endDate: undefined as Date | undefined,
     endTime: "",
     description: "",
     capacity: "",
-    registrationDeadline: "",
+    registrationDeadline: undefined as Date | undefined,
   });
   const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
 
@@ -51,12 +66,12 @@ export default function CreateTripForm() {
       const now = new Date();
       const start = formData.startDate
         ? new Date(
-            `${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`
+            `${format(formData.startDate, "yyyy-MM-dd")}T${(formData.startTime || "00:00").trim()}:00`
           )
         : null;
       const end = formData.endDate
         ? new Date(
-            `${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`
+            `${format(formData.endDate, "yyyy-MM-dd")}T${(formData.endTime || "00:00").trim()}:00`
           )
         : null;
       if (!start || isNaN(start.getTime())) {
@@ -107,14 +122,10 @@ export default function CreateTripForm() {
 
       // Format dates as ISO dates (without time) and keep time fields separate
       if (formData.startDate) {
-        payload.startDate = new Date(formData.startDate)
-          .toISOString()
-          .split("T")[0];
+        payload.startDate = format(formData.startDate, "yyyy-MM-dd");
       }
       if (formData.endDate) {
-        payload.endDate = new Date(formData.endDate)
-          .toISOString()
-          .split("T")[0];
+        payload.endDate = format(formData.endDate, "yyyy-MM-dd");
       }
 
       // Keep time fields as they are, ensuring they're not empty strings
@@ -141,8 +152,9 @@ export default function CreateTripForm() {
       // registrationDeadline -> full ISO date (backend expects Date)
       if (formData.registrationDeadline) {
         // Validate registration deadline (must be today or in the future)
-        const todayIso = new Date().toISOString().slice(0, 10);
-        if (formData.registrationDeadline < todayIso) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (formData.registrationDeadline < today) {
           toast({
             title: "Invalid registration deadline",
             description:
@@ -153,9 +165,8 @@ export default function CreateTripForm() {
           return;
         }
 
-        payload.registrationDeadline = new Date(
-          formData.registrationDeadline
-        ).toISOString();
+        payload.registrationDeadline =
+          formData.registrationDeadline.toISOString();
       }
 
       // numeric conversions
@@ -285,27 +296,38 @@ export default function CreateTripForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="startDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          startDate: e.target.value,
-                        })
-                      }
-                      onClick={(e) =>
-                        (e.currentTarget as HTMLInputElement).showPicker?.()
-                      }
-                      data-testid="input-start-date"
-                      required
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.startDate ? (
+                          format(formData.startDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.startDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, startDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.endDate ? date > formData.endDate : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -333,24 +355,40 @@ export default function CreateTripForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="endDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                      onClick={(e) =>
-                        (e.currentTarget as HTMLInputElement).showPicker?.()
-                      }
-                      data-testid="input-end-date"
-                      required
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? (
+                          format(formData.endDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.endDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, endDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.startDate
+                            ? date < formData.startDate
+                            : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -410,27 +448,41 @@ export default function CreateTripForm() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="deadline">Registration Deadline</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="deadline"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                      value={formData.registrationDeadline}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          registrationDeadline: e.target.value,
-                        })
-                      }
-                      onClick={(e) =>
-                        (e.currentTarget as HTMLInputElement).showPicker?.()
-                      }
-                      data-testid="input-deadline"
-                      required
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.registrationDeadline &&
+                            "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.registrationDeadline ? (
+                          format(formData.registrationDeadline, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.registrationDeadline}
+                        onSelect={(date) =>
+                          setFormData({
+                            ...formData,
+                            registrationDeadline: date,
+                          })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
 

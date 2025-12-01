@@ -1,12 +1,25 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import { Calendar, MapPin, Users, DollarSign } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  DollarSign,
+  CalendarIcon,
+} from "lucide-react";
+import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -19,6 +32,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+import { cn } from "@/lib/utils";
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
@@ -35,13 +49,13 @@ export default function EditTrip() {
     name: "",
     location: "",
     price: "",
-    startDate: "",
+    startDate: undefined as Date | undefined,
     startTime: "",
-    endDate: "",
+    endDate: undefined as Date | undefined,
     endTime: "",
     description: "",
     capacity: "",
-    registrationDeadline: "",
+    registrationDeadline: undefined as Date | undefined,
   });
   const [restrictedRoles, setRestrictedRoles] = useState<string[]>([]);
 
@@ -115,15 +129,18 @@ export default function EditTrip() {
         name: tripData.name || "",
         location: tripData.location || "",
         price: tripData.price?.toString() || "",
-        startDate: tripData.startDate?.split("T")[0] || "",
+        startDate: tripData.startDate
+          ? new Date(tripData.startDate)
+          : undefined,
         startTime:
           tripData.startTime || getTimeFromDate(tripData.startDate || ""),
-        endDate: tripData.endDate?.split("T")[0] || "",
+        endDate: tripData.endDate ? new Date(tripData.endDate) : undefined,
         endTime: tripData.endTime || getTimeFromDate(tripData.endDate || ""),
         description: tripData.description || "",
         capacity: tripData.capacity?.toString() || "",
-        registrationDeadline:
-          tripData.registrationDeadline?.split("T")[0] || "",
+        registrationDeadline: tripData.registrationDeadline
+          ? new Date(tripData.registrationDeadline)
+          : undefined,
       });
       setRestrictedRoles(tripData.restrictedRoles || []);
     } catch (error) {
@@ -150,12 +167,12 @@ export default function EditTrip() {
       const now = new Date();
       const start = formData.startDate
         ? new Date(
-            `${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`
+            `${format(formData.startDate, "yyyy-MM-dd")}T${(formData.startTime || "00:00").trim()}:00`
           )
         : null;
       const end = formData.endDate
         ? new Date(
-            `${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`
+            `${format(formData.endDate, "yyyy-MM-dd")}T${(formData.endTime || "00:00").trim()}:00`
           )
         : null;
 
@@ -219,7 +236,18 @@ export default function EditTrip() {
       }
 
       const payload = {
-        ...formData,
+        name: formData.name,
+        location: formData.location,
+        startDate: formData.startDate
+          ? format(formData.startDate, "yyyy-MM-dd")
+          : "",
+        startTime: formData.startTime,
+        endDate: formData.endDate ? format(formData.endDate, "yyyy-MM-dd") : "",
+        endTime: formData.endTime,
+        description: formData.description,
+        registrationDeadline: formData.registrationDeadline
+          ? formData.registrationDeadline.toISOString()
+          : undefined,
         // Normalize numeric fields to avoid floating/locale issues
         price: (() => {
           const p = Number(String(formData.price).trim());
@@ -405,19 +433,38 @@ export default function EditTrip() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="startDate"
-                      type="date"
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startDate: e.target.value })
-                      }
-                      className="pl-10"
-                      required
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.startDate ? (
+                          format(formData.startDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.startDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, startDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.endDate ? date > formData.endDate : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="startTime">Start Time *</Label>
@@ -437,19 +484,40 @@ export default function EditTrip() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date *</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="endDate"
-                      type="date"
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                      className="pl-10"
-                      required
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? (
+                          format(formData.endDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.endDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, endDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.startDate
+                            ? date < formData.startDate
+                            : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endTime">End Time *</Label>
@@ -491,22 +559,41 @@ export default function EditTrip() {
                 <Label htmlFor="registrationDeadline">
                   Registration Deadline *
                 </Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="registrationDeadline"
-                    type="date"
-                    value={formData.registrationDeadline}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        registrationDeadline: e.target.value,
-                      })
-                    }
-                    className="pl-10"
-                    required
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.registrationDeadline &&
+                          "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.registrationDeadline ? (
+                        format(formData.registrationDeadline, "dd/MM/yyyy")
+                      ) : (
+                        <span>dd/mm/yyyy</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.registrationDeadline}
+                      onSelect={(date) =>
+                        setFormData({
+                          ...formData,
+                          registrationDeadline: date,
+                        })
+                      }
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Description */}

@@ -1,12 +1,19 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin, Info, Clock } from "lucide-react";
+import { Calendar, MapPin, Info, Clock, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   AlertDialog,
@@ -19,6 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export default function CreateBazaar() {
   const [, setLocation] = useLocation();
@@ -26,12 +34,12 @@ export default function CreateBazaar() {
   const [formData, setFormData] = useState({
     name: "",
     location: "",
-    startDate: "",
+    startDate: undefined as Date | undefined,
     startTime: "",
-    endDate: "",
+    endDate: undefined as Date | undefined,
     endTime: "",
     description: "",
-    deadline: "",
+    deadline: undefined as Date | undefined,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
@@ -57,8 +65,9 @@ export default function CreateBazaar() {
     setError("");
     try {
       // Validate registration deadline (must be today or in the future)
-      const todayIso = new Date().toISOString().slice(0, 10);
-      if (formData.deadline && formData.deadline < todayIso) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      if (formData.deadline && formData.deadline < today) {
         toast({
           title: "Invalid registration deadline",
           description:
@@ -73,12 +82,12 @@ export default function CreateBazaar() {
       const now = new Date();
       const start = formData.startDate
         ? new Date(
-            `${formData.startDate}T${(formData.startTime || "00:00").trim()}:00`
+            `${format(formData.startDate, "yyyy-MM-dd")}T${(formData.startTime || "00:00").trim()}:00`
           )
         : null;
       const end = formData.endDate
         ? new Date(
-            `${formData.endDate}T${(formData.endTime || "00:00").trim()}:00`
+            `${format(formData.endDate, "yyyy-MM-dd")}T${(formData.endTime || "00:00").trim()}:00`
           )
         : null;
       if (!start || isNaN(start.getTime())) {
@@ -135,12 +144,16 @@ export default function CreateBazaar() {
         name: formData.name,
         description: formData.description,
         location: formData.location,
-        startDate: `${formData.startDate}T${startTimeValue}:00.000Z`,
-        endDate: `${formData.endDate}T${endTimeValue}:00.000Z`,
+        startDate: formData.startDate
+          ? `${format(formData.startDate, "yyyy-MM-dd")}T${startTimeValue}:00.000Z`
+          : undefined,
+        endDate: formData.endDate
+          ? `${format(formData.endDate, "yyyy-MM-dd")}T${endTimeValue}:00.000Z`
+          : undefined,
         startTime: startTimeValue, // Required by backend model
         endTime: endTimeValue, // Required by backend model
         registrationDeadline: formData.deadline
-          ? `${formData.deadline}T23:59:59.000Z`
+          ? `${format(formData.deadline, "yyyy-MM-dd")}T23:59:59.000Z`
           : undefined,
       };
 
@@ -320,25 +333,38 @@ export default function CreateBazaar() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="startDate">Start Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="startDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startDate: e.target.value })
-                      }
-                      onClick={(e) => {
-                        // show native picker where supported
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      }}
-                      data-testid="input-start-date"
-                      required
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.startDate ? (
+                          format(formData.startDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.startDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, startDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.endDate ? date > formData.endDate : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -366,24 +392,40 @@ export default function CreateBazaar() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="endDate">End Date</Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="endDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                      onClick={(e) => {
-                        (e.currentTarget as HTMLInputElement).showPicker?.();
-                      }}
-                      data-testid="input-end-date"
-                      required
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? (
+                          format(formData.endDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.endDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, endDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.startDate
+                            ? date < formData.startDate
+                            : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div className="space-y-2">
@@ -425,24 +467,37 @@ export default function CreateBazaar() {
 
               <div className="space-y-2">
                 <Label htmlFor="deadline">Vendor Registration Deadline</Label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                  <Input
-                    id="deadline"
-                    type="date"
-                    min={new Date().toISOString().split("T")[0]}
-                    value={formData.deadline}
-                    onChange={(e) =>
-                      setFormData({ ...formData, deadline: e.target.value })
-                    }
-                    onClick={(e) =>
-                      (e.currentTarget as HTMLInputElement).showPicker?.()
-                    }
-                    data-testid="input-deadline"
-                    required
-                    className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                  />
-                </div>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !formData.deadline && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {formData.deadline ? (
+                        format(formData.deadline, "dd/MM/yyyy")
+                      ) : (
+                        <span>dd/mm/yyyy</span>
+                      )}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.deadline}
+                      onSelect={(date) =>
+                        setFormData({ ...formData, deadline: date })
+                      }
+                      disabled={(date) =>
+                        date < new Date(new Date().setHours(0, 0, 0, 0))
+                      }
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
               </div>
 
               {/* Restrict Access Section */}

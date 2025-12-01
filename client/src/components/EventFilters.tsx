@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -12,6 +13,12 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import {
   Calendar,
   MapPin,
   SlidersHorizontal,
@@ -19,7 +26,9 @@ import {
   User,
   AlertCircle,
   CalendarDays,
+  CalendarIcon,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const eventTypes = [
   { value: "all", label: "All event types" },
@@ -33,9 +42,9 @@ const eventTypes = [
 export interface EventFilterState {
   eventType: string;
   location: string;
-  startDate: string;
+  startDate: Date | undefined;
   professor?: string;
-  endDate: string;
+  endDate: Date | undefined;
   showUpcoming?: boolean;
   showPast?: boolean;
 }
@@ -335,101 +344,79 @@ export default function EventFilters({
               <label className="text-xs text-muted-foreground font-medium">
                 From
               </label>
-              <div
-                className="relative cursor-pointer group"
-                tabIndex={0}
-                onClick={(e) => {
-                  const input = document.getElementById(
-                    "event-filter-start-date"
-                  );
-                  if (input) {
-                    if ((input as HTMLInputElement).showPicker) {
-                      (input as HTMLInputElement).showPicker();
-                    } else {
-                      input.focus();
-                    }
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    const input = document.getElementById(
-                      "event-filter-start-date"
-                    );
-                    if (input) {
-                      if ((input as HTMLInputElement).showPicker) {
-                        (input as HTMLInputElement).showPicker();
-                      } else {
-                        input.focus();
-                      }
-                    }
-                  }
-                }}
-              >
-                <Input
-                  id="event-filter-start-date"
-                  type="date"
-                  value={filters.startDate}
-                  onChange={(e) => updateFilters({ startDate: e.target.value })}
-                  min={today}
-                  placeholder="Start date"
-                  aria-label="Filter start date"
-                  className="appearance-none cursor-pointer"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ pointerEvents: "auto" }}
-                ></div>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal text-sm h-9 px-2",
+                      !filters.startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-0.5 h-3.5 w-3.5" />
+                    {filters.startDate ? (
+                      format(filters.startDate, "dd/MM/yyyy")
+                    ) : (
+                      <span className="text-xs">dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.startDate}
+                    onSelect={(date) => updateFilters({ startDate: date })}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return (
+                        date < today ||
+                        (filters.endDate ? date > filters.endDate : false)
+                      );
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-1">
               <label className="text-xs text-muted-foreground font-medium">
                 To
               </label>
-              <div
-                className="relative cursor-pointer group"
-                tabIndex={0}
-                onClick={(e) => {
-                  const input = document.getElementById(
-                    "event-filter-end-date"
-                  );
-                  if (input) {
-                    if ((input as HTMLInputElement).showPicker) {
-                      (input as HTMLInputElement).showPicker();
-                    } else {
-                      input.focus();
-                    }
-                  }
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    const input = document.getElementById(
-                      "event-filter-end-date"
-                    );
-                    if (input) {
-                      if ((input as HTMLInputElement).showPicker) {
-                        (input as HTMLInputElement).showPicker();
-                      } else {
-                        input.focus();
-                      }
-                    }
-                  }
-                }}
-              >
-                <Input
-                  id="event-filter-end-date"
-                  type="date"
-                  value={filters.endDate}
-                  onChange={(e) => updateFilters({ endDate: e.target.value })}
-                  min={filters.startDate || today}
-                  placeholder="End date"
-                  aria-label="Filter end date"
-                  className="appearance-none cursor-pointer"
-                />
-                <div
-                  className="absolute inset-0"
-                  style={{ pointerEvents: "auto" }}
-                ></div>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal text-sm h-9 px-2",
+                      !filters.endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-0.5 h-3.5 w-3.5" />
+                    {filters.endDate ? (
+                      format(filters.endDate, "dd/MM/yyyy")
+                    ) : (
+                      <span className="text-xs">dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarComponent
+                    mode="single"
+                    selected={filters.endDate}
+                    onSelect={(date) => updateFilters({ endDate: date })}
+                    disabled={(date) => {
+                      const today = new Date();
+                      today.setHours(0, 0, 0, 0);
+                      return (
+                        date < today ||
+                        (filters.startDate ? date < filters.startDate : false)
+                      );
+                    }}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
         </div>

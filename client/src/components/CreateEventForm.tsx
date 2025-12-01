@@ -1,18 +1,26 @@
 import { useState, useEffect } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Info, Clock } from "lucide-react";
+import { Info, Clock, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 export interface CreateEventFormValues {
   name: string;
-  startDate: string;
+  startDate: Date | undefined;
   startTime: string;
-  endDate: string;
+  endDate: Date | undefined;
   endTime: string;
   description: string;
   websiteUrl?: string;
@@ -60,9 +68,9 @@ export default function CreateEventForm({
 }: CreateEventFormProps) {
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
-    startDate: initialValues.startDate || "",
+    startDate: initialValues.startDate || undefined,
     startTime: initialValues.startTime || "",
-    endDate: initialValues.endDate || "",
+    endDate: initialValues.endDate || undefined,
     endTime: initialValues.endTime || "",
     description: initialValues.description || "",
     websiteUrl: initialValues.websiteUrl || "",
@@ -237,37 +245,38 @@ export default function CreateEventForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="startDate">Start Date</Label>
-              <div className="relative">
-                <input type="hidden" />
-                <Input
-                  id="startDate"
-                  type="date"
-                  min={todayLocal()}
-                  value={values.startDate}
-                  onChange={(e) =>
-                    setValues({ ...values, startDate: e.target.value })
-                  }
-                  required
-                  onClick={(e) => {
-                    (e.currentTarget as HTMLInputElement).showPicker?.();
-                  }}
-                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"
-                  ></path>
-                </svg>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !values.startDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {values.startDate ? (
+                      format(values.startDate, "dd/MM/yyyy")
+                    ) : (
+                      <span>dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={values.startDate}
+                    onSelect={(date) =>
+                      setValues({ ...values, startDate: date })
+                    }
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                      (values.endDate ? date > values.endDate : false)
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               {errors.startDate && (
                 <p className="text-sm text-red-500">{errors.startDate}</p>
               )}
@@ -300,36 +309,36 @@ export default function CreateEventForm({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="endDate">End Date</Label>
-              <div className="relative">
-                <Input
-                  id="endDate"
-                  type="date"
-                  min={values.startDate || todayLocal()}
-                  value={values.endDate}
-                  onChange={(e) =>
-                    setValues({ ...values, endDate: e.target.value })
-                  }
-                  required
-                  onClick={(e) => {
-                    (e.currentTarget as HTMLInputElement).showPicker?.();
-                  }}
-                  className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                />
-                <svg
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground z-10"
-                  aria-hidden="true"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M8 7V3m8 4V3M3 11h18M5 21h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2z"
-                  ></path>
-                </svg>
-              </div>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant={"outline"}
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !values.endDate && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {values.endDate ? (
+                      format(values.endDate, "dd/MM/yyyy")
+                    ) : (
+                      <span>dd/mm/yyyy</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <CalendarComponent
+                    mode="single"
+                    selected={values.endDate}
+                    onSelect={(date) => setValues({ ...values, endDate: date })}
+                    disabled={(date) =>
+                      date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                      (values.startDate ? date < values.startDate : false)
+                    }
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
               {errors.endDate && (
                 <p className="text-sm text-red-500">{errors.endDate}</p>
               )}

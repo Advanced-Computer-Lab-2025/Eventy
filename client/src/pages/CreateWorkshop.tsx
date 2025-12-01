@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, Users, DollarSign } from "lucide-react";
+import { Calendar, Clock, Users, DollarSign, CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,15 +15,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
+import { cn } from "@/lib/utils";
 
 interface WorkshopFormData {
   name: string;
   location: string;
-  startDate: string;
+  startDate: Date | undefined;
   startTime: string;
-  endDate: string;
+  endDate: Date | undefined;
   endTime: string;
   description: string;
   agenda: string;
@@ -31,7 +39,7 @@ interface WorkshopFormData {
   fundingSource: string;
   resources: string;
   capacity: string;
-  deadline: string;
+  deadline: Date | undefined;
   price: string;
 }
 
@@ -41,9 +49,9 @@ export default function CreateWorkshop() {
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
     location: "",
-    startDate: "",
+    startDate: undefined,
     startTime: "",
-    endDate: "",
+    endDate: undefined,
     endTime: "",
     description: "",
     agenda: "",
@@ -52,7 +60,7 @@ export default function CreateWorkshop() {
     fundingSource: "",
     resources: "",
     capacity: "",
-    deadline: "",
+    deadline: undefined,
     price: "",
   });
 
@@ -88,8 +96,9 @@ export default function CreateWorkshop() {
     (async () => {
       try {
         // Validate registration deadline (must be today or in the future)
-        const todayIso = new Date().toISOString().slice(0, 10);
-        if (formData.deadline && formData.deadline < todayIso) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        if (formData.deadline && formData.deadline < today) {
           toast({
             title: "Invalid registration deadline",
             description:
@@ -141,9 +150,11 @@ export default function CreateWorkshop() {
       const workshopData = {
         name: formData.name,
         location: formData.location,
-        startDate: formData.startDate,
+        startDate: formData.startDate
+          ? format(formData.startDate, "yyyy-MM-dd")
+          : "",
         startTime: formData.startTime,
-        endDate: formData.endDate,
+        endDate: formData.endDate ? format(formData.endDate, "yyyy-MM-dd") : "",
         endTime: formData.endTime,
         description: formData.description,
         agenda: formData.agenda,
@@ -153,7 +164,9 @@ export default function CreateWorkshop() {
         fundingSource: formData.fundingSource,
         extraResources: formData.resources,
         capacity: Number(formData.capacity),
-        registrationDeadline: formData.deadline,
+        registrationDeadline: formData.deadline
+          ? format(formData.deadline, "yyyy-MM-dd")
+          : "",
         price: Number(formData.price),
       };
 
@@ -289,23 +302,38 @@ export default function CreateWorkshop() {
                   <Label htmlFor="startDate">
                     Start Date <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="startDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.startDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, startDate: e.target.value })
-                      }
-                      onClick={(e) => {
-                        e.currentTarget.showPicker();
-                      }}
-                      required
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.startDate ? (
+                          format(formData.startDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.startDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, startDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.endDate ? date > formData.endDate : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="startTime">
@@ -335,23 +363,40 @@ export default function CreateWorkshop() {
                   <Label htmlFor="endDate">
                     End Date <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="endDate"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.endDate}
-                      onChange={(e) =>
-                        setFormData({ ...formData, endDate: e.target.value })
-                      }
-                      onClick={(e) => {
-                        e.currentTarget.showPicker();
-                      }}
-                      required
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.endDate ? (
+                          format(formData.endDate, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.endDate}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, endDate: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0)) ||
+                          (formData.startDate
+                            ? date < formData.startDate
+                            : false)
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="endTime">
@@ -579,23 +624,37 @@ export default function CreateWorkshop() {
                     Registration Deadline{" "}
                     <span className="text-red-500">*</span>
                   </Label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
-                    <Input
-                      id="deadline"
-                      type="date"
-                      min={new Date().toISOString().split("T")[0]}
-                      value={formData.deadline}
-                      onChange={(e) =>
-                        setFormData({ ...formData, deadline: e.target.value })
-                      }
-                      onClick={(e) => {
-                        e.currentTarget.showPicker();
-                      }}
-                      required
-                      className="pl-10 cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:w-full [&::-webkit-calendar-picker-indicator]:h-full [&::-webkit-calendar-picker-indicator]:cursor-pointer"
-                    />
-                  </div>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !formData.deadline && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {formData.deadline ? (
+                          format(formData.deadline, "dd/MM/yyyy")
+                        ) : (
+                          <span>dd/mm/yyyy</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <CalendarComponent
+                        mode="single"
+                        selected={formData.deadline}
+                        onSelect={(date) =>
+                          setFormData({ ...formData, deadline: date })
+                        }
+                        disabled={(date) =>
+                          date < new Date(new Date().setHours(0, 0, 0, 0))
+                        }
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
                 </div>
               </div>
             </CardContent>
