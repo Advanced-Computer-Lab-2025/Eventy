@@ -28,16 +28,29 @@ export class TransactionService {
   }
 
   async payForEvent({ userId, eventId, paymentMethod }) {
-    // Check if user already paid for this event
-    const existingTransaction = await Transaction.findOne({
+    // Check if user already paid for this event and hasn't been refunded
+    const existingPayment = await Transaction.findOne({
       userId,
       "relatedEntity.type": "Event",
       "relatedEntity.id": eventId,
       status: "completed",
       type: "payment",
     });
-    if (existingTransaction) {
-      throw new Error("You have already paid for this event.");
+
+    if (existingPayment) {
+      // Check if there is a completed refund for this payment
+      const refundExists = await Transaction.findOne({
+        userId,
+        "relatedEntity.type": "Event",
+        "relatedEntity.id": eventId,
+        status: "completed",
+        type: "refund",
+      });
+
+      if (!refundExists) {
+        throw new Error("You have already paid for this event.");
+      }
+      // If refund exists, allow payment to proceed
     }
 
     // Fetch event and ensure user is registered
@@ -461,15 +474,29 @@ export class TransactionService {
   }
 
   async payForApplication({ userId, applicationId, paymentMethod }) {
-    const existingTransaction = await Transaction.findOne({
+    // Check if user already paid for this application and hasn't been refunded
+    const existingPayment = await Transaction.findOne({
       userId,
       "relatedEntity.type": "Application",
       "relatedEntity.id": applicationId,
       status: "completed",
       type: "payment",
     });
-    if (existingTransaction) {
-      throw new Error("You have already paid for this application.");
+
+    if (existingPayment) {
+      // Check if there is a completed refund for this payment
+      const refundExists = await Transaction.findOne({
+        userId,
+        "relatedEntity.type": "Application",
+        "relatedEntity.id": applicationId,
+        status: "completed",
+        type: "refund",
+      });
+
+      if (!refundExists) {
+        throw new Error("You have already paid for this application.");
+      }
+      // If refund exists, allow payment to proceed
     }
 
     const application = await Application.findById(applicationId)
