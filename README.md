@@ -655,7 +655,7 @@ We welcome contributions from the community! Here are areas where you can help:
 - [Express.js Guide](https://expressjs.com/en/guide/routing.html)
 - [React Documentation](https://react.dev/)
 - [Tailwind CSS](https://tailwindcss.com/docs)
-- **Stripe Integration**: [Stripe Official Documentation](https://stripe.com/docs/payments/accept-a-payment)
+- [Stripe Documentation](https://stripe.com/docs/payments/accept-a-payment)
 - [Radix UI](https://www.radix-ui.com/)
 
 ### External Libraries & Tools
