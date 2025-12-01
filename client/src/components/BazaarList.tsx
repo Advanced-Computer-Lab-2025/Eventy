@@ -13,6 +13,8 @@ export interface Bazaar {
   location: string;
   startDate: string;
   endDate: string;
+  startTime?: string;
+  endTime?: string;
   registrationDeadline: string;
   status: "pending" | "approved" | "rejected" | "needs_revision";
   attendees?: string[];
@@ -216,6 +218,8 @@ export default function BazaarList({
               location={bazaar.location}
               startDate={bazaar.startDate}
               endDate={bazaar.endDate}
+              startTime={bazaar.startTime}
+              endTime={bazaar.endTime}
               registrationDeadline={bazaar.registrationDeadline}
               status={bazaar.status}
               attendees={bazaar.attendees?.length ?? 0}

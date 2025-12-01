@@ -12,6 +12,8 @@ export interface BazaarCardProps {
   location: string;
   startDate: string;
   endDate: string;
+  startTime?: string;
+  endTime?: string;
   registrationDeadline: string;
   status: "pending" | "approved" | "rejected" | "needs_revision";
   attendees?: number;
@@ -29,6 +31,8 @@ export default function BazaarCard({
   location,
   startDate,
   endDate,
+  startTime,
+  endTime,
   registrationDeadline,
   status,
   attendees = 0,
@@ -49,6 +53,27 @@ export default function BazaarCard({
     });
   };
 
+  // Helper to convert 24H string to 12H format
+  const formatStringTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+
+    // If string is in HH:mm format (e.g. "23:52" or "09:30")
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hoursStr, minutesStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const suffix = hours >= 12 ? "PM" : "AM";
+
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+
+      return `${hours}:${minutesStr} ${suffix}`;
+    }
+
+    // Return original if it doesn't match expected format
+    return timeStr;
+  };
+
+  // Fallback to extracting time from date if startTime/endTime not provided
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleTimeString("en-US", {
@@ -127,7 +152,8 @@ export default function BazaarCard({
                 {formatDate(startDate)} - {formatDate(endDate)}
               </div>
               <div className="text-muted-foreground">
-                {formatTime(startDate)} - {formatTime(endDate)}
+                {formatStringTime(startTime) || formatTime(startDate)} -{" "}
+                {formatStringTime(endTime) || formatTime(endDate)}
               </div>
             </div>
           </div>
