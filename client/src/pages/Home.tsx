@@ -44,6 +44,8 @@ interface Event {
 export default function Home() {
   const [events, setEvents] = useState<Event[]>([]);
   const [allEvents, setAllEvents] = useState<Event[]>([]);
+  const [recommendedEvents, setRecommendedEvents] = useState<Event[]>([]);
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
   const [professorOptions, setProfessorOptions] = useState<
     { id: string; name: string }[]
   >([]);
@@ -254,6 +256,60 @@ export default function Home() {
     fetchProfessors();
   }, []);
 
+  // Fetch personalized recommendations
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        const user = localStorage.getItem("user");
+
+        if (!token || !user) return;
+
+        const userData = JSON.parse(user);
+        const userId = userData.id || userData._id;
+
+        if (!userId) return;
+
+        setLoadingRecommendations(true);
+
+        const response = await fetch(
+          `http://localhost:5000/api/recommendations/user/${userId}?limit=6`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          console.error("Failed to fetch recommendations");
+          return;
+        }
+
+        const recommendations = await response.json();
+
+        // Fetch full event details for recommended event IDs
+        if (recommendations && recommendations.length > 0) {
+          const eventIds = recommendations.map((rec: any) => rec.event_id);
+          const eventDetailsPromises = eventIds.map((id: string) =>
+            fetch(`http://localhost:5000/api/events/${id}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            }).then((res) => res.json())
+          );
+
+          const eventDetails = await Promise.all(eventDetailsPromises);
+          setRecommendedEvents(eventDetails.filter((e) => e && e._id));
+        }
+      } catch (err) {
+        console.error("Failed to fetch recommendations:", err);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
   return (
     <div className="min-h-screen bg-background">
       <StudentHeader />
@@ -267,6 +323,55 @@ export default function Home() {
               Discover exciting events happening at your university
             </p>
           </div>
+
+          {/* AI Recommendations Section */}
+          {recommendedEvents.length > 0 && (
+            <div className="mb-10">
+              <div className="mb-4">
+                <h3 className="text-2xl font-bold mb-1 flex items-center gap-2">
+                  <span className="text-primary">✨</span>
+                  Recommended for You
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Personalized picks based on your interests
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {recommendedEvents.map((event) => (
+                  <EventCard
+                    key={event._id}
+                    id={event._id}
+                    title={event.name}
+                    eventType={event.eventType || "event"}
+                    date={event.startDate}
+                    endDate={event.endDate}
+                    startTime={event.startTime}
+                    endTime={event.endTime}
+                    location={
+                      event.location ||
+                      event.locationPreference ||
+                      "Location TBA"
+                    }
+                    attendees={
+                      event.attendeesCount || event.attendees?.length || 0
+                    }
+                    capacity={event.capacity}
+                    registrationDeadline={event.registrationDeadline}
+                    image={
+                      event.bannerImage ||
+                      event.image ||
+                      getEventImage(event.eventType || "")
+                    }
+                    description={event.description}
+                    price={event.price}
+                    durationWeeks={event.durationWeeks}
+                    vendors={event.vendors}
+                  />
+                ))}
+              </div>
+              <div className="mt-6 border-t border-border pt-6"></div>
+            </div>
+          )}
 
           {/* Filters and Content Section */}
           <div className="flex flex-col lg:flex-row gap-8">

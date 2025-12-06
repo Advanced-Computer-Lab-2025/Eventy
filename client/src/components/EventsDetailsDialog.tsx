@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
 import {
   Calendar,
   MapPin,
@@ -15,9 +16,11 @@ import {
   AlertCircle,
   Landmark,
   LayoutGrid,
+  Sparkles,
 } from "lucide-react";
 import CategoryBadge from "./CategoryBadge";
 import { motion, AnimatePresence } from "framer-motion";
+import { getEventImage } from "@/lib/eventImages";
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -31,6 +34,57 @@ export default function EventDetailsDialog({
   onOpenChange,
   event,
 }: EventDetailsDialogProps) {
+  const [similarEvents, setSimilarEvents] = useState<any[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
+
+  // Fetch similar events when dialog opens
+  useEffect(() => {
+    const fetchSimilarEvents = async () => {
+      if (!event || !event._id || !open) {
+        setSimilarEvents([]);
+        return;
+      }
+
+      try {
+        setLoadingSimilar(true);
+        const token = localStorage.getItem("token");
+
+        const response = await fetch(
+          `http://localhost:5000/api/recommendations/similar/${event._id}?limit=4`,
+          {
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
+          }
+        );
+
+        if (!response.ok) {
+          console.error("Failed to fetch similar events");
+          return;
+        }
+
+        const recommendations = await response.json();
+
+        // Fetch full event details
+        if (recommendations && recommendations.length > 0) {
+          const eventIds = recommendations.map((rec: any) => rec.event_id);
+          const eventDetailsPromises = eventIds.map((id: string) =>
+            fetch(`http://localhost:5000/api/events/${id}`, {
+              headers: token ? { Authorization: `Bearer ${token}` } : {},
+            }).then((res) => res.json())
+          );
+
+          const eventDetails = await Promise.all(eventDetailsPromises);
+          setSimilarEvents(eventDetails.filter((e) => e && e._id));
+        }
+      } catch (err) {
+        console.error("Failed to fetch similar events:", err);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    };
+
+    fetchSimilarEvents();
+  }, [event?._id, open]);
+
   if (!event) return null;
 
   // --- Date Formatting Logic based on Schema ---
@@ -313,6 +367,71 @@ export default function EventDetailsDialog({
                 </div>
               )}
             </div>
+
+            {/* ================= SIMILAR EVENTS ================= */}
+            {similarEvents.length > 0 && (
+              <div className="px-6 pb-6">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles size={18} className="text-[#6A33B8]" />
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-white">
+                    Similar Events
+                  </h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {similarEvents.map((similarEvent) => {
+                    const similarStartDate = similarEvent.startDate
+                      ? new Date(similarEvent.startDate).toLocaleDateString(
+                          "en-US",
+                          {
+                            month: "short",
+                            day: "numeric",
+                          }
+                        )
+                      : "TBA";
+
+                    return (
+                      <div
+                        key={similarEvent._id}
+                        onClick={() => {
+                          onOpenChange(false);
+                          setTimeout(() => {
+                            window.location.href = `/?event=${similarEvent._id}`;
+                          }, 100);
+                        }}
+                        className="group cursor-pointer p-3 rounded-lg border border-slate-200 dark:border-[#6A33B8]/20 bg-white dark:bg-[#130F19] hover:border-[#6A33B8] hover:shadow-md transition-all"
+                      >
+                        <div className="flex gap-3">
+                          <img
+                            src={
+                              similarEvent.bannerImage ||
+                              similarEvent.image ||
+                              getEventImage(similarEvent.eventType || "")
+                            }
+                            alt={similarEvent.name}
+                            className="w-16 h-16 rounded-md object-cover"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <h4 className="text-sm font-semibold text-slate-900 dark:text-white truncate group-hover:text-[#6A33B8] transition-colors">
+                              {similarEvent.name}
+                            </h4>
+                            <div className="flex items-center gap-2 mt-1 text-xs text-slate-600 dark:text-purple-300/70">
+                              <Calendar size={12} />
+                              <span>{similarStartDate}</span>
+                            </div>
+                            <div className="mt-1">
+                              <CategoryBadge
+                                category={similarEvent.eventType}
+                                size="sm"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </motion.div>
         </AnimatePresence>
       </DialogContent>

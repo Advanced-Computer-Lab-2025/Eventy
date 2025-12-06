@@ -11,8 +11,11 @@ import loyaltyPartnerRoutes from "../features/loyaltyPartners/loyaltyPartner.rou
 import feedbackRoutes from "../features/feedback/feedback.routes.js";
 import transactionRoutes from "../features/transactions/transaction.route.js";
 import pollRoutes from "../features/polls/poll.route.js";
+import axios from "axios";
 
 const PORT = process.env.PORT || 4000;
+const RECOMMENDATION_SERVICE_URL =
+  process.env.RECOMMENDATION_SERVICE_URL || "http://localhost:8000";
 const router = express.Router();
 
 // Placeholder route to confirm the API is working
@@ -56,4 +59,93 @@ router.use("/feedback", feedbackRoutes);
 router.use("/transactions", transactionRoutes);
 // poll routes
 router.use("/polls", pollRoutes);
+
+// ============================================
+// AI RECOMMENDATION ROUTES (Proxy to Python Service)
+// ============================================
+
+// Get personalized recommendations for a user
+router.get("/recommendations/user/:userId", verifyToken, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { limit = 8, exclude_registered = true } = req.query;
+
+    const response = await axios.get(
+      `${RECOMMENDATION_SERVICE_URL}/recommendations/user/${userId}`,
+      {
+        params: { limit, exclude_registered },
+        timeout: 5000,
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ Recommendation service error:", error.message);
+    // Fallback to empty array if service is down
+    res.json([]);
+  }
+});
+
+// Get similar events
+router.get("/recommendations/similar/:eventId", async (req, res) => {
+  try {
+    const { eventId } = req.params;
+    const { limit = 6 } = req.query;
+
+    const response = await axios.get(
+      `${RECOMMENDATION_SERVICE_URL}/recommendations/similar/${eventId}`,
+      {
+        params: { limit },
+        timeout: 5000,
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ Recommendation service error:", error.message);
+    res.json([]);
+  }
+});
+
+// Get popular/trending events
+router.get("/recommendations/popular", async (req, res) => {
+  try {
+    const { limit = 10, category, time_range = "week" } = req.query;
+
+    const response = await axios.get(
+      `${RECOMMENDATION_SERVICE_URL}/recommendations/popular`,
+      {
+        params: { limit, category, time_range },
+        timeout: 5000,
+      }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ Recommendation service error:", error.message);
+    res.json([]);
+  }
+});
+
+// Refresh recommendation engine data
+router.post("/recommendations/refresh", verifyToken, async (req, res) => {
+  try {
+    // Only allow admins/staff to refresh
+    if (!["admin", "staff", "events_office"].includes(req.user.role)) {
+      return res.status(403).json({ message: "Unauthorized" });
+    }
+
+    const response = await axios.post(
+      `${RECOMMENDATION_SERVICE_URL}/recommendations/refresh`,
+      {},
+      { timeout: 10000 }
+    );
+
+    res.json(response.data);
+  } catch (error) {
+    console.error("❌ Recommendation service error:", error.message);
+    res.status(500).json({ message: "Failed to refresh recommendations" });
+  }
+});
+
 export default router;
