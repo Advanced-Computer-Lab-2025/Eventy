@@ -421,7 +421,6 @@ export default function EventDetailsDialog({
                             <div className="mt-1">
                               <CategoryBadge
                                 category={similarEvent.eventType}
-                                size="sm"
                               />
                             </div>
                           </div>

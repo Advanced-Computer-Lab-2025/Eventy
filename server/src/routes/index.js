@@ -148,4 +148,41 @@ router.post("/recommendations/refresh", verifyToken, async (req, res) => {
   }
 });
 
+// Track recommendation click (when user clicks a recommended event)
+router.post("/recommendations/track-click", verifyToken, async (req, res) => {
+  try {
+    const { eventId } = req.body;
+    const userId = req.user._id || req.user.id;
+
+    if (!eventId) {
+      return res.status(400).json({ message: "eventId is required" });
+    }
+
+    // Update user's clickedRecommendations array (add to set, limit to last 20)
+    const { User } = await import("../features/users/user.model.js");
+    await User.findByIdAndUpdate(
+      userId,
+      {
+        $addToSet: { clickedRecommendations: eventId },
+      },
+      { new: true }
+    );
+
+    // Trim to last 20 clicks to avoid bloat
+    const user = await User.findById(userId);
+    if (
+      user.clickedRecommendations &&
+      user.clickedRecommendations.length > 20
+    ) {
+      user.clickedRecommendations = user.clickedRecommendations.slice(-20);
+      await user.save();
+    }
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error("❌ Track click error:", error.message);
+    res.status(500).json({ message: "Failed to track click" });
+  }
+});
+
 export default router;

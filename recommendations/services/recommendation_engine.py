@@ -117,8 +117,13 @@ class RecommendationEngine:
         user_data = await self.data_fetcher.get_user_interactions(user_id)
         registered_events = set(user_data["registered_events"])
         favorite_events = set(user_data["favorite_events"])
+        clicked_recommendations = set(user_data.get("clicked_recommendations", []))
         user_role = user_data["user_data"].get("role")
         user_faculty = user_data["user_data"].get("faculty")
+        
+        # STRICT: Return empty if user has NO favorites AND NO registrations
+        if len(favorite_events) == 0 and len(registered_events) == 0:
+            return []
         
         # Compute scores for each event
         event_scores = []
@@ -158,6 +163,20 @@ class RecommendationEngine:
                 score += max_similarity * 50
                 if max_similarity > 0.3:
                     reasons.append("Similar to events you favorited")
+            
+            # Boost events similar to clicked recommendations (weaker signal than favorites)
+            if clicked_recommendations:
+                max_click_similarity = 0
+                for click_id in clicked_recommendations:
+                    if click_id in self.event_id_to_index:
+                        click_idx = self.event_id_to_index[click_id]
+                        event_idx = self.event_id_to_index[event_id]
+                        similarity = self.similarity_matrix[click_idx][event_idx]
+                        max_click_similarity = max(max_click_similarity, similarity)
+                
+                score += max_click_similarity * 20  # Lower weight than favorites (20 vs 50)
+                if max_click_similarity > 0.4 and max_similarity < 0.3:
+                    reasons.append("Similar to events you viewed")
             
             # Faculty match boost
             event_faculty = event.get("faculty")
