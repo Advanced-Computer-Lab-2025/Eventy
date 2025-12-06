@@ -56,8 +56,8 @@ export default function Home() {
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: "" as any,
+    endDate: "" as any,
     professor: "",
     showUpcoming: true,
     showPast: true,
@@ -145,8 +145,8 @@ export default function Home() {
       next.location = filters.location;
     }
     if (filters.startDate && filters.endDate) {
-      next.startDate = filters.startDate;
-      next.endDate = filters.endDate;
+      next.startDate = filters.startDate as any;
+      next.endDate = filters.endDate as any;
     }
     if (filters.professor) {
       (next as any).professor = filters.professor;
@@ -310,6 +310,25 @@ export default function Home() {
     fetchRecommendations();
   }, []);
 
+  // Track when user clicks on a recommended event
+  const trackRecommendationClick = async (eventId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      await fetch("http://localhost:5000/api/recommendations/track-click", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ eventId }),
+      });
+    } catch (err) {
+      console.error("Failed to track recommendation click:", err);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <StudentHeader />
@@ -342,11 +361,12 @@ export default function Home() {
                     key={event._id}
                     id={event._id}
                     title={event.name}
-                    eventType={event.eventType || "event"}
-                    date={event.startDate}
+                    category={(event.eventType || "event") as any}
+                    date={event.startDate || ""}
+                    time={event.startTime || ""}
                     endDate={event.endDate}
-                    startTime={event.startTime}
-                    endTime={event.endTime}
+                    dbStartTime={event.startTime}
+                    dbEndTime={event.endTime}
                     location={
                       event.location ||
                       event.locationPreference ||
@@ -366,6 +386,7 @@ export default function Home() {
                     price={event.price}
                     durationWeeks={event.durationWeeks}
                     vendors={event.vendors}
+                    onViewDetails={() => trackRecommendationClick(event._id)}
                   />
                 ))}
               </div>
