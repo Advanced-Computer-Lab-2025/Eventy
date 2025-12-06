@@ -54,12 +54,16 @@ class DataFetcher:
         # Get user's favorites
         user = self.db.users.find_one({"_id": ObjectId(user_id)})
         favorite_event_ids = []
+        clicked_recommendation_ids = []
         if user and "favorites" in user:
             favorite_event_ids = [str(fav) for fav in user["favorites"]]
+        if user and "clickedRecommendations" in user:
+            clicked_recommendation_ids = [str(click) for click in user["clickedRecommendations"]]
         
         return {
             "registered_events": registered_event_ids,
             "favorite_events": favorite_event_ids,
+            "clicked_recommendations": clicked_recommendation_ids,
             "user_data": {
                 "role": user.get("role") if user else None,
                 "faculty": user.get("faculty") if user else None
