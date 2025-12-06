@@ -159,3 +159,9 @@ server/uploads/
 !uploads/id-cards/.gitkeep
 !server/uploads/.gitkeep
 !server/uploads/id-cards/.gitkeep
+
+# Python: bytecode caches and compiled files
+**/__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
