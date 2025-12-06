@@ -513,6 +513,9 @@ export default function Home() {
                         showDetailedView={true}
                         onSave={() => console.log("Save:", event.name)}
                         onShare={() => console.log("Share:", event.name)}
+                        onViewDetails={() =>
+                          trackRecommendationClick(event._id)
+                        }
                       />
                     ))}
                 </div>

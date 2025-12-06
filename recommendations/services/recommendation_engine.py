@@ -121,10 +121,23 @@ class RecommendationEngine:
         user_role = user_data["user_data"].get("role")
         user_faculty = user_data["user_data"].get("faculty")
         
-        # STRICT: Return empty if user has NO favorites AND NO registrations
-        if len(favorite_events) == 0 and len(registered_events) == 0:
+        # Conservative cold-start strategy:
+        # 1. Completely new users (0 interactions) → return empty
+        total_interactions = len(favorite_events) + len(registered_events) + len(clicked_recommendations)
+        if total_interactions == 0:
             return []
         
+        # 2. Users with clicks but no favorites/registrations → show clicked events + popular
+        has_strong_signal = len(favorite_events) > 0 or len(registered_events) > 0
+        if not has_strong_signal and len(clicked_recommendations) > 0:
+            return await self._get_clicked_and_popular_recommendations(
+                clicked_recommendations,
+                registered_events,
+                user_faculty,
+                limit
+            )
+        
+        # 3. Users with favorites/registrations → full personalized recommendations
         # Compute scores for each event
         event_scores = []
         
@@ -224,6 +237,104 @@ class RecommendationEngine:
                 "event_id": event_id,
                 "score": score,
                 "reason": ", ".join(reasons[:2])  # Top 2 reasons
+            })
+        
+        # Sort by score and return top N
+        event_scores.sort(key=lambda x: x["score"], reverse=True)
+        return event_scores[:limit]
+    
+    async def _get_clicked_and_popular_recommendations(
+        self,
+        clicked_recommendations: set,
+        registered_events: set,
+        user_faculty: Optional[str],
+        limit: int
+    ) -> List[Dict[str, Any]]:
+        """
+        Cold-start strategy for users with clicks but no favorites/registrations.
+        Returns a mix of events similar to clicked ones + trending/popular events.
+        """
+        event_scores = []
+        
+        for event in self.events:
+            event_id = event["_id"]
+            
+            # Skip if already registered
+            if event_id in registered_events:
+                continue
+            
+            # Skip past events
+            start_date = event.get("startDate")
+            if start_date:
+                if isinstance(start_date, str):
+                    start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                if start_date < datetime.now():
+                    continue
+            
+            score = 0
+            reasons = []
+            
+            # Strong weight on popularity for cold-start users
+            popularity = self.popularity_scores.get(event_id, 0)
+            score += popularity * 1.5  # Higher than normal (was 0.3)
+            
+            # Similarity to clicked events (medium weight)
+            max_click_similarity = 0
+            for click_id in clicked_recommendations:
+                if click_id in self.event_id_to_index:
+                    click_idx = self.event_id_to_index[click_id]
+                    event_idx = self.event_id_to_index[event_id]
+                    similarity = self.similarity_matrix[click_idx][event_idx]
+                    max_click_similarity = max(max_click_similarity, similarity)
+            
+            score += max_click_similarity * 30  # Medium weight
+            if max_click_similarity > 0.3:
+                reasons.append("Similar to events you viewed")
+            
+            # Faculty match boost
+            event_faculty = event.get("faculty")
+            if event_faculty and user_faculty and event_faculty == user_faculty:
+                score += 10
+                reasons.append(f"In your faculty ({event_faculty})")
+            
+            # Trending boost
+            if popularity > 20:
+                reasons.append("Trending event")
+            
+            # Registration deadline urgency
+            reg_deadline = event.get("registrationDeadline")
+            if reg_deadline:
+                if isinstance(reg_deadline, str):
+                    reg_deadline = datetime.fromisoformat(reg_deadline.replace('Z', '+00:00'))
+                days_until_deadline = (reg_deadline - datetime.now()).days
+                if 0 < days_until_deadline <= 3:
+                    score += 12  # Higher urgency for cold-start users
+                    reasons.append("Deadline approaching")
+            
+            # Capacity urgency
+            capacity = event.get("capacity")
+            if capacity:
+                # Use registration count from popularity metrics
+                reg_count = 0
+                for metric_id, metrics in self.popularity_scores.items():
+                    if metric_id == event_id:
+                        # Estimate from popularity (this is approximate)
+                        break
+                
+                # Time-based urgency for newer events
+                if start_date:
+                    days_until_event = (start_date - datetime.now()).days
+                    if 0 < days_until_event <= 7:
+                        score += 8
+                        reasons.append("Happening soon")
+            
+            if not reasons:
+                reasons.append("Popular event")
+            
+            event_scores.append({
+                "event_id": event_id,
+                "score": score,
+                "reason": ", ".join(reasons[:2])
             })
         
         # Sort by score and return top N
