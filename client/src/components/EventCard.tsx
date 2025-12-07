@@ -20,6 +20,7 @@ import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { EventPaymentDialog } from "./EventPaymentDialog";
+import { WaitlistDialog } from "./WaitlistDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -182,6 +183,7 @@ export default function EventCard({
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -525,6 +527,7 @@ export default function EventCard({
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || localAttendeeCount < capacity;
+  const isFull = capacity && localAttendeeCount >= capacity;
   const isArchived = status === "archived";
 
   const canRegister =
@@ -533,6 +536,14 @@ export default function EventCard({
     hasCapacity &&
     !isArchived &&
     !isProfessorInWorkshop;
+
+  const canJoinWaitlist =
+    isRegisterable &&
+    isBeforeDeadline &&
+    isFull &&
+    !isArchived &&
+    !isProfessorInWorkshop &&
+    !registered;
 
   const hasPrice = typeof price === "number" && price > 0;
   const formattedPrice = hasPrice
@@ -904,18 +915,28 @@ export default function EventCard({
                     >
                       View Details
                     </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={() =>
-                        requiresPayment
-                          ? setShowPaymentDialog(true)
-                          : handleDirectRegister()
-                      }
-                      data-testid={`button-register-${id}`}
-                      disabled={!canRegister}
-                    >
-                      Register
-                    </Button>
+                    {isFull && canJoinWaitlist ? (
+                      <Button
+                        className="flex-1"
+                        onClick={() => setShowWaitlistDialog(true)}
+                        data-testid={`button-join-waitlist-${id}`}
+                      >
+                        Join Waitlist
+                      </Button>
+                    ) : (
+                      <Button
+                        className="flex-1"
+                        onClick={() =>
+                          requiresPayment
+                            ? setShowPaymentDialog(true)
+                            : handleDirectRegister()
+                        }
+                        data-testid={`button-register-${id}`}
+                        disabled={!canRegister}
+                      >
+                        Register
+                      </Button>
+                    )}
                     {canShowFavorites && (
                       <div
                         className="relative flex-shrink-0"
@@ -1248,18 +1269,28 @@ export default function EventCard({
                           >
                             View Details
                           </Button>
-                          <Button
-                            onClick={() =>
-                              requiresPayment
-                                ? setShowPaymentDialog(true)
-                                : handleDirectRegister()
-                            }
-                            className="flex-1"
-                            data-testid={`button-register-${id}`}
-                            disabled={!canRegister}
-                          >
-                            Register
-                          </Button>
+                          {isFull && canJoinWaitlist ? (
+                            <Button
+                              className="flex-1"
+                              onClick={() => setShowWaitlistDialog(true)}
+                              data-testid={`button-join-waitlist-${id}`}
+                            >
+                              Join Waitlist
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() =>
+                                requiresPayment
+                                  ? setShowPaymentDialog(true)
+                                  : handleDirectRegister()
+                              }
+                              className="flex-1"
+                              data-testid={`button-register-${id}`}
+                              disabled={!canRegister}
+                            >
+                              Register
+                            </Button>
+                          )}
                           {canShowFavorites && (
                             <div
                               className="relative flex-shrink-0"
@@ -1378,6 +1409,15 @@ export default function EventCard({
           }}
         />
       )}
+
+      {/* Waitlist Dialog */}
+      <WaitlistDialog
+        open={showWaitlistDialog}
+        onOpenChange={setShowWaitlistDialog}
+        eventId={id}
+        eventTitle={title}
+        price={price || 0}
+      />
 
       {/* Custom Alert Dialog for Cancellation */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
