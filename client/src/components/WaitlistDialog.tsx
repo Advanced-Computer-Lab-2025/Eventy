@@ -34,18 +34,37 @@ export function WaitlistDialog({
   const handleJoinWaitlist = async () => {
     setIsSubmitting(true);
     try {
-      // TODO: Add backend API call to join waitlist
-      // For now, just show a success message
+      const token = localStorage.getItem("token");
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/events/${eventId}/waitlist`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            autopayEnabled,
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.message || "Failed to join waitlist");
+      }
+
       toast({
         title: "Joined Waitlist!",
         description: `You've been added to the waitlist${autopayEnabled ? " with autopay enabled" : ""}. We'll notify you when a spot becomes available.`,
       });
       onOpenChange(false);
       setAutopayEnabled(false);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to join waitlist. Please try again.",
+        description:
+          error.message || "Failed to join waitlist. Please try again.",
         variant: "destructive",
       });
     } finally {

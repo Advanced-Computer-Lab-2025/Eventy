@@ -17,6 +17,7 @@ import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import mongoose from "mongoose";
 import { differenceInHours } from "date-fns";
+import { Waitlist } from "./waitlist.model.js";
 
 // Store the interval ID for the reminder scheduler
 let reminderInterval;
@@ -1587,6 +1588,15 @@ export const cancelEventRegistration = async (eventId, userId) => {
   );
   await event.save();
 
+  // Check if event now has available capacity and notify waitlist users
+  const currentAttendees = event.attendees.length;
+  const hasCapacity = !event.capacity || currentAttendees < event.capacity;
+
+  if (hasCapacity && event.capacity) {
+    // Notify waitlist users that a spot is available
+    await notifyWaitlistUsers(event._id);
+  }
+
   // Only process refund if event has a price
   if (event.price && !isNaN(event.price) && Number(event.price) > 0) {
     const refund = await transactionService.refundUserForEvent(
@@ -1607,6 +1617,107 @@ export const cancelEventRegistration = async (eventId, userId) => {
       transactionId: null,
       message: "No refund issued as event has no price.",
     };
+  }
+};
+
+/**
+ * Join the waitlist for an event
+ * @param {string} eventId - The ID of the event
+ * @param {string} userId - The ID of the user joining the waitlist
+ * @param {boolean} autopayEnabled - Whether autopay is enabled
+ * @returns {Promise<Object>} The waitlist entry
+ * @throws {ApiError} If event not found, event not full, or user already on waitlist
+ */
+export const joinWaitlist = async (eventId, userId, autopayEnabled = false) => {
+  // Find the event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  // Check if event is full
+  const isFull = event.capacity && event.attendees.length >= event.capacity;
+  if (!isFull) {
+    throw new ApiError(400, "Event is not full. You can register directly.");
+  }
+
+  // Check if user is already registered
+  if (event.attendees && event.attendees.includes(userId)) {
+    throw new ApiError(409, "You are already registered for this event");
+  }
+
+  // Check if user is already on waitlist
+  const existingWaitlist = await Waitlist.findOne({
+    event: eventId,
+    user: userId,
+    deletedAt: null,
+  });
+
+  if (existingWaitlist) {
+    throw new ApiError(409, "You are already on the waitlist for this event");
+  }
+
+  // Create waitlist entry
+  const waitlistEntry = await Waitlist.create({
+    event: eventId,
+    user: userId,
+    autopayEnabled,
+  });
+
+  return waitlistEntry;
+};
+
+/**
+ * Notify waitlist users when a spot becomes available
+ * @param {string} eventId - The ID of the event
+ * @returns {Promise<void>}
+ */
+export const notifyWaitlistUsers = async (eventId) => {
+  try {
+    const event = await Event.findById(eventId);
+    if (!event) return;
+
+    // Get all waitlist entries for this event that haven't been notified
+    const waitlistEntries = await Waitlist.find({
+      event: eventId,
+      deletedAt: null,
+      notified: false,
+    })
+      .populate("user", "firstName lastName email notificationPreferences")
+      .sort({ createdAt: 1 }); // First come, first served
+
+    if (!waitlistEntries.length) return;
+
+    // Get the first user on the waitlist (FIFO)
+    const firstUser = waitlistEntries[0].user;
+
+    // Check if user has notifications enabled
+    if (firstUser.notificationPreferences === false) {
+      return;
+    }
+
+    // Create notification for the first user
+    await NotificationService.createNotification({
+      title: `🎟️ Spot Available: ${event.name}`,
+      message: `A spot has become available for "${event.name}". Register now to secure your place!`,
+      link: `/events/${eventId}`,
+      recipients: [firstUser._id],
+      event: eventId,
+      notificationType: "waitlist_spot_available",
+    });
+
+    // Mark this waitlist entry as notified
+    await Waitlist.findByIdAndUpdate(waitlistEntries[0]._id, {
+      notified: true,
+      notifiedAt: new Date(),
+    });
+
+    console.log(
+      `Notified waitlist user ${firstUser._id} about available spot for event ${eventId}`
+    );
+  } catch (error) {
+    console.error("Error notifying waitlist users:", error);
+    // Don't throw error to not block cancellation
   }
 };
 

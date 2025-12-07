@@ -954,6 +954,45 @@ export class EventsController {
     }
   }
 
+  // Join waitlist for an event (for Student/Staff/TA/Professor)
+  async joinWaitlist(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+      const { autopayEnabled } = req.body;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only students, staff, TAs, and professors can join waitlists."
+        );
+      }
+
+      const waitlistEntry = await eventService.joinWaitlist(
+        eventId,
+        userId,
+        autopayEnabled || false
+      );
+
+      return res
+        .status(201)
+        .json(
+          new ApiResponse(
+            201,
+            waitlistEntry,
+            "Successfully joined the waitlist."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Export registered users for an event in various formats
   async exportEventRegisteredUsers(req, res, next) {
     try {
