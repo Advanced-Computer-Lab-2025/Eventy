@@ -2693,3 +2693,53 @@ export async function getApprovedEventsCount() {
     archivedAt: null,
   });
 }
+
+/**
+ * Upload an image to an ongoing event by a registered attendee
+ * @param {string} eventId - The event ID
+ * @param {string} userId - The user ID (from req.user)
+ * @param {string} imageUrl - The uploaded image URL
+ * @returns {Promise<Object>} - The updated event with new image
+ */
+export const uploadImageToEvent = async (eventId, userId, imageUrl) => {
+  // Find the event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot upload image to a deleted event");
+  }
+
+  // Check if event is ongoing
+  const now = new Date();
+  const isOngoing = event.startDate <= now && event.endDate >= now;
+  if (!isOngoing) {
+    throw new ApiError(400, "Can only upload images to ongoing events");
+  }
+
+  // Check if user is registered attendee
+  const isRegistered = event.attendees.some(
+    (attendeeId) => attendeeId.toString() === userId.toString()
+  );
+  if (!isRegistered) {
+    throw new ApiError(403, "Only registered attendees can upload images");
+  }
+
+  // Add image to event.images array
+  event.images.push({
+    url: imageUrl,
+    uploadedBy: userId,
+    uploadedAt: new Date(),
+  });
+
+  await event.save();
+
+  // Return updated event with populated data
+  const updatedEvent = await Event.findById(eventId)
+    .populate("images.uploadedBy", "firstName lastName email")
+    .populate("attendees", "firstName lastName email");
+
+  return updatedEvent;
+};

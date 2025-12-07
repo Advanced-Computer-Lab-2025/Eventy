@@ -1214,4 +1214,40 @@ export class EventsController {
       next(error);
     }
   }
+
+  async uploadImageToEvent(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id || req.user.id;
+
+      if (!req.file) {
+        throw new ApiError(400, "Image file is required");
+      }
+
+      // Construct the public URL for the uploaded image
+      const relativePath = `/uploads/event-images/${req.file.filename}`;
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const imageUrl = `${protocol}://${host}${relativePath}`;
+
+      const updatedEvent = await eventService.uploadImageToEvent(
+        eventId,
+        userId,
+        imageUrl
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            event: updatedEvent,
+            imageUrl: imageUrl,
+          },
+          "Image uploaded successfully"
+        )
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
 }
