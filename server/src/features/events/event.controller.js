@@ -1250,4 +1250,20 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getEventImages(req, res, next) {
+    try {
+      const { eventId } = req.params;
+
+      const imageData = await eventService.getEventImages(eventId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, imageData, "Event images fetched successfully")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
 }

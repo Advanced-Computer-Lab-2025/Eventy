@@ -258,6 +258,13 @@ router.post(
   eventsController.uploadImageToEvent.bind(eventsController)
 );
 
+// Get all uploaded images for an event
+router.get(
+  "/:eventId/images",
+  authMiddleware,
+  eventsController.getEventImages.bind(eventsController)
+);
+
 // Get past events (events whose endDate has passed) - Events Office / Admin
 router.get(
   "/past",

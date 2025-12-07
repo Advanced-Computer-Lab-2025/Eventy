@@ -2743,3 +2743,30 @@ export const uploadImageToEvent = async (eventId, userId, imageUrl) => {
 
   return updatedEvent;
 };
+
+/**
+ * Get all uploaded images for a specific event
+ * @param {string} eventId - The event ID
+ * @returns {Promise<Array>} - Array of images with uploader details
+ */
+export const getEventImages = async (eventId) => {
+  const event = await Event.findById(eventId)
+    .select("images name eventType")
+    .populate("images.uploadedBy", "firstName lastName email");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view images of a deleted event");
+  }
+
+  return {
+    eventId: event._id,
+    eventName: event.name,
+    eventType: event.eventType,
+    images: event.images || [],
+    totalImages: event.images?.length || 0,
+  };
+};
