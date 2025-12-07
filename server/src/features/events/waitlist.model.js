@@ -20,6 +20,16 @@ const waitlistSchema = new Schema(
       type: Boolean,
       default: false,
     },
+    paymentMethod: {
+      type: String,
+      enum: ["wallet", "credit_card"],
+      default: null,
+    },
+    // For card payments, store the payment intent ID (if created but not confirmed)
+    stripePaymentIntentId: {
+      type: String,
+      default: null,
+    },
     notified: {
       type: Boolean,
       default: false,

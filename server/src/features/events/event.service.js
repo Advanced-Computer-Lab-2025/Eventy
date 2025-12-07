@@ -1625,10 +1625,16 @@ export const cancelEventRegistration = async (eventId, userId) => {
  * @param {string} eventId - The ID of the event
  * @param {string} userId - The ID of the user joining the waitlist
  * @param {boolean} autopayEnabled - Whether autopay is enabled
+ * @param {string} paymentMethod - Payment method preference ("wallet" or "credit_card")
  * @returns {Promise<Object>} The waitlist entry
  * @throws {ApiError} If event not found, event not full, or user already on waitlist
  */
-export const joinWaitlist = async (eventId, userId, autopayEnabled = false) => {
+export const joinWaitlist = async (
+  eventId,
+  userId,
+  autopayEnabled = false,
+  paymentMethod = null
+) => {
   // Find the event
   const event = await Event.findById(eventId);
   if (!event) {
@@ -1657,11 +1663,24 @@ export const joinWaitlist = async (eventId, userId, autopayEnabled = false) => {
     throw new ApiError(409, "You are already on the waitlist for this event");
   }
 
+  // Validate payment method if autopay is enabled
+  if (autopayEnabled && !paymentMethod) {
+    throw new ApiError(
+      400,
+      "Payment method is required when autopay is enabled"
+    );
+  }
+
+  if (autopayEnabled && !["wallet", "credit_card"].includes(paymentMethod)) {
+    throw new ApiError(400, "Invalid payment method");
+  }
+
   // Create waitlist entry
   const waitlistEntry = await Waitlist.create({
     event: eventId,
     user: userId,
     autopayEnabled,
+    paymentMethod: autopayEnabled ? paymentMethod : null,
   });
 
   return waitlistEntry;
@@ -1683,20 +1702,222 @@ export const notifyWaitlistUsers = async (eventId) => {
       deletedAt: null,
       notified: false,
     })
-      .populate("user", "firstName lastName email notificationPreferences")
+      .populate(
+        "user",
+        "firstName lastName email notificationPreferences walletBalance role _id"
+      )
       .sort({ createdAt: 1 }); // First come, first served
 
     if (!waitlistEntries.length) return;
 
     // Get the first user on the waitlist (FIFO)
-    const firstUser = waitlistEntries[0].user;
+    const firstWaitlistEntry = waitlistEntries[0];
+    const firstUser = firstWaitlistEntry.user;
 
     // Check if user has notifications enabled
     if (firstUser.notificationPreferences === false) {
       return;
     }
 
-    // Create notification for the first user
+    // Debug logging
+    console.warn(
+      `Processing waitlist for event ${eventId}: autopayEnabled=${firstWaitlistEntry.autopayEnabled}, paymentMethod=${firstWaitlistEntry.paymentMethod}, userId=${firstUser._id}`
+    );
+
+    // If autopay is enabled, try to process payment and register automatically
+    // Check both autopayEnabled and paymentMethod exist and are truthy
+    // Handle both boolean true and string "true" cases
+    const autopayEnabledValue =
+      firstWaitlistEntry.autopayEnabled === true ||
+      firstWaitlistEntry.autopayEnabled === "true" ||
+      firstWaitlistEntry.autopayEnabled === 1;
+    const hasPaymentMethod =
+      firstWaitlistEntry.paymentMethod &&
+      firstWaitlistEntry.paymentMethod !== null &&
+      firstWaitlistEntry.paymentMethod !== "";
+
+    console.warn(
+      `Autopay check for waitlist entry ${firstWaitlistEntry._id}: autopayEnabledValue=${autopayEnabledValue}, hasPaymentMethod=${hasPaymentMethod}, paymentMethod=${firstWaitlistEntry.paymentMethod}`
+    );
+
+    if (autopayEnabledValue && hasPaymentMethod) {
+      try {
+        const paymentMethod = firstWaitlistEntry.paymentMethod;
+        const eventPrice = event.price || 0;
+
+        // Handle free events - just register directly
+        if (eventPrice === 0) {
+          // Use registerUserToEvent which handles all validations
+          await registerUserToEvent(firstUser, eventId);
+
+          await NotificationService.createNotification({
+            title: `✅ Auto-Registered: ${event.name}`,
+            message: `A spot became available and you've been automatically registered for "${event.name}".`,
+            link: `/events/${eventId}`,
+            recipients: [firstUser._id],
+            event: eventId,
+            notificationType: "waitlist_autopay_success",
+          });
+
+          await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+            deletedAt: new Date(),
+            notified: true,
+            notifiedAt: new Date(),
+          });
+
+          console.warn(
+            `Auto-registered waitlist user ${firstUser._id} for free event ${eventId}`
+          );
+          return;
+        }
+
+        // For paid events, process payment first
+        // For wallet payments, check balance first
+        if (paymentMethod === "wallet") {
+          if (firstUser.walletBalance < eventPrice) {
+            // Insufficient balance - notify user
+            await NotificationService.createNotification({
+              title: `⚠️ Autopay Failed: ${event.name}`,
+              message: `A spot became available for "${event.name}", but your wallet balance is insufficient ($${firstUser.walletBalance.toFixed(2)}). Please top up your wallet to complete registration.`,
+              link: `/events/${eventId}`,
+              recipients: [firstUser._id],
+              event: eventId,
+              notificationType: "waitlist_autopay_failed",
+            });
+
+            // Mark as notified but don't remove from waitlist
+            await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+              notified: true,
+              notifiedAt: new Date(),
+            });
+            return;
+          }
+        }
+
+        // Process payment (wallet or card)
+        const payResult = await transactionService.payForEvent({
+          userId: firstUser._id,
+          eventId: eventId,
+          paymentMethod: paymentMethod,
+        });
+
+        console.warn(
+          `Payment result for waitlist autopay:`,
+          JSON.stringify({
+            paymentMethod,
+            hasPayResult: !!payResult,
+            hasTransaction: !!(payResult && payResult.transaction),
+            hasClientSecret: !!(payResult && payResult.clientSecret),
+          })
+        );
+
+        // For wallet, payment is completed immediately - register user
+        if (paymentMethod === "wallet" && payResult && payResult.transaction) {
+          // Wallet payment succeeded - register user
+          // Use registerUserToEvent which handles all validations
+          // (it will check capacity, but since we just freed a spot, it should pass)
+          await registerUserToEvent(firstUser, eventId);
+
+          // Send success notification
+          await NotificationService.createNotification({
+            title: `✅ Auto-Registered: ${event.name}`,
+            message: `A spot became available and you've been automatically registered for "${event.name}". $${eventPrice.toFixed(2)} has been deducted from your wallet.`,
+            link: `/events/${eventId}`,
+            recipients: [firstUser._id],
+            event: eventId,
+            notificationType: "waitlist_autopay_success",
+          });
+
+          // Remove from waitlist
+          await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+            deletedAt: new Date(),
+            notified: true,
+            notifiedAt: new Date(),
+          });
+
+          console.warn(
+            `Auto-registered waitlist user ${firstUser._id} for event ${eventId} via wallet autopay`
+          );
+          return; // Successfully processed
+        } else if (
+          paymentMethod === "credit_card" &&
+          payResult &&
+          payResult.clientSecret
+        ) {
+          // Card payment intent created - we can't auto-charge without saved payment method
+          // Store payment intent ID in waitlist entry for future reference
+          await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+            stripePaymentIntentId: payResult.transaction.stripePaymentIntentId,
+            notified: true,
+            notifiedAt: new Date(),
+          });
+
+          // Notify user to complete card payment
+          await NotificationService.createNotification({
+            title: `💳 Complete Payment: ${event.name}`,
+            message: `A spot became available for "${event.name}". Please complete your card payment to finalize your registration.`,
+            link: `/events/${eventId}`,
+            recipients: [firstUser._id],
+            event: eventId,
+            notificationType: "waitlist_payment_required",
+          });
+
+          console.warn(
+            `Notified waitlist user ${firstUser._id} to complete card payment for event ${eventId}`
+          );
+          return;
+        } else {
+          // Payment was processed but didn't match expected conditions
+          console.error(
+            `Unexpected payment result for waitlist autopay:`,
+            JSON.stringify({
+              paymentMethod,
+              payResult: payResult ? Object.keys(payResult) : null,
+              hasTransaction: !!(payResult && payResult.transaction),
+              hasClientSecret: !!(payResult && payResult.clientSecret),
+            })
+          );
+          // Fall through to error handling
+          throw new Error(
+            `Unexpected payment result structure for ${paymentMethod}`
+          );
+        }
+      } catch (autopayError) {
+        console.error("Error processing autopay:", autopayError);
+        console.error("Autopay error details:", {
+          error: autopayError.message,
+          stack: autopayError.stack,
+          userId: firstUser._id,
+          eventId: eventId,
+          autopayEnabled: firstWaitlistEntry.autopayEnabled,
+          paymentMethod: firstWaitlistEntry.paymentMethod,
+        });
+
+        // Send failure notification
+        await NotificationService.createNotification({
+          title: `⚠️ Autopay Failed: ${event.name}`,
+          message: `A spot became available for "${event.name}", but automatic payment failed: ${autopayError.message}. Please register manually.`,
+          link: `/events/${eventId}`,
+          recipients: [firstUser._id],
+          event: eventId,
+          notificationType: "waitlist_autopay_failed",
+        });
+
+        // Mark as notified
+        await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+          notified: true,
+          notifiedAt: new Date(),
+        });
+        return;
+      }
+    } else {
+      // Debug: Log why autopay wasn't triggered
+      console.warn(
+        `Autopay not triggered for waitlist entry: autopayEnabled=${firstWaitlistEntry.autopayEnabled}, paymentMethod=${firstWaitlistEntry.paymentMethod}`
+      );
+    }
+
+    // No autopay enabled - send regular notification
     await NotificationService.createNotification({
       title: `🎟️ Spot Available: ${event.name}`,
       message: `A spot has become available for "${event.name}". Register now to secure your place!`,
@@ -1707,12 +1928,12 @@ export const notifyWaitlistUsers = async (eventId) => {
     });
 
     // Mark this waitlist entry as notified
-    await Waitlist.findByIdAndUpdate(waitlistEntries[0]._id, {
+    await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
       notified: true,
       notifiedAt: new Date(),
     });
 
-    console.log(
+    console.warn(
       `Notified waitlist user ${firstUser._id} about available spot for event ${eventId}`
     );
   } catch (error) {

@@ -143,6 +143,8 @@ interface EventPaymentDialogProps {
   eventId: string;
   price: number;
   onRegistered: () => void;
+  waitlistMode?: boolean;
+  onPaymentMethodSelected?: (method: "wallet" | "credit_card") => void;
 }
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -153,6 +155,8 @@ export function EventPaymentDialog({
   eventId,
   price,
   onRegistered,
+  waitlistMode = false,
+  onPaymentMethodSelected,
 }: EventPaymentDialogProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -176,6 +180,17 @@ export function EventPaymentDialog({
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+
+      if (waitlistMode) {
+        // In waitlist mode, just store the payment method preference
+        // For card payments, user will need to complete payment when notified
+        if (onPaymentMethodSelected) {
+          onPaymentMethodSelected("credit_card");
+        }
+        onOpenChange(false);
+        return;
+      }
+
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/transactions/pay/${eventId}`,
         {
@@ -221,6 +236,15 @@ export function EventPaymentDialog({
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+
+      if (waitlistMode) {
+        // In waitlist mode, just store the payment method preference
+        if (onPaymentMethodSelected) {
+          onPaymentMethodSelected("wallet");
+        }
+        onOpenChange(false);
+        return;
+      }
 
       // Step A: Deduct Money
       const payRes = await fetch(
@@ -317,10 +341,12 @@ export function EventPaymentDialog({
       <DialogContent className="sm:max-w-[900px] p-8 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="mb-4 text-left">
           <DialogTitle className="text-2xl font-bold">
-            Event Registration & Payment
+            {waitlistMode ? "Set Up Autopay" : "Event Registration & Payment"}
           </DialogTitle>
           <DialogDescription>
-            Securely pay and register for this event.
+            {waitlistMode
+              ? "Select your payment method for automatic payment when a spot becomes available."
+              : "Securely pay and register for this event."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-8 pt-4 items-start">
@@ -418,6 +444,12 @@ export function EventPaymentDialog({
                 >
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : waitlistMode ? (
+                    paymentMethod === "card" ? (
+                      "Set Up Card Payment"
+                    ) : (
+                      "Use Wallet"
+                    )
                   ) : paymentMethod === "card" ? (
                     `Proceed to Card Details`
                   ) : (

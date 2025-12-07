@@ -959,7 +959,7 @@ export class EventsController {
     try {
       const userId = req.user._id || req.user.id;
       const { eventId } = req.params;
-      const { autopayEnabled } = req.body;
+      const { autopayEnabled, paymentMethod } = req.body;
 
       if (!userId) {
         throw new ApiError(401, "Unauthorized");
@@ -976,7 +976,8 @@ export class EventsController {
       const waitlistEntry = await eventService.joinWaitlist(
         eventId,
         userId,
-        autopayEnabled || false
+        autopayEnabled || false,
+        paymentMethod || null
       );
 
       return res
