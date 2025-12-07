@@ -205,7 +205,21 @@ const eventSchema = new Schema(
     // Reminder tracking fields
     reminder1DaySent: { type: Boolean, default: false },
     reminder1HourSent: { type: Boolean, default: false },
-    // timestamps option for mongoose schema
+
+    // ✅ FEATURE 4: RESALE MARKET LISTINGS
+    resaleListings: [
+      {
+        sellerId: { type: Schema.Types.ObjectId, ref: "User" },
+        originalPrice: Number,
+        status: {
+          type: String,
+          enum: ["available", "sold"],
+          default: "available",
+        },
+        buyerId: { type: Schema.Types.ObjectId, ref: "User" }, // Who bought it?
+        listedAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
