@@ -538,6 +538,34 @@ export const getUpcomingEventsWithVendors = async (
   return eventsWithVendors;
 };
 
+/**
+ * Get all ongoing events (events that have started but not ended yet).
+ * @param {string|null} userRole - The role of the user requesting events
+ * @returns {Promise<Array>} Array of ongoing event objects.
+ */
+export const getOngoingEvents = async (userRole = null) => {
+  const now = new Date();
+
+  const filter = {
+    status: "approved",
+    deletedAt: null,
+    startDate: { $lte: now }, // Event has already started
+    endDate: { $gte: now }, // Event hasn't ended yet
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
+    .populate("professors", "firstName lastName email")
+    .populate("createdBy", "name email companyName")
+    .lean();
+
+  return events;
+};
+
 export async function deleteEvent(eventId, user) {
   // Ensure event exists
   const event = await Event.findById(eventId);

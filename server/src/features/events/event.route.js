@@ -181,6 +181,21 @@ router.get(
   eventsController.getUpcomingEvents.bind(eventsController)
 );
 
+// Get ongoing events (events that have started but not ended yet)
+router.get(
+  "/ongoing",
+  authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
+  eventsController.getOngoingEvents.bind(eventsController)
+);
+
 // Get past events (events whose endDate has passed) - Events Office / Admin
 router.get(
   "/past",

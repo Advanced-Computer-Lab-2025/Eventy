@@ -644,6 +644,21 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getOngoingEvents(req, res, next) {
+    try {
+      const userRole = req.user?.role;
+      const events = await eventService.getOngoingEvents(userRole);
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Ongoing events fetched successfully.")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   //search events by name and type
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
