@@ -6,6 +6,13 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 const router = express.Router();
 const eventsController = new EventsController();
 
+// Record view
+router.post(
+  "/:eventId/view",
+  authMiddleware,
+  eventsController.recordView.bind(eventsController)
+);
+
 router.get(
   "/gettrips",
   authMiddleware,

@@ -2665,3 +2665,7 @@ export async function getApprovedEventsCount() {
     archivedAt: null,
   });
 }
+
+export const incrementViewCount = async (eventId) => {
+  await Event.findByIdAndUpdate(eventId, { $inc: { viewCount: 1 } });
+};

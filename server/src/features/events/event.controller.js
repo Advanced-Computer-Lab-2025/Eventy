@@ -1199,4 +1199,24 @@ export class EventsController {
       next(error);
     }
   }
+
+  async recordView(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id;
+
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { viewedEvents: eventId },
+      });
+
+      // Increment global view count for the event
+      await eventService.incrementViewCount(eventId);
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error recording view:", error);
+      // Don't block the UI for this background task
+      return res.status(200).json({ success: false });
+    }
+  }
 }
