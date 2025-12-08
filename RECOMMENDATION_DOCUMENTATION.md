@@ -88,3 +88,27 @@ The system compares the **User Vector** against all **Upcoming Event Vectors** u
 - **Model:** `@xenova/transformers` (all-MiniLM-L6-v2) running locally in Node.js.
 - **Database:** MongoDB (Mongoose) for storing events and user history.
 - **Algorithm:** Weighted Cosine Similarity with Hybrid Filtering.
+
+## AI Server Setup
+
+To run the recommendation engine locally, ensure the following setup:
+
+### 1. Dependencies
+
+The project uses `@xenova/transformers` for local inference.
+
+```bash
+npm install @xenova/transformers
+```
+
+### 2. Model Download
+
+The model `Xenova/all-MiniLM-L6-v2` is downloaded automatically to the `node_modules` or cache folder upon the first execution of the recommendation service.
+
+- **First Run:** May take a few moments to download the model (~90MB).
+- **Subsequent Runs:** Loads instantly from cache.
+
+### 3. Environment
+
+- **Node.js:** Required (v18+ recommended).
+- **Memory:** The model is lightweight and runs efficiently on standard development machines.
