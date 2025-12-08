@@ -180,7 +180,7 @@ export const getRecommendationsForUser = async (userId) => {
     return {
       type: "personalized",
       events: topRecommendations,
-      reason: "AI-Curated based on your history",
+      reason: "Based on your recent activity",
     };
   } catch (error) {
     console.error("AI Recommendation Error:", error);
