@@ -11,6 +11,7 @@ import loyaltyPartnerRoutes from "../features/loyaltyPartners/loyaltyPartner.rou
 import feedbackRoutes from "../features/feedback/feedback.routes.js";
 import transactionRoutes from "../features/transactions/transaction.route.js";
 import pollRoutes from "../features/polls/poll.route.js";
+import recommendationRoutes from "../features/recommendations/recommendation.route.js";
 
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
@@ -56,4 +57,6 @@ router.use("/feedback", feedbackRoutes);
 router.use("/transactions", transactionRoutes);
 // poll routes
 router.use("/polls", pollRoutes);
+// recommendation routes
+router.use("/recommendations", recommendationRoutes);
 export default router;
