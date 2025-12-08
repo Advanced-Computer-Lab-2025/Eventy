@@ -1,0 +1,223 @@
+import { useState, useEffect } from "react";
+import {
+  Sparkles,
+  TrendingUp,
+  Calendar,
+  MapPin,
+  ArrowRight,
+  RotateCcw,
+} from "lucide-react";
+import { getEventImage } from "@/lib/eventImages";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import CategoryBadge from "./CategoryBadge";
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import { useToast } from "@/hooks/use-toast";
+
+interface RecommendationResponse {
+  type: "popular" | "personalized";
+  events: any[];
+  reason: string;
+}
+
+function CompactEventCard({ event }: { event: any }) {
+  const [showDetails, setShowDetails] = useState(false);
+
+  return (
+    <>
+      <Card
+        className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group border-primary/10"
+        onClick={() => setShowDetails(true)}
+      >
+        <div className="relative h-32 overflow-hidden shrink-0">
+          <img
+            src={
+              event.image || event.bannerImage || getEventImage(event.eventType)
+            }
+            alt={event.name}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+          />
+          <div className="absolute top-2 right-2">
+            <CategoryBadge
+              category={
+                event.eventType === "platform_booth" ? "booth" : event.eventType
+              }
+            />
+          </div>
+        </div>
+        <CardContent className="p-3 flex flex-col flex-1">
+          <h3
+            className="font-semibold text-sm line-clamp-2 mb-2 leading-tight transition-colors"
+            title={event.name}
+          >
+            {event.name}
+          </h3>
+          <div className="space-y-2 mb-3">
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="w-3 h-3 shrink-0" />
+              <span>{new Date(event.startDate).toLocaleDateString()}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <MapPin className="w-3 h-3 shrink-0" />
+              <span className="line-clamp-1">{event.location || "TBD"}</span>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full mt-auto"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowDetails(true);
+            }}
+          >
+            View Details
+          </Button>
+        </CardContent>
+      </Card>
+
+      <EventDetailsDialog
+        open={showDetails}
+        onOpenChange={setShowDetails}
+        event={{
+          _id: event._id,
+          id: event._id,
+          name: event.name, // Changed from title to name
+          eventType:
+            event.eventType === "platform_booth" ? "booth" : event.eventType, // Changed from category to eventType
+          date: new Date(event.startDate).toLocaleDateString(),
+          time: event.startTime || "TBD",
+          location: event.location || "TBD",
+          attendees: event.attendees?.length || 0,
+          attendeesList: event.attendees,
+          image:
+            event.image || event.bannerImage || getEventImage(event.eventType),
+          description: event.description,
+          startDate: event.startDate,
+          endDate: event.endDate,
+          startTime: event.startTime, // Added explicit startTime
+          endTime: event.endTime, // Added explicit endTime
+          dbStartTime: event.startTime,
+          dbEndTime: event.endTime,
+          price: event.price,
+          capacity: event.capacity,
+          registrationDeadline: event.registrationDeadline,
+          vendors: event.vendors,
+          status: event.status,
+          createdBy: event.createdBy,
+          agenda: event.agenda,
+          professors: event.professors,
+          faculty: event.faculty,
+          boothSize: event.boothSize,
+          durationWeeks: event.durationWeeks,
+        }}
+      />
+    </>
+  );
+}
+
+export default function Recommendations() {
+  const [data, setData] = useState<RecommendationResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const handleReset = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+
+      await fetch(`${API_BASE_URL}/api/recommendations/reset`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      toast({
+        title: "Recommendations Reset",
+        description: "Your interaction history has been cleared.",
+      });
+
+      window.location.reload();
+    } catch (err) {
+      console.error("Failed to reset", err);
+    }
+  };
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+        const res = await fetch(`${API_BASE_URL}/api/recommendations`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.data.events.length > 0) {
+            setData(json.data);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch recommendations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecommendations();
+  }, []);
+
+  if (loading || !data) return null;
+
+  return (
+    <div className="mb-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center gap-3 px-1">
+        <div
+          className={`p-2 rounded-full ${data.type === "personalized" ? "bg-primary/10 text-primary" : "bg-orange-500/10 text-orange-500"}`}
+        >
+          {data.type === "personalized" ? (
+            <Sparkles className="h-5 w-5 animate-pulse" />
+          ) : (
+            <TrendingUp className="h-5 w-5" />
+          )}
+        </div>
+        <div>
+          <h2 className="text-xl font-bold tracking-tight">
+            {data.type === "personalized"
+              ? "Recommended for You"
+              : "Popular Events"}
+          </h2>
+          <p className="text-sm text-muted-foreground">{data.reason}</p>
+        </div>
+        <div className="ml-auto">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleReset}
+            title="Reset Recommendations (Demo)"
+          >
+            <RotateCcw className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </div>
+      </div>
+
+      <div className="relative group/container pt-2 -mx-6 px-6">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+          {data.events.slice(0, 5).map((event) => (
+            <div
+              key={event._id}
+              className="min-w-[230px] w-[230px] snap-start relative mt-1"
+            >
+              <CompactEventCard event={event} />
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
