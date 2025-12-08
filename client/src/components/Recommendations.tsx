@@ -175,7 +175,7 @@ export default function Recommendations() {
   if (loading || !data) return null;
 
   return (
-    <div className="mb-8 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="mb-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center gap-3 px-1">
         <div
           className={`p-2 rounded-full ${data.type === "personalized" ? "bg-primary/10 text-primary" : "bg-orange-500/10 text-orange-500"}`}
