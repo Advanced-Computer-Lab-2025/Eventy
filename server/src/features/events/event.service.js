@@ -549,8 +549,9 @@ export const getOngoingEvents = async (userRole = null) => {
   const filter = {
     status: "approved",
     deletedAt: null,
+    // Include both ongoing events and past events
+    // Remove the endDate filter to include past events
     startDate: { $lte: now }, // Event has already started
-    endDate: { $gte: now }, // Event hasn't ended yet
   };
 
   // Filter out events where the user's role is restricted

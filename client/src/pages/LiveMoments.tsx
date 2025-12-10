@@ -8,6 +8,7 @@ import {
   Eye,
   ChevronLeft,
   ChevronRight,
+  ImageOff,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import StudentHeader from "@/components/StudentHeader";
@@ -246,8 +247,16 @@ function LiveEventCard({ event }: { event: Event }) {
                 </div>
               )}
               {images.length === 0 && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                  <Camera className="h-12 w-12 text-muted-foreground" />
+                <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-muted to-muted/50">
+                  <ImageOff className="h-12 w-12 text-muted-foreground/50 mb-2" />
+                  <p className="text-sm text-muted-foreground/70 font-medium">
+                    No photos yet
+                  </p>
+                  {isRegistered && (
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      Be the first to share!
+                    </p>
+                  )}
                 </div>
               )}
             </>
@@ -417,14 +426,21 @@ function LiveEventCard({ event }: { event: Event }) {
 export default function LiveMoments() {
   const { toast } = useToast();
   const [userRole, setUserRole] = useState<string | null>(null);
+  const [eventImageCounts, setEventImageCounts] = useState<
+    Record<string, number>
+  >({});
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Get user role from localStorage
+  // Get user role and ID from localStorage
   useEffect(() => {
     try {
       const user = localStorage.getItem("user");
       if (user) {
         const parsed = JSON.parse(user);
+        console.log("Parsed user from localStorage:", parsed);
         setUserRole(parsed.role);
+        setCurrentUserId(parsed._id || parsed.id);
+        console.log("Set current user ID to:", parsed._id || parsed.id);
       }
     } catch (err) {
       console.error("Error parsing user data:", err);
@@ -436,9 +452,25 @@ export default function LiveMoments() {
     isLoading,
     error,
   } = useQuery<Event[]>({
-    queryKey: ["ongoing-events"],
+    queryKey: ["ongoing-events", currentUserId], // Add currentUserId as dependency
     queryFn: async () => {
       const token = localStorage.getItem("token");
+
+      // Get current user ID directly from localStorage in the query
+      let userId = currentUserId;
+      if (!userId) {
+        try {
+          const user = localStorage.getItem("user");
+          if (user) {
+            const parsed = JSON.parse(user);
+            userId = parsed._id || parsed.id;
+          }
+        } catch (err) {
+          console.error("Error getting user ID:", err);
+        }
+      }
+
+      console.log("Query running with user ID:", userId);
       const response = await fetch(`${API_BASE_URL}/api/events/ongoing`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -458,7 +490,96 @@ export default function LiveMoments() {
 
       const result = await response.json();
       console.log("Ongoing events response:", result);
-      return result.data || [];
+      const events = result.data || [];
+
+      // Fetch image counts for all events
+      const counts: Record<string, number> = {};
+      await Promise.all(
+        events.map(async (event: Event) => {
+          try {
+            const imgResponse = await fetch(
+              `${API_BASE_URL}/api/events/${event._id}/images`,
+              {
+                headers: {
+                  Authorization: `Bearer ${token}`,
+                  "Content-Type": "application/json",
+                },
+              }
+            );
+            if (imgResponse.ok) {
+              const imgResult = await imgResponse.json();
+              counts[event._id] = imgResult.data?.images?.length || 0;
+            } else {
+              counts[event._id] = 0;
+            }
+          } catch {
+            counts[event._id] = 0;
+          }
+        })
+      );
+
+      setEventImageCounts(counts);
+
+      console.log("Current User ID in filter:", userId);
+
+      // Filter events: show only if user is registered OR event has photos
+      const filteredEvents = events.filter((event: Event) => {
+        const hasPhotos = (counts[event._id] || 0) > 0;
+
+        // Log attendees for debugging
+        if (event.name === "Yehia's Bazaar") {
+          console.log("DEBUG - Yehia's Bazaar details:", {
+            eventId: event._id,
+            attendees: event.attendees,
+            attendeesType: typeof event.attendees,
+            userId,
+            userIdType: typeof userId,
+          });
+        }
+
+        const isRegistered =
+          userId &&
+          event.attendees?.some((attendee: any) => {
+            const attendeeId = attendee._id || attendee;
+            const match =
+              attendeeId === userId || String(attendeeId) === String(userId);
+
+            if (event.name === "Yehia's Bazaar") {
+              console.log("Checking attendee:", {
+                attendee,
+                attendeeId,
+                userId,
+                attendeeIdString: String(attendeeId),
+                userIdString: String(userId),
+                match,
+              });
+            }
+
+            return match;
+          });
+
+        console.log(`Event: ${event.name}`, {
+          eventId: event._id,
+          hasPhotos,
+          isRegistered,
+          userId,
+          attendeesCount: event.attendees?.length,
+          willShow: hasPhotos || isRegistered,
+        });
+
+        return hasPhotos || isRegistered;
+      });
+
+      console.log(
+        `Total events: ${events.length}, Filtered events: ${filteredEvents.length}`
+      );
+
+      // Sort filtered events by image count (descending)
+      return filteredEvents.sort((a: Event, b: Event) => {
+        const countA = counts[a._id] || 0;
+        const countB = counts[b._id] || 0;
+        return countB - countA;
+      });
     },
   });
 
@@ -488,11 +609,29 @@ export default function LiveMoments() {
       )}
 
       <main className="max-w-7xl mx-auto px-4 md:px-6 py-8">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold">Live Moments</h1>
-          <p className="text-muted-foreground">
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold mb-2">Live Moments</h1>
+          <p className="text-muted-foreground mb-6">
             Capture and share moments from events happening right now
           </p>
+
+          <div className="relative rounded-xl overflow-hidden shadow-lg border-4 border-primary/20">
+            <img
+              src="/images/acl pic.jpg"
+              alt="Campus Events"
+              className="w-full h-auto object-contain"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end">
+              <div className="p-6">
+                <p className="text-white font-bold text-4xl md:text-4xl drop-shadow-2xl leading-tight">
+                  Share the Best Moments
+                </p>
+                <p className="text-white font-bold text-4xl md:text-4xl drop-shadow-2xl leading-tight">
+                  Skip the FOMO
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         {isLoading ? (
