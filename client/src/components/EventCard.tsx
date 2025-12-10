@@ -192,6 +192,8 @@ export default function EventCard({
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
+  const [isOnWaitlist, setIsOnWaitlist] = useState(false);
+  const [isCheckingWaitlist, setIsCheckingWaitlist] = useState(false);
 
   // --- HELPER TO CONVERT 24H STRING TO 12H ---
   const formatStringTime = (timeStr?: string) => {
@@ -916,13 +918,24 @@ export default function EventCard({
                       View Details
                     </Button>
                     {isFull && canJoinWaitlist ? (
-                      <Button
-                        className="flex-1"
-                        onClick={() => setShowWaitlistDialog(true)}
-                        data-testid={`button-join-waitlist-${id}`}
-                      >
-                        Join Waitlist
-                      </Button>
+                      isOnWaitlist ? (
+                        <Button
+                          className="flex-1"
+                          disabled
+                          variant="outline"
+                          data-testid={`button-waitlisted-${id}`}
+                        >
+                          {isCheckingWaitlist ? "Checking..." : "Waitlisted"}
+                        </Button>
+                      ) : (
+                        <Button
+                          className="flex-1"
+                          onClick={() => setShowWaitlistDialog(true)}
+                          data-testid={`button-join-waitlist-${id}`}
+                        >
+                          Join Waitlist
+                        </Button>
+                      )
                     ) : (
                       <Button
                         className="flex-1"
@@ -1270,13 +1283,26 @@ export default function EventCard({
                             View Details
                           </Button>
                           {isFull && canJoinWaitlist ? (
-                            <Button
-                              className="flex-1"
-                              onClick={() => setShowWaitlistDialog(true)}
-                              data-testid={`button-join-waitlist-${id}`}
-                            >
-                              Join Waitlist
-                            </Button>
+                            isOnWaitlist ? (
+                              <Button
+                                className="flex-1"
+                                disabled
+                                variant="outline"
+                                data-testid={`button-waitlisted-${id}`}
+                              >
+                                {isCheckingWaitlist
+                                  ? "Checking..."
+                                  : "Waitlisted"}
+                              </Button>
+                            ) : (
+                              <Button
+                                className="flex-1"
+                                onClick={() => setShowWaitlistDialog(true)}
+                                data-testid={`button-join-waitlist-${id}`}
+                              >
+                                Join Waitlist
+                              </Button>
+                            )
                           ) : (
                             <Button
                               onClick={() =>
@@ -1414,6 +1440,53 @@ export default function EventCard({
       <WaitlistDialog
         open={showWaitlistDialog}
         onOpenChange={setShowWaitlistDialog}
+        onJoined={async () => {
+          // Set state optimistically first - this will update the UI immediately
+          console.log("onJoined callback called, setting isOnWaitlist to true");
+          setIsOnWaitlist(true);
+
+          // Use setTimeout to ensure state update is processed before async operations
+          setTimeout(async () => {
+            // Then verify with backend after a short delay
+            try {
+              const token = localStorage.getItem("token");
+              if (!token) {
+                // If no token, keep optimistic state
+                return;
+              }
+
+              // Small delay to ensure backend has processed the join
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
+              const res = await fetch(
+                `${API_BASE_URL}/api/events/${id}/waitlist/status`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              if (res.ok) {
+                const data = await res.json();
+                console.log(
+                  "Waitlist status verified:",
+                  data.data?.isOnWaitlist
+                );
+                // Update with actual backend state
+                setIsOnWaitlist(data.data?.isOnWaitlist || false);
+              } else {
+                // If check fails, keep optimistic state
+                console.warn(
+                  "Failed to verify waitlist status, keeping optimistic state"
+                );
+              }
+            } catch (error) {
+              console.error("Error checking waitlist status:", error);
+              // Keep optimistic state on error
+            }
+          }, 0);
+        }}
         eventId={id}
         eventTitle={title}
         price={price || 0}

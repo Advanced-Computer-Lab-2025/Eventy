@@ -19,6 +19,7 @@ interface WaitlistDialogProps {
   eventId: string;
   eventTitle?: string;
   price?: number;
+  onJoined?: () => void; // Callback when successfully joined
 }
 
 export function WaitlistDialog({
@@ -27,6 +28,7 @@ export function WaitlistDialog({
   eventId,
   eventTitle,
   price = 0,
+  onJoined,
 }: WaitlistDialogProps) {
   const [autopayEnabled, setAutopayEnabled] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
@@ -98,6 +100,12 @@ export function WaitlistDialog({
         title: "Joined Waitlist!",
         description: `You've been added to the waitlist${finalAutopayEnabled ? " with autopay enabled" : ""}. We'll notify you when a spot becomes available.`,
       });
+
+      // Call the onJoined callback if provided BEFORE closing dialog
+      if (onJoined) {
+        await onJoined();
+      }
+
       onOpenChange(false);
       setAutopayEnabled(false);
       setPaymentMethod(null);

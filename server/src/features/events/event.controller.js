@@ -994,6 +994,32 @@ export class EventsController {
     }
   }
 
+  // Check waitlist status for an event (for Student/Staff/TA/Professor)
+  async checkWaitlistStatus(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      const waitlistEntry = await eventService.checkWaitlistStatus(
+        eventId,
+        userId
+      );
+
+      return res.status(200).json(
+        new ApiResponse(200, {
+          isOnWaitlist: !!waitlistEntry,
+          waitlistEntry: waitlistEntry || null,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Export registered users for an event in various formats
   async exportEventRegisteredUsers(req, res, next) {
     try {

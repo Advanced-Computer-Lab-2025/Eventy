@@ -15,6 +15,12 @@ import { TransactionService } from "../transactions/transaction.service.js";
 const transactionService = new TransactionService();
 import { Transaction } from "../transactions/transaction.model.js";
 import NotificationService from "../notifications/notification.service.js";
+import {
+  sendWaitlistAutopaySuccessEmail,
+  sendWaitlistSpotAvailableEmail,
+  sendWaitlistAutopayFailedEmail,
+  sendWaitlistPaymentRequiredEmail,
+} from "../auth/email.service.js";
 import mongoose from "mongoose";
 import { differenceInHours } from "date-fns";
 import { Waitlist } from "./waitlist.model.js";
@@ -417,6 +423,21 @@ export const registerUserToEvent = async (user, eventId) => {
   // 5️⃣ Register the user
   event.attendees.push(user._id);
   await event.save();
+
+  // 6️⃣ Remove user from waitlist if they were on it
+  // This handles cases where someone was notified and then manually registered
+  await Waitlist.updateMany(
+    {
+      event: eventId,
+      user: user._id,
+      deletedAt: null, // Only update active waitlist entries
+    },
+    {
+      deletedAt: new Date(),
+      notified: true,
+      notifiedAt: new Date(),
+    }
+  );
 
   // Return the updated event document so callers can use it immediately
   const updatedEvent = await Event.findById(eventId).populate(
@@ -1641,6 +1662,18 @@ export const joinWaitlist = async (
     throw new ApiError(404, "Event not found");
   }
 
+  // Check if registration deadline has passed
+  if (event.registrationDeadline) {
+    const deadline = new Date(event.registrationDeadline);
+    const now = new Date();
+    if (now > deadline) {
+      throw new ApiError(
+        400,
+        "Registration deadline has passed. Waitlist is no longer available."
+      );
+    }
+  }
+
   // Check if event is full
   const isFull = event.capacity && event.attendees.length >= event.capacity;
   if (!isFull) {
@@ -1687,6 +1720,22 @@ export const joinWaitlist = async (
 };
 
 /**
+ * Check if a user is on the waitlist for an event
+ * @param {string} eventId - The ID of the event
+ * @param {string} userId - The ID of the user
+ * @returns {Promise<Object|null>} The waitlist entry if found, null otherwise
+ */
+export const checkWaitlistStatus = async (eventId, userId) => {
+  const waitlistEntry = await Waitlist.findOne({
+    event: eventId,
+    user: userId,
+    deletedAt: null, // Only check active waitlist entries
+  });
+
+  return waitlistEntry;
+};
+
+/**
  * Notify waitlist users when a spot becomes available
  * @param {string} eventId - The ID of the event
  * @returns {Promise<void>}
@@ -1695,6 +1744,18 @@ export const notifyWaitlistUsers = async (eventId) => {
   try {
     const event = await Event.findById(eventId);
     if (!event) return;
+
+    // Don't notify waitlist users if registration deadline has passed
+    if (event.registrationDeadline) {
+      const deadline = new Date(event.registrationDeadline);
+      const now = new Date();
+      if (now > deadline) {
+        console.warn(
+          `Registration deadline passed for event ${eventId}, not notifying waitlist users`
+        );
+        return;
+      }
+    }
 
     // Get all waitlist entries for this event that haven't been notified
     const waitlistEntries = await Waitlist.find({
@@ -1710,9 +1771,60 @@ export const notifyWaitlistUsers = async (eventId) => {
 
     if (!waitlistEntries.length) return;
 
+    // Clean up: Remove waitlist entries for users who are already registered
+    // This handles cases where someone was notified and manually registered
+    const registeredUserIds = event.attendees.map((id) => id.toString());
+
+    for (const entry of waitlistEntries) {
+      const userId = entry.user._id.toString();
+      if (registeredUserIds.includes(userId)) {
+        // User is already registered, remove from waitlist
+        await Waitlist.findByIdAndUpdate(entry._id, {
+          deletedAt: new Date(),
+          notified: true,
+          notifiedAt: new Date(),
+        });
+        console.warn(
+          `Removed waitlist entry for already-registered user ${userId} for event ${eventId}`
+        );
+      }
+    }
+
+    // Get fresh waitlist entries after cleanup
+    const activeWaitlistEntries = await Waitlist.find({
+      event: eventId,
+      deletedAt: null,
+      notified: false,
+    })
+      .populate(
+        "user",
+        "firstName lastName email notificationPreferences walletBalance role _id"
+      )
+      .sort({ createdAt: 1 });
+
+    if (!activeWaitlistEntries.length) return;
+
     // Get the first user on the waitlist (FIFO)
-    const firstWaitlistEntry = waitlistEntries[0];
+    const firstWaitlistEntry = activeWaitlistEntries[0];
     const firstUser = firstWaitlistEntry.user;
+
+    // Double-check: If user is already registered, skip them
+    const isAlreadyRegistered = event.attendees.some(
+      (attendeeId) => attendeeId.toString() === firstUser._id.toString()
+    );
+
+    if (isAlreadyRegistered) {
+      // Remove from waitlist and skip
+      await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
+        deletedAt: new Date(),
+        notified: true,
+        notifiedAt: new Date(),
+      });
+      console.warn(
+        `Skipping waitlist entry - user ${firstUser._id} already registered for event ${eventId}`
+      );
+      return;
+    }
 
     // Check if user has notifications enabled
     if (firstUser.notificationPreferences === false) {
@@ -1759,6 +1871,9 @@ export const notifyWaitlistUsers = async (eventId) => {
             notificationType: "waitlist_autopay_success",
           });
 
+          // Send email notification
+          await sendWaitlistAutopaySuccessEmail(firstUser, event, 0);
+
           await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
             deletedAt: new Date(),
             notified: true,
@@ -1784,6 +1899,13 @@ export const notifyWaitlistUsers = async (eventId) => {
               event: eventId,
               notificationType: "waitlist_autopay_failed",
             });
+
+            // Send email notification
+            await sendWaitlistAutopayFailedEmail(
+              firstUser,
+              event,
+              `Insufficient wallet balance ($${firstUser.walletBalance.toFixed(2)})`
+            );
 
             // Mark as notified but don't remove from waitlist
             await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
@@ -1828,6 +1950,9 @@ export const notifyWaitlistUsers = async (eventId) => {
             notificationType: "waitlist_autopay_success",
           });
 
+          // Send email notification
+          await sendWaitlistAutopaySuccessEmail(firstUser, event, eventPrice);
+
           // Remove from waitlist
           await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
             deletedAt: new Date(),
@@ -1861,6 +1986,9 @@ export const notifyWaitlistUsers = async (eventId) => {
             event: eventId,
             notificationType: "waitlist_payment_required",
           });
+
+          // Send email notification
+          await sendWaitlistPaymentRequiredEmail(firstUser, event);
 
           console.warn(
             `Notified waitlist user ${firstUser._id} to complete card payment for event ${eventId}`
@@ -1903,6 +2031,13 @@ export const notifyWaitlistUsers = async (eventId) => {
           notificationType: "waitlist_autopay_failed",
         });
 
+        // Send email notification
+        await sendWaitlistAutopayFailedEmail(
+          firstUser,
+          event,
+          autopayError.message
+        );
+
         // Mark as notified
         await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
           notified: true,
@@ -1926,6 +2061,9 @@ export const notifyWaitlistUsers = async (eventId) => {
       event: eventId,
       notificationType: "waitlist_spot_available",
     });
+
+    // Send email notification
+    await sendWaitlistSpotAvailableEmail(firstUser, event);
 
     // Mark this waitlist entry as notified
     await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
