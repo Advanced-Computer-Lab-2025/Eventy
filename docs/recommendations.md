@@ -66,7 +66,8 @@ The system compares the **User Vector** against all **Upcoming Event Vectors** u
 ### 4. Filtering
 
 - **Already Attending:** Events the user is already registered for are excluded.
-- **Past Events:** Only future events are considered.
+- **Past Events / Started Events:** Only future events are considered. Note: the recommendation service requires the event `startDate` to be strictly in the future (i.e. `startDate > now`) so events that have already started (or are starting at the current instant) will not be recommended.
+- **Soft-deleted Events:** Events that have been soft-deleted are excluded (the query requires `deletedAt: null`).
 - **Registration Closed:** Events where the registration deadline has passed are excluded.
 - **Threshold:** Only events with a similarity score > 0.2 are shown.
 
