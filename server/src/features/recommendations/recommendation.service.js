@@ -49,10 +49,12 @@ export const getRecommendationsForUser = async (userId) => {
 
     // 4. Get Candidates (Upcoming, Approved, Not already attending, Registration Open)
     const candidates = await Event.find({
-      startDate: { $gte: now },
+      // Only future events (strictly greater than now) and not soft-deleted
+      startDate: { $gt: now },
       registrationDeadline: { $gte: now },
       status: "approved",
       attendees: { $ne: userId },
+      deletedAt: null,
     }).populate("professors", "firstName lastName name username");
 
     if (candidates.length === 0) {
