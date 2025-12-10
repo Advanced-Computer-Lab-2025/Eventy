@@ -48,14 +48,28 @@ export const getRecommendationsForUser = async (userId) => {
       registeredEvents.length > 0 || totalInteractions >= 5;
 
     // 4. Get Candidates (Upcoming, Approved, Not already attending, Registration Open)
-    const candidates = await Event.find({
+    // Build a filter and respect event role restrictions so we don't recommend events
+    // the user shouldn't see (restrictedRoles contains role).
+    const userRole = user?.role || null;
+
+    const candidateFilter = {
       // Only future events (strictly greater than now) and not soft-deleted
       startDate: { $gt: now },
       registrationDeadline: { $gte: now },
       status: "approved",
       attendees: { $ne: userId },
       deletedAt: null,
-    }).populate("professors", "firstName lastName name username");
+    };
+
+    // If the user is not admin or events_office, exclude events that restrict their role
+    if (userRole && userRole !== "admin" && userRole !== "events_office") {
+      candidateFilter.restrictedRoles = { $ne: userRole };
+    }
+
+    const candidates = await Event.find(candidateFilter).populate(
+      "professors",
+      "firstName lastName name username"
+    );
 
     if (candidates.length === 0) {
       return { type: "hidden", events: [], reason: "No upcoming events" };
