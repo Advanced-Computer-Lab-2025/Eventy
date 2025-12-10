@@ -55,7 +55,11 @@ export const getRecommendationsForUser = async (userId) => {
     const candidateFilter = {
       // Only future events (strictly greater than now) and not soft-deleted
       startDate: { $gt: now },
-      registrationDeadline: { $gte: now },
+      // Allow events where registrationDeadline is still open OR missing/null
+      $or: [
+        { registrationDeadline: { $gte: now } },
+        { registrationDeadline: null },
+      ],
       status: "approved",
       attendees: { $ne: userId },
       deletedAt: null,

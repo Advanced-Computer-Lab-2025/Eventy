@@ -68,7 +68,7 @@ The system compares the **User Vector** against all **Upcoming Event Vectors** u
 - **Already Attending:** Events the user is already registered for are excluded.
 - **Past Events / Started Events:** The recommendation service only considers future events. Specifically, candidates must have `startDate > now` (strictly in the future) — events that have already started or are starting now are not considered.
 - **Soft-deleted Events:** Events that have been soft-deleted are excluded (the query requires `deletedAt: null`).
-- **Registration Closed / Open:** Candidates must have their `registrationDeadline` still open (i.e. `registrationDeadline >= now`). Important: if an event document does not include `registrationDeadline`, it will currently be excluded by the recommendation query — plan accordingly or add a `registrationDeadline` when creating events you want discoverable.
+- **Registration Closed / Open:** Candidates must have their `registrationDeadline` still open (i.e. `registrationDeadline >= now`) or have no registration deadline set. Events that intentionally omit `registrationDeadline` (for example `platform_booth`) will be included as discoverable by recommendations.
 - **Role Restrictions:** The recommendation engine respects event-level access rules. If an event's `restrictedRoles` array includes the user's role, that event will be excluded from recommendations for that user (admin and `events_office` bypass this restriction).
 - **Threshold:** Only events with a similarity score > 0.2 are shown.
 
