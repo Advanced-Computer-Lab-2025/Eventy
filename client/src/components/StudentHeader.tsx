@@ -10,6 +10,7 @@ import {
   Wallet,
   Store,
   Star,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
@@ -95,6 +96,14 @@ export default function StudentHeader({
             onClick={() => setLocation("/my-events")}
           >
             <Calendar className="h-4 w-4" /> My Events
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/live-moments" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/live-moments")}
+          >
+            <Camera className="h-4 w-4" /> Live Moments
           </Button>
           <Button
             variant="ghost"
