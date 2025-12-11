@@ -304,7 +304,7 @@ function LiveEventCard({ event }: { event: Event }) {
                 {isRegistered && (
                   <Button
                     size="sm"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white group transition-all"
+                    className="flex-1 group transition-all"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploading}
                   >
@@ -324,7 +324,7 @@ function LiveEventCard({ event }: { event: Event }) {
                 {images.length > 0 && (
                   <Button
                     size="sm"
-                    className="flex-1 bg-purple-600 hover:bg-purple-700 text-white group transition-all"
+                    className="flex-1 group transition-all"
                     onClick={() => {
                       setDialogImageIndex(0);
                       setViewDialogOpen(true);
