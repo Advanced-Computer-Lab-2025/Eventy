@@ -325,9 +325,12 @@ export function ResaleMarketplaceDialog({
             )}
           </div>
 
-          {/* Footer */}
-          <DialogFooter className="p-3 bg-muted/40 border-t text-[10px] text-muted-foreground text-center justify-center">
-            <div className="flex items-center gap-1.5 opacity-70">
+          <DialogFooter className="flex-col gap-1 p-3 bg-muted/40 border-t text-[10px] text-muted-foreground text-center justify-center">
+            <div className="flex items-center justify-center gap-1.5 font-semibold text-purple-700 dark:text-purple-400">
+              <Info className="h-3 w-3" />
+              <span>Please note: Service fees are non-refundable.</span>
+            </div>
+            <div className="flex items-center justify-center gap-1.5 opacity-70">
               <Receipt className="h-3 w-3" /> 100% Secure Transaction • Proceeds
               support Student Activities.
             </div>
