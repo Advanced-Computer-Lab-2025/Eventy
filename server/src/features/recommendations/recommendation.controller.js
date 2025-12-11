@@ -24,7 +24,7 @@ export const resetRecommendations = async (req, res) => {
   try {
     const userId = req.user._id;
 
-    // 1. Clear User fields
+    // 1. Clear User fields (views and favorites only)
     await User.findByIdAndUpdate(userId, {
       $set: {
         viewedEvents: [],
@@ -33,10 +33,12 @@ export const resetRecommendations = async (req, res) => {
     });
 
     // 2. Remove from Event attendees
-    await Event.updateMany(
-      { attendees: userId },
-      { $pull: { attendees: userId } }
-    );
+    // COMMENTED OUT: This was unregistering users from all events
+    // Only clearing recommendation history, not actual registrations
+    // await Event.updateMany(
+    //   { attendees: userId },
+    //   { $pull: { attendees: userId } }
+    // );
 
     res.status(200).json({
       success: true,
