@@ -12,7 +12,6 @@ import { getEventImage } from "@/lib/eventImages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import CategoryBadge from "./CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { EventPaymentDialog } from "./EventPaymentDialog";
@@ -140,11 +139,14 @@ function CompactEventCard({ event }: { event: any }) {
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
           />
           <div className="absolute top-2 right-2">
-            <CategoryBadge
-              category={
-                event.eventType === "platform_booth" ? "booth" : event.eventType
-              }
-            />
+            <Badge
+              variant="default"
+              className="capitalize text-xs font-semibold"
+            >
+              {event.eventType === "platform_booth"
+                ? "Platform Booth"
+                : String(event.eventType).replace(/_/g, " ")}
+            </Badge>
           </div>
         </div>
         <CardContent className="p-3 flex flex-col flex-1">
