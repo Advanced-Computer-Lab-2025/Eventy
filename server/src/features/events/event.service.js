@@ -2723,6 +2723,8 @@ export const listTicketForResale = async (eventId, userId) => {
 /**
  * Get available resale tickets for a specific event
  */
+// In your eventService.js
+
 export const getResaleTickets = async (eventId) => {
   const event = await Event.findById(eventId).populate(
     "resaleListings.sellerId",
@@ -2732,8 +2734,19 @@ export const getResaleTickets = async (eventId) => {
 
   if (!event.resaleListings) return [];
 
-  // Filter only available tickets
-  return event.resaleListings.filter((l) => l.status === "available");
+  // Filter available tickets
+  return event.resaleListings
+    .filter((l) => l.status === "available")
+    .map((ticket) => {
+      const ticketObj = ticket.toObject ? ticket.toObject() : ticket;
+
+      const basePrice = ticketObj.originalPrice || 0;
+
+      return {
+        ...ticketObj,
+        finalPrice: basePrice * 1.15, // Calculate 15% markup
+      };
+    });
 };
 /**
  * GENERAL MARKETPLACE: Get all available tickets across ALL events.
