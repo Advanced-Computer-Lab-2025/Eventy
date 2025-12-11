@@ -79,16 +79,6 @@ export default function AdminHeader() {
           <Button
             variant="ghost"
             size="sm"
-            className={`gap-2 ${location === "/live-moments" ? "underline decoration-primary decoration-2" : ""}`}
-            data-testid="button-nav-live-moments"
-            onClick={() => setLocation("/live-moments")}
-          >
-            <Camera className="h-4 w-4" />
-            Live Moments
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             className={`gap-2 ${location === "/admin/users" ? "underline decoration-primary decoration-2" : ""}`}
             data-testid="button-nav-users"
             onClick={() => setLocation("/admin/users")}
