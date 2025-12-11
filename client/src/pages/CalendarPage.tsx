@@ -1,0 +1,241 @@
+import { useEffect, useState } from "react";
+import { useLocation } from "wouter";
+import StudentHeader from "@/components/StudentHeader";
+import BigCalendarView from "@/components/BigCalendarView";
+import GoogleCalendarIntegration from "@/components/GoogleCalendarIntegration";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Calendar as CalendarIcon, Download, Filter } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+
+const API_BASE_URL = "http://localhost:4000";
+
+interface Event {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  location?: string;
+  description?: string;
+  eventType?: string;
+  attendeesCount?: number;
+  bannerImage?: string;
+  price?: number;
+  status?: string;
+}
+
+export default function CalendarPage() {
+  const [, navigate] = useLocation();
+  const [events, setEvents] = useState<Event[]>([]);
+  const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+
+  useEffect(() => {
+    fetchUserEvents();
+  }, []);
+
+  useEffect(() => {
+    // Apply filters
+    let filtered = events;
+
+    if (eventTypeFilter !== "all") {
+      filtered = filtered.filter(
+        (event) => event.eventType === eventTypeFilter
+      );
+    }
+
+    setFilteredEvents(filtered);
+  }, [events, eventTypeFilter]);
+
+  const fetchUserEvents = async () => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        console.error("Failed to fetch events:", res.statusText);
+        setEvents([]);
+        return;
+      }
+
+      const data = await res.json();
+      setEvents(data.data || []);
+      setFilteredEvents(data.data || []);
+    } catch (err) {
+      console.error("Error fetching events:", err);
+      setEvents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleMiniCalendarDateClick = (date: Date) => {
+    setSelectedDate(date);
+    // Switch to day view in big calendar
+    const calendarTab = document.querySelector('[data-calendar-tab="big"]');
+    if (calendarTab) {
+      (calendarTab as HTMLElement).click();
+    }
+  };
+
+  const exportCalendar = () => {
+    // Generate ICS file for download
+    const icsContent = generateICSForAllEvents(filteredEvents);
+    const blob = new Blob([icsContent], { type: "text/calendar" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "eventy-calendar.ics";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const generateICSForAllEvents = (events: Event[]): string => {
+    const lines = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Eventy//Calendar//EN",
+      "CALSCALE:GREGORIAN",
+      "METHOD:PUBLISH",
+      "X-WR-CALNAME:Eventy Events",
+      "X-WR-TIMEZONE:Africa/Cairo",
+    ];
+
+    events.forEach((event) => {
+      const startDate = new Date(event.startDate);
+      const endDate = new Date(event.endDate);
+
+      const formatDate = (date: Date) => {
+        return date.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+      };
+
+      lines.push(
+        "BEGIN:VEVENT",
+        `UID:${event._id}@eventy.com`,
+        `DTSTAMP:${formatDate(new Date())}`,
+        `DTSTART:${formatDate(startDate)}`,
+        `DTEND:${formatDate(endDate)}`,
+        `SUMMARY:${event.name}`,
+        `DESCRIPTION:${event.description || "Event details available on Eventy"}`,
+        `LOCATION:${event.location || "TBD"}`,
+        "STATUS:CONFIRMED",
+        "END:VEVENT"
+      );
+    });
+
+    lines.push("END:VCALENDAR");
+    return lines.join("\r\n");
+  };
+
+  const eventTypes = Array.from(
+    new Set(events.map((e) => e.eventType).filter(Boolean))
+  );
+
+  return (
+    <>
+      <StudentHeader />
+      <div className="container mx-auto px-4 py-8">
+        {/* Action Buttons */}
+        <div className="flex items-center justify-end gap-2 mb-6">
+          <GoogleCalendarIntegration />
+          <Button variant="outline" size="sm" onClick={exportCalendar}>
+            <Download className="h-4 w-4 mr-2" />
+            Export Calendar
+          </Button>
+        </div>
+
+        {/* Filters */}
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Filter className="h-5 w-5" />
+              Filters
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <Select
+                  value={eventTypeFilter}
+                  onValueChange={setEventTypeFilter}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="All Event Types" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Event Types</SelectItem>
+                    {eventTypes.map((type) => (
+                      <SelectItem
+                        key={type}
+                        value={type!}
+                        className="capitalize"
+                      >
+                        {type}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {eventTypeFilter !== "all" && (
+                <Button
+                  variant="outline"
+                  onClick={() => setEventTypeFilter("all")}
+                >
+                  Clear Filters
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 gap-6">
+          {/* Big Calendar */}
+          <div>
+            {loading ? (
+              <Card className="p-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Loading your calendar...
+                  </p>
+                </div>
+              </Card>
+            ) : filteredEvents.length === 0 ? (
+              <Card className="p-12">
+                <div className="text-center">
+                  <CalendarIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold mb-2">No Events Yet</h3>
+                  <p className="text-muted-foreground mb-6">
+                    Start exploring and register for exciting campus events!
+                  </p>
+                  <Button onClick={() => navigate("/")}>Browse Events</Button>
+                </div>
+              </Card>
+            ) : (
+              <BigCalendarView
+                events={filteredEvents}
+                defaultDate={selectedDate || undefined}
+                defaultView={selectedDate ? "day" : "month"}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

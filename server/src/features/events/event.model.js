@@ -205,6 +205,18 @@ const eventSchema = new Schema(
     // Reminder tracking fields
     reminder1DaySent: { type: Boolean, default: false },
     reminder1HourSent: { type: Boolean, default: false },
+
+    // Google Calendar integration
+    googleCalendarEvents: [
+      {
+        userId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        googleEventId: String,
+        htmlLink: String,
+      },
+    ],
     // timestamps option for mongoose schema
   },
   { timestamps: true }

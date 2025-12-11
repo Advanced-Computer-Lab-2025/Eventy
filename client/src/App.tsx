@@ -42,6 +42,7 @@ import EventsOfficeReportPage from "@/pages/EventsReportPage";
 import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
+import CalendarPage from "@/pages/CalendarPage";
 function Router() {
   return (
     <Switch>
@@ -246,6 +247,8 @@ function Router() {
           <SalesReport />
         </ProtectedRoute>
       </Route>
+
+      <Route path="/calendar" component={CalendarPage} />
 
       <Route component={NotFound} />
     </Switch>

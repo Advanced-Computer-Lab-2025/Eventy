@@ -17,7 +17,8 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 import { useEffect, useState } from "react";
-import WalletPopover from "./WalletPopover"; // Import the new WalletPopover
+import WalletPopover from "./WalletPopover";
+import CalendarPopover from "./CalendarPopover";
 
 interface StudentHeaderProps {
   homeHref?: string;
@@ -61,6 +62,7 @@ export default function StudentHeader({
           <div className="flex items-center gap-1 sm:gap-2">
             {/* The WalletPopover now contains its own trigger button */}
             <WalletPopover />
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />

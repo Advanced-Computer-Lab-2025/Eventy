@@ -90,6 +90,15 @@ const userSchema = new mongoose.Schema(
         default: [],
       },
     ],
+    googleCalendarTokens: {
+      access_token: String,
+      refresh_token: String,
+      expiry_date: Number,
+    },
+    calendarConnected: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
