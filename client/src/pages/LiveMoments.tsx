@@ -285,11 +285,9 @@ function LiveEventCard({ event }: { event: Event }) {
             </div>
           </div>
 
-          {images.length > 0 && (
-            <div className="text-xs text-muted-foreground pt-2 border-t">
-              {images.length} photo{images.length !== 1 ? "s" : ""} shared
-            </div>
-          )}
+          <div className="text-xs text-muted-foreground pt-2 border-t">
+            {images.length} photo{images.length !== 1 ? "s" : ""} shared
+          </div>
 
           {/* Action buttons */}
           {(isRegistered || images.length > 0) && (
