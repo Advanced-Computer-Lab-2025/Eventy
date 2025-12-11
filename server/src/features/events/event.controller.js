@@ -1255,7 +1255,8 @@ export class EventsController {
     try {
       const { eventId } = req.params;
 
-      const imageData = await eventService.getEventImages(eventId);
+      const user = req.user || null;
+      const imageData = await eventService.getEventImages(eventId, user);
 
       return res
         .status(200)

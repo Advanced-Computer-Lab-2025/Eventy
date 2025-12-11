@@ -262,6 +262,14 @@ router.post(
 router.get(
   "/:eventId/images",
   authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
   eventsController.getEventImages.bind(eventsController)
 );
 

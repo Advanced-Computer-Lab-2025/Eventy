@@ -2720,6 +2720,11 @@ export const uploadImageToEvent = async (eventId, userId, imageUrl) => {
     throw new ApiError(400, "Can only upload images to ongoing events");
   }
 
+  // Ensure event is approved before allowing uploads
+  if (event.status !== "approved") {
+    throw new ApiError(403, "Cannot upload images to an unapproved event");
+  }
+
   // Check if user is registered attendee
   const isRegistered = event.attendees.some(
     (attendeeId) => attendeeId.toString() === userId.toString()
@@ -2750,9 +2755,9 @@ export const uploadImageToEvent = async (eventId, userId, imageUrl) => {
  * @param {string} eventId - The event ID
  * @returns {Promise<Array>} - Array of images with uploader details
  */
-export const getEventImages = async (eventId) => {
+export const getEventImages = async (eventId, user = null) => {
   const event = await Event.findById(eventId)
-    .select("images name eventType")
+    .select("images name eventType restrictedRoles status deletedAt archivedAt")
     .populate("images.uploadedBy", "firstName lastName email");
 
   if (!event) {
@@ -2761,6 +2766,24 @@ export const getEventImages = async (eventId) => {
 
   if (event.deletedAt) {
     throw new ApiError(400, "Cannot view images of a deleted event");
+  }
+
+  // Only approved events' images are viewable
+  if (event.status !== "approved") {
+    throw new ApiError(
+      403,
+      "Event images are not available for unapproved events"
+    );
+  }
+
+  // If a user is provided, ensure their role is not restricted from this event
+  if (user && user.role && Array.isArray(event.restrictedRoles)) {
+    if (event.restrictedRoles.includes(user.role)) {
+      throw new ApiError(
+        403,
+        "You are restricted from viewing images of this event"
+      );
+    }
   }
 
   return {
