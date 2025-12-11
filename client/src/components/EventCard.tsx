@@ -10,6 +10,8 @@ import {
   DollarSign,
   ArchiveRestore,
   Edit,
+  Ticket,
+  ShoppingBag,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
@@ -20,6 +22,7 @@ import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { EventPaymentDialog } from "./EventPaymentDialog";
+import { ResaleMarketplaceDialog } from "./ResaleMarketplaceDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -81,6 +84,19 @@ interface Vendor {
   type?: string;
   boothSize?: string;
   attendees?: number;
+}
+
+interface ResaleListing {
+  _id: string;
+  sellerId: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  price: number;
+  originalPrice: number;
+  status: "available" | "sold" | "cancelled";
+  createdAt: string;
 }
 
 export interface EventCardProps {
@@ -186,31 +202,56 @@ export default function EventCard({
   const [isCanceling, setIsCanceling] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
+  // --- SELLER RESALE STATES ---
+  const [showResaleConfirmationDialog, setShowResaleConfirmationDialog] =
+    useState(false);
+  const [isListing, setIsListing] = useState(false);
+  const [isAlreadyListed, setIsAlreadyListed] = useState(false);
+
+  // --- BUYER RESALE MARKETPLACE STATES ---
+  const [showMarketplaceDialog, setShowMarketplaceDialog] = useState(false);
+  const [resaleTickets, setResaleTickets] = useState<ResaleListing[]>([]);
+  const [isLoadingResale, setIsLoadingResale] = useState(false);
+
   const [internalDetailsOpen, setInternalDetailsOpen] = useState(false);
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
 
+  // Check if ticket is already listed (for My Events view)
+  useEffect(() => {
+    if (eventData?.resaleListings && Array.isArray(eventData.resaleListings)) {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const currentUserId = payload?.id || payload?._id;
+
+          const listed = eventData.resaleListings.some(
+            (l: any) =>
+              (l.sellerId === currentUserId ||
+                l.sellerId?._id === currentUserId) &&
+              l.status === "available"
+          );
+          setIsAlreadyListed(listed);
+        }
+      } catch (e) {}
+    }
+  }, [eventData]);
+
   // --- HELPER TO CONVERT 24H STRING TO 12H ---
   const formatStringTime = (timeStr?: string) => {
     if (!timeStr) return null;
-
-    // If string is in HH:mm format (e.g. "23:52" or "09:30")
     if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
       const [hoursStr, minutesStr] = timeStr.split(":");
       let hours = parseInt(hoursStr, 10);
       const suffix = hours >= 12 ? "PM" : "AM";
-
       hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
-
+      hours = hours ? hours : 12;
       return `${hours}:${minutesStr} ${suffix}`;
     }
-
-    // Return original if it doesn't match expected format
     return timeStr;
   };
-  // --------------------------------------------
 
   // Check if current user is a professor in this workshop
   useEffect(() => {
@@ -223,7 +264,6 @@ export default function EventCard({
           const userRole = payload?.role;
 
           if (userRole === "professor" && currentUserId) {
-            // Check eventData first, then internalEventDetails
             const professors =
               eventData?.professors || internalEventDetails?.professors || [];
             if (professors.length > 0) {
@@ -243,7 +283,6 @@ export default function EventCard({
           }
         }
       } catch (err) {
-        // If parsing fails, continue without the check
         setIsProfessorInWorkshop(false);
       }
     } else {
@@ -251,14 +290,14 @@ export default function EventCard({
     }
   }, [category, eventData, internalEventDetails]);
 
-  // Share handler
   const handleShare = async () => {
     if (onShare) {
       onShare();
       return;
     }
-
-    const shareText = `Check out this event: ${title}${location ? ` at ${location}` : ""}${date ? ` on ${date}` : ""}`;
+    const shareText = `Check out this event: ${title}${
+      location ? ` at ${location}` : ""
+    }${date ? ` on ${date}` : ""}`;
     const shareUrl = `${window.location.origin}/events/${id}`;
 
     if (navigator.share) {
@@ -280,9 +319,7 @@ export default function EventCard({
           title: "Link copied",
           description: "Event link copied to clipboard!",
         });
-      } catch (err) {
-        // Fallback...
-      }
+      } catch (err) {}
     }
   };
 
@@ -291,22 +328,17 @@ export default function EventCard({
       e.stopPropagation();
       e.preventDefault();
     }
-
     if (onViewDetails) {
       onViewDetails();
       return;
     }
-
-    // FIX: Use passed eventData if available to avoid fetch error
     if (eventData) {
       setInternalEventDetails(eventData);
       setInternalDetailsOpen(true);
       return;
     }
-
     setInternalDetailsOpen(true);
     setIsFetchingDetails(true);
-
     try {
       const token = localStorage.getItem("token");
       const res = await fetch(`${API_BASE_URL}/api/events/${id}`, {
@@ -315,13 +347,10 @@ export default function EventCard({
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
-
       if (!res.ok) throw new Error("Failed to fetch details");
-
       const data = await res.json();
       setInternalEventDetails(data.data);
     } catch (err) {
-      console.error("Error fetching event details:", err);
       toast({
         title: "Error",
         description: "Could not load event details.",
@@ -340,28 +369,19 @@ export default function EventCard({
   }, [attendees]);
 
   const isPlatformBooth = /booth|platform_booth/i.test(String(category));
-
-  // Helper to identify conferences
   const isConference = /conference/i.test(String(category));
-
   const isRegisterable =
     !isPlatformBooth && /workshop|trip|conference/i.test(String(category));
-
   const isBazaar = /bazaar/i.test(String(category));
-
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
-
-  // Display category name (human readable)
   const displayCategory = isPlatformBooth
     ? "Platform Booth"
     : String(category)
         .replace(/_/g, " ")
         .replace(/\b\w/g, (c) => c.toUpperCase());
-
   const imageSrc = image || getEventImage(eventTypeForImage, title);
-
   const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
   );
@@ -373,9 +393,7 @@ export default function EventCard({
         `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/register`,
         {
           method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       if (!res.ok) {
@@ -389,33 +407,86 @@ export default function EventCard({
         return;
       }
       const data = await res.json().catch(() => null);
-
       toast({
         title: "Registered!",
         description: "You are now registered for this event.",
       });
-
-      // Update local UI state
       setRegistered(true);
       setLocalAttendeeCount((prev) => prev + 1);
-
-      // Dispatch a custom event so other parts of the app (e.g. MyEvents)
-      // can react and refetch their data if needed
       try {
         window.dispatchEvent(
           new CustomEvent("event:registered", {
             detail: { eventId: id, event: data?.event || null },
           })
         );
-      } catch (e) {
-        // ignore if dispatch not supported
-      }
+      } catch (e) {}
     } catch {
       toast({
         title: "Error",
         description: "Could not register for event.",
         variant: "destructive",
       });
+    }
+  };
+
+  // --- SELLER: LIST TICKET ---
+  const handleResaleListing = async () => {
+    setIsListing(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/resale/list`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to list ticket");
+      }
+      toast({
+        title: "Ticket Listed!",
+        description: "Your ticket is now listed on the marketplace.",
+      });
+      setIsAlreadyListed(true);
+    } catch (err: any) {
+      toast({
+        title: "Listing Failed",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsListing(false);
+      setShowResaleConfirmationDialog(false);
+    }
+  };
+
+  // --- BUYER: FETCH TICKETS ---
+  const handleFetchResaleTickets = async () => {
+    setIsLoadingResale(true);
+    setShowMarketplaceDialog(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/resale`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) throw new Error("Failed to fetch tickets");
+
+      const data = await res.json();
+      setResaleTickets(data.data || []);
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error",
+        description: "Could not load resale tickets.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoadingResale(false);
     }
   };
 
@@ -427,28 +498,20 @@ export default function EventCard({
         `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/cancel`,
         {
           method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
-
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || "Failed to cancel registration");
       }
-
       toast({
         title: "Registration Cancelled",
         description: "You have successfully cancelled your registration.",
       });
-
       setRegistered(false);
       setLocalAttendeeCount((prev) => Math.max(0, prev - 1));
-
-      if (onUnregister) {
-        onUnregister();
-      }
+      if (onUnregister) onUnregister();
     } catch (error: any) {
       toast({
         title: "Cancellation Failed",
@@ -567,6 +630,41 @@ export default function EventCard({
     </Button>
   );
 
+  // --- DATE LOGIC FOR 14-DAY RULE ---
+  const getActionStatus = () => {
+    if (!startDate) return { canCancel: true, canResell: false, days: 99 };
+
+    const eventDate = new Date(startDate);
+    const today = new Date();
+    const diffTime = eventDate.getTime() - today.getTime();
+    const daysUntilEvent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffTime < 0)
+      return { canCancel: false, canResell: false, isExpired: true, days: -1 };
+
+    // Logic: If days >= 14, allow Cancel. If < 14, allow Resale.
+    if (daysUntilEvent >= 14) {
+      return { canCancel: true, canResell: false, days: daysUntilEvent };
+    } else {
+      return { canCancel: false, canResell: true, days: daysUntilEvent };
+    }
+  };
+
+  const {
+    canCancel,
+    canResell,
+    isExpired,
+    days: daysUntilEvent,
+  } = getActionStatus();
+
+  // Flag for Unregistered user viewing event < 14 days away
+  const showResaleMarketplaceOption =
+    !registered &&
+    !isArchived &&
+    daysUntilEvent < 14 &&
+    daysUntilEvent >= 0 &&
+    isRegisterable;
+
   if (isDeleted) return null;
 
   return (
@@ -611,13 +709,12 @@ export default function EventCard({
                 )}
 
                 <div className="space-y-2 text-sm">
-                  {/* Date & Time */}
                   <div className="flex items-start text-muted-foreground">
                     <Calendar className="mr-2 h-4 w-4 mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
                       {startDate && endDate ? (
                         <div>
-                          {formatDate(startDate)}, {/* APPLY HELPER HERE */}
+                          {formatDate(startDate)},{" "}
                           {formatStringTime(dbStartTime) ||
                             formatTime(startDate)}{" "}
                           → {formatDate(endDate)},{" "}
@@ -638,7 +735,6 @@ export default function EventCard({
                     </div>
                   </div>
 
-                  {/* Location - HIDE IF CONFERENCE */}
                   {location && !isConference && (
                     <div className="flex items-center text-muted-foreground">
                       <MapPin className="mr-2 h-4 w-4 flex-shrink-0" />
@@ -762,9 +858,7 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {
-                              // parent handles errors
-                            }
+                            } catch (err) {}
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-${id}`}
@@ -849,9 +943,7 @@ export default function EventCard({
                             (e as any).stopPropagation();
                           try {
                             await onArchive();
-                          } catch (err) {
-                            // parent handles errors
-                          }
+                          } catch (err) {}
                         }}
                         disabled={isArchiving}
                         data-testid={`button-archive-${id}`}
@@ -893,7 +985,6 @@ export default function EventCard({
                 ) : showRegisterButton &&
                   !hideRegisterButton &&
                   isRegisterable &&
-                  isBeforeDeadline &&
                   !isArchived &&
                   !isProfessorInWorkshop ? (
                   <div className="flex gap-2 w-full items-center">
@@ -904,18 +995,32 @@ export default function EventCard({
                     >
                       View Details
                     </Button>
-                    <Button
-                      className="flex-1"
-                      onClick={() =>
-                        requiresPayment
-                          ? setShowPaymentDialog(true)
-                          : handleDirectRegister()
-                      }
-                      data-testid={`button-register-${id}`}
-                      disabled={!canRegister}
-                    >
-                      Register
-                    </Button>
+
+                    {/* --- NEW LOGIC: SHOW RESALE IF < 14 DAYS --- */}
+                    {showResaleMarketplaceOption ? (
+                      <Button
+                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                        onClick={handleFetchResaleTickets}
+                        // removed variant="secondary"
+                      >
+                        <ShoppingBag className="h-4 w-4 mr-1" />
+                        View Resale Tickets
+                      </Button>
+                    ) : (
+                      <Button
+                        className="flex-1"
+                        onClick={() =>
+                          requiresPayment
+                            ? setShowPaymentDialog(true)
+                            : handleDirectRegister()
+                        }
+                        data-testid={`button-register-${id}`}
+                        disabled={!canRegister}
+                      >
+                        Register
+                      </Button>
+                    )}
+
                     {canShowFavorites && (
                       <div
                         className="relative flex-shrink-0"
@@ -976,9 +1081,7 @@ export default function EventCard({
                         e.stopPropagation();
                         try {
                           await onUnarchive();
-                        } catch (err) {
-                          // parent handles errors
-                        }
+                        } catch (err) {}
                       }}
                       disabled={isUnarchiving}
                       data-testid={`button-unarchive-${id}`}
@@ -1007,7 +1110,7 @@ export default function EventCard({
           </>
         ) : (
           <>
-            {/* --- COMPACT VIEW (used in My Events & Favorites) --- */}
+            {/* --- COMPACT VIEW (Dashboard & My Events) --- */}
             <CardContent className="p-4 flex-1 flex flex-col">
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
@@ -1112,9 +1215,7 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {
-                              // parent handles errors
-                            }
+                            } catch (err) {}
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-compact-${id}`}
@@ -1150,14 +1251,47 @@ export default function EventCard({
                           </Button>
                           {inlineShareButton && <ShareButton />}
                         </div>
-                        <Button
-                          className="w-full"
-                          variant="destructive"
-                          onClick={() => setShowCancelDialog(true)}
-                          disabled={isCanceling}
-                        >
-                          {isCanceling ? "Canceling..." : "Cancel Registration"}
-                        </Button>
+
+                        {/* --- 14-DAY LOGIC START (My Events / Already Registered) --- */}
+                        {isAlreadyListed ? (
+                          <Button
+                            className="w-full opacity-60 cursor-not-allowed"
+                            disabled
+                          >
+                            <Ticket className="h-4 w-4 mr-2" /> Ticket Listed
+                          </Button>
+                        ) : canCancel ? (
+                          <Button
+                            className="w-full"
+                            variant="destructive"
+                            onClick={() => setShowCancelDialog(true)}
+                            disabled={isCanceling}
+                          >
+                            {isCanceling
+                              ? "Canceling..."
+                              : "Cancel Registration"}
+                          </Button>
+                        ) : canResell ? (
+                          <Button
+                            className="w-full"
+                            onClick={() =>
+                              setShowResaleConfirmationDialog(true)
+                            }
+                          >
+                            <Ticket className="h-4 w-4 mr-2" />
+                            Sell on Marketplace
+                          </Button>
+                        ) : isExpired ? (
+                          <Button
+                            variant="ghost"
+                            disabled
+                            className="w-full border border-dashed text-muted-foreground"
+                          >
+                            Event Started
+                          </Button>
+                        ) : null}
+                        {/* --- 14-DAY LOGIC END --- */}
+
                         {onUnarchive && (
                           <Button
                             variant="outline"
@@ -1166,9 +1300,7 @@ export default function EventCard({
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {
-                                // parent handles errors
-                              }
+                              } catch (err) {}
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1213,9 +1345,7 @@ export default function EventCard({
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {
-                                // parent handles errors
-                              }
+                              } catch (err) {}
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1237,7 +1367,6 @@ export default function EventCard({
                       {showRegisterButton &&
                       !hideRegisterButton &&
                       isRegisterable &&
-                      isBeforeDeadline &&
                       !isArchived &&
                       !isProfessorInWorkshop ? (
                         <div className="flex gap-2 w-full items-center">
@@ -1248,18 +1377,32 @@ export default function EventCard({
                           >
                             View Details
                           </Button>
-                          <Button
-                            onClick={() =>
-                              requiresPayment
-                                ? setShowPaymentDialog(true)
-                                : handleDirectRegister()
-                            }
-                            className="flex-1"
-                            data-testid={`button-register-${id}`}
-                            disabled={!canRegister}
-                          >
-                            Register
-                          </Button>
+
+                          {/* --- NEW LOGIC FOR DASHBOARD (Upcoming Events) --- */}
+                          {showResaleMarketplaceOption ? (
+                            <Button
+                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                              onClick={handleFetchResaleTickets}
+                              // removed variant="secondary"
+                            >
+                              <ShoppingBag className="h-4 w-4 mr-1" />
+                              View Resale Tickets
+                            </Button>
+                          ) : (
+                            <Button
+                              onClick={() =>
+                                requiresPayment
+                                  ? setShowPaymentDialog(true)
+                                  : handleDirectRegister()
+                              }
+                              className="flex-1"
+                              data-testid={`button-register-${id}`}
+                              disabled={!canRegister}
+                            >
+                              Register
+                            </Button>
+                          )}
+
                           {canShowFavorites && (
                             <div
                               className="relative flex-shrink-0"
@@ -1271,7 +1414,6 @@ export default function EventCard({
                           {inlineShareButton && <ShareButton />}
                         </div>
                       ) : (
-                        // Fallback: If not registered and register button is hidden/unavailable (FAVORITES)
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
@@ -1302,9 +1444,7 @@ export default function EventCard({
                           (e as any).stopPropagation();
                         try {
                           await onArchive();
-                        } catch (err) {
-                          // parent handles errors
-                        }
+                        } catch (err) {}
                       }}
                       disabled={isArchiving}
                       data-testid={`button-archive-compact-${id}`}
@@ -1315,7 +1455,6 @@ export default function EventCard({
                     </Button>
                   )}
 
-                  {/* BOTTOM FLOATING SHARE BUTTON (For My Events) */}
                   {!inlineShareButton && (
                     <div className="flex items-center gap-2 ml-auto">
                       <ShareButton />
@@ -1365,7 +1504,7 @@ export default function EventCard({
         )}
       </Card>
 
-      {/* Payment Dialog */}
+      {/* --- DIALOGS --- */}
       {showPaymentDialog && (
         <EventPaymentDialog
           open={showPaymentDialog}
@@ -1379,14 +1518,55 @@ export default function EventCard({
         />
       )}
 
-      {/* Custom Alert Dialog for Cancellation */}
+      {/* Seller: Resale Confirmation Dialog */}
+      <AlertDialog
+        open={showResaleConfirmationDialog}
+        onOpenChange={setShowResaleConfirmationDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>List Ticket for Resale?</AlertDialogTitle>
+            <AlertDialogDescription>
+              We are less than 14 days from the event, so standard cancellation
+              is closed. You can list your ticket on the Marketplace.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Ticket</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleResaleListing();
+              }}
+            >
+              {isListing ? "Listing..." : "Confirm Listing"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Buyer: Resale Marketplace Dialog */}
+      <ResaleMarketplaceDialog
+        open={showMarketplaceDialog}
+        onOpenChange={setShowMarketplaceDialog}
+        eventId={id}
+        eventName={title}
+        tickets={resaleTickets}
+        isLoadingInitial={isLoadingResale}
+        onPurchaseSuccess={() => {
+          setRegistered(true);
+          setLocalAttendeeCount((prev) => prev + 1);
+        }}
+      />
+
+      {/* Cancellation Dialog */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Cancel Registration</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to cancel your registration? If this was a
-              paid event, refunds are processed separately.
+              Are you sure you want to cancel your registration? You will
+              receive a standard refund.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
