@@ -69,7 +69,7 @@ function CompactEventCard({ event }: { event: any }) {
     : true;
 
   const isRegisterable =
-    ["workshop", "trip", "conference", "bazaar"].includes(event.eventType) &&
+    ["workshop", "trip", "conference"].includes(event.eventType) &&
     event.status === "approved";
 
   const requiresPayment = event.price && event.price > 0;
@@ -171,6 +171,7 @@ function CompactEventCard({ event }: { event: any }) {
             {canRegister ? (
               <Button
                 size="sm"
+                variant="default"
                 className="w-full text-xs h-8"
                 onClick={(e) => {
                   e.stopPropagation();
