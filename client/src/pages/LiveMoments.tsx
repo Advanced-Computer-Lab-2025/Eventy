@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { type EventCategory } from "@/components/CategoryBadge";
 import {
   Loader2,
   Camera,
@@ -18,13 +17,13 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import CategoryBadge from "@/components/CategoryBadge";
 
 interface Event {
   _id: string;
@@ -236,9 +235,13 @@ function LiveEventCard({ event }: { event: Event }) {
             </div>
           ) : (
             <>
+              {/* Only provide alt text when there is a real image (uploaded or banner).
+                 When no image exists we render a decorative image with empty alt
+                 and aria-hidden to avoid the browser showing fallback text. */}
               <img
                 src={currentImage}
-                alt={event.name}
+                alt={images.length > 0 || event.bannerImage ? event.name : ""}
+                aria-hidden={images.length === 0 && !event.bannerImage}
                 className="w-full h-full object-cover"
               />
               {images.length > 1 && (
@@ -267,7 +270,11 @@ function LiveEventCard({ event }: { event: Event }) {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-lg line-clamp-2">{event.name}</h3>
-            <CategoryBadge category={event.eventType as EventCategory} />
+            <Badge variant="default" className="capitalize">
+              {event.eventType === "platform_booth"
+                ? "Platform Booth"
+                : event.eventType.replace(/_/g, " ")}
+            </Badge>
           </div>
 
           <div className="space-y-1 text-sm">
