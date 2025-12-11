@@ -1662,16 +1662,18 @@ export const joinWaitlist = async (
     throw new ApiError(404, "Event not found");
   }
 
-  // Check if registration deadline has passed
-  if (event.registrationDeadline) {
-    const deadline = new Date(event.registrationDeadline);
-    const now = new Date();
-    if (now > deadline) {
-      throw new ApiError(
-        400,
-        "Registration deadline has passed. Waitlist is no longer available."
-      );
-    }
+  // Check if cancellations can be made (at least 14 days before event)
+  // If cancellations cannot be made, waitlist is not available
+  const now = new Date();
+  const eventStartDate = new Date(event.startDate);
+  const twoWeeksBefore = new Date(eventStartDate);
+  twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+  if (now > twoWeeksBefore) {
+    throw new ApiError(
+      400,
+      "Waitlist is no longer available. Cancellations cannot be made within 14 days of the event."
+    );
   }
 
   // Check if event is full
@@ -1745,16 +1747,17 @@ export const notifyWaitlistUsers = async (eventId) => {
     const event = await Event.findById(eventId);
     if (!event) return;
 
-    // Don't notify waitlist users if registration deadline has passed
-    if (event.registrationDeadline) {
-      const deadline = new Date(event.registrationDeadline);
-      const now = new Date();
-      if (now > deadline) {
-        console.warn(
-          `Registration deadline passed for event ${eventId}, not notifying waitlist users`
-        );
-        return;
-      }
+    // Don't notify waitlist users if cancellations can no longer be made (within 14 days of event)
+    const now = new Date();
+    const eventStartDate = new Date(event.startDate);
+    const twoWeeksBefore = new Date(eventStartDate);
+    twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+
+    if (now > twoWeeksBefore) {
+      console.warn(
+        `Cancellations cannot be made for event ${eventId} (within 14 days), not notifying waitlist users`
+      );
+      return;
     }
 
     // Get all waitlist entries for this event that haven't been notified

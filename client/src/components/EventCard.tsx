@@ -532,6 +532,16 @@ export default function EventCard({
   const isFull = capacity && localAttendeeCount >= capacity;
   const isArchived = status === "archived";
 
+  // Check if cancellations can be made (at least 14 days before event)
+  // Waitlist is only available if cancellations can be made
+  const eventStartDate = startDate ? new Date(startDate) : null;
+  const twoWeeksBefore = eventStartDate ? new Date(eventStartDate) : null;
+  if (twoWeeksBefore) {
+    twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+  }
+  const canCancel =
+    eventStartDate && twoWeeksBefore ? now <= twoWeeksBefore : false;
+
   const canRegister =
     isRegisterable &&
     isBeforeDeadline &&
@@ -541,7 +551,7 @@ export default function EventCard({
 
   const canJoinWaitlist =
     isRegisterable &&
-    isBeforeDeadline &&
+    canCancel &&
     isFull &&
     !isArchived &&
     !isProfessorInWorkshop &&
