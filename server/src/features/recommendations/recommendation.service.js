@@ -81,12 +81,28 @@ export const getRecommendationsForUser = async (userId) => {
 
     // 5. If NOT enough data for AI, use Popular/Trending Logic
     if (!enoughDataForAI) {
-      // Calculate Popularity Score: (Attendees * 5) + (Views * 1)
+      // Calculate Popularity Score: (Attendees * 5) + (Favorites * 3) + (Views * 1)
+      // Aggregate favorite counts for all candidates
+      const eventIds = candidates.map((e) => e._id);
+      const favoriteCounts = await User.aggregate([
+        { $match: { favoriteEvents: { $in: eventIds } } },
+        { $unwind: "$favoriteEvents" },
+        { $match: { favoriteEvents: { $in: eventIds } } },
+        { $group: { _id: "$favoriteEvents", count: { $sum: 1 } } },
+      ]);
+
+      // Map favorite counts to events
+      const favoriteCountMap = new Map(
+        favoriteCounts.map((fc) => [fc._id.toString(), fc.count])
+      );
+
       const popularEvents = candidates
         .map((event) => ({
           event,
           score:
-            (event.attendees?.length || 0) * 5 + (event.viewCount || 0) * 1,
+            (event.attendees?.length || 0) * 5 +
+            (favoriteCountMap.get(event._id.toString()) || 0) * 3 +
+            (event.viewCount || 0) * 1,
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
@@ -179,12 +195,26 @@ export const getRecommendationsForUser = async (userId) => {
       });
 
     if (topRecommendations.length === 0) {
-      // Fallback to popular
+      // Fallback to popular (with favorite counts)
+      const eventIds = candidates.map((e) => e._id);
+      const favoriteCounts = await User.aggregate([
+        { $match: { favoriteEvents: { $in: eventIds } } },
+        { $unwind: "$favoriteEvents" },
+        { $match: { favoriteEvents: { $in: eventIds } } },
+        { $group: { _id: "$favoriteEvents", count: { $sum: 1 } } },
+      ]);
+
+      const favoriteCountMap = new Map(
+        favoriteCounts.map((fc) => [fc._id.toString(), fc.count])
+      );
+
       const popularEvents = candidates
         .map((event) => ({
           event,
           score:
-            (event.attendees?.length || 0) * 5 + (event.viewCount || 0) * 1,
+            (event.attendees?.length || 0) * 5 +
+            (favoriteCountMap.get(event._id.toString()) || 0) * 3 +
+            (event.viewCount || 0) * 1,
         }))
         .sort((a, b) => b.score - a.score)
         .slice(0, 5)
