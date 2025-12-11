@@ -119,7 +119,7 @@ function CompactEventCard({ event }: { event: any }) {
   return (
     <>
       <Card
-        className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group border-primary/10"
+        className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-200 hover:-translate-y-1 cursor-pointer group hover:ring-[0.5px] hover:ring-primary/10"
         onClick={() => setShowDetails(true)}
         onMouseEnter={() => {
           hoverTimeout.current = setTimeout(() => setIsHovering(true), 300);
@@ -130,18 +130,19 @@ function CompactEventCard({ event }: { event: any }) {
         }}
         onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
       >
-        <div className="relative h-32 overflow-hidden shrink-0">
+        <div className="relative h-32 overflow-hidden shrink-0 rounded-t-lg">
           <img
             src={
               event.image || event.bannerImage || getEventImage(event.eventType)
             }
             alt={event.name}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute top-2 right-2">
             <Badge
               variant="default"
-              className="capitalize text-xs font-semibold"
+              className="capitalize text-xs font-semibold shadow-sm"
             >
               {event.eventType === "platform_booth"
                 ? "Platform Booth"
@@ -151,19 +152,23 @@ function CompactEventCard({ event }: { event: any }) {
         </div>
         <CardContent className="p-3 flex flex-col flex-1">
           <h3
-            className="font-semibold text-sm line-clamp-2 mb-2 leading-tight transition-colors"
+            className="font-semibold text-sm line-clamp-2 mb-3 leading-snug text-foreground"
             title={event.name}
           >
             {event.name}
           </h3>
-          <div className="space-y-2 mb-3">
+          <div className="space-y-1.5 mb-3">
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <Calendar className="w-3 h-3 shrink-0" />
-              <span>{new Date(event.startDate).toLocaleDateString()}</span>
+              <Calendar className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span className="leading-relaxed">
+                {new Date(event.startDate).toLocaleDateString()}
+              </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <MapPin className="w-3 h-3 shrink-0" />
-              <span className="line-clamp-1">{event.location || "TBD"}</span>
+              <MapPin className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              <span className="line-clamp-1 leading-relaxed">
+                {event.location || "TBD"}
+              </span>
             </div>
           </div>
 
@@ -324,7 +329,7 @@ export default function Recommendations() {
     <div className="mb-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
       <div className="flex items-center gap-3 px-1">
         <div
-          className={`p-2 rounded-full ${data.type === "personalized" ? "bg-primary/10 text-primary" : "bg-orange-500/10 text-orange-500"}`}
+          className={`p-2.5 rounded-xl shadow-sm ${data.type === "personalized" ? "bg-gradient-to-br from-primary/20 to-primary/10 text-primary ring-1 ring-primary/20" : "bg-gradient-to-br from-orange-500/20 to-orange-500/10 text-orange-600 ring-1 ring-orange-500/20"}`}
         >
           {data.type === "personalized" ? (
             <Sparkles className="h-5 w-5 animate-pulse" />
@@ -353,7 +358,7 @@ export default function Recommendations() {
       </div>
 
       <div className="relative group/container pt-2 -mx-6 px-6">
-        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory">
+        <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/30">
           {data.events.slice(0, 5).map((event) => (
             <div
               key={event._id}
