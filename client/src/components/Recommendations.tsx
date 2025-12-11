@@ -192,8 +192,8 @@ function CompactEventCard({ event }: { event: any }) {
               </Button>
             ) : isRegistered ? (
               <Button
-                variant="secondary"
                 size="sm"
+                variant="default"
                 className="w-full mt-auto cursor-default"
                 disabled
               >
