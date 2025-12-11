@@ -14,7 +14,7 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
-import WalletPopover from "./WalletPopover"; // Import the WalletPopover
+import WalletPopover from "./WalletPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
@@ -22,28 +22,60 @@ interface StaffHeaderProps {
   homeHref?: string;
 }
 
+// 1. Updated User Interface
+interface UserData {
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
+  companyName?: string;
+  walletBalance?: number;
+}
+
 export default function StaffHeader({
   homeHref = "/staff-ta",
 }: StaffHeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<{
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    role?: string;
-    companyName?: string;
-  } | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+
+  // 2. Fetch User Profile Logic
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        const payload = await res.json();
+        // Extract inner user object safely
+        const freshUserData = payload.user || payload.data || payload;
+        setUser(freshUserData);
+        localStorage.setItem("user", JSON.stringify(freshUserData));
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile", err);
+    }
+  };
 
   useEffect(() => {
+    // Initial Load from LocalStorage
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
         const parsed = JSON.parse(raw);
-        setUser(parsed);
+        setUser(parsed.user || parsed);
       }
     } catch (err) {
       // ignore
     }
+    // Fetch fresh data immediately
+    fetchUserProfile();
   }, []);
 
   return (
@@ -58,7 +90,12 @@ export default function StaffHeader({
           </div>
 
           <div className="flex items-center gap-1 md:gap-2 relative">
-            <WalletPopover /> {/* <-- Replaced dialog button with this */}
+            {/* 3. Pass Balance Props */}
+            <WalletPopover
+              balance={user?.walletBalance ?? 0}
+              onRefreshBalance={fetchUserProfile}
+            />
+
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
@@ -72,6 +109,7 @@ export default function StaffHeader({
           </div>
         </div>
 
+        {/* Navigation Tabs (Unchanged) */}
         <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
           <Button
             variant="ghost"
