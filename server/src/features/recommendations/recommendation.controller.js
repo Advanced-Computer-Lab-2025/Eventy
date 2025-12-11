@@ -20,6 +20,7 @@ export const getRecommendations = async (req, res) => {
   }
 };
 
+/*
 export const resetRecommendations = async (req, res) => {
   try {
     const userId = req.user._id;
@@ -51,4 +52,13 @@ export const resetRecommendations = async (req, res) => {
       error: error.message,
     });
   }
+};
+*/
+
+// Stubbed endpoint while reset is disabled
+export const resetRecommendations = async (req, res) => {
+  res.status(501).json({
+    success: false,
+    message: "Reset recommendations endpoint is temporarily disabled",
+  });
 };

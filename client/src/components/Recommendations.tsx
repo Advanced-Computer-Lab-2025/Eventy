@@ -273,27 +273,28 @@ export default function Recommendations() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const handleReset = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-
-      await fetch(`${API_BASE_URL}/api/recommendations/reset`, {
-        method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      toast({
-        title: "Recommendations Reset",
-        description: "Your interaction history has been cleared.",
-      });
-
-      window.location.reload();
-    } catch (err) {
-      console.error("Failed to reset", err);
-    }
-  };
+  // Reset recommendations is disabled to avoid accidental data loss during testing.
+  // const handleReset = async () => {
+  //   try {
+  //     const token = localStorage.getItem("token");
+  //     const API_BASE_URL =
+  //       import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  //
+  //     await fetch(`${API_BASE_URL}/api/recommendations/reset`, {
+  //       method: "POST",
+  //       headers: { Authorization: `Bearer ${token}` },
+  //     });
+  //
+  //     toast({
+  //       title: "Recommendations Reset",
+  //       description: "Your interaction history has been cleared.",
+  //     });
+  //
+  //     window.location.reload();
+  //   } catch (err) {
+  //     console.error("Failed to reset", err);
+  //   }
+  // };
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -346,14 +347,7 @@ export default function Recommendations() {
           <p className="text-sm text-muted-foreground">{data.reason}</p>
         </div>
         <div className="ml-auto">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleReset}
-            title="Reset Recommendations (Demo)"
-          >
-            <RotateCcw className="h-4 w-4 text-muted-foreground" />
-          </Button>
+          {/* Reset Recommendations temporarily disabled for safety */}
         </div>
       </div>
 
