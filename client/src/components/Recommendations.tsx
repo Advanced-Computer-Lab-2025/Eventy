@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Sparkles,
   TrendingUp,
@@ -14,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import CategoryBadge from "./CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
+import { EventPaymentDialog } from "./EventPaymentDialog";
 
 interface RecommendationResponse {
   type: "popular" | "personalized";
@@ -23,12 +25,111 @@ interface RecommendationResponse {
 
 function CompactEventCard({ event }: { event: any }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const { toast } = useToast();
+  const [localIsRegistered, setLocalIsRegistered] = useState(false);
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const hoverTimeout = useRef<any>(null);
+
+  // Get current user info
+  const token = localStorage.getItem("token");
+  let currentUserId = "";
+  let userRole = "";
+  if (token) {
+    try {
+      const payload = JSON.parse(atob(token.split(".")[1]));
+      currentUserId = payload.id || payload._id;
+      userRole = payload.role;
+    } catch (e) {}
+  }
+
+  // Check registration status
+  const isRegistered =
+    localIsRegistered ||
+    (event.attendees &&
+      Array.isArray(event.attendees) &&
+      event.attendees.some((att: any) => {
+        const attId = typeof att === "string" ? att : att._id;
+        return attId === currentUserId;
+      }));
+
+  // Check if professor in workshop
+  const isProfessorInWorkshop =
+    userRole === "professor" &&
+    event.eventType === "workshop" &&
+    event.professors?.some((prof: any) => {
+      const profId = prof._id || prof;
+      return profId === currentUserId;
+    });
+
+  const isArchived = event.status === "archived";
+  const isBeforeDeadline = event.registrationDeadline
+    ? new Date() <= new Date(event.registrationDeadline)
+    : true;
+
+  const isRegisterable =
+    ["workshop", "trip", "conference", "bazaar"].includes(event.eventType) &&
+    event.status === "approved";
+
+  const requiresPayment = event.price && event.price > 0;
+
+  const canRegister =
+    !isRegistered &&
+    isRegisterable &&
+    isBeforeDeadline &&
+    !isArchived &&
+    !isProfessorInWorkshop &&
+    userRole !== "admin" &&
+    userRole !== "events_office";
+
+  const handleDirectRegister = async () => {
+    if (!token) {
+      toast({ title: "Error", description: "Please login to register" });
+      return;
+    }
+    setIsRegistering(true);
+    try {
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+      const res = await fetch(
+        `${API_BASE_URL}/api/events/${event._id}/register`,
+        {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.message || "Registration failed");
+      }
+      toast({ title: "Success", description: "Registered successfully!" });
+      setLocalIsRegistered(true);
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegistering(false);
+    }
+  };
 
   return (
     <>
       <Card
         className="h-full flex flex-col overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer group border-primary/10"
         onClick={() => setShowDetails(true)}
+        onMouseEnter={() => {
+          hoverTimeout.current = setTimeout(() => setIsHovering(true), 300);
+        }}
+        onMouseLeave={() => {
+          if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+          setIsHovering(false);
+        }}
+        onMouseMove={(e) => setTooltipPos({ x: e.clientX, y: e.clientY })}
       >
         <div className="relative h-32 overflow-hidden shrink-0">
           <img
@@ -63,19 +164,50 @@ function CompactEventCard({ event }: { event: any }) {
               <span className="line-clamp-1">{event.location || "TBD"}</span>
             </div>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full mt-auto"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowDetails(true);
-            }}
-          >
-            View Details
-          </Button>
+
+          <div className="mt-auto flex gap-2">
+            {canRegister ? (
+              <Button
+                size="sm"
+                className="w-full text-xs h-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (requiresPayment) {
+                    setShowPaymentDialog(true);
+                  } else {
+                    handleDirectRegister();
+                  }
+                }}
+                disabled={isRegistering}
+              >
+                {isRegistering ? "Registering..." : "Register"}
+              </Button>
+            ) : isRegistered ? (
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full mt-auto cursor-default"
+                disabled
+              >
+                Registered
+              </Button>
+            ) : null}
+          </div>
         </CardContent>
       </Card>
+      {isHovering &&
+        createPortal(
+          <div
+            className="fixed z-[100] pointer-events-none bg-popover text-popover-foreground text-sm px-3 py-1.5 rounded-md border shadow-md animate-in fade-in-0 zoom-in-95"
+            style={{
+              left: tooltipPos.x + 16,
+              top: tooltipPos.y + 16,
+            }}
+          >
+            Click on event to view details
+          </div>,
+          document.body
+        )}
 
       <EventDetailsDialog
         open={showDetails}
@@ -111,6 +243,17 @@ function CompactEventCard({ event }: { event: any }) {
           faculty: event.faculty,
           boothSize: event.boothSize,
           durationWeeks: event.durationWeeks,
+        }}
+      />
+
+      <EventPaymentDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        eventId={event._id}
+        price={event.price || 0}
+        onRegistered={() => {
+          setLocalIsRegistered(true);
+          toast({ title: "Success", description: "Registered successfully!" });
         }}
       />
     </>
