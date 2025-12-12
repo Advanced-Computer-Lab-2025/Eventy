@@ -248,7 +248,13 @@ function Router() {
         </ProtectedRoute>
       </Route>
 
-      <Route path="/calendar" component={CalendarPage} />
+      <Route path="/calendar">
+        <ProtectedRoute
+          allowedRoles={["student", "staff", "ta", "professor", "vendor"]}
+        >
+          <CalendarPage />
+        </ProtectedRoute>
+      </Route>
 
       <Route component={NotFound} />
     </Switch>
