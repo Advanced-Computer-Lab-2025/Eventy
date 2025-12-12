@@ -188,107 +188,86 @@ export default function CalendarPage() {
           </Button>
         </div>
 
-        {/* Filters */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <Select
-                  value={eventTypeFilter}
-                  onValueChange={setEventTypeFilter}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Event Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Event Types</SelectItem>
-                    {eventTypes.map((type) => (
-                      <SelectItem
-                        key={type}
-                        value={type!}
-                        className="capitalize"
-                      >
-                        {type}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {eventTypeFilter !== "all" && (
-                <Button
-                  variant="outline"
-                  onClick={() => setEventTypeFilter("all")}
-                >
-                  Clear Filters
-                </Button>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Main Content */}
         <div className="grid grid-cols-1 gap-6">
           {/* Big Calendar */}
           <div>
             {loading ? (
-              <>
-                <Card className="p-12">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                    <p className="text-muted-foreground">
-                      Loading your calendar...
-                    </p>
-                  </div>
-                </Card>
-                ) : filteredEvents.length === 0 ? (
-                <div className="relative">
-                  <BigCalendarView events={[]} defaultView={"month"} />
-
-                  <div className="absolute inset-0 flex items-center justify-center z-20">
-                    <div className="bg-card/90 dark:bg-card/90 px-6 py-5 rounded-md text-center shadow-lg backdrop-blur-sm">
-                      <h3 className="text-xl font-semibold mb-2">
-                        No events in your calendar yet
-                      </h3>
-                      <p className="text-muted-foreground mb-4">
-                        Browse upcoming events to add them to your calendar.
-                      </p>
-                      <div>
-                        <Button
-                          onClick={() => {
-                            const role = userRole ? userRole.toLowerCase() : "";
-                            if (role === "vendor")
-                              navigate("/vendor/dashboard");
-                            else if (role === "events_office")
-                              navigate("/events-office/dashboard");
-                            else if (role === "admin") navigate("/admin");
-                            else if (role === "staff" || role === "ta")
-                              navigate("/staff-ta");
-                            else if (role === "professor")
-                              navigate("/professor");
-                            else navigate("/home");
-                          }}
-                          variant="default"
-                          className="pointer-events-auto"
-                        >
-                          Browse Events
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+              <Card className="p-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    Loading your calendar...
+                  </p>
                 </div>
-              </>
+              </Card>
             ) : (
               <BigCalendarView
                 events={filteredEvents}
                 defaultDate={selectedDate || undefined}
                 defaultView={selectedDate ? "day" : "month"}
                 onUnregister={fetchUserEvents}
+                customToolbarComponent={
+                  <div className="flex items-center gap-2">
+                    <Select
+                      value={eventTypeFilter}
+                      onValueChange={setEventTypeFilter}
+                    >
+                      <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="All Event Types" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Event Types</SelectItem>
+                        {eventTypes.map((type) => (
+                          <SelectItem
+                            key={type}
+                            value={type!}
+                            className="capitalize"
+                          >
+                            {type}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {eventTypeFilter !== "all" && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEventTypeFilter("all")}
+                      >
+                        Clear
+                      </Button>
+                    )}
+                  </div>
+                }
+                messages={{
+                  noEventsInRange: (
+                    <div className="text-center py-12">
+                      <h3 className="text-xl font-semibold mb-2">
+                        No events to display
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        {events.length === 0
+                          ? "You haven't registered for any events yet."
+                          : "Try adjusting your filters or browse for more events."}
+                      </p>
+                      <Button
+                        onClick={() => {
+                          const role = userRole ? userRole.toLowerCase() : "";
+                          if (role === "vendor") navigate("/vendor/dashboard");
+                          else if (role === "events_office")
+                            navigate("/events-office/dashboard");
+                          else if (role === "admin") navigate("/admin");
+                          else if (role === "staff" || role === "ta")
+                            navigate("/staff-ta");
+                          else if (role === "professor") navigate("/professor");
+                          else navigate("/home");
+                        }}
+                      >
+                        Browse Events
+                      </Button>
+                    </div>
+                  ),
+                }}
               />
             )}
           </div>

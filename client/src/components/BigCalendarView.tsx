@@ -39,6 +39,10 @@ interface BigCalendarViewProps {
   defaultDate?: Date;
   defaultView?: View;
   className?: string;
+  customToolbarComponent?: React.ReactNode;
+  messages?: {
+    noEventsInRange?: React.ReactNode;
+  };
 }
 
 export default function BigCalendarView({
@@ -48,6 +52,8 @@ export default function BigCalendarView({
   defaultDate,
   defaultView = "month",
   className = "",
+  customToolbarComponent,
+  messages,
 }: BigCalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -182,6 +188,7 @@ export default function BigCalendarView({
           <Button variant="outline" size="sm" onClick={goToToday}>
             Today
           </Button>
+          {customToolbarComponent}
           <Button variant="outline" size="icon" onClick={goToBack}>
             ←
           </Button>
@@ -230,6 +237,7 @@ export default function BigCalendarView({
           components={{
             toolbar: CustomToolbar,
           }}
+          messages={messages}
           date={currentDate}
           onNavigate={setCurrentDate}
           view={currentView}
