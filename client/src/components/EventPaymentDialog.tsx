@@ -365,7 +365,6 @@ export function EventPaymentDialog({
     if (!clientSecret) return null;
     return {
       clientSecret,
-      paymentMethodCreation: waitlistMode ? "manual" : "automatic",
       appearance: {
         theme: theme === "dark" ? "night" : ("stripe" as "night" | "stripe"),
         variables: {
@@ -375,7 +374,7 @@ export function EventPaymentDialog({
         },
       },
     };
-  }, [clientSecret, theme, waitlistMode]);
+  }, [clientSecret, theme]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
