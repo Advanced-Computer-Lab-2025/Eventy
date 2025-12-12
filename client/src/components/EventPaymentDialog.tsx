@@ -330,6 +330,10 @@ export function EventPaymentDialog({
         title: "Success!",
         description: "Payment successful via wallet. You are registered.",
       });
+      // Dispatch custom event to trigger recommendations refresh
+      window.dispatchEvent(
+        new CustomEvent("event-registered", { detail: { eventId } })
+      );
       onRegistered();
       onOpenChange(false);
     } catch (error) {
@@ -524,6 +528,12 @@ export function EventPaymentDialog({
                         if (waitlistMode && onPaymentMethodSelected) {
                           onPaymentMethodSelected("credit_card");
                         } else {
+                          // Dispatch custom event to trigger recommendations refresh
+                          window.dispatchEvent(
+                            new CustomEvent("event-registered", {
+                              detail: { eventId },
+                            })
+                          );
                           onRegistered();
                         }
                         onOpenChange(false);

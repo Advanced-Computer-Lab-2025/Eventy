@@ -106,6 +106,11 @@ export const useFavorites = () => {
       // Refresh to get complete data
       await fetchFavorites();
 
+      // Dispatch custom event to trigger recommendations refresh
+      window.dispatchEvent(
+        new CustomEvent("event-favorited", { detail: { eventId } })
+      );
+
       return { success: true, data: result };
     } catch (err: any) {
       console.error("Error adding to favorites:", err);
@@ -129,6 +134,11 @@ export const useFavorites = () => {
         (event) => event._id !== eventId
       );
       updateSharedFavorites(newFavorites);
+
+      // Dispatch custom event to trigger recommendations refresh
+      window.dispatchEvent(
+        new CustomEvent("event-unfavorited", { detail: { eventId } })
+      );
 
       return { success: true };
     } catch (err: any) {

@@ -417,6 +417,10 @@ export default function EventCard({
       });
       setRegistered(true);
       setLocalAttendeeCount((prev) => prev + 1);
+      // Dispatch custom event to trigger recommendations refresh
+      window.dispatchEvent(
+        new CustomEvent("event-registered", { detail: { eventId: id } })
+      );
       try {
         window.dispatchEvent(
           new CustomEvent("event:registered", {
@@ -515,6 +519,11 @@ export default function EventCard({
       });
       setRegistered(false);
       setLocalAttendeeCount((prev) => Math.max(0, prev - 1));
+
+      // Dispatch custom event to trigger recommendations refresh
+      window.dispatchEvent(
+        new CustomEvent("event-unregistered", { detail: { eventId: id } })
+      );
 
       if (onUnregister) {
         onUnregister();

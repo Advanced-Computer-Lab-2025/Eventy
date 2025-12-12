@@ -51,7 +51,16 @@ export default function EventDetailsDialog({
         fetch(`${API_BASE_URL}/api/events/${event._id}/view`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
-        }).catch((err) => console.error("Failed to record view", err));
+        })
+          .then(() => {
+            // Dispatch custom event to trigger recommendations refresh
+            window.dispatchEvent(
+              new CustomEvent("event-viewed", {
+                detail: { eventId: event._id },
+              })
+            );
+          })
+          .catch((err) => console.error("Failed to record view", err));
       }
     }
   }, [open, event]);

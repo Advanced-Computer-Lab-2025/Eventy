@@ -296,35 +296,100 @@ export default function Recommendations() {
   //   }
   // };
 
-  useEffect(() => {
-    const fetchRecommendations = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const API_BASE_URL =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
-        const res = await fetch(`${API_BASE_URL}/api/recommendations`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          const json = await res.json();
-          if (json.success && json.data.events.length > 0) {
-            setData(json.data);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch recommendations:", error);
-      } finally {
+  const fetchRecommendations = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
         setLoading(false);
+        return;
       }
+
+      const API_BASE_URL =
+        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+      const res = await fetch(`${API_BASE_URL}/api/recommendations`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data.events.length > 0) {
+          setData(json.data);
+        } else {
+          setData(null);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch recommendations:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
+    fetchRecommendations();
+
+    // Listen for custom events that should trigger a refresh
+    const handleRefresh = () => {
+      // Small delay to ensure backend has processed the action
+      setTimeout(() => {
+        fetchRecommendations();
+      }, 500);
     };
 
-    fetchRecommendations();
+    // Listen for various user interactions
+    window.addEventListener("event-viewed", handleRefresh);
+    window.addEventListener("event-favorited", handleRefresh);
+    window.addEventListener("event-unfavorited", handleRefresh);
+    window.addEventListener("event-registered", handleRefresh);
+    window.addEventListener("event-unregistered", handleRefresh);
+    // Also listen for the existing event:registered event (with colon)
+    window.addEventListener("event:registered", handleRefresh);
+
+    return () => {
+      window.removeEventListener("event-viewed", handleRefresh);
+      window.removeEventListener("event-favorited", handleRefresh);
+      window.removeEventListener("event-unfavorited", handleRefresh);
+      window.removeEventListener("event-registered", handleRefresh);
+      window.removeEventListener("event-unregistered", handleRefresh);
+      window.removeEventListener("event:registered", handleRefresh);
+    };
   }, []);
 
-  if (loading || !data) return null;
+  // Show loading skeleton instead of null
+  if (loading) {
+    return (
+      <div className="mb-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex items-center gap-3 px-1">
+          <div className="p-2.5 rounded-xl shadow-sm bg-gradient-to-br from-primary/20 to-primary/10 text-primary ring-1 ring-primary/20 animate-pulse">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          <div className="flex-1">
+            <div className="h-6 w-48 bg-muted rounded animate-pulse mb-2" />
+            <div className="h-4 w-32 bg-muted rounded animate-pulse" />
+          </div>
+        </div>
+        <div className="flex gap-4 overflow-x-auto pb-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="min-w-[230px] w-[230px]">
+              <Card className="h-full animate-pulse">
+                <div className="h-32 bg-muted rounded-t-lg" />
+                <CardContent className="p-3 space-y-3">
+                  <div className="h-4 w-full bg-muted rounded" />
+                  <div className="h-4 w-3/4 bg-muted rounded" />
+                  <div className="h-3 w-1/2 bg-muted rounded" />
+                  <div className="h-3 w-1/2 bg-muted rounded" />
+                  <div className="h-8 w-full bg-muted rounded mt-4" />
+                </CardContent>
+              </Card>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!data) return null;
 
   return (
     <div className="mb-4 space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
