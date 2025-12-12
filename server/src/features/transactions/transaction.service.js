@@ -25,7 +25,7 @@ export class TransactionService {
   }
 
   // =========================================================================
-  //  STANDARD EVENT PAYMENT (Existing Logic)
+  //  STANDARD EVENT PAYMENT
   // =========================================================================
   async payForEvent({ userId, eventId, paymentMethod }) {
     const existingPayment = await Transaction.findOne({
@@ -53,10 +53,9 @@ export class TransactionService {
     const event = await Event.findById(eventId);
     if (!event) throw new Error("Event not found");
 
-    // FIX: Safety check for free events or missing price
     const amount = Number(event.price) || 0;
 
-    // --- FREE EVENT HANDLING (New Safety) ---
+    // --- FREE EVENT HANDLING ---
     if (amount === 0) {
       const transaction = await Transaction.create({
         userId,
@@ -67,6 +66,11 @@ export class TransactionService {
         description: `Free Registration for event ${event.name}`,
         relatedEntity: { type: "Event", id: eventId },
       });
+
+      // Optional: Send receipt for free events too if desired
+      // const user = await User.findById(userId);
+      // sendPaymentReceipt(user.toObject(), transaction, event).catch(console.error);
+
       return { message: "Registration successful", transaction };
     }
 
@@ -89,6 +93,14 @@ export class TransactionService {
             description: `Payment for event ${event.name}`,
             relatedEntity: { type: "Event", id: eventId },
           });
+
+          // ============================================================
+          // FIX APPLIED HERE: Send Email Receipt for Wallet Payment
+          // ============================================================
+          sendPaymentReceipt(updatedUser.toObject(), transaction, event).catch(
+            (err) =>
+              console.error("Failed to send wallet payment receipt:", err)
+          );
 
           return { message: "Payment successful via wallet", transaction };
         } else {
@@ -149,16 +161,11 @@ export class TransactionService {
   }
 
   // =========================================================================
-  //  RESALE MARKET LOGIC (New Integration)
+  //  RESALE MARKET LOGIC
   // =========================================================================
 
-  /**
-   * Helper: Performs the database updates to swap the ticket owner and pay the seller.
-   */
   async _executeResaleSwap(event, listing, buyerId, sellerId, refundAmount) {
-    // Only create transaction/refund money if amount > 0
     if (refundAmount > 0) {
-      // 1. Record Seller's Refund Transaction (Using type 'refund' to match model)
       await Transaction.create({
         userId: sellerId,
         type: "refund",
@@ -169,13 +176,11 @@ export class TransactionService {
         relatedEntity: { type: "Event", id: event._id },
       });
 
-      // 2. Credit Seller Wallet
       await User.findByIdAndUpdate(sellerId, {
         $inc: { walletBalance: refundAmount },
       });
     }
 
-    // 3. Swap Attendees (Split operations to avoid Mongo conflicts)
     await Event.findByIdAndUpdate(event._id, {
       $pull: { attendees: sellerId },
     });
@@ -183,7 +188,6 @@ export class TransactionService {
       $addToSet: { attendees: buyerId },
     });
 
-    // 4. Update Listing Status
     await Event.updateOne(
       { _id: event._id, "resaleListings._id": listing._id },
       {
@@ -226,7 +230,6 @@ export class TransactionService {
       );
     }
 
-    // --- PRICING LOGIC ---
     const basePrice = Number(event.price) || 0;
     const markupPercentage = 0.15;
     let totalAmountToPay = 0;
@@ -236,15 +239,13 @@ export class TransactionService {
       totalAmountToPay = basePrice + markupAmount;
     }
 
-    // =========================================================
-    // 🆓 FREE TICKET HANDLING (No Receipt, No Transaction Record)
-    // =========================================================
+    // Free Ticket
     if (totalAmountToPay === 0) {
       await this._executeResaleSwap(event, listing, buyerId, sellerId, 0);
       return { message: "Free ticket claimed successfully" };
     }
 
-    // --- WALLET PAYMENT ---
+    // Wallet Payment
     if (paymentMethod === "wallet") {
       const buyer = await User.findById(buyerId);
       if (buyer.walletBalance < totalAmountToPay) {
@@ -278,7 +279,6 @@ export class TransactionService {
         buyerTransaction.status = "completed";
         await buyerTransaction.save();
 
-        // 📧 SEND EMAIL RECEIPT (Wallet - Only if Paid)
         if (totalAmountToPay > 0) {
           sendPaymentReceipt(buyer.toObject(), buyerTransaction, event).catch(
             console.error
@@ -299,14 +299,14 @@ export class TransactionService {
       }
     }
 
-    // --- STRIPE PAYMENT ---
+    // Stripe Payment
     if (paymentMethod === "credit_card" || paymentMethod === "debit_card") {
       const paymentIntent = await this.stripe.paymentIntents.create({
         amount: Math.round(totalAmountToPay * 100),
         currency: "usd",
         automatic_payment_methods: { enabled: true, allow_redirects: "never" },
         metadata: {
-          type: "resale_purchase", // Flag for confirmation logic
+          type: "resale_purchase",
           buyerId: String(buyerId),
           sellerId: String(sellerId),
           eventId: String(eventId),
@@ -335,7 +335,7 @@ export class TransactionService {
   }
 
   // =========================================================================
-  //  CONFIRMATION LOGIC (Integrated)
+  //  CONFIRMATION LOGIC
   // =========================================================================
   async confirmStripePayment(paymentIntentId) {
     const paymentIntent =
@@ -349,17 +349,13 @@ export class TransactionService {
 
     if (paymentIntent.status === "succeeded") {
       if (transaction.status === "completed") {
-        // --- EXISTING: Application Logic for duplicate calls ---
         if (transaction.relatedEntity?.type === "Application") {
-          // ... (Keep existing complex application duplicate check logic) ...
-          // (Logic omitted for brevity as it's preserved below in the main block)
+          // Duplicate check logic handled implicitly by return
         }
         return { message: "Payment already confirmed", transaction };
       }
 
-      // =========================================================
-      // 🎟️ RESALE MARKET CONFIRMATION (New Logic)
-      // =========================================================
+      // RESALE MARKET CONFIRMATION
       if (
         paymentIntent.metadata &&
         paymentIntent.metadata.type === "resale_purchase"
@@ -374,7 +370,6 @@ export class TransactionService {
             l.status === "available"
         );
 
-        // Race Condition Handling
         if (!listing) {
           await this.stripe.refunds.create({ payment_intent: paymentIntentId });
           transaction.status = "failed";
@@ -399,7 +394,6 @@ export class TransactionService {
           transaction.status = "completed";
           await transaction.save();
 
-          // 📧 SEND EMAIL RECEIPT (Resale via Card)
           if (transaction.amount > 0) {
             const buyerUser = await User.findById(buyerId);
             if (buyerUser) {
@@ -413,7 +407,6 @@ export class TransactionService {
 
           return { message: "Resale successful via Card", transaction };
         } catch (error) {
-          // Serious system error after charging card -> Refund
           await this.stripe.refunds.create({ payment_intent: paymentIntentId });
           transaction.status = "failed";
           await transaction.save();
@@ -421,13 +414,11 @@ export class TransactionService {
         }
       }
 
-      // =========================================================
-      // EXISTING CONFIRMATION LOGIC (Standard)
-      // =========================================================
+      // EXISTING CONFIRMATION LOGIC
       transaction.status = "completed";
       await transaction.save();
 
-      // Wallet Top-up Logic (Existing)
+      // Wallet Top-up
       if (transaction.type === "wallet_top_up") {
         const user = await User.findByIdAndUpdate(
           transaction.userId,
@@ -442,14 +433,13 @@ export class TransactionService {
         return { message: "Wallet top-up confirmed successfully", transaction };
       }
 
-      // Application Logic (Existing - Complex)
+      // Application Payment
       if (transaction.relatedEntity?.type === "Application") {
         const applicationId = transaction.relatedEntity.id;
         const application =
           await Application.findById(applicationId).populate("createdBy");
 
         if (application) {
-          // Platform Booth Logic
           if (
             application.type === "booth" &&
             application.paymentStatus !== "paid" &&
@@ -493,7 +483,6 @@ export class TransactionService {
             });
           }
 
-          // Vendor Receipt
           const updatedApplication = await Application.findById(applicationId)
             .populate("event", "name location")
             .populate("createdBy", "companyName");
@@ -524,7 +513,7 @@ export class TransactionService {
         };
       }
 
-      // Event Payment Logic (Existing)
+      // Event Payment
       if (
         transaction.type === "payment" &&
         transaction.relatedEntity?.type === "Event"
@@ -542,7 +531,6 @@ export class TransactionService {
       return { message: "Payment confirmed", transaction };
     }
 
-    // Status pending/failed
     return {
       message: `Payment status: ${paymentIntent.status}`,
       status: paymentIntent.status,
@@ -551,7 +539,7 @@ export class TransactionService {
   }
 
   // =========================================================================
-  //  OTHER METHODS (Unchanged)
+  //  OTHER METHODS
   // =========================================================================
 
   async topUpWallet({ userId, amount, paymentMethod }) {
