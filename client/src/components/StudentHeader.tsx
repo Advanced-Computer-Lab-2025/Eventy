@@ -15,7 +15,6 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
-import { useEffect, useState } from "react";
 import WalletPopover from "./WalletPopover";
 import CalendarPopover from "./CalendarPopover";
 
