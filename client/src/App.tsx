@@ -43,6 +43,7 @@ import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
 import CalendarPage from "@/pages/CalendarPage";
+import LiveMoments from "@/pages/LiveMoments";
 function Router() {
   return (
     <Switch>
@@ -62,6 +63,21 @@ function Router() {
       <Route path="/booth-vote">
         <ProtectedRoute allowedRoles={["student", "staff", "ta", "professor"]}>
           <BoothVotePage />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/live-moments">
+        <ProtectedRoute
+          allowedRoles={[
+            "student",
+            "staff",
+            "ta",
+            "professor",
+            "events_office",
+            "admin",
+          ]}
+        >
+          <LiveMoments />
         </ProtectedRoute>
       </Route>
 

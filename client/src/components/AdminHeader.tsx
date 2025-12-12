@@ -1,4 +1,4 @@
-import { Users, Star, FileText, Gift, Home } from "lucide-react";
+import { Users, Star, FileText, Gift, Home, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
@@ -66,6 +66,16 @@ export default function AdminHeader() {
           >
             <Home className="h-4 w-4" />
             Dashboard
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/live-moments" ? "underline decoration-primary decoration-2" : ""}`}
+            data-testid="button-nav-live-moments"
+            onClick={() => setLocation("/live-moments")}
+          >
+            <Camera className="h-4 w-4" />
+            Live Moments
           </Button>
           <Button
             variant="ghost"

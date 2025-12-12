@@ -59,6 +59,9 @@ const userSchema = new mongoose.Schema(
       ],
       default: null,
     },
+    // Track viewed events for recommendations
+    viewedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
+
     status: {
       type: String,
       required: true,

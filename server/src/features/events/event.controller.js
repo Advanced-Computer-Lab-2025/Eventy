@@ -692,6 +692,21 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getOngoingEvents(req, res, next) {
+    try {
+      const userRole = req.user?.role;
+      const events = await eventService.getOngoingEvents(userRole);
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Ongoing events fetched successfully.")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   //search events by name and type
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
@@ -1034,6 +1049,72 @@ export class EventsController {
     }
   }
 
+  // Join waitlist for an event (for Student/Staff/TA/Professor)
+  async joinWaitlist(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+      const { autopayEnabled, paymentMethod } = req.body;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      // Allow only student/staff/ta/professor
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        throw new ApiError(
+          403,
+          "Only students, staff, TAs, and professors can join waitlists."
+        );
+      }
+
+      const waitlistEntry = await eventService.joinWaitlist(
+        eventId,
+        userId,
+        autopayEnabled || false,
+        paymentMethod || null
+      );
+
+      return res
+        .status(201)
+        .json(
+          new ApiResponse(
+            201,
+            waitlistEntry,
+            "Successfully joined the waitlist."
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // Check waitlist status for an event (for Student/Staff/TA/Professor)
+  async checkWaitlistStatus(req, res, next) {
+    try {
+      const userId = req.user._id || req.user.id;
+      const { eventId } = req.params;
+
+      if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+      }
+
+      const waitlistEntry = await eventService.checkWaitlistStatus(
+        eventId,
+        userId
+      );
+
+      return res.status(200).json(
+        new ApiResponse(200, {
+          isOnWaitlist: !!waitlistEntry,
+          waitlistEntry: waitlistEntry || null,
+        })
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   // Export registered users for an event in various formats
   async exportEventRegisteredUsers(req, res, next) {
     try {
@@ -1277,6 +1358,79 @@ export class EventsController {
     } catch (error) {
       console.error("Error counting approved events:", error);
       next(error);
+    }
+  }
+
+  async recordView(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id;
+
+      await User.findByIdAndUpdate(userId, {
+        $addToSet: { viewedEvents: eventId },
+      });
+
+      // Increment global view count for the event
+      await eventService.incrementViewCount(eventId);
+
+      return res.status(200).json({ success: true });
+    } catch (error) {
+      console.error("Error recording view:", error);
+      // Don't block the UI for this background task
+      return res.status(200).json({ success: false });
+    }
+  }
+
+  async uploadImageToEvent(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id || req.user.id;
+
+      if (!req.file) {
+        throw new ApiError(400, "Image file is required");
+      }
+
+      // Construct the public URL for the uploaded image
+      const relativePath = `/uploads/event-images/${req.file.filename}`;
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const imageUrl = `${protocol}://${host}${relativePath}`;
+
+      const updatedEvent = await eventService.uploadImageToEvent(
+        eventId,
+        userId,
+        imageUrl
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            event: updatedEvent,
+            imageUrl: imageUrl,
+          },
+          "Image uploaded successfully"
+        )
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEventImages(req, res, next) {
+    try {
+      const { eventId } = req.params;
+
+      const user = req.user || null;
+      const imageData = await eventService.getEventImages(eventId, user);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, imageData, "Event images fetched successfully")
+        );
+    } catch (err) {
+      next(err);
     }
   }
 }

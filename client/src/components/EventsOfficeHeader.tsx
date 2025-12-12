@@ -10,6 +10,7 @@ import {
   Gift,
   Star,
   ChevronDown,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -99,6 +100,16 @@ export default function EventsOfficeHeader() {
           >
             <Dumbbell className="h-4 w-4" />
             Sports Facilities
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/live-moments" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/live-moments")}
+            data-testid="button-nav-live-moments"
+          >
+            <Camera className="h-4 w-4" />
+            Live Moments
           </Button>
           <DropdownMenu
             open={isApprovalsOpen}

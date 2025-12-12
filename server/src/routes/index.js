@@ -12,6 +12,7 @@ import feedbackRoutes from "../features/feedback/feedback.routes.js";
 import transactionRoutes from "../features/transactions/transaction.route.js";
 import pollRoutes from "../features/polls/poll.route.js";
 import calendarRoutes from "../features/calendar/calendar.route.js";
+import recommendationRoutes from "../features/recommendations/recommendation.route.js";
 
 const PORT = process.env.PORT || 4000;
 const router = express.Router();
@@ -59,4 +60,6 @@ router.use("/transactions", transactionRoutes);
 router.use("/polls", pollRoutes);
 // calendar routes
 router.use("/calendar", calendarRoutes);
+// recommendation routes
+router.use("/recommendations", recommendationRoutes);
 export default router;

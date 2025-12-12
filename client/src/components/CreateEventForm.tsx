@@ -181,7 +181,9 @@ export default function CreateEventForm({
 
     // Logical date/time validation
     if (values.startDate && values.startTime) {
-      const start = new Date(`${values.startDate}T${values.startTime}:00`);
+      const start = new Date(
+        `${format(values.startDate, "yyyy-MM-dd")}T${values.startTime}:00`
+      );
       const now = new Date();
       if (!isNaN(start.getTime()) && start < now) {
         nextErrors.startTime = "Start date/time cannot be in the past";
@@ -198,8 +200,12 @@ export default function CreateEventForm({
       values.endDate &&
       values.endTime
     ) {
-      const start = new Date(`${values.startDate}T${values.startTime}:00`);
-      const end = new Date(`${values.endDate}T${values.endTime}:00`);
+      const start = new Date(
+        `${format(values.startDate, "yyyy-MM-dd")}T${values.startTime}:00`
+      );
+      const end = new Date(
+        `${format(values.endDate, "yyyy-MM-dd")}T${values.endTime}:00`
+      );
       if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && end <= start) {
         // Attach error to end time for clarity
         nextErrors.endTime = "End date/time must be after start date/time";
@@ -426,7 +432,9 @@ export default function CreateEventForm({
           {includeBudgetAndFunding && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="requiredBudget">Required Budget (EGP)</Label>
+                <Label htmlFor="requiredBudget">
+                  Required Budget (Dollars)
+                </Label>
                 <Input
                   id="requiredBudget"
                   type="number"

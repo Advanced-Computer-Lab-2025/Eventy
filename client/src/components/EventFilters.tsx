@@ -349,15 +349,14 @@ export default function EventFilters({
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal text-sm h-9 px-2",
+                      "w-full justify-center text-center font-normal text-sm h-9 px-2",
                       !filters.startDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-0.5 h-3.5 w-3.5" />
                     {filters.startDate ? (
                       format(filters.startDate, "dd/MM/yyyy")
                     ) : (
-                      <span className="text-xs">dd/mm/yyyy</span>
+                      <span className="text-sm">dd/mm/yyyy</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -388,15 +387,14 @@ export default function EventFilters({
                   <Button
                     variant={"outline"}
                     className={cn(
-                      "w-full justify-start text-left font-normal text-sm h-9 px-2",
+                      "w-full justify-center text-center font-normal text-sm h-9 px-2",
                       !filters.endDate && "text-muted-foreground"
                     )}
                   >
-                    <CalendarIcon className="mr-0.5 h-3.5 w-3.5" />
                     {filters.endDate ? (
                       format(filters.endDate, "dd/MM/yyyy")
                     ) : (
-                      <span className="text-xs">dd/mm/yyyy</span>
+                      <span className="text-sm">dd/mm/yyyy</span>
                     )}
                   </Button>
                 </PopoverTrigger>

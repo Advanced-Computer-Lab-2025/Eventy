@@ -7,6 +7,7 @@ import StudentHeader from "@/components/StudentHeader";
 import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import EmptyState from "@/components/EmptyState";
+import Recommendations from "@/components/Recommendations";
 import { useToast } from "@/hooks/use-toast";
 import { getEventImage } from "@/lib/eventImages";
 
@@ -260,6 +261,9 @@ export default function Home() {
 
       <main className="pb-20 md:pb-8">
         <div className="max-w-7xl mx-auto px-4 md:px-6 py-8">
+          {/* Recommendations Section */}
+          <Recommendations />
+
           {/* Header Section - Full Width */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold mb-2">Upcoming Events</h2>
