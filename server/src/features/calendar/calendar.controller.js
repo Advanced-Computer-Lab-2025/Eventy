@@ -88,11 +88,11 @@ export const handleOAuthCallback = async (req, res) => {
       delete req.session.userId;
     }
 
-    // Redirect to Eventy root with success indicator
-    res.redirect("http://localhost:5000/?calendar_connected=true");
+    // Redirect to calendar page with success indicator
+    res.redirect("http://localhost:5000/calendar?calendar_connected=true");
   } catch (error) {
     console.error("Error handling OAuth callback:", error);
-    res.redirect("http://localhost:5000/?calendar_error=auth_failed");
+    res.redirect("http://localhost:5000/calendar?calendar_error=auth_failed");
   }
 };
 
