@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Tooltip,
   TooltipContent,
@@ -205,12 +204,12 @@ export default function MiniCalendar({
   };
 
   return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
+    <div className={className}>
+      <div className="p-4 pb-3">
         <div className="flex items-center justify-between">
-          <CardTitle className="text-lg">
+          <h3 className="text-lg font-semibold">
             {monthNames[currentDate.getMonth()]} {currentDate.getFullYear()}
-          </CardTitle>
+          </h3>
           <div className="flex gap-1">
             <Button
               variant="ghost"
@@ -238,8 +237,8 @@ export default function MiniCalendar({
             </Button>
           </div>
         </div>
-      </CardHeader>
-      <CardContent>
+      </div>
+      <div className="p-4 pt-0">
         <div className="grid grid-cols-7 gap-1 mb-2">
           {dayNames.map((name) => (
             <div
@@ -262,7 +261,7 @@ export default function MiniCalendar({
             <span>{events.length} total events</span>
           </div>
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
