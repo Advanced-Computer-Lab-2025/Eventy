@@ -203,10 +203,10 @@ export class TransactionController {
       const buyerId = req.user._id || req.user.id;
 
       // Basic Role Check
-      if (!["student", "staff", "ta"].includes(req.user.role)) {
-        return res
-          .status(403)
-          .json({ error: "Only students/staff can buy resale tickets." });
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        return res.status(403).json({
+          error: "Only students/staff/ta/professors can buy resale tickets.",
+        });
       }
 
       const result = await this.transactionService.buyResaleTicket({
