@@ -9,6 +9,12 @@ import roleMiddleware from "../../middlewares/role.middleware.js";
 const router = express.Router();
 const eventsController = new EventsController();
 
+// Record view
+router.post(
+  "/:eventId/view",
+  authMiddleware,
+  eventsController.recordView.bind(eventsController)
+);
 // Configure multer for event images
 const eventImagesDir = path.join(process.cwd(), "uploads", "event-images");
 if (!fs.existsSync(eventImagesDir)) {

@@ -2695,6 +2695,10 @@ export async function getApprovedEventsCount() {
   });
 }
 
+export const incrementViewCount = async (eventId) => {
+  await Event.findByIdAndUpdate(eventId, { $inc: { viewCount: 1 } });
+};
+
 /**
  * Upload an image to an ongoing event by a registered attendee
  * @param {string} eventId - The event ID

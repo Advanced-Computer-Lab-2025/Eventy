@@ -26,11 +26,27 @@ interface EventDetailsDialogProps {
   loading?: boolean;
 }
 
+import { useEffect } from "react";
+
 export default function EventDetailsDialog({
   open,
   onOpenChange,
   event,
 }: EventDetailsDialogProps) {
+  useEffect(() => {
+    if (open && event?._id) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+        fetch(`${API_BASE_URL}/api/events/${event._id}/view`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch((err) => console.error("Failed to record view", err));
+      }
+    }
+  }, [open, event]);
+
   if (!event) return null;
 
   // --- Date Formatting Logic based on Schema ---

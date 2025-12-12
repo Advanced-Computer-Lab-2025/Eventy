@@ -218,6 +218,10 @@ const eventSchema = new Schema(
     // Reminder tracking fields
     reminder1DaySent: { type: Boolean, default: false },
     reminder1HourSent: { type: Boolean, default: false },
+
+    // Recommendation metrics
+    viewCount: { type: Number, default: 0 },
+
     // timestamps option for mongoose schema
   },
   { timestamps: true }
