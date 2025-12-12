@@ -74,11 +74,18 @@ function CompactEventCard({ event }: { event: any }) {
 
   const requiresPayment = event.price && event.price > 0;
 
+  // Check if event is full
+  const isFull =
+    event.capacity &&
+    event.attendees &&
+    event.attendees.length >= event.capacity;
+
   const canRegister =
     !isRegistered &&
     isRegisterable &&
     isBeforeDeadline &&
     !isArchived &&
+    !isFull &&
     !isProfessorInWorkshop &&
     userRole !== "admin" &&
     userRole !== "events_office";
@@ -198,6 +205,15 @@ function CompactEventCard({ event }: { event: any }) {
                 disabled
               >
                 Registered
+              </Button>
+            ) : isFull ? (
+              <Button
+                size="sm"
+                variant="secondary"
+                className="w-full mt-auto cursor-default opacity-60"
+                disabled
+              >
+                Event Full
               </Button>
             ) : null}
           </div>
@@ -418,14 +434,24 @@ export default function Recommendations() {
 
       <div className="relative group/container pt-2 -mx-6 px-6">
         <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent hover:scrollbar-thumb-primary/30">
-          {data.events.slice(0, 5).map((event) => (
-            <div
-              key={event._id}
-              className="min-w-[230px] w-[230px] snap-start relative mt-1"
-            >
-              <CompactEventCard event={event} />
-            </div>
-          ))}
+          {data.events
+            .filter((event) => {
+              // Filter out full events
+              const isFull =
+                event.capacity &&
+                event.attendees &&
+                event.attendees.length >= event.capacity;
+              return !isFull;
+            })
+            .slice(0, 5)
+            .map((event) => (
+              <div
+                key={event._id}
+                className="min-w-[230px] w-[230px] snap-start relative mt-1"
+              >
+                <CompactEventCard event={event} />
+              </div>
+            ))}
         </div>
       </div>
     </div>
