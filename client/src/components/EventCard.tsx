@@ -642,7 +642,9 @@ export default function EventCard({
     if (diffTime < 0)
       return { canCancel: false, canResell: false, isExpired: true, days: -1 };
 
-    // Logic: If days >= 14, allow Cancel. If < 14, allow Resale.
+    // Seller Logic:
+    // If > 14 days, they can cancel normally.
+    // If < 14 days, they must sell on marketplace.
     if (daysUntilEvent >= 14) {
       return { canCancel: true, canResell: false, days: daysUntilEvent };
     } else {
@@ -657,11 +659,15 @@ export default function EventCard({
     days: daysUntilEvent,
   } = getActionStatus();
 
-  // Flag for Unregistered user viewing event < 14 days away
+  // --- MODIFIED BUYER LOGIC ---
+  // If registered: They see cancellation or sell options (handled above).
+  // If NOT registered:
+  //   - If registration is OPEN (isBeforeDeadline), show "Register".
+  //   - If registration is CLOSED (!isBeforeDeadline), show "View Resale Tickets".
   const showResaleMarketplaceOption =
     !registered &&
     !isArchived &&
-    daysUntilEvent < 14 &&
+    !isBeforeDeadline && // Only show marketplace if main registration is CLOSED
     daysUntilEvent >= 0 &&
     isRegisterable;
 
@@ -996,7 +1002,6 @@ export default function EventCard({
                       View Details
                     </Button>
 
-                    {/* --- NEW LOGIC: SHOW RESALE IF < 14 DAYS --- */}
                     {showResaleMarketplaceOption ? (
                       <Button
                         className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
