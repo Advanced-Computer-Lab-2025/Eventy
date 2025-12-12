@@ -1687,15 +1687,27 @@ export const joinWaitlist = async (
     throw new ApiError(409, "You are already registered for this event");
   }
 
-  // Check if user is already on waitlist
+  // Check if user is already on waitlist (including soft-deleted entries)
+  // If a soft-deleted entry exists, we'll restore it instead of creating a new one
   const existingWaitlist = await Waitlist.findOne({
     event: eventId,
     user: userId,
-    deletedAt: null,
   });
 
   if (existingWaitlist) {
-    throw new ApiError(409, "You are already on the waitlist for this event");
+    // If entry exists but is soft-deleted, restore it
+    if (existingWaitlist.deletedAt) {
+      existingWaitlist.deletedAt = null;
+      existingWaitlist.autopayEnabled = autopayEnabled;
+      existingWaitlist.paymentMethod = autopayEnabled ? paymentMethod : null;
+      existingWaitlist.notified = false;
+      existingWaitlist.notifiedAt = null;
+      await existingWaitlist.save();
+      return existingWaitlist;
+    } else {
+      // Active entry exists
+      throw new ApiError(409, "You are already on the waitlist for this event");
+    }
   }
 
   // Validate payment method if autopay is enabled

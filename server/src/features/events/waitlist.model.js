@@ -47,8 +47,15 @@ const waitlistSchema = new Schema(
   { timestamps: true }
 );
 
-// Compound index to prevent duplicate waitlist entries
-waitlistSchema.index({ event: 1, user: 1 }, { unique: true });
+// Compound index to prevent duplicate waitlist entries (only for active entries)
+// This allows users to rejoin waitlist after being soft-deleted
+waitlistSchema.index(
+  { event: 1, user: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { deletedAt: null },
+  }
+);
 
 // Index for querying waitlist by event
 waitlistSchema.index({ event: 1, deletedAt: 1 });
