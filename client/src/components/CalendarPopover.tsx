@@ -80,7 +80,7 @@ export default function CalendarPopover() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0" align="end">
+      <PopoverContent className="w-72 p-0" align="end">
         <MiniCalendar events={events} onDateClick={handleDateClick} />
       </PopoverContent>
     </Popover>

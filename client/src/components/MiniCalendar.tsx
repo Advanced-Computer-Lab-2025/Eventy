@@ -161,19 +161,16 @@ export default function MiniCalendar({
                 <div className="flex flex-col items-center justify-center h-full">
                   <span>{day}</span>
                   {hasEvents && (
-                    <div className="flex gap-0.5 mt-1">
-                      {dayEvents.slice(0, 3).map((_, index) => (
-                        <div
-                          key={index}
-                          className={`
-                            w-1.5 h-1.5 rounded-full
-                            ${today ? "bg-primary-foreground" : "bg-primary"}
-                          `}
-                        />
-                      ))}
-                      {dayEvents.length > 3 && (
-                        <span className="text-[8px] ml-0.5">
-                          +{dayEvents.length - 3}
+                    <div className="flex items-center justify-center gap-0.5 mt-1">
+                      <div
+                        className={`
+                          w-1.5 h-1.5 rounded-full
+                          ${today ? "bg-primary-foreground" : "bg-primary"}
+                        `}
+                      />
+                      {dayEvents.length > 1 && (
+                        <span className="text-[8px] leading-none">
+                          +{dayEvents.length - 1}
                         </span>
                       )}
                     </div>

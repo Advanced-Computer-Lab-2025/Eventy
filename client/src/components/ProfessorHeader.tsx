@@ -16,6 +16,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 import WalletPopover from "./WalletPopover"; // Import the WalletPopover
+import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
@@ -60,6 +61,7 @@ export default function ProfessorHeader({
 
           <div className="flex items-center gap-1 md:gap-2">
             <WalletPopover /> {/* <-- Replaced dialog button with this */}
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />

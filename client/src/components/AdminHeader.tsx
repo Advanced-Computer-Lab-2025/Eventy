@@ -1,9 +1,10 @@
-import { Users, Star, FileText, Gift, Home } from "lucide-react";
+import { Users, Star, FileText, Gift, Home, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 
@@ -41,6 +42,7 @@ export default function AdminHeader() {
           </div>
 
           <div className="flex items-center gap-2">
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />

@@ -13,6 +13,8 @@ import {
   GraduationCap,
   Route as RouteIcon,
   Megaphone,
+  Grid2x2,
+  List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +29,7 @@ import StaffHeader from "@/components/StaffHeader";
 import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import EventCard from "@/components/EventCard";
+import BigCalendarView from "@/components/BigCalendarView";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
@@ -73,11 +76,12 @@ export default function StaffTADashboard() {
   const [upcomingLoading, setUpcomingLoading] = useState(true);
   const [upcomingError, setUpcomingError] = useState("");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [eventFilters, setEventFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,
@@ -246,10 +250,14 @@ export default function StaffTADashboard() {
       next.location = eventFilters.location;
     }
     if (eventFilters.startDate) {
-      next.startDate = eventFilters.startDate;
+      next.startDate =
+        (eventFilters.startDate as any).toISOString?.() ||
+        String(eventFilters.startDate);
     }
     if (eventFilters.endDate) {
-      next.endDate = eventFilters.endDate;
+      next.endDate =
+        (eventFilters.endDate as any).toISOString?.() ||
+        String(eventFilters.endDate);
     }
     if (eventFilters.professor) {
       (next as any).professor = eventFilters.professor;
@@ -510,6 +518,24 @@ export default function StaffTADashboard() {
                     sortOrder={sortOrder}
                     onSortChange={setSortOrder}
                   />
+                  <div className="flex gap-1 border rounded-lg p-1">
+                    <Button
+                      size="sm"
+                      variant={viewMode === "list" ? "default" : "ghost"}
+                      onClick={() => setViewMode("list")}
+                      className="h-8 w-8 p-0"
+                    >
+                      <List className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant={viewMode === "calendar" ? "default" : "ghost"}
+                      onClick={() => setViewMode("calendar")}
+                      className="h-8 w-8 p-0"
+                    >
+                      <Grid2x2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
                 {upcomingLoading ? (
@@ -518,6 +544,21 @@ export default function StaffTADashboard() {
                   <p className="text-red-500">{upcomingError}</p>
                 ) : upcomingEvents.length === 0 ? (
                   <EmptyState />
+                ) : viewMode === "calendar" ? (
+                  <BigCalendarView
+                    events={[...upcomingEvents].sort((a, b) => {
+                      const aDate = a.startDate
+                        ? new Date(a.startDate).getTime()
+                        : 0;
+                      const bDate = b.startDate
+                        ? new Date(b.startDate).getTime()
+                        : 0;
+                      return sortOrder === "asc"
+                        ? aDate - bDate
+                        : bDate - aDate;
+                    })}
+                    onUnregister={fetchEventStats}
+                  />
                 ) : (
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                     {[...upcomingEvents]

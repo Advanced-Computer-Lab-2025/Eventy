@@ -1,5 +1,12 @@
 import { useState, useEffect, useMemo } from "react";
-import { Calendar, Users, TrendingUp, UserCheck } from "lucide-react";
+import {
+  Calendar,
+  Users,
+  TrendingUp,
+  UserCheck,
+  Grid2x2,
+  List,
+} from "lucide-react";
 import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
@@ -7,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
+import BigCalendarView from "@/components/BigCalendarView";
 import EmptyState from "@/components/EmptyState";
 import { getEventImage } from "@/lib/eventImages";
 import EventSort from "@/components/EventSort";
@@ -49,13 +57,14 @@ export default function AdminDashboardPage() {
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,
   });
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0); // ✅ Add this
   const [activeUsersLoading, setActiveUsersLoading] = useState<boolean>(true); // ✅ Add this
   const [eventTypeFilter, setEventTypeFilter] = useState<
@@ -524,6 +533,24 @@ export default function AdminDashboardPage() {
                 />
               </div>
               <EventSort sortOrder={sortOrder} onSortChange={setSortOrder} />
+              <div className="flex gap-1 border rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={viewMode === "list" ? "default" : "ghost"}
+                  onClick={() => setViewMode("list")}
+                  className="h-8 w-8 p-0"
+                >
+                  <List className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant={viewMode === "calendar" ? "default" : "ghost"}
+                  onClick={() => setViewMode("calendar")}
+                  className="h-8 w-8 p-0"
+                >
+                  <Grid2x2 className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
 
             {eventsLoading ? (
@@ -532,6 +559,37 @@ export default function AdminDashboardPage() {
               <p className="text-red-500">{eventsError}</p>
             ) : upcomingEvents.length === 0 ? (
               <EmptyState />
+            ) : viewMode === "calendar" ? (
+              <BigCalendarView
+                events={[...upcomingEvents]
+                  .sort((a, b) => {
+                    const aDate = a.startDate
+                      ? new Date(a.startDate).getTime()
+                      : 0;
+                    const bDate = b.startDate
+                      ? new Date(b.startDate).getTime()
+                      : 0;
+                    return sortOrder === "asc" ? aDate - bDate : bDate - aDate;
+                  })
+                  .filter((e: any) => {
+                    if (
+                      filters.eventType !== "all" &&
+                      !e.eventType.toLowerCase().includes(filters.eventType)
+                    ) {
+                      return false;
+                    }
+                    if (
+                      filters.location !== "all" &&
+                      e.location !== filters.location
+                    ) {
+                      return false;
+                    }
+                    return true;
+                  })}
+                onUnregister={() => {
+                  setUpcomingEvents([]);
+                }}
+              />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {[...upcomingEvents]
