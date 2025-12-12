@@ -385,6 +385,20 @@ router.patch(
   roleMiddleware(["student", "staff", "ta", "professor"]),
   eventsController.cancelEventRegistration.bind(eventsController)
 );
+// POST /events/:id/waitlist
+router.post(
+  "/:eventId/waitlist",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.joinWaitlist.bind(eventsController)
+);
+// GET /events/:id/waitlist/status - Check if user is on waitlist
+router.get(
+  "/:eventId/waitlist/status",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.checkWaitlistStatus.bind(eventsController)
+);
 // Get attendees count for an event
 router.get(
   "/reports/attendees",
