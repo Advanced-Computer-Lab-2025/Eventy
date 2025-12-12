@@ -12,17 +12,18 @@ import {
   ArrowUpRight,
   PlusCircle,
   CreditCard,
+  RefreshCw,
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { WalletTopUpDialog } from "./WalletTopUpDialog";
 
 interface WalletPopoverProps {
   balance: number;
-  onRefreshBalance: () => void;
+  onRefreshBalance?: () => void;
 }
 
 export default function WalletPopover({
-  balance,
+  balance: initialBalance,
   onRefreshBalance,
 }: WalletPopoverProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -30,30 +31,64 @@ export default function WalletPopover({
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchTransactions = async () => {
+  // Local state to hold the live balance
+  const [currentBalance, setCurrentBalance] = useState(initialBalance);
+
+  // Sync prop changes (initial load), but allow local override
+  useEffect(() => {
+    setCurrentBalance(initialBalance);
+  }, [initialBalance]);
+
+  const fetchData = async () => {
     setLoading(true);
+    const token = localStorage.getItem("token");
+
     try {
-      const token = localStorage.getItem("token");
+      // 1. Single Fetch: Gets both Transactions AND Balance
+      // Added timestamp to prevent caching
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/me`,
+        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/me?t=${new Date().getTime()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
+          cache: "no-store",
         }
       );
+
       if (res.ok) {
         const data = await res.json();
-        setTransactions(data.transactions || []);
+
+        // Handle the response structure (adjust if your controller wraps it in 'data')
+        // Scenario A: Controller returns { transactions: [], walletBalance: 100 }
+        // Scenario B: Controller returns { data: { transactions: [], walletBalance: 100 } }
+
+        const responseData = data.data || data;
+
+        // Update Transactions
+        setTransactions(responseData.transactions || []);
+
+        // Update Balance
+        if (typeof responseData.walletBalance !== "undefined") {
+          console.log(
+            "Wallet refreshed via single API call. New Balance:",
+            responseData.walletBalance
+          );
+          setCurrentBalance(Number(responseData.walletBalance));
+        }
       }
     } catch (error) {
-      console.error(error);
+      console.error("Failed to refresh wallet data:", error);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch data whenever the popover opens
   useEffect(() => {
     if (popoverOpen) {
-      fetchTransactions();
+      fetchData();
+      // Optional: If the parent component needs to know the balance updated,
+      // you might still want to trigger this, but the data inside the popover
+      // is now self-sufficient.
       if (onRefreshBalance) onRefreshBalance();
     }
   }, [popoverOpen]);
@@ -67,12 +102,11 @@ export default function WalletPopover({
           </Button>
         </PopoverTrigger>
 
-        {/* Dimensions matched to Notifications: 408px x 573px */}
         <PopoverContent
           className="!w-[408px] !h-[573px] p-0 flex flex-col overflow-hidden shadow-2xl border-purple-100 dark:border-white/10 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-background/95 dark:via-background/90 dark:to-purple-900/10 backdrop-blur-xl"
           align="end"
         >
-          {/* Header: Restored "Available Funds" design you liked */}
+          {/* Header */}
           <div className="px-4 py-4 border-b border-purple-100/50 dark:border-white/5 shrink-0">
             <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
               <CreditCard className="w-4 h-4" />
@@ -80,26 +114,32 @@ export default function WalletPopover({
                 Available Funds
               </span>
             </div>
-            <div className="flex items-baseline gap-1">
-              <span className="text-3xl font-bold text-foreground tracking-tight">
-                ${Number(balance).toFixed(2)}
-              </span>
-              <span className="text-sm text-muted-foreground font-medium">
-                USD
-              </span>
+            <div className="flex items-baseline justify-between">
+              <div className="flex items-baseline gap-1">
+                {/* ALWAYS display currentBalance state */}
+                <span className="text-3xl font-bold text-foreground tracking-tight">
+                  ${Number(currentBalance).toFixed(2)}
+                </span>
+                <span className="text-sm text-muted-foreground font-medium">
+                  USD
+                </span>
+              </div>
+              {loading && (
+                <RefreshCw className="h-4 w-4 animate-spin text-muted-foreground opacity-50" />
+              )}
             </div>
           </div>
 
-          {/* Subheader: "Recent Activity" */}
+          {/* Subheader */}
           <div className="px-4 py-2 border-b border-purple-100/50 dark:border-white/5 bg-white/30 dark:bg-white/[0.02] text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
             Recent Activity
           </div>
 
-          {/* ScrollArea: List items matched to Notifications typography */}
+          {/* ScrollArea */}
           <ScrollArea className="flex-1 w-full h-full">
-            {loading ? (
+            {loading && transactions.length === 0 ? (
               <div className="p-8 text-center text-muted-foreground text-sm">
-                Loading transactions...
+                Refreshing data...
               </div>
             ) : transactions.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-60">
@@ -115,7 +155,6 @@ export default function WalletPopover({
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div className="flex items-center gap-3">
-                        {/* Icon */}
                         <div
                           className={`p-2 rounded-full shrink-0 ${
                             tx.type === "payment"
@@ -129,7 +168,6 @@ export default function WalletPopover({
                             <ArrowDownLeft className="h-4 w-4" />
                           )}
                         </div>
-                        {/* Text - Matches Notification typography */}
                         <div className="space-y-0.5">
                           <p className="text-sm font-semibold capitalize text-foreground">
                             {tx.type.replace(/_/g, " ")}
@@ -142,7 +180,6 @@ export default function WalletPopover({
                         </div>
                       </div>
 
-                      {/* Amount */}
                       <span
                         className={`font-bold text-sm ${
                           tx.type === "payment"
@@ -160,7 +197,7 @@ export default function WalletPopover({
             )}
           </ScrollArea>
 
-          {/* Footer: Matches "Mark all as read" section style */}
+          {/* Footer */}
           <div className="p-3 border-t border-purple-100/50 dark:border-white/5 bg-muted/30 backdrop-blur-sm shrink-0">
             <Button
               size="sm"
@@ -177,7 +214,8 @@ export default function WalletPopover({
         open={topUpOpen}
         onOpenChange={setTopUpOpen}
         onPaymentSuccess={() => {
-          fetchTransactions();
+          fetchData();
+          // We still notify parent in case other parts of the UI (like a header badge) need updating
           if (onRefreshBalance) onRefreshBalance();
         }}
       />

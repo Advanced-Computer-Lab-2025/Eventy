@@ -113,7 +113,7 @@ export class TransactionController {
       const transactions =
         await this.transactionService.getUserTransactions(userId);
 
-      res.status(200).json({ transactions });
+      res.status(200).json(transactions);
     } catch (error) {
       console.error("Get transactions error:", error);
       res.status(400).json({ error: error.message });
