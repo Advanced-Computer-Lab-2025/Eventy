@@ -184,7 +184,7 @@ export default function TripManagement() {
                         Start Date
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">
-                        Price (EGP)
+                        Price (Dollars)
                       </th>
                       <th className="text-left py-3 px-4 font-medium text-muted-foreground">
                         Capacity
@@ -271,7 +271,7 @@ export default function TripManagement() {
                   <strong>Location:</strong> {selectedTrip?.location}
                 </p>
                 <p>
-                  <strong>Price:</strong> {selectedTrip?.price} EGP
+                  <strong>Price:</strong> {selectedTrip?.price} Dollars
                 </p>
                 <p>
                   <strong>Capacity:</strong> {selectedTrip?.capacity}
