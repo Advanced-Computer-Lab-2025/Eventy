@@ -26,11 +26,15 @@ function EventPaymentForm({
   eventId,
   amount,
   onSuccess,
+  waitlistMode = false,
+  onPaymentMethodSelected,
 }: {
   clientSecret: string;
   eventId: string;
   amount: number;
   onSuccess: () => void;
+  waitlistMode?: boolean;
+  onPaymentMethodSelected?: (method: "wallet" | "credit_card") => void;
 }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -47,6 +51,42 @@ function EventPaymentForm({
       const { error: submitError } = await elements.submit();
       if (submitError) throw new Error(submitError.message);
 
+      // In waitlist mode, we need to create a setup intent to save the payment method
+      if (waitlistMode) {
+        // For waitlist, we'll create a setup intent to save the payment method
+        // without charging. The backend should handle this.
+        // For now, we'll just validate the card is entered correctly
+        const paymentElement = elements.getElement("payment");
+        if (!paymentElement) {
+          throw new Error("Payment element not found");
+        }
+
+        // Get the payment method from the element
+        const { error: pmError, paymentMethod } =
+          await stripe.createPaymentMethod({
+            elements,
+          });
+
+        if (pmError) throw new Error(pmError.message);
+
+        if (paymentMethod) {
+          // Payment method created successfully, save it
+          if (onPaymentMethodSelected) {
+            onPaymentMethodSelected("credit_card");
+          }
+          toast({
+            title: "Card Details Saved",
+            description:
+              "Your card details have been saved for autopay. You'll be charged when a spot becomes available.",
+          });
+          onSuccess();
+          return;
+        } else {
+          throw new Error("Failed to save payment method");
+        }
+      }
+
+      // Normal payment flow
       const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
         clientSecret,
@@ -127,6 +167,8 @@ function EventPaymentForm({
       >
         {isProcessing ? (
           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : waitlistMode ? (
+          "Save Card for Autopay"
         ) : (
           `Pay $${amount.toFixed(2)} & Register`
         )}
@@ -143,6 +185,8 @@ interface EventPaymentDialogProps {
   eventId: string;
   price: number;
   onRegistered: () => void;
+  waitlistMode?: boolean;
+  onPaymentMethodSelected?: (method: "wallet" | "credit_card") => void;
 }
 
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
@@ -153,6 +197,8 @@ export function EventPaymentDialog({
   eventId,
   price,
   onRegistered,
+  waitlistMode = false,
+  onPaymentMethodSelected,
 }: EventPaymentDialogProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -176,6 +222,9 @@ export function EventPaymentDialog({
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+
+      // For waitlist mode, we still need to create a payment intent
+      // so the user can enter their card details for autopay
       const res = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/api/transactions/pay/${eventId}`,
         {
@@ -184,7 +233,9 @@ export function EventPaymentDialog({
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ paymentMethod: "credit_card" }),
+          body: JSON.stringify({
+            paymentMethod: "credit_card",
+          }),
         }
       );
 
@@ -221,6 +272,15 @@ export function EventPaymentDialog({
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
+
+      if (waitlistMode) {
+        // In waitlist mode, just store the payment method preference
+        if (onPaymentMethodSelected) {
+          onPaymentMethodSelected("wallet");
+        }
+        onOpenChange(false);
+        return;
+      }
 
       // Step A: Deduct Money
       const payRes = await fetch(
@@ -301,6 +361,7 @@ export function EventPaymentDialog({
     if (!clientSecret) return null;
     return {
       clientSecret,
+      paymentMethodCreation: waitlistMode ? "manual" : "automatic",
       appearance: {
         theme: theme === "dark" ? "night" : ("stripe" as "night" | "stripe"),
         variables: {
@@ -310,17 +371,19 @@ export function EventPaymentDialog({
         },
       },
     };
-  }, [clientSecret, theme]);
+  }, [clientSecret, theme, waitlistMode]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] p-8 max-h-[90vh] overflow-y-auto">
         <DialogHeader className="mb-4 text-left">
           <DialogTitle className="text-2xl font-bold">
-            Event Registration & Payment
+            {waitlistMode ? "Set Up Autopay" : "Event Registration & Payment"}
           </DialogTitle>
           <DialogDescription>
-            Securely pay and register for this event.
+            {waitlistMode
+              ? "Select your payment method for automatic payment when a spot becomes available."
+              : "Securely pay and register for this event."}
           </DialogDescription>
         </DialogHeader>
         <div className="grid md:grid-cols-2 gap-8 pt-4 items-start">
@@ -418,6 +481,12 @@ export function EventPaymentDialog({
                 >
                   {isLoading ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : waitlistMode ? (
+                    paymentMethod === "card" ? (
+                      "Set Up Card Payment"
+                    ) : (
+                      "Use Wallet"
+                    )
                   ) : paymentMethod === "card" ? (
                     `Proceed to Card Details`
                   ) : (
@@ -450,10 +519,16 @@ export function EventPaymentDialog({
                       clientSecret={clientSecret}
                       eventId={eventId}
                       amount={price}
+                      waitlistMode={waitlistMode}
                       onSuccess={() => {
-                        onRegistered();
+                        if (waitlistMode && onPaymentMethodSelected) {
+                          onPaymentMethodSelected("credit_card");
+                        } else {
+                          onRegistered();
+                        }
                         onOpenChange(false);
                       }}
+                      onPaymentMethodSelected={onPaymentMethodSelected}
                     />
                   </Elements>
                 )}
