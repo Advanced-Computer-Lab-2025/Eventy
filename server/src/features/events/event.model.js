@@ -230,10 +230,23 @@ const eventSchema = new Schema(
         htmlLink: String,
       },
     ],
+    // ✅ FEATURE 4: RESALE MARKET LISTINGS
+    resaleListings: [
+      {
+        sellerId: { type: Schema.Types.ObjectId, ref: "User" },
+        originalPrice: Number,
+        status: {
+          type: String,
+          enum: ["available", "sold"],
+          default: "available",
+        },
+        buyerId: { type: Schema.Types.ObjectId, ref: "User" }, // Who bought it?
+        listedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     // Recommendation metrics
     viewCount: { type: Number, default: 0 },
-
-    // timestamps option for mongoose schema
   },
   { timestamps: true }
 );

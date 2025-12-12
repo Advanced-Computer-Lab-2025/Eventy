@@ -100,5 +100,15 @@ router.get(
   authMiddleware,
   transactionController.getStripePublishableKey.bind(transactionController)
 );
+// ==========================================
+// 🎟️ FEATURE 4: RESALE MARKET PURCHASE
+// ==========================================
 
+// Buy a ticket from the resale market
+router.post(
+  "/resale/buy",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  transactionController.buyResaleTicket.bind(transactionController)
+);
 export default router;
