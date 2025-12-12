@@ -6,6 +6,7 @@ import {
 } from "./auth.validation.js";
 import jwt from "jsonwebtoken";
 import { sendStudentEmailVerification } from "./email.service.js";
+import { waitForDebugger } from "inspector";
 export const signUpUser = async (data) => {
   const { role } = data;
 
@@ -219,6 +220,7 @@ export const loginUser = async (data) => {
       firstName: user.firstName,
       lastName: user.lastName,
       companyName: user.companyName,
+      walletBalance: user.walletBalance,
     },
     token,
   };

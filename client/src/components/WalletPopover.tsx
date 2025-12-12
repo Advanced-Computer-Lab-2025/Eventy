@@ -6,32 +6,31 @@ import {
 } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { Wallet, ArrowDownLeft, ArrowUpRight, PlusCircle } from "lucide-react";
+import {
+  Wallet,
+  ArrowDownLeft,
+  ArrowUpRight,
+  PlusCircle,
+  CreditCard,
+} from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { WalletTopUpDialog } from "./WalletTopUpDialog"; // Import the new dialog
+import { WalletTopUpDialog } from "./WalletTopUpDialog";
 
-interface Transaction {
-  _id: string;
-  type: "payment" | "refund" | "wallet_top_up";
-  amount: number;
-  description?: string;
-  createdAt: string;
+interface WalletPopoverProps {
+  balance: number;
+  onRefreshBalance: () => void;
 }
 
-export default function WalletPopover() {
+export default function WalletPopover({
+  balance,
+  onRefreshBalance,
+}: WalletPopoverProps) {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const balance = transactions.reduce((acc, tx) => {
-    return tx.type === "refund" || tx.type === "wallet_top_up"
-      ? acc + tx.amount
-      : acc - tx.amount;
-  }, 0);
-
-  const fetchWallet = async () => {
+  const fetchTransactions = async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -46,7 +45,7 @@ export default function WalletPopover() {
         setTransactions(data.transactions || []);
       }
     } catch (error) {
-      console.error("Failed to load wallet", error);
+      console.error(error);
     } finally {
       setLoading(false);
     }
@@ -54,7 +53,8 @@ export default function WalletPopover() {
 
   useEffect(() => {
     if (popoverOpen) {
-      fetchWallet();
+      fetchTransactions();
+      if (onRefreshBalance) onRefreshBalance();
     }
   }, [popoverOpen]);
 
@@ -66,90 +66,119 @@ export default function WalletPopover() {
             <Wallet className="h-5 w-5" />
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-96 p-0" align="end">
-          <div className="flex items-center justify-between p-4 border-b">
-            <div className="flex items-center gap-2">
-              <h3 className="font-semibold text-lg">My Transactions</h3>
+
+        {/* Dimensions matched to Notifications: 408px x 573px */}
+        <PopoverContent
+          className="!w-[408px] !h-[573px] p-0 flex flex-col overflow-hidden shadow-2xl border-purple-100 dark:border-white/10 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-background/95 dark:via-background/90 dark:to-purple-900/10 backdrop-blur-xl"
+          align="end"
+        >
+          {/* Header: Restored "Available Funds" design you liked */}
+          <div className="px-4 py-4 border-b border-purple-100/50 dark:border-white/5 shrink-0">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <CreditCard className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">
+                Available Funds
+              </span>
             </div>
-            <Badge variant="outline" className="text-sm font-mono">
-              ${balance.toFixed(2)}
-            </Badge>
+            <div className="flex items-baseline gap-1">
+              <span className="text-3xl font-bold text-foreground tracking-tight">
+                ${Number(balance).toFixed(2)}
+              </span>
+              <span className="text-sm text-muted-foreground font-medium">
+                USD
+              </span>
+            </div>
           </div>
-          <ScrollArea className="h-[350px]">
+
+          {/* Subheader: "Recent Activity" */}
+          <div className="px-4 py-2 border-b border-purple-100/50 dark:border-white/5 bg-white/30 dark:bg-white/[0.02] text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
+            Recent Activity
+          </div>
+
+          {/* ScrollArea: List items matched to Notifications typography */}
+          <ScrollArea className="flex-1 w-full h-full">
             {loading ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Loading...
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Loading transactions...
               </div>
             ) : transactions.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                No transactions yet.
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-60">
+                <Wallet className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm">No transactions yet</p>
               </div>
             ) : (
-              <div className="divide-y">
+              <div className="divide-y divide-purple-100/50 dark:divide-white/5">
                 {transactions.map((tx) => (
                   <div
                     key={tx._id}
-                    className="p-3 flex items-start justify-between"
+                    className="p-4 hover:bg-accent/50 transition-colors cursor-default"
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-1.5 rounded-full ${
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {/* Icon */}
+                        <div
+                          className={`p-2 rounded-full shrink-0 ${
+                            tx.type === "payment"
+                              ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
+                        >
+                          {tx.type === "payment" ? (
+                            <ArrowUpRight className="h-4 w-4" />
+                          ) : (
+                            <ArrowDownLeft className="h-4 w-4" />
+                          )}
+                        </div>
+                        {/* Text - Matches Notification typography */}
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-semibold capitalize text-foreground">
+                            {tx.type.replace(/_/g, " ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(tx.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <span
+                        className={`font-bold text-sm ${
                           tx.type === "payment"
-                            ? "bg-red-100 dark:bg-red-900/30"
-                            : "bg-green-100 dark:bg-green-900/30"
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-green-600 dark:text-green-400"
                         }`}
                       >
-                        {tx.type === "payment" ? (
-                          <ArrowUpRight className="h-4 w-4 text-red-600" />
-                        ) : (
-                          <ArrowDownLeft className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium capitalize">
-                          {tx.type.replace(/_/g, " ")}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDistanceToNow(new Date(tx.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                      </div>
+                        {tx.type === "payment" ? "-" : "+"}$
+                        {tx.amount.toFixed(2)}
+                      </span>
                     </div>
-                    <span
-                      className={`font-semibold text-sm ${
-                        tx.type === "payment"
-                          ? "text-red-600"
-                          : "text-green-600"
-                      }`}
-                    >
-                      {tx.type === "payment" ? "-" : "+"}${tx.amount.toFixed(2)}
-                    </span>
                   </div>
                 ))}
               </div>
             )}
           </ScrollArea>
-          <div className="p-3 border-t bg-muted/30">
+
+          {/* Footer: Matches "Mark all as read" section style */}
+          <div className="p-3 border-t border-purple-100/50 dark:border-white/5 bg-muted/30 backdrop-blur-sm shrink-0">
             <Button
-              variant="ghost"
               size="sm"
-              className="w-full"
+              className="w-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
               onClick={() => setTopUpOpen(true)}
             >
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Top Up Wallet
+              <PlusCircle className="mr-2 h-4 w-4" /> Top Up Wallet
             </Button>
           </div>
         </PopoverContent>
       </Popover>
 
-      {/* The Top Up Dialog */}
       <WalletTopUpDialog
         open={topUpOpen}
         onOpenChange={setTopUpOpen}
         onPaymentSuccess={() => {
-          fetchWallet(); // Refetch wallet data after successful payment
+          fetchTransactions();
+          if (onRefreshBalance) onRefreshBalance();
         }}
       />
     </>
