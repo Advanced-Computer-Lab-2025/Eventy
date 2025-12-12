@@ -193,7 +193,7 @@ export default function EventCard({
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
   const [isOnWaitlist, setIsOnWaitlist] = useState(false);
-  const [isCheckingWaitlist, setIsCheckingWaitlist] = useState(false);
+  const [isCheckingWaitlist, setIsCheckingWaitlist] = useState(true); // Start as true to prevent flash
 
   // --- HELPER TO CONVERT 24H STRING TO 12H ---
   const formatStringTime = (timeStr?: string) => {
@@ -490,6 +490,54 @@ export default function EventCard({
       setRegistered(true);
     }
   }, [isActuallyRegistered]);
+
+  // Check waitlist status on component mount
+  useEffect(() => {
+    const checkWaitlistStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setIsCheckingWaitlist(false);
+          return;
+        }
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/${id}/waitlist/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          setIsOnWaitlist(data.data?.isOnWaitlist || false);
+        }
+      } catch (error) {
+        console.error("Error checking waitlist status:", error);
+      } finally {
+        setIsCheckingWaitlist(false);
+      }
+    };
+
+    // Only check if event is full and cancellations can be made
+    const eventStartDate = startDate ? new Date(startDate) : null;
+    const twoWeeksBefore = eventStartDate ? new Date(eventStartDate) : null;
+    if (twoWeeksBefore) {
+      twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+    }
+    const canCancel =
+      eventStartDate && twoWeeksBefore ? new Date() <= twoWeeksBefore : false;
+    const isFull = capacity && localAttendeeCount >= capacity;
+
+    if (isFull && canCancel) {
+      checkWaitlistStatus();
+    } else {
+      // If waitlist is not available, don't check and set checking to false
+      setIsCheckingWaitlist(false);
+    }
+  }, [id, capacity, localAttendeeCount, startDate]);
 
   let roleAllowsDelete = false;
   let roleAllowsFavorites = false;
@@ -928,14 +976,23 @@ export default function EventCard({
                       View Details
                     </Button>
                     {isFull && canJoinWaitlist ? (
-                      isOnWaitlist ? (
+                      isCheckingWaitlist ? (
+                        <Button
+                          className="flex-1"
+                          disabled
+                          variant="outline"
+                          data-testid={`button-checking-waitlist-${id}`}
+                        >
+                          Checking...
+                        </Button>
+                      ) : isOnWaitlist ? (
                         <Button
                           className="flex-1"
                           disabled
                           variant="outline"
                           data-testid={`button-waitlisted-${id}`}
                         >
-                          {isCheckingWaitlist ? "Checking..." : "Waitlisted"}
+                          Waitlisted
                         </Button>
                       ) : (
                         <Button
@@ -1293,16 +1350,23 @@ export default function EventCard({
                             View Details
                           </Button>
                           {isFull && canJoinWaitlist ? (
-                            isOnWaitlist ? (
+                            isCheckingWaitlist ? (
+                              <Button
+                                className="flex-1"
+                                disabled
+                                variant="outline"
+                                data-testid={`button-checking-waitlist-${id}`}
+                              >
+                                Checking...
+                              </Button>
+                            ) : isOnWaitlist ? (
                               <Button
                                 className="flex-1"
                                 disabled
                                 variant="outline"
                                 data-testid={`button-waitlisted-${id}`}
                               >
-                                {isCheckingWaitlist
-                                  ? "Checking..."
-                                  : "Waitlisted"}
+                                Waitlisted
                               </Button>
                             ) : (
                               <Button
