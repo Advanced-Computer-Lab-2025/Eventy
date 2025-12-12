@@ -67,99 +67,101 @@ export default function WalletPopover({
           </Button>
         </PopoverTrigger>
 
-        {/* 
-           UPDATED: "Native Glass" Theme
-           1. dark:bg-background/95 -> Uses your app's actual background color so it matches perfectly.
-           2. backdrop-blur-xl -> Blends it slightly with whatever is behind it.
-           3. Gradient -> Subtle fade to purple-900/20 at the bottom for branding.
-        */}
+        {/* Dimensions matched to Notifications: 408px x 573px */}
         <PopoverContent
-          className="w-80 p-0 overflow-hidden shadow-2xl border-purple-100 dark:border-white/10 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-background/95 dark:via-background/90 dark:to-purple-900/10 backdrop-blur-xl"
+          className="!w-[408px] !h-[573px] p-0 flex flex-col overflow-hidden shadow-2xl border-purple-100 dark:border-white/10 bg-gradient-to-br from-purple-50 via-white to-indigo-50 dark:from-background/95 dark:via-background/90 dark:to-purple-900/10 backdrop-blur-xl"
           align="end"
         >
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-purple-100/50 dark:border-white/5">
-            <div className="flex items-center gap-1.5 text-muted-foreground mb-0.5">
-              <CreditCard className="w-3 h-3" />
-              <span className="text-[10px] font-bold uppercase tracking-wider">
+          {/* Header: Restored "Available Funds" design you liked */}
+          <div className="px-4 py-4 border-b border-purple-100/50 dark:border-white/5 shrink-0">
+            <div className="flex items-center gap-1.5 text-muted-foreground mb-1">
+              <CreditCard className="w-4 h-4" />
+              <span className="text-xs font-bold uppercase tracking-wider">
                 Available Funds
               </span>
             </div>
             <div className="flex items-baseline gap-1">
-              <span className="text-2xl font-bold text-foreground tracking-tight">
+              <span className="text-3xl font-bold text-foreground tracking-tight">
                 ${Number(balance).toFixed(2)}
               </span>
-              <span className="text-xs text-muted-foreground font-medium">
+              <span className="text-sm text-muted-foreground font-medium">
                 USD
               </span>
             </div>
           </div>
 
-          {/* Subheader */}
-          <div className="px-4 py-2 border-b border-purple-100/50 dark:border-white/5 bg-white/30 dark:bg-white/[0.02] text-[10px] font-semibold text-muted-foreground uppercase tracking-wide">
+          {/* Subheader: "Recent Activity" */}
+          <div className="px-4 py-2 border-b border-purple-100/50 dark:border-white/5 bg-white/30 dark:bg-white/[0.02] text-xs font-semibold text-muted-foreground uppercase tracking-wide shrink-0">
             Recent Activity
           </div>
 
-          {/* ScrollArea */}
-          <ScrollArea className="h-[280px]">
+          {/* ScrollArea: List items matched to Notifications typography */}
+          <ScrollArea className="flex-1 w-full h-full">
             {loading ? (
-              <div className="p-8 text-center text-muted-foreground text-xs">
-                Loading...
+              <div className="p-8 text-center text-muted-foreground text-sm">
+                Loading transactions...
               </div>
             ) : transactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground opacity-60">
-                <Wallet className="h-8 w-8 mb-2 opacity-50" />
-                <p className="text-xs">No transactions yet.</p>
+              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-60">
+                <Wallet className="h-10 w-10 mb-3 opacity-30" />
+                <p className="text-sm">No transactions yet</p>
               </div>
             ) : (
               <div className="divide-y divide-purple-100/50 dark:divide-white/5">
                 {transactions.map((tx) => (
                   <div
                     key={tx._id}
-                    className="px-4 py-2.5 flex items-center justify-between hover:bg-white/50 dark:hover:bg-white/5 transition-colors"
+                    className="p-4 hover:bg-accent/50 transition-colors cursor-default"
                   >
-                    <div className="flex items-center gap-3">
-                      <div
-                        className={`p-1.5 rounded-full shadow-sm ${
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        {/* Icon */}
+                        <div
+                          className={`p-2 rounded-full shrink-0 ${
+                            tx.type === "payment"
+                              ? "bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+                              : "bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400"
+                          }`}
+                        >
+                          {tx.type === "payment" ? (
+                            <ArrowUpRight className="h-4 w-4" />
+                          ) : (
+                            <ArrowDownLeft className="h-4 w-4" />
+                          )}
+                        </div>
+                        {/* Text - Matches Notification typography */}
+                        <div className="space-y-0.5">
+                          <p className="text-sm font-semibold capitalize text-foreground">
+                            {tx.type.replace(/_/g, " ")}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {formatDistanceToNow(new Date(tx.createdAt), {
+                              addSuffix: true,
+                            })}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <span
+                        className={`font-bold text-sm ${
                           tx.type === "payment"
-                            ? "bg-red-100/80 text-red-600 dark:bg-red-500/10 dark:text-red-400"
-                            : "bg-green-100/80 text-green-600 dark:bg-green-500/10 dark:text-green-400"
+                            ? "text-red-600 dark:text-red-400"
+                            : "text-green-600 dark:text-green-400"
                         }`}
                       >
-                        {tx.type === "payment" ? (
-                          <ArrowUpRight className="h-3.5 w-3.5" />
-                        ) : (
-                          <ArrowDownLeft className="h-3.5 w-3.5" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="text-xs font-medium capitalize text-foreground">
-                          {tx.type.replace(/_/g, " ")}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(tx.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </p>
-                      </div>
+                        {tx.type === "payment" ? "-" : "+"}$
+                        {tx.amount.toFixed(2)}
+                      </span>
                     </div>
-                    <span
-                      className={`font-bold text-xs ${
-                        tx.type === "payment"
-                          ? "text-red-600 dark:text-red-400"
-                          : "text-green-600 dark:text-green-400"
-                      }`}
-                    >
-                      {tx.type === "payment" ? "-" : "+"}${tx.amount.toFixed(2)}
-                    </span>
                   </div>
                 ))}
               </div>
             )}
           </ScrollArea>
 
-          {/* Footer */}
-          <div className="p-3 border-t border-purple-100/50 dark:border-white/5 bg-white/40 dark:bg-white/[0.02] backdrop-blur-sm">
+          {/* Footer: Matches "Mark all as read" section style */}
+          <div className="p-3 border-t border-purple-100/50 dark:border-white/5 bg-muted/30 backdrop-blur-sm shrink-0">
             <Button
               size="sm"
               className="w-full bg-purple-600 hover:bg-purple-700 text-white shadow-sm"
