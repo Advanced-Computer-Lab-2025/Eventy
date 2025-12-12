@@ -32,6 +32,7 @@ interface Event {
 
 export default function CalendarPage() {
   const [, navigate] = useLocation();
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
@@ -57,6 +58,18 @@ export default function CalendarPage() {
       window.removeEventListener("event:registered", handleRegistration);
       window.removeEventListener("event:unregistered", handleCancellation);
     };
+  }, []);
+
+  useEffect(() => {
+    const user = localStorage.getItem("user");
+    if (user) {
+      try {
+        const userData = JSON.parse(user);
+        setUserRole(userData.role);
+      } catch (e) {
+        setUserRole(null);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -224,25 +237,52 @@ export default function CalendarPage() {
           {/* Big Calendar */}
           <div>
             {loading ? (
-              <Card className="p-12">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                  <p className="text-muted-foreground">
-                    Loading your calendar...
-                  </p>
+              <>
+                <Card className="p-12">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                    <p className="text-muted-foreground">
+                      Loading your calendar...
+                    </p>
+                  </div>
+                </Card>
+                ) : filteredEvents.length === 0 ? (
+                <div className="relative">
+                  <BigCalendarView events={[]} defaultView={"month"} />
+
+                  <div className="absolute inset-0 flex items-center justify-center z-20">
+                    <div className="bg-card/90 dark:bg-card/90 px-6 py-5 rounded-md text-center shadow-lg backdrop-blur-sm">
+                      <h3 className="text-xl font-semibold mb-2">
+                        No events in your calendar yet
+                      </h3>
+                      <p className="text-muted-foreground mb-4">
+                        Browse upcoming events to add them to your calendar.
+                      </p>
+                      <div>
+                        <Button
+                          onClick={() => {
+                            const role = userRole ? userRole.toLowerCase() : "";
+                            if (role === "vendor")
+                              navigate("/vendor/dashboard");
+                            else if (role === "events_office")
+                              navigate("/events-office/dashboard");
+                            else if (role === "admin") navigate("/admin");
+                            else if (role === "staff" || role === "ta")
+                              navigate("/staff-ta");
+                            else if (role === "professor")
+                              navigate("/professor");
+                            else navigate("/home");
+                          }}
+                          variant="default"
+                          className="pointer-events-auto"
+                        >
+                          Browse Events
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </Card>
-            ) : filteredEvents.length === 0 ? (
-              <Card className="p-12">
-                <div className="text-center">
-                  <CalendarIcon className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">No Events Yet</h3>
-                  <p className="text-muted-foreground mb-6">
-                    Start exploring and register for exciting campus events!
-                  </p>
-                  <Button onClick={() => navigate("/")}>Browse Events</Button>
-                </div>
-              </Card>
+              </>
             ) : (
               <BigCalendarView
                 events={filteredEvents}
