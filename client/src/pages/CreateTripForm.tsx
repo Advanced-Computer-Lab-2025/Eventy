@@ -278,7 +278,7 @@ export default function CreateTripForm() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="price">Price (EGP)</Label>
+                  <Label htmlFor="price">Price (Dollars)</Label>
                   <Input
                     id="price"
                     type="number"
