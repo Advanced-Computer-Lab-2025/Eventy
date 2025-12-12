@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { format } from "date-fns";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import CreateEventForm, {
   CreateEventFormValues,
@@ -34,8 +35,12 @@ export default function CreateConference() {
 
       const payload: any = {
         name: values.name,
-        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
-        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startDate: values.startDate
+          ? `${format(values.startDate, "yyyy-MM-dd")}T${startTimeValue}:00.000Z`
+          : "",
+        endDate: values.endDate
+          ? `${format(values.endDate, "yyyy-MM-dd")}T${endTimeValue}:00.000Z`
+          : "",
         startTime: startTimeValue, // Required by backend model
         endTime: endTimeValue, // Required by backend model
         description: values.description,

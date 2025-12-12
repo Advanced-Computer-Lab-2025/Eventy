@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { EventPaymentDialog } from "./EventPaymentDialog";
 import { ResaleMarketplaceDialog } from "./ResaleMarketplaceDialog";
+import { WaitlistDialog } from "./WaitlistDialog";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -198,6 +199,7 @@ export default function EventCard({
   const [expandedVendors, setExpandedVendors] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showWaitlistDialog, setShowWaitlistDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [isCanceling, setIsCanceling] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
@@ -217,6 +219,8 @@ export default function EventCard({
   const [internalEventDetails, setInternalEventDetails] = useState<any>(null);
   const [isFetchingDetails, setIsFetchingDetails] = useState(false);
   const [isProfessorInWorkshop, setIsProfessorInWorkshop] = useState(false);
+  const [isOnWaitlist, setIsOnWaitlist] = useState(false);
+  const [isCheckingWaitlist, setIsCheckingWaitlist] = useState(true); // Start as true to prevent flash
 
   // Check if ticket is already listed (for My Events view)
   useEffect(() => {
@@ -550,6 +554,54 @@ export default function EventCard({
     }
   }, [isActuallyRegistered]);
 
+  // Check waitlist status on component mount
+  useEffect(() => {
+    const checkWaitlistStatus = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setIsCheckingWaitlist(false);
+          return;
+        }
+
+        const res = await fetch(
+          `${API_BASE_URL}/api/events/${id}/waitlist/status`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
+        if (res.ok) {
+          const data = await res.json();
+          setIsOnWaitlist(data.data?.isOnWaitlist || false);
+        }
+      } catch (error) {
+        console.error("Error checking waitlist status:", error);
+      } finally {
+        setIsCheckingWaitlist(false);
+      }
+    };
+
+    // Only check if event is full and cancellations can be made
+    const eventStartDate = startDate ? new Date(startDate) : null;
+    const twoWeeksBefore = eventStartDate ? new Date(eventStartDate) : null;
+    if (twoWeeksBefore) {
+      twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+    }
+    const canCancel =
+      eventStartDate && twoWeeksBefore ? new Date() <= twoWeeksBefore : false;
+    const isFull = capacity && localAttendeeCount >= capacity;
+
+    if (isFull && canCancel) {
+      checkWaitlistStatus();
+    } else {
+      // If waitlist is not available, don't check and set checking to false
+      setIsCheckingWaitlist(false);
+    }
+  }, [id, capacity, localAttendeeCount, startDate]);
+
   let roleAllowsDelete = false;
   let roleAllowsFavorites = false;
   try {
@@ -588,7 +640,18 @@ export default function EventCard({
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || localAttendeeCount < capacity;
+  const isFull = capacity && localAttendeeCount >= capacity;
   const isArchived = status === "archived";
+
+  // Check if cancellations can be made (at least 14 days before event)
+  // Waitlist is only available if cancellations can be made
+  const eventStartDate = startDate ? new Date(startDate) : null;
+  const twoWeeksBefore = eventStartDate ? new Date(eventStartDate) : null;
+  if (twoWeeksBefore) {
+    twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
+  }
+  const canCancel =
+    eventStartDate && twoWeeksBefore ? now <= twoWeeksBefore : false;
 
   const canRegister =
     isRegisterable &&
@@ -596,6 +659,14 @@ export default function EventCard({
     hasCapacity &&
     !isArchived &&
     !isProfessorInWorkshop;
+
+  const canJoinWaitlist =
+    isRegisterable &&
+    canCancel &&
+    isFull &&
+    !isArchived &&
+    !isProfessorInWorkshop &&
+    !registered;
 
   const hasPrice = typeof price === "number" && price > 0;
   const formattedPrice = hasPrice
@@ -1014,6 +1085,34 @@ export default function EventCard({
                         <ShoppingBag className="h-4 w-4 mr-1" />
                         View Resale Tickets
                       </Button>
+                    ) : isFull && canJoinWaitlist ? (
+                      isCheckingWaitlist ? (
+                        <Button
+                          className="flex-1"
+                          disabled
+                          variant="outline"
+                          data-testid={`button-checking-waitlist-${id}`}
+                        >
+                          Checking...
+                        </Button>
+                      ) : isOnWaitlist ? (
+                        <Button
+                          className="flex-1"
+                          disabled
+                          variant="outline"
+                          data-testid={`button-waitlisted-${id}`}
+                        >
+                          Waitlisted
+                        </Button>
+                      ) : (
+                        <Button
+                          className="flex-1"
+                          onClick={() => setShowWaitlistDialog(true)}
+                          data-testid={`button-join-waitlist-${id}`}
+                        >
+                          Join Waitlist
+                        </Button>
+                      )
                     ) : (
                       <Button
                         className="flex-1"
@@ -1028,7 +1127,6 @@ export default function EventCard({
                         {isBeforeDeadline ? "Register" : "Registration Closed"}
                       </Button>
                     )}
-
                     {canShowFavorites && (
                       <div
                         className="relative flex-shrink-0"
@@ -1396,6 +1494,34 @@ export default function EventCard({
                               <ShoppingBag className="h-4 w-4 mr-1" />
                               View Resale Tickets
                             </Button>
+                          ) : isFull && canJoinWaitlist ? (
+                            isCheckingWaitlist ? (
+                              <Button
+                                className="flex-1"
+                                disabled
+                                variant="outline"
+                                data-testid={`button-checking-waitlist-${id}`}
+                              >
+                                Checking...
+                              </Button>
+                            ) : isOnWaitlist ? (
+                              <Button
+                                className="flex-1"
+                                disabled
+                                variant="outline"
+                                data-testid={`button-waitlisted-${id}`}
+                              >
+                                Waitlisted
+                              </Button>
+                            ) : (
+                              <Button
+                                className="flex-1"
+                                onClick={() => setShowWaitlistDialog(true)}
+                                data-testid={`button-join-waitlist-${id}`}
+                              >
+                                Join Waitlist
+                              </Button>
+                            )
                           ) : (
                             <Button
                               onClick={() =>
@@ -1412,7 +1538,6 @@ export default function EventCard({
                                 : "Registration Closed"}
                             </Button>
                           )}
-
                           {canShowFavorites && (
                             <div
                               className="relative flex-shrink-0"
@@ -1569,7 +1694,63 @@ export default function EventCard({
         }}
       />
 
-      {/* Cancellation Dialog */}
+      {/* Waitlist Dialog */}
+      <WaitlistDialog
+        open={showWaitlistDialog}
+        onOpenChange={setShowWaitlistDialog}
+        onJoined={async () => {
+          // Set state optimistically first - this will update the UI immediately
+          console.log("onJoined callback called, setting isOnWaitlist to true");
+          setIsOnWaitlist(true);
+
+          // Use setTimeout to ensure state update is processed before async operations
+          setTimeout(async () => {
+            // Then verify with backend after a short delay
+            try {
+              const token = localStorage.getItem("token");
+              if (!token) {
+                // If no token, keep optimistic state
+                return;
+              }
+
+              // Small delay to ensure backend has processed the join
+              await new Promise((resolve) => setTimeout(resolve, 500));
+
+              const res = await fetch(
+                `${API_BASE_URL}/api/events/${id}/waitlist/status`,
+                {
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                  },
+                }
+              );
+
+              if (res.ok) {
+                const data = await res.json();
+                console.log(
+                  "Waitlist status verified:",
+                  data.data?.isOnWaitlist
+                );
+                // Update with actual backend state
+                setIsOnWaitlist(data.data?.isOnWaitlist || false);
+              } else {
+                // If check fails, keep optimistic state
+                console.warn(
+                  "Failed to verify waitlist status, keeping optimistic state"
+                );
+              }
+            } catch (error) {
+              console.error("Error checking waitlist status:", error);
+              // Keep optimistic state on error
+            }
+          }, 0);
+        }}
+        eventId={id}
+        eventTitle={title}
+        price={price || 0}
+      />
+
+      {/* Custom Alert Dialog for Cancellation */}
       <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>

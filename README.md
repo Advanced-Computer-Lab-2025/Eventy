@@ -70,7 +70,9 @@ The platform was built to modernize campus event management, reduce administrati
 - **Husky**: Pre-commit hooks ensure code is linted and formatted before commits
 
 ## Screenshots
+
 ### Secure Login & Authentication
+
 User authentication system supporting multi-role access (Student, Vendor, Admin) with secure session management.
 
 <img src="https://github.com/user-attachments/assets/ef1ba7fd-10ab-4469-9cd6-1405eeed070b" width="800" alt="Login Page" />
@@ -78,6 +80,7 @@ User authentication system supporting multi-role access (Student, Vendor, Admin)
 <br>
 
 ### Event Registration & Stripe Payment
+
 Secure, integrated checkout experience supporting card payments and digital wallets.
 
 <img src="https://github.com/user-attachments/assets/09256220-ef2e-4ca0-9b51-3172c8858be1" width="800" alt="Stripe Payment Modal" />
@@ -87,6 +90,7 @@ Secure, integrated checkout experience supporting card payments and digital wall
 <br>
 
 ### Interactive Platform Booth Booking
+
 Visual map interface for vendors to select and book specific booth locations.
 
 <img src="https://github.com/user-attachments/assets/dc728c6f-dc89-4974-935f-c4617926bd7c" width="800" alt="Platform Booth Booking Map" />
@@ -94,6 +98,7 @@ Visual map interface for vendors to select and book specific booth locations.
 <br>
 
 ### Vendor Dashboard
+
 Comprehensive analytics for vendors to track application status and performance.
 
 <img src="https://github.com/user-attachments/assets/010e2071-1bbe-4ec4-acbb-5d32b2f55d3b" width="800" alt="Vendor Dashboard" />
@@ -101,11 +106,13 @@ Comprehensive analytics for vendors to track application status and performance.
 <br>
 
 ### Custom 404 Page
+
 User-friendly error handling to guide lost users back home.
 
 <img src="https://github.com/user-attachments/assets/ac076c25-028d-41ba-99fc-cb7925968975" width="800" alt="404 Error Page" />
 
 ### Event Details & Agenda
+
 Users can view comprehensive event information, including descriptions, locations, and detailed agendas before registering.
 
 <img src="https://github.com/user-attachments/assets/83e071cc-a0a0-46e1-ad00-7c51ba001135" width="800" alt="Event Details View 1" />
@@ -153,89 +160,91 @@ Users can view comprehensive event information, including descriptions, location
 - **Drizzle ORM** - Type-safe database queries (PostgreSQL)
 
 ## Features
+
 ### User Management & Authentication
 
--   **Domain-Restricted Sign Up**: Mandatory GUC email (`@guc.edu.eg`) for Students, Staff, TAs, and Professors.
--   **Role Verification Workflow**:
-    -   Students: Auto-verified via email link.
-    -   Staff/TAs/Professors: Request an account → **Admin manually verifies role** → Verification email sent.
--   **Admin Management**: Root Admin can create and delete other Admin and Event Office accounts.
--   **Account Status**: View active/blocked status; Admin can block users.
+- **Domain-Restricted Sign Up**: Mandatory GUC email (`@guc.edu.eg`) for Students, Staff, TAs, and Professors.
+- **Role Verification Workflow**:
+  - Students: Auto-verified via email link.
+  - Staff/TAs/Professors: Request an account → **Admin manually verifies role** → Verification email sent.
+- **Admin Management**: Root Admin can create and delete other Admin and Event Office accounts.
+- **Account Status**: View active/blocked status; Admin can block users.
 
 ### Event Management
 
--   **Conference Creation**: Events Office creates conferences with agendas, website links, and funding sources.
--   **Workshop Workflow**:
-    -   Professors submit proposals (details, budget, funding source).
-    -   Events Office reviews: **Accept, Reject, or Request Edits**.
-    -   Professor tracks status and edits if necessary.
--   **Trip Organization**: Events Office creates trips with itineraries, pricing, and capacity limits.
--   **Bazaar Management**: Events Office sets schedules and location details for upcoming bazaars.
--   **Advanced Search & Filtering**: Sort by date; Filter by type, category, location, and **Professor Name** (for workshops/conferences).
--   **Event Archival**: Auto-archive past events; manual deletion allowed only if 0 registrants.
--   **Access Control**: Restrict specific events to specific roles (e.g., "Students Only").
+- **Conference Creation**: Events Office creates conferences with agendas, website links, and funding sources.
+- **Workshop Workflow**:
+  - Professors submit proposals (details, budget, funding source).
+  - Events Office reviews: **Accept, Reject, or Request Edits**.
+  - Professor tracks status and edits if necessary.
+- **Trip Organization**: Events Office creates trips with itineraries, pricing, and capacity limits.
+- **Bazaar Management**: Events Office sets schedules and location details for upcoming bazaars.
+- **Advanced Search & Filtering**: Sort by date; Filter by type, category, location, and **Professor Name** (for workshops/conferences).
+- **Event Archival**: Auto-archive past events; manual deletion allowed only if 0 registrants.
+- **Access Control**: Restrict specific events to specific roles (e.g., "Students Only").
 
 ### Vendor & Application System
 
--   **Application Workflows**:
-    -   **Bazaars**: Apply with booth size (2x2, 4x4) and team details.
-    -   **Platform Booths**: Apply with duration (1-4 weeks), location preference, and booth size.
--   **Document Management**: Upload Tax Card, Company Logo, and **IDs of all attending team members**.
--   **Payment Rules**:
-    -   Integrated Stripe payment.
-    -   **Strict Deadline**: Vendors must pay within **3 days** of acceptance or application is void.
--   **Visitor Management**: Vendors receive QR codes for their registered staff/visitors.
+- **Application Workflows**:
+  - **Bazaars**: Apply with booth size (2x2, 4x4) and team details.
+  - **Platform Booths**: Apply with duration (1-4 weeks), location preference, and booth size.
+- **Document Management**: Upload Tax Card, Company Logo, and **IDs of all attending team members**.
+- **Payment Rules**:
+  - Integrated Stripe payment.
+  - **Strict Deadline**: Vendors must pay within **3 days** of acceptance or application is void.
+- **Visitor Management**: Vendors receive QR codes for their registered staff/visitors.
 
 ### Sports, Gym & Facilities
 
--   **Facility Booking (Students)**: View availability and reserve courts (Tennis, Football, Basketball).
--   **Gym Session Management (Events Office)**:
-    -   **Create Sessions**: Define type (Yoga, Zumba, etc.), instructor, time, and capacity.
-    -   **Edit/Cancel**: Modify times or cancel sessions (triggers auto-notification to registrants).
--   **Session Registration**: Users book spots in specific gym classes.
+- **Facility Booking (Students)**: View availability and reserve courts (Tennis, Football, Basketball).
+- **Gym Session Management (Events Office)**:
+  - **Create Sessions**: Define type (Yoga, Zumba, etc.), instructor, time, and capacity.
+  - **Edit/Cancel**: Modify times or cancel sessions (triggers auto-notification to registrants).
+- **Session Registration**: Users book spots in specific gym classes.
 
 ### Wallet & Payment System
 
--   **Digital Wallet**: Store refunded credit for future use.
--   **Payment Processing**: Credit/Debit card (Stripe) or Wallet balance.
--   **Refund Policy**:
-    -   Users can cancel registration.
-    -   **Constraint**: Refund is only processed if cancelled **at least 2 weeks** before the event.
+- **Digital Wallet**: Store refunded credit for future use.
+- **Payment Processing**: Credit/Debit card (Stripe) or Wallet balance.
+- **Refund Policy**:
+  - Users can cancel registration.
+  - **Constraint**: Refund is only processed if cancelled **at least 2 weeks** before the event.
 
 ### Social, Feedback & Moderation
 
--   **Ratings & Comments**: Users can rate and comment on attended events.
--   **Moderation System**:
-    -   Admins can **delete inappropriate comments**.
-    -   **Auto-Warning**: System sends a warning email to the user whose comment was deleted.
--   **Favorites**: Bookmark events for quick access.
+- **Ratings & Comments**: Users can rate and comment on attended events.
+- **Moderation System**:
+  - Admins can **delete inappropriate comments**.
+  - **Auto-Warning**: System sends a warning email to the user whose comment was deleted.
+- **Favorites**: Bookmark events for quick access.
 
 ### Loyalty Program
 
--   **Vendor Partnership**: Vendors apply to become loyalty partners.
--   **Offer Management**: Vendors submit discount rates, promo codes, and terms for approval.
--   **Public Listing**: Users browse a list of all active loyalty partners and codes.
+- **Vendor Partnership**: Vendors apply to become loyalty partners.
+- **Offer Management**: Vendors submit discount rates, promo codes, and terms for approval.
+- **Public Listing**: Users browse a list of all active loyalty partners and codes.
 
 ### Polling System
 
--   **Booth Competitions**: Events Office creates polls for conflicting vendor slots.
--   **Student Voting**: Students vote for their preferred vendor/booth.
--   **Real-time Results**: Events Office views results to decide the winner.
+- **Booth Competitions**: Events Office creates polls for conflicting vendor slots.
+- **Student Voting**: Students vote for their preferred vendor/booth.
+- **Real-time Results**: Events Office views results to decide the winner.
 
 ### Notifications
 
--   **In-App & Email**:
-    -   **Registration**: Confirmations and QR codes.
-    -   **Reminders**: Sent **1 day** and **1 hour** prior to event.
-    -   **Updates**: Alerts for gym cancellations, workshop approvals, or loyalty additions.
--   **Warning System**: Alerts for policy violations (comments).
+- **In-App & Email**:
+  - **Registration**: Confirmations and QR codes.
+  - **Reminders**: Sent **1 day** and **1 hour** prior to event.
+  - **Updates**: Alerts for gym cancellations, workshop approvals, or loyalty additions.
+- **Warning System**: Alerts for policy violations (comments).
 
 ### Reporting & Analytics
 
--   **Sales Reports**: Revenue analytics filtered by event type/date; sortable by revenue amount.
--   **Attendance Reports**: Track participant numbers and remaining spots.
--   **Data Export**: Events Office can export registrant names to **.xlsx (Excel)**.
--   **Certificate Generation**: Automated certificates emailed upon workshop completion.
+- **Sales Reports**: Revenue analytics filtered by event type/date; sortable by revenue amount.
+- **Attendance Reports**: Track participant numbers and remaining spots.
+- **Data Export**: Events Office can export registrant names to **.xlsx (Excel)**.
+- **Certificate Generation**: Automated certificates emailed upon workshop completion.
+
 ## Code Examples
 
 ### 1. Edit Bazaar Service Function
@@ -488,16 +497,19 @@ export const getUpcomingEventsService = async (
    # Frontend URL
    CLIENT_URL=http://localhost:5000
    ```
+
    Create a `.env` file in the client directory:
+
    ```env
    # Backend Connection
    VITE_API_BASE_URL=http://localhost:4000
    VITE_WS_BASE_URL=ws://localhost:4000
-  
+
    # Stripe Payment
    VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxx
    ```
-5. **Run the application**
+
+4. **Run the application**
 
    ```bash
    # Run separately:
@@ -509,7 +521,7 @@ export const getUpcomingEventsService = async (
    npm run dev
    ```
 
-6. **Access the application**
+5. **Access the application**
    - Frontend: http://localhost:5000
    - Backend API: http://localhost:4000
 
@@ -616,6 +628,7 @@ Get all transactions for authenticated user
 Get all available court bookings
 
 #### PATCH `/api/facilities/gym/sessions/:id/cancel`
+
 Cancel a gym session
 
 ## Tests

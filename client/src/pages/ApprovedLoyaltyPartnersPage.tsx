@@ -249,7 +249,7 @@ export default function ApprovedLoyaltyPartnersPage() {
                         <TableCell className="px-4">
                           <Badge
                             variant="secondary"
-                            className="bg-green-100 text-green-800"
+                            className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 border-green-200 dark:border-green-700/50"
                           >
                             {partner.discountRate}% OFF
                           </Badge>

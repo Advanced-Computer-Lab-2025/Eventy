@@ -2513,3 +2513,663 @@ export const sendCommentDeletionWarning = async ({
     return false;
   }
 };
+
+/**
+ * Send waitlist autopay success email - when user is automatically registered via autopay
+ * @param {Object} user - User object with email and name
+ * @param {Object} event - Event object with details
+ * @param {number} amount - Amount charged (0 for free events)
+ */
+export const sendWaitlistAutopaySuccessEmail = async (
+  user,
+  event,
+  amount = 0
+) => {
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
+  const fullDisplayName = namePrefix + displayName;
+
+  // Format event date
+  const eventDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "TBA";
+
+  // Path to logo image
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `✅ Auto-Registered: ${event.name}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Auto-Registered for Event</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #065f46; line-height: 1.2;">
+                        ✅ Auto-Registered
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${fullDisplayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Great news! A spot became available for an event you were on the waitlist for, and you've been automatically registered!
+                    </p>
+                    
+                    <!-- Event Details Box -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #10b981; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Event Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Event Name:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${event.name}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventDate}</td>
+                        </tr>
+                        ${
+                          amount > 0
+                            ? `
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Amount Charged:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #10b981; font-weight: 700; text-align: right;">$${amount.toFixed(2)}</td>
+                        </tr>
+                        `
+                            : ""
+                        }
+                      </table>
+                    </div>
+                    
+                    <p style="margin: 32px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      ${amount > 0 ? `Payment has been automatically processed from your selected payment method. ` : ""}You're all set! We look forward to seeing you at the event.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0;">
+                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        View Event Details
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 32px 40px; background: #f7fafc; text-align: center; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.6;">
+                      This is an automated notification from Eventy Platform.<br>
+                      If you have any questions, please contact support.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.warn("✅ Waitlist autopay success email sent:", {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Error sending waitlist autopay success email:",
+      error?.message || error
+    );
+    return false;
+  }
+};
+
+/**
+ * Send waitlist spot available email - when a spot becomes available but no autopay
+ * @param {Object} user - User object with email and name
+ * @param {Object} event - Event object with details
+ */
+export const sendWaitlistSpotAvailableEmail = async (user, event) => {
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
+  const fullDisplayName = namePrefix + displayName;
+
+  // Format event date
+  const eventDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "TBA";
+
+  // Path to logo image
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `🎟️ Spot Available: ${event.name}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Spot Available</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #92400e; line-height: 1.2;">
+                        🎟️ Spot Available
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${fullDisplayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      Great news! A spot has become available for an event you were on the waitlist for. Register now to secure your place!
+                    </p>
+                    
+                    <!-- Event Details Box -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #f59e0b; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Event Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Event Name:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${event.name}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventDate}</td>
+                        </tr>
+                        ${
+                          event.price > 0
+                            ? `
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Price:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">$${event.price.toFixed(2)}</td>
+                        </tr>
+                        `
+                            : ""
+                        }
+                      </table>
+                    </div>
+                    
+                    <p style="margin: 32px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      <strong>Hurry!</strong> Spots are limited and available on a first-come, first-served basis. Register now to secure your place.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0;">
+                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        Register Now
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 32px 40px; background: #f7fafc; text-align: center; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.6;">
+                      This is an automated notification from Eventy Platform.<br>
+                      If you have any questions, please contact support.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.warn("✅ Waitlist spot available email sent:", {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Error sending waitlist spot available email:",
+      error?.message || error
+    );
+    return false;
+  }
+};
+
+/**
+ * Send waitlist autopay failed email - when autopay fails
+ * @param {Object} user - User object with email and name
+ * @param {Object} event - Event object with details
+ * @param {string} reason - Reason for failure
+ */
+export const sendWaitlistAutopayFailedEmail = async (user, event, reason) => {
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
+  const fullDisplayName = namePrefix + displayName;
+
+  // Format event date
+  const eventDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "TBA";
+
+  // Path to logo image
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `⚠️ Autopay Failed: ${event.name}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Autopay Failed</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #991b1b; line-height: 1.2;">
+                        ⚠️ Autopay Failed
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${fullDisplayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      A spot became available for an event you were on the waitlist for, but automatic payment failed. Please register manually to secure your spot.
+                    </p>
+                    
+                    <!-- Event Details Box -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #ef4444; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Event Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Event Name:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${event.name}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventDate}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Reason:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #ef4444; text-align: right;">${reason}</td>
+                        </tr>
+                      </table>
+                    </div>
+                    
+                    <p style="margin: 32px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      <strong>Action Required:</strong> Please register manually to secure your spot. Spots are limited and available on a first-come, first-served basis.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0;">
+                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        Register Now
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 32px 40px; background: #f7fafc; text-align: center; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.6;">
+                      This is an automated notification from Eventy Platform.<br>
+                      If you have any questions, please contact support.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.warn("✅ Waitlist autopay failed email sent:", {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Error sending waitlist autopay failed email:",
+      error?.message || error
+    );
+    return false;
+  }
+};
+
+/**
+ * Send waitlist payment required email - when card payment needs to be completed
+ * @param {Object} user - User object with email and name
+ * @param {Object} event - Event object with details
+ */
+export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
+  const namePrefix =
+    user?.role?.toLowerCase() === "professor" ? "Professor " : "";
+  const displayName =
+    (
+      user?.name || [user?.firstName, user?.lastName].filter(Boolean).join(" ")
+    ).trim() || "there";
+  const fullDisplayName = namePrefix + displayName;
+
+  // Format event date
+  const eventDate = event.startDate
+    ? new Date(event.startDate).toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+      })
+    : "TBA";
+
+  // Path to logo image
+  const logoPath = path.resolve(
+    __dirname,
+    "../../../../client/public/images/logo-light.png"
+  );
+
+  const mailOptions = {
+    from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
+    to: user?.email,
+    subject: `💳 Complete Payment: ${event.name}`,
+    html: `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Complete Payment</title>
+      </head>
+      <body style="margin: 0; padding: 0; background: linear-gradient(135deg, #f0f9ff 0%, #e0e7ff 50%, #fce7f3 100%); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+        <table role="presentation" style="width: 100%; border-collapse: collapse; margin: 0; padding: 0;">
+          <tr>
+            <td align="center" style="padding: 40px 20px;">
+              <table role="presentation" style="max-width: 600px; width: 100%; background-color: #ffffff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15); overflow: hidden;">
+                
+                <!-- Header with Logo and Gradient -->
+                <tr>
+                  <td style="background: linear-gradient(135deg, #dbeafe 0%, #e0e7ff 50%, #fce7f3 100%); padding: 48px 40px; text-align: center; position: relative; border-radius: 16px 16px 0 0;">
+                    <img src="cid:logo" alt="Eventy Logo" style="height: 140px; width: auto; display: block; margin: 0 auto 16px;" />
+                    <div style="margin-top: 20px; padding: 8px 16px; background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%); border-radius: 10px; display: inline-block; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);">
+                      <h1 style="margin: 0; font-size: 16px; font-weight: 700; color: #3730a3; line-height: 1.2;">
+                        💳 Payment Required
+                      </h1>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Main Content -->
+                <tr>
+                  <td style="padding: 50px 40px 40px;">
+                    <h2 style="margin: 0 0 16px; font-size: 24px; font-weight: 700; color: #1a202c; line-height: 1.3;">
+                      Hi ${fullDisplayName},
+                    </h2>
+                    <p style="margin: 0 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      A spot became available for an event you were on the waitlist for. Please complete your card payment to finalize your registration.
+                    </p>
+                    
+                    <!-- Event Details Box -->
+                    <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid #6366f1; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                      <div style="margin-bottom: 20px; padding-bottom: 16px; border-bottom: 2px solid #e2e8f0;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #2d3748;">
+                          Event Details
+                        </h3>
+                      </div>
+                      <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Event Name:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">${event.name}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Date:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; text-align: right;">${eventDate}</td>
+                        </tr>
+                        ${
+                          event.price > 0
+                            ? `
+                        <tr>
+                          <td style="padding: 10px 0; font-size: 14px; color: #718096; font-weight: 600;">
+                            Amount:
+                          </td>
+                          <td style="padding: 10px 0; font-size: 15px; color: #1a202c; font-weight: 700; text-align: right;">$${event.price.toFixed(2)}</td>
+                        </tr>
+                        `
+                            : ""
+                        }
+                      </table>
+                    </div>
+                    
+                    <p style="margin: 32px 0 20px; font-size: 16px; line-height: 1.6; color: #4a5568;">
+                      <strong>Action Required:</strong> Complete your card payment to secure your spot. Your registration will be finalized once payment is confirmed.
+                    </p>
+                    
+                    <!-- CTA Button -->
+                    <div style="text-align: center; margin: 32px 0;">
+                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        Complete Payment
+                      </a>
+                    </div>
+                  </td>
+                </tr>
+                
+                <!-- Footer -->
+                <tr>
+                  <td style="padding: 32px 40px; background: #f7fafc; text-align: center; border-radius: 0 0 16px 16px;">
+                    <p style="margin: 0; font-size: 14px; color: #718096; line-height: 1.6;">
+                      This is an automated notification from Eventy Platform.<br>
+                      If you have any questions, please contact support.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </body>
+      </html>
+    `,
+    attachments: [
+      {
+        filename: "logo-light.png",
+        path: logoPath,
+        cid: "logo",
+      },
+    ],
+  };
+
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.warn("✅ Waitlist payment required email sent:", {
+      messageId: info?.messageId,
+      accepted: info?.accepted,
+      rejected: info?.rejected,
+    });
+
+    if (info?.rejected && info.rejected.length > 0) {
+      console.error("⚠️ Some recipients were rejected:", info.rejected);
+    }
+
+    return true;
+  } catch (error) {
+    console.error(
+      "❌ Error sending waitlist payment required email:",
+      error?.message || error
+    );
+    return false;
+  }
+};

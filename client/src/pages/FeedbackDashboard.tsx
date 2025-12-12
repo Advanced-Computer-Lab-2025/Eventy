@@ -70,6 +70,8 @@ export default function FeedbackDashboard() {
   useEffect(() => {
     // Fetch both upcoming and past events so we include any event
     setLoadingEvents(true);
+
+    // First get upcoming + past, then for the deduped list fetch feedback for each
     Promise.allSettled([api.get("/events/upcoming"), api.get("/events/past")])
       .then((results) => {
         const combined: any[] = [];
@@ -106,47 +108,41 @@ export default function FeedbackDashboard() {
             return true;
           });
 
-        // For each mapped event, check whether it has any feedback and
-        // only keep events that have at least one feedback item.
-        Promise.allSettled(
+        // Return the inner Promise so the outer chain waits for feedback checks
+        return Promise.allSettled(
           mapped.map((m: any) => api.get(`/feedback/events/${m.id}`))
-        )
-          .then((fbResults) => {
-            const eventsWithFeedback = mapped
-              .map((m: any, idx: number) => {
-                const res = fbResults[idx];
-                if (res.status !== "fulfilled") return null;
-                const data = (res as any).value?.data?.data;
-                const feedback = data?.feedback || [];
-                if (!Array.isArray(feedback) || feedback.length === 0) {
-                  return null;
-                }
-
-                return {
-                  ...m,
-                  averageRating: data?.averageRating || 0,
-                  totalReviews: data?.totalReviews || feedback.length,
-                };
-              })
-              .filter((e): e is EventItem => e !== null);
-
-            setEvents(eventsWithFeedback);
-            setSelectedEvent((prev) => {
-              if (
-                prev &&
-                eventsWithFeedback.some(
-                  (eventWithFeedback) => eventWithFeedback.id === prev
-                )
-              ) {
-                return prev;
+        ).then((fbResults) => {
+          const eventsWithFeedback = mapped
+            .map((m: any, idx: number) => {
+              const res = fbResults[idx];
+              if (res.status !== "fulfilled") return null;
+              const data = (res as any).value?.data?.data;
+              const feedback = data?.feedback || [];
+              if (!Array.isArray(feedback) || feedback.length === 0) {
+                return null;
               }
-              return null;
-            });
-          })
-          .catch(() => {
-            setEvents([]);
-          })
-          .finally(() => setLoadingEvents(false));
+
+              return {
+                ...m,
+                averageRating: data?.averageRating || 0,
+                totalReviews: data?.totalReviews || feedback.length,
+              };
+            })
+            .filter((e): e is EventItem => e !== null);
+
+          setEvents(eventsWithFeedback);
+          setSelectedEvent((prev) => {
+            if (
+              prev &&
+              eventsWithFeedback.some(
+                (eventWithFeedback) => eventWithFeedback.id === prev
+              )
+            ) {
+              return prev;
+            }
+            return null;
+          });
+        });
       })
       .catch(() => setEvents([]))
       .finally(() => setLoadingEvents(false));

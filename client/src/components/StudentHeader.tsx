@@ -1,50 +1,87 @@
-import React from "react"; // No longer need useState here
+import React, { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
-  Bell,
   Home,
   Calendar,
   Dumbbell,
   Heart,
   Gift,
-  Wallet,
   Store,
   Star,
+  Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
-import { useEffect, useState } from "react";
-import WalletPopover from "./WalletPopover"; // Import the new WalletPopover
+import WalletPopover from "./WalletPopover";
 
 interface StudentHeaderProps {
   homeHref?: string;
+}
+
+interface UserData {
+  _id?: string;
+  id?: string; // Handle both _id and id based on DB
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  role?: string;
+  companyName?: string;
+  walletBalance?: number;
 }
 
 export default function StudentHeader({
   homeHref = "/home",
 }: StudentHeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<{
-    firstName?: string;
-    lastName?: string;
-    email?: string;
-    role?: string;
-    companyName?: string;
-  } | null>(null);
+  const [user, setUser] = useState<UserData | null>(null);
+
+  // Function to fetch fresh user data (including walletBalance)
+  const fetchUserProfile = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return;
+
+      const res = await fetch(
+        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (res.ok) {
+        const payload = await res.json();
+
+        // --- CRITICAL FIX ---
+        // Based on your JSON: { message: "...", user: { ... } }
+        // We must extract the inner 'user' object.
+        const freshUserData = payload.user || payload.data || payload;
+
+        setUser(freshUserData);
+        localStorage.setItem("user", JSON.stringify(freshUserData));
+      }
+    } catch (err) {
+      console.error("Failed to fetch user profile", err);
+    }
+  };
 
   useEffect(() => {
+    // 1. Initial Load from LocalStorage (fast render)
     try {
       const raw = localStorage.getItem("user");
       if (raw) {
         const parsed = JSON.parse(raw);
-        setUser(parsed);
+        // Handle case where localStorage accidentally saved the wrapper
+        setUser(parsed.user || parsed);
       }
     } catch (err) {
       // ignore
     }
+
+    // 2. Fetch fresh data from API (accurate balance)
+    fetchUserProfile();
   }, []);
 
   return (
@@ -59,11 +96,16 @@ export default function StudentHeader({
           </div>
 
           <div className="flex items-center gap-1 sm:gap-2">
-            {/* The WalletPopover now contains its own trigger button */}
-            <WalletPopover />
+            {/* Pass the balance to the child. Default to 0 if undefined. */}
+            <WalletPopover
+              balance={user?.walletBalance ?? 0}
+              onRefreshBalance={fetchUserProfile}
+            />
+
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+
             {user?.role &&
               ((user.role === "vendor" && user?.companyName) ||
                 (user.role !== "vendor" && user?.firstName)) && (
@@ -79,7 +121,6 @@ export default function StudentHeader({
 
         {/* Navigation Tabs */}
         <div className="hidden md:flex gap-2 pb-3 overflow-x-auto">
-          {/* ... all your navigation buttons ... */}
           <Button
             variant="ghost"
             size="sm"
@@ -95,6 +136,14 @@ export default function StudentHeader({
             onClick={() => setLocation("/my-events")}
           >
             <Calendar className="h-4 w-4" /> My Events
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`gap-2 ${location === "/live-moments" ? "underline decoration-primary decoration-2" : ""}`}
+            onClick={() => setLocation("/live-moments")}
+          >
+            <Camera className="h-4 w-4" /> Live Moments
           </Button>
           <Button
             variant="ghost"

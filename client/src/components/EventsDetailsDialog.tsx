@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import CategoryBadge from "./CategoryBadge";
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -31,9 +32,33 @@ export default function EventDetailsDialog({
   onOpenChange,
   event,
 }: EventDetailsDialogProps) {
+  // --- Role Access Logic ---
+  // We assume the user object is stored in localStorage.
+  // If you pass it via context/props, you can change this line.
+  const userString = localStorage.getItem("user");
+  const user = userString ? JSON.parse(userString) : null;
+  const userRole = user?.role; // e.g., 'admin', 'events_office', 'student'
+
+  // Only Admin and Events Office can see financial details
+  const canViewFinancials = ["admin", "events_office"].includes(userRole);
+
+  useEffect(() => {
+    if (open && event?._id) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        const API_BASE_URL =
+          import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+        fetch(`${API_BASE_URL}/api/events/${event._id}/view`, {
+          method: "POST",
+          headers: { Authorization: `Bearer ${token}` },
+        }).catch((err) => console.error("Failed to record view", err));
+      }
+    }
+  }, [open, event]);
+
   if (!event) return null;
 
-  // --- Date Formatting Logic based on Schema ---
+  // --- Date Formatting Logic ---
   const formatDate = (dateString: string) => {
     if (!dateString) return null;
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -44,7 +69,6 @@ export default function EventDetailsDialog({
     });
   };
 
-  // Use the explicit time string from DB, or fallback to extracting from Date object
   const startTime =
     event.startTime ||
     (event.startDate
@@ -81,7 +105,7 @@ export default function EventDetailsDialog({
       <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#1D1825] border-purple-100 dark:border-[#6A33B8]/30 shadow-2xl shadow-purple-900/20">
         <AnimatePresence mode="wait">
           <motion.div
-            key={event._id || event.id} // Handle Mongoose _id
+            key={event._id || event.id}
             initial="hidden"
             animate="visible"
             variants={contentAnimation}
@@ -171,20 +195,20 @@ export default function EventDetailsDialog({
                 </div>
               </div>
 
-              {/* 3. Detailed Info Grid (Dynamic based on Schema) */}
+              {/* 3. Detailed Info Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {/* Registration Deadline */}
+                {/* Registration Deadline (With Fixed Red Box Style) */}
                 {deadlineStr && (
                   <DetailCard
                     icon={AlertCircle}
                     label="Reg. Deadline"
                     value={deadlineStr}
                     className="border-red-200 dark:border-red-900/30 bg-red-50/50 dark:bg-red-900/10"
-                    iconClass="text-red-600 dark:text-red-400"
+                    iconClass="p-2 rounded-lg bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-400 shrink-0"
                   />
                 )}
 
-                {/* Price (Trips & Workshops) - In Dollars */}
+                {/* Price */}
                 {event.price !== undefined && event.price !== null && (
                   <DetailCard
                     icon={DollarSign}
@@ -202,7 +226,7 @@ export default function EventDetailsDialog({
                   />
                 )}
 
-                {/* Faculty (Workshops) */}
+                {/* Faculty */}
                 {event.faculty && (
                   <DetailCard
                     icon={GraduationCap}
@@ -228,8 +252,8 @@ export default function EventDetailsDialog({
                   </a>
                 )}
 
-                {/* Funding Source (Workshops & Conferences) */}
-                {event.fundingSource && (
+                {/* Funding Source - CONDITIONAL RENDER */}
+                {canViewFinancials && event.fundingSource && (
                   <DetailCard
                     icon={Landmark}
                     label="Funding Source"
@@ -241,8 +265,8 @@ export default function EventDetailsDialog({
                   />
                 )}
 
-                {/* Required Budget (Workshops & Conferences) - In Dollars */}
-                {event.requiredBudget && (
+                {/* Required Budget - CONDITIONAL RENDER */}
+                {canViewFinancials && event.requiredBudget && (
                   <DetailCard
                     icon={Wallet}
                     label="Required Budget"
@@ -270,7 +294,7 @@ export default function EventDetailsDialog({
                 )}
               </div>
 
-              {/* 4. Agenda (Workshops & Conferences) */}
+              {/* 4. Agenda */}
               {event.agenda && (
                 <div className="bg-slate-50 dark:bg-[#130F19] rounded-xl p-4 border border-slate-200 dark:border-[#6A33B8]/20">
                   <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100 mb-2">
@@ -283,7 +307,7 @@ export default function EventDetailsDialog({
                 </div>
               )}
 
-              {/* 5. Professors (Workshops & Conferences) */}
+              {/* 5. Professors */}
               {event.professors && event.professors.length > 0 && (
                 <div className="pt-2">
                   <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100 mb-3">
@@ -300,7 +324,6 @@ export default function EventDetailsDialog({
                           <User size={12} />
                         </div>
                         <span className="text-slate-700 dark:text-purple-100">
-                          {/* Handle Populated User Object vs ID string */}
                           {typeof prof === "object"
                             ? prof.firstName && prof.lastName
                               ? `${prof.firstName} ${prof.lastName}`
@@ -320,7 +343,7 @@ export default function EventDetailsDialog({
   );
 }
 
-// --- Dynamic Detail Card Component ---
+// --- Detail Card Component ---
 function DetailCard({
   icon: Icon,
   label,
@@ -334,6 +357,7 @@ function DetailCard({
   const linkClasses = isLink
     ? "group-hover:border-[#6A33B8] group-hover:bg-purple-50 dark:group-hover:bg-[#6A33B8]/10 cursor-pointer"
     : "";
+  // If iconClass is provided, we use it. If not, use defaults.
   const defaultIconClass =
     "p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0";
 

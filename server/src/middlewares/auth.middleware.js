@@ -47,7 +47,6 @@ const authMiddleware = async (req, res, next) => {
 };
 
 export default authMiddleware;
-
 const verifyToken = async (req, res, next) => {
   try {
     // ...existing token verification...
