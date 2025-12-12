@@ -4,13 +4,7 @@ import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
 
@@ -248,139 +242,17 @@ export default function BigCalendarView({
       </Card>
 
       {/* Event Details Dialog */}
-      <Dialog
+      <EventDetailsDialog
         open={isDialogOpen}
         onOpenChange={(open) => {
           if (!open && onUnregister) {
-            // Call onUnregister callback when dialog closes (after potential unregistration)
             onUnregister();
           }
           setIsDialogOpen(open);
         }}
-      >
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">
-              {isLoadingDetails ? "Loading..." : selectedEvent?.name}
-            </DialogTitle>
-            <DialogDescription>Event Details</DialogDescription>
-          </DialogHeader>
-
-          {isLoadingDetails ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
-          ) : selectedEvent ? (
-            <div className="space-y-4">
-              {selectedEvent.bannerImage && (
-                <img
-                  src={selectedEvent.bannerImage}
-                  alt={selectedEvent.name}
-                  className="w-full h-48 object-cover rounded-lg"
-                />
-              )}
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">Start Date</p>
-                    <p className="text-muted-foreground">
-                      {moment(selectedEvent.startDate).format(
-                        "MMM DD, YYYY h:mm A"
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <div>
-                    <p className="font-medium">End Date</p>
-                    <p className="text-muted-foreground">
-                      {moment(selectedEvent.endDate).format(
-                        "MMM DD, YYYY h:mm A"
-                      )}
-                    </p>
-                  </div>
-                </div>
-
-                {selectedEvent.location && (
-                  <div className="flex items-center gap-2 text-sm col-span-2">
-                    <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Location</p>
-                      <p className="text-muted-foreground">
-                        {selectedEvent.location}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedEvent.attendeesCount !== undefined && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                    <div>
-                      <p className="font-medium">Attendees</p>
-                      <p className="text-muted-foreground">
-                        {selectedEvent.attendeesCount}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                {selectedEvent.price !== undefined && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <div>
-                      <p className="font-medium">Price</p>
-                      <p className="text-muted-foreground">
-                        {selectedEvent.price === 0
-                          ? "Free"
-                          : `$${selectedEvent.price}`}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {selectedEvent.eventType && (
-                <div>
-                  <Badge variant="secondary" className="capitalize">
-                    {selectedEvent.eventType}
-                  </Badge>
-                </div>
-              )}
-
-              {selectedEvent.description && (
-                <div>
-                  <p className="font-medium mb-2">Description</p>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    {selectedEvent.description}
-                  </p>
-                </div>
-              )}
-
-              <div className="flex gap-2 pt-4">
-                <Button
-                  onClick={() => {
-                    // Navigate to event details page
-                    window.location.href = `/events/${selectedEvent._id}`;
-                  }}
-                  className="flex-1"
-                >
-                  View Full Details
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsDialogOpen(false)}
-                >
-                  Close
-                </Button>
-              </div>
-            </div>
-          ) : null}
-        </DialogContent>
-      </Dialog>
+        event={selectedEvent}
+        loading={isLoadingDetails}
+      />
     </>
   );
 }
