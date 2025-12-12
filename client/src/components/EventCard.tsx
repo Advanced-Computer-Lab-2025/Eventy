@@ -643,15 +643,34 @@ export default function EventCard({
   const isFull = capacity && localAttendeeCount >= capacity;
   const isArchived = status === "archived";
 
-  // Check if cancellations can be made (at least 14 days before event)
-  // Waitlist is only available if cancellations can be made
-  const eventStartDate = startDate ? new Date(startDate) : null;
-  const twoWeeksBefore = eventStartDate ? new Date(eventStartDate) : null;
-  if (twoWeeksBefore) {
-    twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
-  }
-  const canCancel =
-    eventStartDate && twoWeeksBefore ? now <= twoWeeksBefore : false;
+  // --- DATE LOGIC FOR 14-DAY RULE ---
+  const getActionStatus = () => {
+    if (!startDate) return { canCancel: true, canResell: false, days: 99 };
+
+    const eventDate = new Date(startDate);
+    const today = new Date();
+    const diffTime = eventDate.getTime() - today.getTime();
+    const daysUntilEvent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffTime < 0)
+      return { canCancel: false, canResell: false, isExpired: true, days: -1 };
+
+    // Seller Logic:
+    // If > 14 days, they can cancel normally.
+    // If < 14 days, they must sell on marketplace.
+    if (daysUntilEvent >= 14) {
+      return { canCancel: true, canResell: false, days: daysUntilEvent };
+    } else {
+      return { canCancel: false, canResell: true, days: daysUntilEvent };
+    }
+  };
+
+  const {
+    canCancel,
+    canResell,
+    isExpired,
+    days: daysUntilEvent,
+  } = getActionStatus();
 
   const canRegister =
     isRegisterable &&
@@ -700,35 +719,6 @@ export default function EventCard({
       <Share2 className="h-4 w-4" />
     </Button>
   );
-
-  // --- DATE LOGIC FOR 14-DAY RULE ---
-  const getActionStatus = () => {
-    if (!startDate) return { canCancel: true, canResell: false, days: 99 };
-
-    const eventDate = new Date(startDate);
-    const today = new Date();
-    const diffTime = eventDate.getTime() - today.getTime();
-    const daysUntilEvent = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffTime < 0)
-      return { canCancel: false, canResell: false, isExpired: true, days: -1 };
-
-    // Seller Logic:
-    // If > 14 days, they can cancel normally.
-    // If < 14 days, they must sell on marketplace.
-    if (daysUntilEvent >= 14) {
-      return { canCancel: true, canResell: false, days: daysUntilEvent };
-    } else {
-      return { canCancel: false, canResell: true, days: daysUntilEvent };
-    }
-  };
-
-  const {
-    canCancel,
-    canResell,
-    isExpired,
-    days: daysUntilEvent,
-  } = getActionStatus();
 
   // --- MODIFIED BUYER LOGIC (FIXED) ---
   // If registered: They see cancellation or sell options (handled elsewhere).
