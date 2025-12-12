@@ -27,6 +27,23 @@ export default function CalendarPopover() {
 
   useEffect(() => {
     fetchUserEvents();
+
+    // Listen for registration and cancellation events to keep calendar in sync
+    const handleRegistration = () => {
+      fetchUserEvents();
+    };
+
+    const handleCancellation = () => {
+      fetchUserEvents();
+    };
+
+    window.addEventListener("event:registered", handleRegistration);
+    window.addEventListener("event:unregistered", handleCancellation);
+
+    return () => {
+      window.removeEventListener("event:registered", handleRegistration);
+      window.removeEventListener("event:unregistered", handleCancellation);
+    };
   }, []);
 
   const fetchUserEvents = async () => {

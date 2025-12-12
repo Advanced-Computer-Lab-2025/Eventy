@@ -63,11 +63,11 @@ export const handleOAuthCallback = async (req, res) => {
     let userId = req.session?.userId || state;
 
     if (!code) {
-      return res.redirect("http://localhost:4000/?calendar_error=no_code");
+      return res.redirect("http://localhost:5000/?calendar_error=no_code");
     }
 
     if (!userId) {
-      return res.redirect("http://localhost:4000/?calendar_error=no_session");
+      return res.redirect("http://localhost:5000/?calendar_error=no_session");
     }
 
     // Exchange code for tokens
@@ -88,11 +88,11 @@ export const handleOAuthCallback = async (req, res) => {
       delete req.session.userId;
     }
 
-    // Redirect to frontend with success
-    res.redirect("http://localhost:4000/?calendar_connected=true");
+    // Redirect to Eventy root with success indicator
+    res.redirect("http://localhost:5000/?calendar_connected=true");
   } catch (error) {
     console.error("Error handling OAuth callback:", error);
-    res.redirect("http://localhost:4000/?calendar_error=auth_failed");
+    res.redirect("http://localhost:5000/?calendar_error=auth_failed");
   }
 };
 

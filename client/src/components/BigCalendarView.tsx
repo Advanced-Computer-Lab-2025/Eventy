@@ -15,6 +15,8 @@ import { Button } from "@/components/ui/button";
 import { MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
 
 const localizer = momentLocalizer(moment);
+const API_BASE_URL =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
 
 interface Event {
   _id: string;
@@ -33,6 +35,7 @@ interface Event {
 interface BigCalendarViewProps {
   events: Event[];
   onEventClick?: (event: Event) => void;
+  onUnregister?: () => void;
   defaultDate?: Date;
   defaultView?: View;
   className?: string;
@@ -41,12 +44,14 @@ interface BigCalendarViewProps {
 export default function BigCalendarView({
   events,
   onEventClick,
+  onUnregister,
   defaultDate,
   defaultView = "month",
   className = "",
 }: BigCalendarViewProps) {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [currentDate, setCurrentDate] = useState(defaultDate || new Date());
   const [currentView, setCurrentView] = useState<View>(defaultView);
 
@@ -62,11 +67,52 @@ export default function BigCalendarView({
   }, [events]);
 
   const handleSelectEvent = useCallback(
-    (calendarEvent: any) => {
-      const event = calendarEvent.resource as Event;
-      setSelectedEvent(event);
-      setIsDialogOpen(true);
-      onEventClick?.(event);
+    async (calendarEvent: any) => {
+      const eventId = calendarEvent.id;
+      setIsLoadingDetails(true);
+      try {
+        // Fetch complete event details from the database
+        const token = localStorage.getItem("token");
+        console.log(
+          "Fetching event:",
+          eventId,
+          "API URL:",
+          `${API_BASE_URL}/api/events/${eventId}`
+        );
+
+        const response = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        console.log("API Response status:", response.status);
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log("API Response data:", data);
+          const eventData = data.data || data;
+          console.log("Setting selected event:", eventData);
+          setSelectedEvent(eventData);
+          onEventClick?.(eventData);
+        } else {
+          // Fallback to the resource data if API call fails
+          console.warn("API call failed, using fallback data");
+          const event = calendarEvent.resource as Event;
+          setSelectedEvent(event);
+          onEventClick?.(event);
+        }
+      } catch (error) {
+        console.error("Error fetching event details:", error);
+        // Fallback to the resource data if fetch fails
+        const event = calendarEvent.resource as Event;
+        setSelectedEvent(event);
+        onEventClick?.(event);
+      } finally {
+        setIsLoadingDetails(false);
+        setIsDialogOpen(true);
+      }
     },
     [onEventClick]
   );
@@ -194,16 +240,29 @@ export default function BigCalendarView({
       </Card>
 
       {/* Event Details Dialog */}
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      <Dialog
+        open={isDialogOpen}
+        onOpenChange={(open) => {
+          if (!open && onUnregister) {
+            // Call onUnregister callback when dialog closes (after potential unregistration)
+            onUnregister();
+          }
+          setIsDialogOpen(open);
+        }}
+      >
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle className="text-2xl">
-              {selectedEvent?.name}
+              {isLoadingDetails ? "Loading..." : selectedEvent?.name}
             </DialogTitle>
             <DialogDescription>Event Details</DialogDescription>
           </DialogHeader>
 
-          {selectedEvent && (
+          {isLoadingDetails ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            </div>
+          ) : selectedEvent ? (
             <div className="space-y-4">
               {selectedEvent.bannerImage && (
                 <img
@@ -311,7 +370,7 @@ export default function BigCalendarView({
                 </Button>
               </div>
             </div>
-          )}
+          ) : null}
         </DialogContent>
       </Dialog>
     </>

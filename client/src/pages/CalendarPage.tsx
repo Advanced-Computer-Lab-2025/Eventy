@@ -40,6 +40,23 @@ export default function CalendarPage() {
 
   useEffect(() => {
     fetchUserEvents();
+
+    // Listen for registration and cancellation events to keep all calendars in sync
+    const handleRegistration = () => {
+      fetchUserEvents();
+    };
+
+    const handleCancellation = () => {
+      fetchUserEvents();
+    };
+
+    window.addEventListener("event:registered", handleRegistration);
+    window.addEventListener("event:unregistered", handleCancellation);
+
+    return () => {
+      window.removeEventListener("event:registered", handleRegistration);
+      window.removeEventListener("event:unregistered", handleCancellation);
+    };
   }, []);
 
   useEffect(() => {
@@ -231,6 +248,7 @@ export default function CalendarPage() {
                 events={filteredEvents}
                 defaultDate={selectedDate || undefined}
                 defaultView={selectedDate ? "day" : "month"}
+                onUnregister={fetchUserEvents}
               />
             )}
           </div>

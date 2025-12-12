@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 
 export default function Login() {
+  const [location] = useLocation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -25,6 +26,37 @@ export default function Login() {
     email: "",
     password: "",
   });
+
+  // Check for calendar connection success/error on component mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+
+    if (params.has("calendar_connected")) {
+      toast({
+        title: "Google Calendar Connected! 🎉",
+        description: "Your calendar is now synced with Google Calendar.",
+      });
+    }
+
+    if (params.has("calendar_error")) {
+      const errorCode = params.get("calendar_error");
+      let errorMsg = "Failed to connect calendar";
+
+      if (errorCode === "no_code") {
+        errorMsg = "Authorization code missing from Google";
+      } else if (errorCode === "no_session") {
+        errorMsg = "Session expired, please try again";
+      } else if (errorCode === "auth_failed") {
+        errorMsg = "Failed to authenticate with Google Calendar";
+      }
+
+      toast({
+        variant: "destructive",
+        title: "Calendar Connection Failed ❌",
+        description: errorMsg,
+      });
+    }
+  }, [toast]);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
