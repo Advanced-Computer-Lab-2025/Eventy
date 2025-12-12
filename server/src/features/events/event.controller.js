@@ -644,6 +644,21 @@ export class EventsController {
       next(err);
     }
   }
+
+  async getOngoingEvents(req, res, next) {
+    try {
+      const userRole = req.user?.role;
+      const events = await eventService.getOngoingEvents(userRole);
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, events, "Ongoing events fetched successfully.")
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   //search events by name and type
   //  Search events by name (event/professor) or type
   async searchEvents(req, res, next) {
@@ -1217,6 +1232,59 @@ export class EventsController {
       console.error("Error recording view:", error);
       // Don't block the UI for this background task
       return res.status(200).json({ success: false });
+    }
+  }
+  
+  async uploadImageToEvent(req, res, next) {
+    try {
+      const { eventId } = req.params;
+      const userId = req.user._id || req.user.id;
+
+      if (!req.file) {
+        throw new ApiError(400, "Image file is required");
+      }
+
+      // Construct the public URL for the uploaded image
+      const relativePath = `/uploads/event-images/${req.file.filename}`;
+      const protocol = req.protocol;
+      const host = req.get("host");
+      const imageUrl = `${protocol}://${host}${relativePath}`;
+
+      const updatedEvent = await eventService.uploadImageToEvent(
+        eventId,
+        userId,
+        imageUrl
+      );
+
+      return res.status(200).json(
+        new ApiResponse(
+          200,
+          {
+            event: updatedEvent,
+            imageUrl: imageUrl,
+          },
+          "Image uploaded successfully"
+        )
+      );
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getEventImages(req, res, next) {
+    try {
+      const { eventId } = req.params;
+
+      const user = req.user || null;
+      const imageData = await eventService.getEventImages(eventId, user);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(200, imageData, "Event images fetched successfully")
+        );
+    } catch (err) {
+      next(err);
     }
   }
 }
