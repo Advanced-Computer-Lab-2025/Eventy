@@ -689,9 +689,16 @@ export class TransactionService {
   }
 
   async getUserTransactions(userId) {
-    return await Transaction.find({ userId, status: "completed" }).sort({
-      createdAt: -1,
-    });
+    // Run both queries in parallel for better performance
+    const [transactions, user] = await Promise.all([
+      Transaction.find({ userId, status: "completed" }).sort({ createdAt: -1 }),
+      User.findById(userId).select("walletBalance"),
+    ]);
+
+    return {
+      transactions: transactions || [],
+      walletBalance: user ? user.walletBalance : 0,
+    };
   }
 
   async getAllTransactions() {
