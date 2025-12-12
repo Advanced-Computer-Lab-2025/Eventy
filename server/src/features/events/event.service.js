@@ -1819,6 +1819,65 @@ export const notifyWaitlistUsers = async (eventId) => {
 
     if (!activeWaitlistEntries.length) return;
 
+    // Check if anyone on the waitlist has autopay enabled
+    const hasAnyoneWithAutopay = activeWaitlistEntries.some((entry) => {
+      const autopayEnabledValue =
+        entry.autopayEnabled === true ||
+        entry.autopayEnabled === "true" ||
+        entry.autopayEnabled === 1;
+      const hasPaymentMethod =
+        entry.paymentMethod &&
+        entry.paymentMethod !== null &&
+        entry.paymentMethod !== "";
+      return autopayEnabledValue && hasPaymentMethod;
+    });
+
+    // If no one has autopay, notify all waitlist users
+    if (!hasAnyoneWithAutopay) {
+      const allUserIds = activeWaitlistEntries
+        .filter(
+          (entry) => entry.user && entry.user.notificationPreferences !== false
+        )
+        .map((entry) => entry.user._id);
+
+      if (allUserIds.length > 0) {
+        await NotificationService.createNotification({
+          title: `🎟️ Spot Available: ${event.name}`,
+          message: `A spot has become available for "${event.name}". Register now to secure your place!`,
+          link: `/events/${eventId}`,
+          recipients: allUserIds,
+          event: eventId,
+          notificationType: "waitlist_spot_available",
+        });
+
+        // Send email notifications to all
+        for (const entry of activeWaitlistEntries) {
+          if (entry.user && entry.user.notificationPreferences !== false) {
+            try {
+              await sendWaitlistSpotAvailableEmail(entry.user, event);
+            } catch (error) {
+              console.error(`Error sending email to ${entry.user._id}:`, error);
+            }
+          }
+        }
+
+        // Mark all as notified
+        await Waitlist.updateMany(
+          { _id: { $in: activeWaitlistEntries.map((e) => e._id) } },
+          {
+            notified: true,
+            notifiedAt: new Date(),
+          }
+        );
+
+        console.warn(
+          `Notified all ${allUserIds.length} waitlist users (no autopay) about available spot for event ${eventId}`
+        );
+        return;
+      }
+    }
+
+    // If someone has autopay, process the first person with autopay (or first person if none have autopay)
     // Get the first user on the waitlist (FIFO)
     const firstWaitlistEntry = activeWaitlistEntries[0];
     const firstUser = firstWaitlistEntry.user;
@@ -1905,10 +1964,10 @@ export const notifyWaitlistUsers = async (eventId) => {
         // For wallet payments, check balance first
         if (paymentMethod === "wallet") {
           if (firstUser.walletBalance < eventPrice) {
-            // Insufficient balance - notify user
+            // Insufficient balance - notify user and move to next person
             await NotificationService.createNotification({
               title: `⚠️ Autopay Failed: ${event.name}`,
-              message: `A spot became available for "${event.name}", but your wallet balance is insufficient ($${firstUser.walletBalance.toFixed(2)}). Please top up your wallet to complete registration.`,
+              message: `A spot became available for "${event.name}", but your wallet balance is insufficient ($${firstUser.walletBalance.toFixed(2)}). The spot has been offered to the next person in line. Please top up your wallet if you want to use autopay for future spots.`,
               link: `/events/${eventId}`,
               recipients: [firstUser._id],
               event: eventId,
@@ -1922,11 +1981,14 @@ export const notifyWaitlistUsers = async (eventId) => {
               `Insufficient wallet balance ($${firstUser.walletBalance.toFixed(2)})`
             );
 
-            // Mark as notified but don't remove from waitlist
+            // Mark as notified but keep on waitlist (they can try again if another spot opens)
             await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
               notified: true,
               notifiedAt: new Date(),
             });
+
+            // Recursively call to offer spot to next person
+            await notifyWaitlistUsers(eventId);
             return;
           }
         }
@@ -2039,7 +2101,7 @@ export const notifyWaitlistUsers = async (eventId) => {
         // Send failure notification
         await NotificationService.createNotification({
           title: `⚠️ Autopay Failed: ${event.name}`,
-          message: `A spot became available for "${event.name}", but automatic payment failed: ${autopayError.message}. Please register manually.`,
+          message: `A spot became available for "${event.name}", but automatic payment failed: ${autopayError.message}. The spot has been offered to the next person in line.`,
           link: `/events/${eventId}`,
           recipients: [firstUser._id],
           event: eventId,
@@ -2053,11 +2115,14 @@ export const notifyWaitlistUsers = async (eventId) => {
           autopayError.message
         );
 
-        // Mark as notified
+        // Mark as notified but keep on waitlist (they can try again if another spot opens)
         await Waitlist.findByIdAndUpdate(firstWaitlistEntry._id, {
           notified: true,
           notifiedAt: new Date(),
         });
+
+        // Recursively call to offer spot to next person
+        await notifyWaitlistUsers(eventId);
         return;
       }
     } else {
