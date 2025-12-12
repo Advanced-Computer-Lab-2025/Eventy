@@ -197,4 +197,29 @@ export class TransactionController {
       res.status(500).json({ error: "Failed to get Stripe publishable key" });
     }
   }
+  async buyResaleTicket(req, res) {
+    try {
+      const { eventId, sellerId, paymentMethod } = req.body;
+      const buyerId = req.user._id || req.user.id;
+
+      // Basic Role Check
+      if (!["student", "staff", "ta", "professor"].includes(req.user.role)) {
+        return res.status(403).json({
+          error: "Only students/staff/ta/professors can buy resale tickets.",
+        });
+      }
+
+      const result = await this.transactionService.buyResaleTicket({
+        buyerId,
+        eventId,
+        sellerId,
+        paymentMethod,
+      });
+
+      res.status(200).json(result);
+    } catch (error) {
+      console.error("Resale Purchase error:", error);
+      res.status(400).json({ error: error.message });
+    }
+  }
 }

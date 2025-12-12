@@ -57,8 +57,26 @@ export class TransactionService {
     const event = await Event.findById(eventId);
     if (!event) throw new Error("Event not found");
 
-    const amount = Number(event.price);
-    if (isNaN(amount)) throw new Error("Event price is invalid");
+    const amount = Number(event.price) || 0;
+
+    // --- FREE EVENT HANDLING (Restored) ---
+    if (amount === 0) {
+      const transaction = await Transaction.create({
+        userId,
+        type: "payment",
+        amount: 0,
+        status: "completed",
+        paymentMethod: "wallet",
+        description: `Free Registration for event ${event.name}`,
+        relatedEntity: { type: "Event", id: eventId },
+      });
+
+      // Optional: Send receipt for free events too if desired
+      // const user = await User.findById(userId);
+      // sendPaymentReceipt(user.toObject(), transaction, event).catch(console.error);
+
+      return { message: "Registration successful", transaction };
+    }
 
     // --- WALLET PAYMENT ---
     if (paymentMethod === "wallet") {
@@ -79,6 +97,14 @@ export class TransactionService {
             description: `Payment for event ${event.name}`,
             relatedEntity: { type: "Event", id: eventId },
           });
+
+          // ============================================================
+          // FIX APPLIED HERE: Send Email Receipt for Wallet Payment
+          // ============================================================
+          sendPaymentReceipt(updatedUser.toObject(), transaction, event).catch(
+            (err) =>
+              console.error("Failed to send wallet payment receipt:", err)
+          );
 
           return { message: "Payment successful via wallet", transaction };
         } else {
@@ -139,6 +165,180 @@ export class TransactionService {
     }
 
     throw new Error("Invalid payment method");
+  }
+
+  // =========================================================================
+  //  RESALE MARKET LOGIC (Restored)
+  // =========================================================================
+
+  async _executeResaleSwap(event, listing, buyerId, sellerId, refundAmount) {
+    if (refundAmount > 0) {
+      await Transaction.create({
+        userId: sellerId,
+        type: "refund",
+        amount: refundAmount,
+        status: "completed",
+        paymentMethod: "wallet",
+        description: `Sold Ticket: ${event.name} (Base Value Refunded)`,
+        relatedEntity: { type: "Event", id: event._id },
+      });
+
+      await User.findByIdAndUpdate(sellerId, {
+        $inc: { walletBalance: refundAmount },
+      });
+    }
+
+    await Event.findByIdAndUpdate(event._id, {
+      $pull: { attendees: sellerId },
+    });
+    await Event.findByIdAndUpdate(event._id, {
+      $addToSet: { attendees: buyerId },
+    });
+
+    await Event.updateOne(
+      { _id: event._id, "resaleListings._id": listing._id },
+      {
+        $set: {
+          "resaleListings.$.status": "sold",
+          "resaleListings.$.buyerId": buyerId,
+          "resaleListings.$.soldAt": new Date(),
+        },
+      }
+    );
+  }
+
+  async buyResaleTicket({ buyerId, eventId, sellerId, paymentMethod }) {
+    const event = await Event.findById(eventId);
+    if (!event) throw new Error("Event not found");
+
+    if (!event.resaleListings)
+      throw new Error("No resale listings for this event");
+
+    const listing = event.resaleListings.find(
+      (l) =>
+        l.sellerId.toString() === sellerId.toString() &&
+        l.status === "available"
+    );
+
+    if (!listing) throw new Error("Ticket unavailable.");
+    if (buyerId.toString() === sellerId.toString())
+      throw new Error("You cannot buy your own ticket.");
+
+    const isSellerHoldingSeat = event.attendees.some(
+      (att) => att.toString() === sellerId.toString()
+    );
+    if (!isSellerHoldingSeat) {
+      await Event.updateOne(
+        { _id: event._id, "resaleListings._id": listing._id },
+        { $set: { "resaleListings.$.status": "cancelled" } }
+      );
+      throw new Error(
+        "Transaction failed: The seller no longer holds a valid seat."
+      );
+    }
+
+    const basePrice = Number(event.price) || 0;
+    const markupPercentage = 0.15;
+    let totalAmountToPay = 0;
+
+    if (basePrice > 0) {
+      const markupAmount = basePrice * markupPercentage;
+      totalAmountToPay = basePrice + markupAmount;
+    }
+
+    // Free Ticket
+    if (totalAmountToPay === 0) {
+      await this._executeResaleSwap(event, listing, buyerId, sellerId, 0);
+      return { message: "Free ticket claimed successfully" };
+    }
+
+    // Wallet Payment
+    if (paymentMethod === "wallet") {
+      const buyer = await User.findById(buyerId);
+      if (buyer.walletBalance < totalAmountToPay) {
+        throw new Error(
+          `Insufficient wallet balance. Required: $${totalAmountToPay}`
+        );
+      }
+
+      const buyerTransaction = await Transaction.create({
+        userId: buyerId,
+        type: "payment",
+        amount: totalAmountToPay,
+        status: "pending",
+        paymentMethod: "wallet",
+        description: `Bought Resale Ticket: ${event.name}`,
+        relatedEntity: { type: "Event", id: event._id },
+      });
+
+      try {
+        buyer.walletBalance -= totalAmountToPay;
+        await buyer.save();
+
+        await this._executeResaleSwap(
+          event,
+          listing,
+          buyerId,
+          sellerId,
+          basePrice
+        );
+
+        buyerTransaction.status = "completed";
+        await buyerTransaction.save();
+
+        if (totalAmountToPay > 0) {
+          sendPaymentReceipt(buyer.toObject(), buyerTransaction, event).catch(
+            console.error
+          );
+        }
+
+        return {
+          message: "Resale purchase successful via Wallet",
+          transaction: buyerTransaction,
+        };
+      } catch (error) {
+        console.error("Resale Swap Failed. Rolling back.", error);
+        buyer.walletBalance += totalAmountToPay;
+        await buyer.save();
+        buyerTransaction.status = "failed";
+        await buyerTransaction.save();
+        throw new Error(`Transaction failed and rolled back: ${error.message}`);
+      }
+    }
+
+    // Stripe Payment
+    if (paymentMethod === "credit_card" || paymentMethod === "debit_card") {
+      const paymentIntent = await this.stripe.paymentIntents.create({
+        amount: Math.round(totalAmountToPay * 100),
+        currency: "usd",
+        automatic_payment_methods: { enabled: true, allow_redirects: "never" },
+        metadata: {
+          type: "resale_purchase",
+          buyerId: String(buyerId),
+          sellerId: String(sellerId),
+          eventId: String(eventId),
+        },
+      });
+
+      const transaction = await Transaction.create({
+        userId: buyerId,
+        type: "payment",
+        amount: totalAmountToPay,
+        status: "pending",
+        paymentMethod,
+        stripePaymentIntentId: paymentIntent.id,
+        description: `Pending Resale Purchase for ${event.name}`,
+        relatedEntity: { type: "Event", id: eventId },
+      });
+
+      return {
+        message: "Stripe payment initiated",
+        clientSecret: paymentIntent.client_secret,
+        transaction,
+      };
+    }
+
+    throw new Error("Invalid payment method.");
   }
 
   async confirmStripePayment(paymentIntentId) {
@@ -232,6 +432,65 @@ export class TransactionService {
           }
         }
         return { message: "Payment already confirmed", transaction };
+      }
+
+      // --- RESALE MARKET CONFIRMATION (Restored) ---
+      if (
+        paymentIntent.metadata &&
+        paymentIntent.metadata.type === "resale_purchase"
+      ) {
+        const { buyerId, sellerId, eventId } = paymentIntent.metadata;
+        const event = await Event.findById(eventId);
+        if (!event) throw new Error("Event not found");
+
+        const listing = event.resaleListings?.find(
+          (l) =>
+            l.sellerId.toString() === sellerId.toString() &&
+            l.status === "available"
+        );
+
+        if (!listing) {
+          await this.stripe.refunds.create({ payment_intent: paymentIntentId });
+          transaction.status = "failed";
+          transaction.description = "Ticket unavailable. Refunded.";
+          await transaction.save();
+          return {
+            status: "failed",
+            message: "Ticket sold to someone else. Refunded.",
+          };
+        }
+
+        try {
+          const refundAmount = Number(event.price) || 0;
+          await this._executeResaleSwap(
+            event,
+            listing,
+            buyerId,
+            sellerId,
+            refundAmount
+          );
+
+          transaction.status = "completed";
+          await transaction.save();
+
+          if (transaction.amount > 0) {
+            const buyerUser = await User.findById(buyerId);
+            if (buyerUser) {
+              sendPaymentReceipt(
+                buyerUser.toObject(),
+                transaction,
+                event
+              ).catch(console.error);
+            }
+          }
+
+          return { message: "Resale successful via Card", transaction };
+        } catch (error) {
+          await this.stripe.refunds.create({ payment_intent: paymentIntentId });
+          transaction.status = "failed";
+          await transaction.save();
+          throw new Error("System error. Refunded.");
+        }
       }
 
       transaction.status = "completed";

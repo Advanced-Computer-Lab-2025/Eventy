@@ -1281,6 +1281,22 @@ export class EventsController {
     }
   }
 
+  // POST /api/events/:id/resale/list
+  async listTicketForResale(req, res, next) {
+    try {
+      if (!req.user) throw new ApiError(401, "Unauthorized");
+
+      const eventId = req.params.id;
+      const userId = req.user._id || req.user.id;
+
+      const result = await eventService.listTicketForResale(eventId, userId);
+
+      return res.status(200).json(new ApiResponse(200, result, result.message));
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async recordView(req, res, next) {
     try {
       const { eventId } = req.params;
@@ -1337,6 +1353,26 @@ export class EventsController {
     }
   }
 
+  // GET /api/events/:id/resale
+  async getResaleTickets(req, res, next) {
+    try {
+      const eventId = req.params.id;
+      const tickets = await eventService.getResaleTickets(eventId);
+
+      return res
+        .status(200)
+        .json(
+          new ApiResponse(
+            200,
+            tickets,
+            "Available resale tickets fetched successfully"
+          )
+        );
+    } catch (err) {
+      next(err);
+    }
+  }
+
   async getEventImages(req, res, next) {
     try {
       const { eventId } = req.params;
@@ -1349,6 +1385,16 @@ export class EventsController {
         .json(
           new ApiResponse(200, imageData, "Event images fetched successfully")
         );
+    } catch (err) {
+      next(err);
+    }
+  }
+  async getMarketplace(req, res, next) {
+    try {
+      const tickets = await eventService.getAllResaleTickets();
+      return res
+        .status(200)
+        .json(new ApiResponse(200, tickets, "Marketplace listings fetched"));
     } catch (err) {
       next(err);
     }

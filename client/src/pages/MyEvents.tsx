@@ -44,9 +44,10 @@ interface RegisteredEvent {
   status?: string;
   price?: number;
   attendeesCount?: number;
-  attendees?: string[]; // Assuming backend returns array of IDs
+  attendees?: string[];
   durationWeeks?: number;
   locationPreference?: string;
+  resaleListings?: any[]; // Added definition for resaleListings
 }
 
 export default function MyEvents() {
@@ -54,7 +55,6 @@ export default function MyEvents() {
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>(
     []
   );
-  const [favoriteEvents, setFavoriteEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
@@ -65,7 +65,6 @@ export default function MyEvents() {
     useState<RegisteredEvent | null>(null);
 
   useEffect(() => {
-    // Get user role from localStorage
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
@@ -102,10 +101,8 @@ export default function MyEvents() {
 
     fetchEvents();
 
-    // Listen for registrations happening elsewhere in the app and refetch
     const onRegistered = (e: any) => {
       try {
-        // If the event was passed and user already has it, skip; otherwise refetch
         fetchEvents();
       } catch (err) {
         // ignore
@@ -119,7 +116,6 @@ export default function MyEvents() {
     };
   }, []);
 
-  // Fetch full event details by ID
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString("en-US", {
@@ -139,13 +135,11 @@ export default function MyEvents() {
   };
 
   const formatBoothDate = (event: any) => {
-    // If platform booth has startDate and endDate, show dates
     if (event.startDate && event.endDate) {
       const start = formatEventDate(event.startDate);
       const end = formatEventDate(event.endDate);
       return `${start} - ${end}`;
     }
-    // Otherwise fall back to duration
     if (event.durationWeeks) {
       return `Active for ${event.durationWeeks} week${event.durationWeeks > 1 ? "s" : ""}`;
     }
@@ -175,7 +169,6 @@ export default function MyEvents() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Use appropriate header based on user role */}
       {userRole === "professor" ? (
         <ProfessorHeader homeHref="/professor" />
       ) : userRole === "staff" || userRole === "ta" ? (
@@ -191,7 +184,6 @@ export default function MyEvents() {
         </div>
 
         <div className="space-y-6">
-          {/* REGISTERED EVENTS */}
           {loading ? (
             <div>Loading...</div>
           ) : registeredEvents.length === 0 ? (
@@ -224,7 +216,6 @@ export default function MyEvents() {
                       (isBoothEvent ? event.locationPreference : null) ||
                       "Unknown location"
                     }
-                    // FIX: Pass actual attendee data
                     attendees={
                       event.attendees
                         ? event.attendees.length
@@ -246,7 +237,9 @@ export default function MyEvents() {
                     allowCancellation={true}
                     showAttendeeCount={false}
                     inlinePriceWithLocation
-                    // CALLBACK to remove from list instantly
+                    // --- FIX: Pass eventData here so the card knows about resaleListings ---
+                    eventData={event}
+                    // ---------------------------------------------------------------------
                     onUnregister={() => {
                       setRegisteredEvents((prev) =>
                         prev.filter((e) => e._id !== event._id)

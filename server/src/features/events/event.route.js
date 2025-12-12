@@ -51,6 +51,12 @@ const uploadEventImage = multer({
 });
 
 router.get(
+  "/marketplace",
+  authMiddleware,
+  eventsController.getMarketplace.bind(eventsController)
+);
+
+router.get(
   "/gettrips",
   authMiddleware,
   roleMiddleware("events_office"),
@@ -451,6 +457,25 @@ router.get(
   authMiddleware,
   roleMiddleware(["admin", "events_office"]),
   eventsController.getApprovedEventsCount.bind(eventsController)
+);
+// ==========================================
+// 🎟️ FEATURE 4: RESALE MARKET ROUTES
+// ==========================================
+
+// 1. List a ticket for resale (Seller Action)
+// Only allowed for Student, Staff, TA, Professor
+router.post(
+  "/:id/resale/list",
+  authMiddleware,
+  roleMiddleware(["student", "staff", "ta", "professor"]),
+  eventsController.listTicketForResale.bind(eventsController)
+);
+
+// 2. View available resale tickets for an event (Buyer Action)
+router.get(
+  "/:id/resale",
+  authMiddleware,
+  eventsController.getResaleTickets.bind(eventsController)
 );
 
 export default router;

@@ -8,7 +8,7 @@ import { Parser } from "json2csv";
 import path from "path";
 import { fileURLToPath } from "url";
 import fs from "fs";
-
+import { differenceInDays } from "date-fns";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { TransactionService } from "../transactions/transaction.service.js";
@@ -3244,6 +3244,131 @@ export async function getApprovedEventsCount() {
     archivedAt: null,
   });
 }
+
+// --- RESALE MARKET FEATURES ---
+
+/**
+ * List a ticket for resale.
+ * Rule: Allowed ONLY if event is <= 14 days away.
+ * If > 14 days, user should use standard refund.
+ */
+export const listTicketForResale = async (eventId, userId) => {
+  const event = await Event.findById(eventId);
+  if (!event) throw new ApiError(404, "Event not found");
+
+  // 1. Check Date Rule
+  const now = new Date();
+  const eventDate = new Date(event.startDate);
+  const daysUntilEvent = differenceInDays(eventDate, now);
+
+  if (daysUntilEvent >= 14) {
+    throw new ApiError(
+      400,
+      "The event is more than 14 days away. Please use the standard 'Cancel' button for a full refund."
+    );
+  }
+
+  if (daysUntilEvent < 0) {
+    throw new ApiError(400, "Cannot list tickets for past events.");
+  }
+
+  // 2. Verify Ownership
+  const isRegistered = event.attendees.some(
+    (att) => att.toString() === userId.toString()
+  );
+  if (!isRegistered)
+    throw new ApiError(400, "You do not own a ticket for this event.");
+
+  // 3. Check for Existing Listing
+  if (!event.resaleListings) event.resaleListings = [];
+
+  const alreadyListed = event.resaleListings.some(
+    (l) =>
+      l.sellerId.toString() === userId.toString() && l.status === "available"
+  );
+  if (alreadyListed)
+    throw new ApiError(400, "Your ticket is already listed on the market.");
+
+  // 4. Create Listing
+  event.resaleListings.push({
+    sellerId: userId,
+    originalPrice: event.price,
+    status: "available",
+  });
+
+  await event.save();
+  return { message: "Ticket listed on Resale Market successfully." };
+};
+
+/**
+ * Get available resale tickets for a specific event
+ */
+// In your eventService.js
+
+export const getResaleTickets = async (eventId) => {
+  const event = await Event.findById(eventId).populate(
+    "resaleListings.sellerId",
+    "firstName lastName"
+  );
+  if (!event) throw new ApiError(404, "Event not found");
+
+  if (!event.resaleListings) return [];
+
+  // Filter available tickets
+  return event.resaleListings
+    .filter((l) => l.status === "available")
+    .map((ticket) => {
+      const ticketObj = ticket.toObject ? ticket.toObject() : ticket;
+
+      const basePrice = ticketObj.originalPrice || 0;
+
+      return {
+        ...ticketObj,
+        finalPrice: basePrice * 1.15, // Calculate 15% markup
+      };
+    });
+};
+/**
+ * GENERAL MARKETPLACE: Get all available tickets across ALL events.
+ * This flattens the data so the frontend gets a clean list of tickets.
+ */
+export const getAllResaleTickets = async () => {
+  // 1. Find all events that have at least one available listing
+  const events = await Event.find({
+    "resaleListings.status": "available",
+  })
+    .select("name location startDate resaleListings") // Select only needed fields
+    .populate("resaleListings.sellerId", "firstName lastName");
+
+  // 2. Flatten the result
+  // We want an array of tickets, not an array of events
+  let allTickets = [];
+
+  events.forEach((event) => {
+    // Filter only the available listings inside this event
+    const availableTickets = event.resaleListings.filter(
+      (l) => l.status === "available"
+    );
+
+    // Map them to a clean format for the frontend card
+    const formattedTickets = availableTickets.map((ticket) => ({
+      listingId: ticket._id,
+      eventId: event._id,
+      eventName: event.name,
+      eventLocation: event.location,
+      eventDate: event.startDate,
+      originalPrice: ticket.originalPrice,
+      sellerName: ticket.sellerId
+        ? `${ticket.sellerId.firstName} ${ticket.sellerId.lastName}`
+        : "Unknown Student",
+      sellerId: ticket.sellerId?._id,
+    }));
+
+    allTickets = [...allTickets, ...formattedTickets];
+  });
+
+  return allTickets;
+};
 
 export const incrementViewCount = async (eventId) => {
   await Event.findByIdAndUpdate(eventId, { $inc: { viewCount: 1 } });
