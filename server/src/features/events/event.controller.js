@@ -1234,7 +1234,7 @@ export class EventsController {
       return res.status(200).json({ success: false });
     }
   }
-  
+
   async uploadImageToEvent(req, res, next) {
     try {
       const { eventId } = req.params;
