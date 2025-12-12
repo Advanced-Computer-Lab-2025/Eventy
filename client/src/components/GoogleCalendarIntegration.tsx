@@ -192,16 +192,18 @@ export default function GoogleCalendarIntegration() {
           {/* Connection Status Card */}
           <Card
             className={
-              isConnected ? "border-green-200 bg-green-50" : "border-gray-200"
+              isConnected
+                ? "border-green-200 bg-green-50 dark:border-green-700 dark:bg-green-900/40"
+                : "border-gray-200 bg-white dark:bg-card dark:border-gray-700"
             }
           >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   {isConnected ? (
-                    <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
                   ) : (
-                    <AlertCircle className="h-6 w-6 text-gray-400" />
+                    <AlertCircle className="h-6 w-6 text-gray-400 dark:text-gray-300" />
                   )}
                   <div>
                     <p className="font-semibold">
@@ -224,19 +226,11 @@ export default function GoogleCalendarIntegration() {
             <ul className="text-sm text-muted-foreground space-y-1 ml-4">
               <li className="flex items-start">
                 <span className="mr-2">•</span>
-                <span>Automatic sync of all registered events</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
-                <span>Receive Google Calendar notifications</span>
-              </li>
-              <li className="flex items-start">
-                <span className="mr-2">•</span>
                 <span>View events across all your devices</span>
               </li>
               <li className="flex items-start">
                 <span className="mr-2">•</span>
-                <span>Updates sync automatically</span>
+                <span>Receive Google Calendar notifications</span>
               </li>
             </ul>
           </div>
