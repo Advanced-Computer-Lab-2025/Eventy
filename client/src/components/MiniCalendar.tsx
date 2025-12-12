@@ -153,7 +153,7 @@ export default function MiniCalendar({
                   aspect-square p-1 rounded-lg text-sm font-medium
                   transition-all duration-200 relative
                   hover:bg-accent hover:scale-105
-                  ${today ? "bg-primary text-primary-foreground ring-2 ring-primary ring-offset-2" : ""}
+                  ${today ? "bg-primary text-primary-foreground" : ""}
                   ${hasEvents && !today ? "font-bold" : ""}
                   ${!hasEvents && !today ? "text-muted-foreground" : ""}
                 `}
@@ -161,18 +161,12 @@ export default function MiniCalendar({
                 <div className="flex flex-col items-center justify-center h-full">
                   <span>{day}</span>
                   {hasEvents && (
-                    <div className="flex items-center justify-center gap-0.5 mt-1">
+                    <div className="flex items-center justify-center -mt-0.5">
                       <div
-                        className={`
-                          w-1.5 h-1.5 rounded-full
-                          ${today ? "bg-primary-foreground" : "bg-primary"}
-                        `}
+                        className={`w-1 h-1 rounded-full ${
+                          today ? "bg-primary-foreground" : "bg-primary"
+                        }`}
                       />
-                      {dayEvents.length > 1 && (
-                        <span className="text-[8px] leading-none">
-                          +{dayEvents.length - 1}
-                        </span>
-                      )}
                     </div>
                   )}
                 </div>
