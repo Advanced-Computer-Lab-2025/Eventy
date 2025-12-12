@@ -659,15 +659,18 @@ export default function EventCard({
     days: daysUntilEvent,
   } = getActionStatus();
 
-  // --- MODIFIED BUYER LOGIC ---
-  // If registered: They see cancellation or sell options (handled above).
+  // --- MODIFIED BUYER LOGIC (FIXED) ---
+  // If registered: They see cancellation or sell options (handled elsewhere).
   // If NOT registered:
   //   - If registration is OPEN (isBeforeDeadline), show "Register".
-  //   - If registration is CLOSED (!isBeforeDeadline), show "View Resale Tickets".
+  //   - If registration is CLOSED (!isBeforeDeadline):
+  //       - AND days < 14: Show "View Resale Tickets".
+  //       - AND days >= 14: Show dimmed "Registration Closed" (or similar).
   const showResaleMarketplaceOption =
     !registered &&
     !isArchived &&
-    !isBeforeDeadline && // Only show marketplace if main registration is CLOSED
+    !isBeforeDeadline && // Only relevant if main registration is closed
+    daysUntilEvent < 14 && // <--- ADDED: Strict check for 14-day window
     daysUntilEvent >= 0 &&
     isRegisterable;
 
@@ -1022,7 +1025,7 @@ export default function EventCard({
                         data-testid={`button-register-${id}`}
                         disabled={!canRegister}
                       >
-                        Register
+                        {isBeforeDeadline ? "Register" : "Registration Closed"}
                       </Button>
                     )}
 
@@ -1404,7 +1407,9 @@ export default function EventCard({
                               data-testid={`button-register-${id}`}
                               disabled={!canRegister}
                             >
-                              Register
+                              {isBeforeDeadline
+                                ? "Register"
+                                : "Registration Closed"}
                             </Button>
                           )}
 
