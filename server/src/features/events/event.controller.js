@@ -2,6 +2,11 @@ import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
 import {
+  syncEventToGoogleCalendar,
+  removeEventFromGoogleCalendar,
+} from "./calendar.sync.js";
+import { Event } from "./event.model.js";
+import {
   createTripSchema,
   workshopStatusSchema,
   createWorkshopSchema,
@@ -574,10 +579,53 @@ export class EventsController {
         eventId
       );
 
+      // 🔄 AUTO-SYNC: Sync to Google Calendar if user has it connected
+      let calendarSyncResult = { synced: false };
+      if (user._id && eventId) {
+        try {
+          calendarSyncResult = await syncEventToGoogleCalendar(
+            user._id,
+            eventId
+          );
+          if (calendarSyncResult.synced && calendarSyncResult.googleEventId) {
+            console.log("✅ Event auto-synced to Google Calendar");
+            // Save the Google Event ID per user to the event document
+            const event = await Event.findById(eventId);
+            if (event) {
+              // Store googleEventId per user in the googleCalendarEvents array
+              event.googleCalendarEvents = event.googleCalendarEvents || [];
+              const existingIndex = event.googleCalendarEvents.findIndex(
+                (item) => item.userId.toString() === user._id.toString()
+              );
+              if (existingIndex >= 0) {
+                event.googleCalendarEvents[existingIndex].googleEventId =
+                  calendarSyncResult.googleEventId;
+              } else {
+                event.googleCalendarEvents.push({
+                  userId: user._id,
+                  googleEventId: calendarSyncResult.googleEventId,
+                  htmlLink: calendarSyncResult.htmlLink,
+                });
+              }
+              await event.save();
+            }
+          } else {
+            console.log("ℹ️ Calendar sync skipped:", calendarSyncResult.reason);
+          }
+        } catch (syncError) {
+          // Don't fail registration if calendar sync fails
+          console.warn(
+            "⚠️ Calendar sync error (non-blocking):",
+            syncError.message
+          );
+        }
+      }
+
       // Return the updated event so the client can update UI without refetch
       return res.status(200).json({
         message: "Successfully registered for the event.",
         event: updatedEvent,
+        calendarSynced: calendarSyncResult.synced,
       });
     } catch (err) {
       // If the service threw an error object with statusCode, use it
@@ -954,6 +1002,38 @@ export class EventsController {
         eventId,
         userId
       );
+
+      // Remove event from Google Calendar when registration is cancelled
+      // Get the event to find the user's specific Google event ID
+      const event = await Event.findById(eventId);
+
+      if (
+        event?.googleCalendarEvents &&
+        event.googleCalendarEvents.length > 0
+      ) {
+        // Find the Google event ID for this specific user
+        const userCalendarEvent = event.googleCalendarEvents.find(
+          (item) => item.userId.toString() === userId.toString()
+        );
+
+        if (userCalendarEvent?.googleEventId) {
+          await removeEventFromGoogleCalendar(
+            userId,
+            userCalendarEvent.googleEventId
+          ).catch((err) => {
+            console.warn(
+              `Warning: Could not remove event from Google Calendar: ${err.message}`
+            );
+            // Don't throw error - registration cancellation should succeed even if calendar removal fails
+          });
+
+          // Remove the calendar entry for this user from the event
+          event.googleCalendarEvents = event.googleCalendarEvents.filter(
+            (item) => item.userId.toString() !== userId.toString()
+          );
+          await event.save();
+        }
+      }
 
       return res
         .status(200)

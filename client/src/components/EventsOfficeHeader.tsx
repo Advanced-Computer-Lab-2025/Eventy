@@ -24,6 +24,7 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+// CalendarPopover removed from events office header
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 

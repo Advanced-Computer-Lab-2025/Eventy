@@ -13,6 +13,8 @@ import {
   Users,
   Target,
   CreditCard,
+  Grid2x2,
+  List,
 } from "lucide-react";
 import {
   PieChart,
@@ -28,6 +30,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import VendorHeader from "@/components/VendorHeader";
+import BigCalendarView from "@/components/BigCalendarView";
+import CalendarHeatmap from "@/components/CalendarHeatmap";
+import MiniCalendar from "@/components/MiniCalendar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

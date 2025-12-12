@@ -515,7 +515,21 @@ export default function EventCard({
       });
       setRegistered(false);
       setLocalAttendeeCount((prev) => Math.max(0, prev - 1));
-      if (onUnregister) onUnregister();
+
+      if (onUnregister) {
+        onUnregister();
+      }
+
+      // Dispatch event so other components (like CalendarPopover and MiniCalendar) can update
+      try {
+        window.dispatchEvent(
+          new CustomEvent("event:unregistered", {
+            detail: { eventId: id },
+          })
+        );
+      } catch (e) {
+        // ignore if dispatch not supported
+      }
     } catch (error: any) {
       toast({
         title: "Cancellation Failed",
@@ -1639,6 +1653,18 @@ export default function EventCard({
           onRegistered={() => {
             setRegistered(true);
             setLocalAttendeeCount((prev) => prev + 1);
+
+            // Dispatch event so other parts of the app (e.g., CalendarPage, CalendarPopover)
+            // can react and refetch their data
+            try {
+              window.dispatchEvent(
+                new CustomEvent("event:registered", {
+                  detail: { eventId: id },
+                })
+              );
+            } catch (e) {
+              // ignore if dispatch not supported
+            }
           }}
         />
       )}

@@ -16,6 +16,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 import WalletPopover from "./WalletPopover";
+import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 

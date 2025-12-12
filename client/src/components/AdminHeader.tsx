@@ -4,6 +4,7 @@ import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
+// Calendar popover removed per request
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
 

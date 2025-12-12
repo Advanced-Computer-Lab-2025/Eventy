@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Calendar styles */
+@import "./styles/calendar.css";
+
 /* Hide calendar icon for date inputs (cross-browser) */
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0;
