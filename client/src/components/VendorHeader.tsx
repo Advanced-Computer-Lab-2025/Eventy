@@ -1,8 +1,16 @@
-import { Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
+import {
+  Home,
+  Store,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Calendar,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
+import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useState, useEffect } from "react";
 import { Gift } from "lucide-react";
@@ -78,6 +86,7 @@ export default function VendorHeader({
           </div>
 
           <div className="flex items-center gap-2">
+            <CalendarPopover />
             <ThemeToggle />
             <ProfileMenu />
             {user?.role && user?.companyName && (

@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import session from "express-session";
 import allRoutes from "./routes/index.js";
 import userRoutes from "./features/users/user.route.js";
 
@@ -16,6 +17,16 @@ app.use(
   cors({
     origin: "http://localhost:5000",
     credentials: true,
+  })
+);
+
+// Session middleware for OAuth flow
+app.use(
+  session({
+    secret: process.env.JWT_SECRET || "calendar-secret-key",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false, maxAge: 600000 }, // 10 minutes
   })
 );
 

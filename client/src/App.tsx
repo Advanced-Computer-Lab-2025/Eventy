@@ -42,6 +42,7 @@ import EventsOfficeReportPage from "@/pages/EventsReportPage";
 import BoothVotePage from "@/pages/BoothVotePage";
 import EventsOfficePolls from "@/pages/EventsOfficePolls";
 import ApprovedLoyaltyPartnersPage from "@/pages/ApprovedLoyaltyPartnersPage";
+import CalendarPage from "@/pages/CalendarPage";
 import LiveMoments from "@/pages/LiveMoments";
 function Router() {
   return (
@@ -260,6 +261,14 @@ function Router() {
       <Route path="/reports/sales">
         <ProtectedRoute allowedRoles={["events_office", "admin"]}>
           <SalesReport />
+        </ProtectedRoute>
+      </Route>
+
+      <Route path="/calendar">
+        <ProtectedRoute
+          allowedRoles={["student", "staff", "ta", "professor", "vendor"]}
+        >
+          <CalendarPage />
         </ProtectedRoute>
       </Route>
 

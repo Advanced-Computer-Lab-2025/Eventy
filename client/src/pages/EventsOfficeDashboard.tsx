@@ -1,6 +1,9 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
+import BigCalendarView from "@/components/BigCalendarView";
+import CalendarHeatmap from "@/components/CalendarHeatmap";
+import MiniCalendar from "@/components/MiniCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CalendarDays,
@@ -20,6 +23,8 @@ import {
   FileText,
   Users,
   PieChart as PieChartIcon,
+  Grid2x2,
+  List,
 } from "lucide-react";
 import {
   PieChart,
@@ -91,6 +96,7 @@ export default function EventsOfficeDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
   const [restrictAccessDialogOpen, setRestrictAccessDialogOpen] =
@@ -122,8 +128,8 @@ export default function EventsOfficeDashboard() {
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,

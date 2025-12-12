@@ -8,9 +8,11 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  Calendar,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
@@ -41,8 +43,8 @@ export default function ProfessorDashboard() {
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,
@@ -58,8 +60,10 @@ export default function ProfessorDashboard() {
       next.location = filters.location;
     }
     if (filters.startDate && filters.endDate) {
-      next.startDate = filters.startDate;
-      next.endDate = filters.endDate;
+      next.startDate =
+        (filters.startDate as any).toISOString?.() || String(filters.startDate);
+      next.endDate =
+        (filters.endDate as any).toISOString?.() || String(filters.endDate);
     }
     if (filters.professor) {
       (next as any).professor = filters.professor;
