@@ -432,7 +432,9 @@ export default function CreateEventForm({
           {includeBudgetAndFunding && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="requiredBudget">Required Budget (EGP)</Label>
+                <Label htmlFor="requiredBudget">
+                  Required Budget (Dollars)
+                </Label>
                 <Input
                   id="requiredBudget"
                   type="number"
