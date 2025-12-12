@@ -103,6 +103,7 @@ export default function StudentHeader({
               onRefreshBalance={fetchUserProfile}
             />
 
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />

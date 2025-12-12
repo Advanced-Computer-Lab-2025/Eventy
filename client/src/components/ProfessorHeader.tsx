@@ -99,6 +99,7 @@ export default function ProfessorHeader({
               onRefreshBalance={fetchUserProfile}
             />
 
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />

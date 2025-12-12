@@ -98,6 +98,7 @@ export default function StaffHeader({
               onRefreshBalance={fetchUserProfile}
             />
 
+            <CalendarPopover />
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
