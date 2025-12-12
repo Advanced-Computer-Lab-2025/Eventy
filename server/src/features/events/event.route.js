@@ -1,10 +1,48 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
+import fs from "fs";
 import { EventsController } from "./event.controller.js";
 import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
 
 const router = express.Router();
 const eventsController = new EventsController();
+
+// Configure multer for event images
+const eventImagesDir = path.join(process.cwd(), "uploads", "event-images");
+if (!fs.existsSync(eventImagesDir)) {
+  fs.mkdirSync(eventImagesDir, { recursive: true });
+}
+
+const eventImageStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, eventImagesDir);
+  },
+  filename: function (req, file, cb) {
+    const timestamp = Date.now();
+    const randomSuffix = Math.random().toString(36).substring(2, 15);
+    const fileExtension = path.extname(file.originalname);
+    const filename = `${timestamp}-${randomSuffix}${fileExtension}`;
+    cb(null, filename);
+  },
+});
+
+const uploadEventImage = multer({
+  storage: eventImageStorage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: function (req, file, cb) {
+    // Only allow image files
+    const allowedMimes = ["image/jpeg", "image/png", "image/gif", "image/jpg"];
+    if (allowedMimes.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error("Only image files are allowed (jpeg, jpg, png, gif)"));
+    }
+  },
+});
 
 router.get(
   "/gettrips",
@@ -179,6 +217,60 @@ router.get(
     "admin",
   ]),
   eventsController.getUpcomingEvents.bind(eventsController)
+);
+
+// Get ongoing events (events that have started but not ended yet)
+router.get(
+  "/ongoing",
+  authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
+  eventsController.getOngoingEvents.bind(eventsController)
+);
+
+// Upload image to ongoing event (registered attendees only)
+router.post(
+  "/:eventId/upload-image",
+  authMiddleware,
+  (req, res, next) => {
+    uploadEventImage.single("image")(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({
+            success: false,
+            message: "File too large. Maximum size is 5MB.",
+          });
+        }
+        return res.status(400).json({
+          success: false,
+          message: err.message || "File upload error",
+        });
+      }
+      next();
+    });
+  },
+  eventsController.uploadImageToEvent.bind(eventsController)
+);
+
+// Get all uploaded images for an event
+router.get(
+  "/:eventId/images",
+  authMiddleware,
+  roleMiddleware([
+    "student",
+    "staff",
+    "events_office",
+    "ta",
+    "professor",
+    "admin",
+  ]),
+  eventsController.getEventImages.bind(eventsController)
 );
 
 // Get past events (events whose endDate has passed) - Events Office / Admin

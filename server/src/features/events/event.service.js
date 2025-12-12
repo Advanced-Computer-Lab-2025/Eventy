@@ -538,6 +538,35 @@ export const getUpcomingEventsWithVendors = async (
   return eventsWithVendors;
 };
 
+/**
+ * Get all ongoing events (events that have started but not ended yet).
+ * @param {string|null} userRole - The role of the user requesting events
+ * @returns {Promise<Array>} Array of ongoing event objects.
+ */
+export const getOngoingEvents = async (userRole = null) => {
+  const now = new Date();
+
+  const filter = {
+    status: "approved",
+    deletedAt: null,
+    // Include both ongoing events and past events
+    // Remove the endDate filter to include past events
+    startDate: { $lte: now }, // Event has already started
+  };
+
+  // Filter out events where the user's role is restricted
+  if (userRole && userRole !== "admin" && userRole !== "events_office") {
+    filter.restrictedRoles = { $ne: userRole };
+  }
+
+  const events = await Event.find(filter)
+    .populate("professors", "firstName lastName email")
+    .populate("createdBy", "name email companyName")
+    .lean();
+
+  return events;
+};
+
 export async function deleteEvent(eventId, user) {
   // Ensure event exists
   const event = await Event.findById(eventId);
@@ -2665,3 +2694,103 @@ export async function getApprovedEventsCount() {
     archivedAt: null,
   });
 }
+
+/**
+ * Upload an image to an ongoing event by a registered attendee
+ * @param {string} eventId - The event ID
+ * @param {string} userId - The user ID (from req.user)
+ * @param {string} imageUrl - The uploaded image URL
+ * @returns {Promise<Object>} - The updated event with new image
+ */
+export const uploadImageToEvent = async (eventId, userId, imageUrl) => {
+  // Find the event
+  const event = await Event.findById(eventId);
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot upload image to a deleted event");
+  }
+
+  // Check if event is ongoing
+  const now = new Date();
+  const isOngoing = event.startDate <= now && event.endDate >= now;
+  if (!isOngoing) {
+    throw new ApiError(400, "Can only upload images to ongoing events");
+  }
+
+  // Ensure event is approved before allowing uploads
+  if (event.status !== "approved") {
+    throw new ApiError(403, "Cannot upload images to an unapproved event");
+  }
+
+  // Check if user is registered attendee
+  const isRegistered = event.attendees.some(
+    (attendeeId) => attendeeId.toString() === userId.toString()
+  );
+  if (!isRegistered) {
+    throw new ApiError(403, "Only registered attendees can upload images");
+  }
+
+  // Add image to event.images array
+  event.images.push({
+    url: imageUrl,
+    uploadedBy: userId,
+    uploadedAt: new Date(),
+  });
+
+  await event.save();
+
+  // Return updated event with populated data
+  const updatedEvent = await Event.findById(eventId)
+    .populate("images.uploadedBy", "firstName lastName email")
+    .populate("attendees", "firstName lastName email");
+
+  return updatedEvent;
+};
+
+/**
+ * Get all uploaded images for a specific event
+ * @param {string} eventId - The event ID
+ * @returns {Promise<Array>} - Array of images with uploader details
+ */
+export const getEventImages = async (eventId, user = null) => {
+  const event = await Event.findById(eventId)
+    .select("images name eventType restrictedRoles status deletedAt archivedAt")
+    .populate("images.uploadedBy", "firstName lastName email");
+
+  if (!event) {
+    throw new ApiError(404, "Event not found");
+  }
+
+  if (event.deletedAt) {
+    throw new ApiError(400, "Cannot view images of a deleted event");
+  }
+
+  // Only approved events' images are viewable
+  if (event.status !== "approved") {
+    throw new ApiError(
+      403,
+      "Event images are not available for unapproved events"
+    );
+  }
+
+  // If a user is provided, ensure their role is not restricted from this event
+  if (user && user.role && Array.isArray(event.restrictedRoles)) {
+    if (event.restrictedRoles.includes(user.role)) {
+      throw new ApiError(
+        403,
+        "You are restricted from viewing images of this event"
+      );
+    }
+  }
+
+  return {
+    eventId: event._id,
+    eventName: event.name,
+    eventType: event.eventType,
+    images: event.images || [],
+    totalImages: event.images?.length || 0,
+  };
+};

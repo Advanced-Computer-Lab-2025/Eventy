@@ -90,6 +90,19 @@ const eventSchema = new Schema(
 
     bannerImage: { type: String }, // URL to the banner image
 
+    // Images uploaded by attendees during the event
+    images: [
+      {
+        url: { type: String, required: true },
+        uploadedBy: {
+          type: Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        uploadedAt: { type: Date, default: Date.now },
+      },
+    ],
+
     createdBy: {
       type: Schema.Types.ObjectId,
       ref: "User",
