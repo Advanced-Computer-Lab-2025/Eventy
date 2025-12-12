@@ -244,12 +244,7 @@ export default function BigCalendarView({
       {/* Event Details Dialog */}
       <EventDetailsDialog
         open={isDialogOpen}
-        onOpenChange={(open) => {
-          if (!open && onUnregister) {
-            onUnregister();
-          }
-          setIsDialogOpen(open);
-        }}
+        onOpenChange={setIsDialogOpen}
         event={selectedEvent}
         loading={isLoadingDetails}
       />

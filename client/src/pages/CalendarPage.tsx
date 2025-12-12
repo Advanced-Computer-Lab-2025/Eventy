@@ -205,7 +205,6 @@ export default function CalendarPage() {
                 events={filteredEvents}
                 defaultDate={selectedDate || undefined}
                 defaultView={selectedDate ? "day" : "month"}
-                onUnregister={fetchUserEvents}
                 customToolbarComponent={
                   <div className="flex items-center gap-2">
                     <Select
