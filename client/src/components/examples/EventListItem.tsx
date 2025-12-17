@@ -11,7 +11,7 @@ export default function EventListItemExample() {
         time="2:00 PM"
         location="Engineering Building, Room 301"
         image="https://images.unsplash.com/photo-1591453089816-0fbb971b454c?w=200&auto=format&fit=crop"
-        onClick={() => console.log("Event clicked")}
+        onClick={() => logger.info("Event clicked")}
       />
       <EventListItem
         id="2"
@@ -21,7 +21,7 @@ export default function EventListItemExample() {
         time="6:00 PM"
         location="Main Quadrangle"
         image="https://images.unsplash.com/photo-1533174072545-7a4b6ad7a6c3?w=200&auto=format&fit=crop"
-        onClick={() => console.log("Event clicked")}
+        onClick={() => logger.info("Event clicked")}
       />
     </div>
   );

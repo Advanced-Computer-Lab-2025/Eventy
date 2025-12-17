@@ -80,7 +80,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Bazaar[]> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error fetching events:", error);
+      logger.error("Error fetching events:", error);
       throw error;
     }
   }
@@ -106,7 +106,7 @@ class BazaarApiService {
 
       return bazaars;
     } catch (error) {
-      console.error("Error fetching upcoming bazaars:", error);
+      logger.error("Error fetching upcoming bazaars:", error);
       throw error;
     }
   }
@@ -134,7 +134,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Bazaar[]> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error fetching bazaars by status:", error);
+      logger.error("Error fetching bazaars by status:", error);
       throw error;
     }
   }
@@ -157,7 +157,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Bazaar[]> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error searching bazaars:", error);
+      logger.error("Error searching bazaars:", error);
       throw error;
     }
   }
@@ -165,14 +165,14 @@ class BazaarApiService {
   async registerForBazaar(bazaarId: string): Promise<void> {
     try {
       // This method is deprecated - use applyToBazaar instead
-      console.warn(
+      logger.warn(
         "registerForBazaar is deprecated. Use applyToBazaar with proper application data."
       );
       throw new Error(
         "Please use the vendor application form instead of direct registration."
       );
     } catch (error) {
-      console.error("Error registering for bazaar:", error);
+      logger.error("Error registering for bazaar:", error);
       throw error;
     }
   }
@@ -200,7 +200,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Application[]> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error fetching applications:", error);
+      logger.error("Error fetching applications:", error);
       throw error;
     }
   }
@@ -245,7 +245,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Application> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error applying to bazaar:", error);
+      logger.error("Error applying to bazaar:", error);
       throw error;
     }
   }
@@ -284,7 +284,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Application> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error applying to booth:", error);
+      logger.error("Error applying to booth:", error);
       throw error;
     }
   }
@@ -315,7 +315,7 @@ class BazaarApiService {
         await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error uploading ID card:", error);
+      logger.error("Error uploading ID card:", error);
       throw error;
     }
   }
@@ -348,7 +348,7 @@ class BazaarApiService {
         await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error uploading vendor document:", error);
+      logger.error("Error uploading vendor document:", error);
       throw error;
     }
   }
@@ -374,7 +374,7 @@ class BazaarApiService {
       const apiResponse: ApiResponse<Application> = await response.json();
       return apiResponse.data;
     } catch (error) {
-      console.error("Error cancelling application:", error);
+      logger.error("Error cancelling application:", error);
       throw error;
     }
   }
@@ -406,7 +406,7 @@ class BazaarApiService {
 
       return data.data;
     } catch (error) {
-      console.error("Error creating booth conflict poll:", error);
+      logger.error("Error creating booth conflict poll:", error);
       throw error;
     }
   }
@@ -436,7 +436,7 @@ class BazaarApiService {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error("Error initiating payment:", error);
+      logger.error("Error initiating payment:", error);
       throw error;
     }
   }
@@ -460,7 +460,7 @@ class BazaarApiService {
       const result = await response.json();
       return result;
     } catch (error) {
-      console.error("Error confirming payment:", error);
+      logger.error("Error confirming payment:", error);
       throw error;
     }
   }
@@ -486,7 +486,7 @@ class BazaarApiService {
       const result = await response.json();
       return result.publishableKey;
     } catch (error) {
-      console.error("Error getting Stripe publishable key:", error);
+      logger.error("Error getting Stripe publishable key:", error);
       throw error;
     }
   }

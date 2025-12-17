@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { Event } from "./event.model.js"; // adjust path if needed
 import ApiError from "../../utils/ApiError.js";
 import { User } from "../users/user.model.js";
@@ -56,7 +57,7 @@ export async function createBazaar(data, user) {
   try {
     await NotificationService.notifyNewEvent(bazaar, "bazaar");
   } catch (error) {
-    console.error("Error sending bazaar notification:", error);
+    logger.error("Error sending bazaar notification:", error);
     // Don't fail the request if notification fails
   }
 
@@ -158,7 +159,7 @@ export const createTrip = async (tripData, createdBy) => {
   try {
     await NotificationService.notifyNewEvent(newTrip, "trip");
   } catch (error) {
-    console.error("Error sending trip notification:", error);
+    logger.error("Error sending trip notification:", error);
     // Don't fail the request if notification fails
   }
 
@@ -218,7 +219,7 @@ export const createConference = async (data, userId) => {
   try {
     await NotificationService.notifyNewEvent(event, "conference");
   } catch (error) {
-    console.error("Error sending conference notification:", error);
+    logger.error("Error sending conference notification:", error);
     // Don't fail the request if notification fails
   }
 
@@ -285,7 +286,7 @@ export const createWorkshop = async (workshopData, professorId) => {
   try {
     await NotificationService.notifyNewEvent(workshop, "workshop");
   } catch (error) {
-    console.error("Error sending workshop notification:", error);
+    logger.error("Error sending workshop notification:", error);
     // Don't fail the request if notification fails
   }
 
@@ -1795,7 +1796,7 @@ export const notifyWaitlistUsers = async (eventId) => {
     twoWeeksBefore.setDate(twoWeeksBefore.getDate() - 14);
 
     if (now > twoWeeksBefore) {
-      console.warn(
+      logger.warn(
         `Cancellations cannot be made for event ${eventId} (within 14 days), not notifying waitlist users`
       );
       return;
@@ -1828,7 +1829,7 @@ export const notifyWaitlistUsers = async (eventId) => {
           notified: true,
           notifiedAt: new Date(),
         });
-        console.warn(
+        logger.warn(
           `Removed waitlist entry for already-registered user ${userId} for event ${eventId}`
         );
       }
@@ -1885,7 +1886,7 @@ export const notifyWaitlistUsers = async (eventId) => {
             try {
               await sendWaitlistSpotAvailableEmail(entry.user, event);
             } catch (error) {
-              console.error(`Error sending email to ${entry.user._id}:`, error);
+              logger.error(`Error sending email to ${entry.user._id}:`, error);
             }
           }
         }
@@ -1899,7 +1900,7 @@ export const notifyWaitlistUsers = async (eventId) => {
           }
         );
 
-        console.warn(
+        logger.warn(
           `Notified all ${allUserIds.length} waitlist users (no autopay) about available spot for event ${eventId}`
         );
         return;
@@ -1923,7 +1924,7 @@ export const notifyWaitlistUsers = async (eventId) => {
         notified: true,
         notifiedAt: new Date(),
       });
-      console.warn(
+      logger.warn(
         `Skipping waitlist entry - user ${firstUser._id} already registered for event ${eventId}`
       );
       return;
@@ -1935,7 +1936,7 @@ export const notifyWaitlistUsers = async (eventId) => {
     }
 
     // Debug logging
-    console.warn(
+    logger.warn(
       `Processing waitlist for event ${eventId}: autopayEnabled=${firstWaitlistEntry.autopayEnabled}, paymentMethod=${firstWaitlistEntry.paymentMethod}, userId=${firstUser._id}`
     );
 
@@ -1951,7 +1952,7 @@ export const notifyWaitlistUsers = async (eventId) => {
       firstWaitlistEntry.paymentMethod !== null &&
       firstWaitlistEntry.paymentMethod !== "";
 
-    console.warn(
+    logger.warn(
       `Autopay check for waitlist entry ${firstWaitlistEntry._id}: autopayEnabledValue=${autopayEnabledValue}, hasPaymentMethod=${hasPaymentMethod}, paymentMethod=${firstWaitlistEntry.paymentMethod}`
     );
 
@@ -1983,7 +1984,7 @@ export const notifyWaitlistUsers = async (eventId) => {
             notifiedAt: new Date(),
           });
 
-          console.warn(
+          logger.warn(
             `Auto-registered waitlist user ${firstUser._id} for free event ${eventId}`
           );
           return;
@@ -2029,7 +2030,7 @@ export const notifyWaitlistUsers = async (eventId) => {
           paymentMethod: paymentMethod,
         });
 
-        console.warn(
+        logger.warn(
           `Payment result for waitlist autopay:`,
           JSON.stringify({
             paymentMethod,
@@ -2066,7 +2067,7 @@ export const notifyWaitlistUsers = async (eventId) => {
             notifiedAt: new Date(),
           });
 
-          console.warn(
+          logger.warn(
             `Auto-registered waitlist user ${firstUser._id} for event ${eventId} via wallet autopay`
           );
           return; // Successfully processed
@@ -2096,13 +2097,13 @@ export const notifyWaitlistUsers = async (eventId) => {
           // Send email notification
           await sendWaitlistPaymentRequiredEmail(firstUser, event);
 
-          console.warn(
+          logger.warn(
             `Notified waitlist user ${firstUser._id} to complete card payment for event ${eventId}`
           );
           return;
         } else {
           // Payment was processed but didn't match expected conditions
-          console.error(
+          logger.error(
             `Unexpected payment result for waitlist autopay:`,
             JSON.stringify({
               paymentMethod,
@@ -2117,8 +2118,8 @@ export const notifyWaitlistUsers = async (eventId) => {
           );
         }
       } catch (autopayError) {
-        console.error("Error processing autopay:", autopayError);
-        console.error("Autopay error details:", {
+        logger.error("Error processing autopay:", autopayError);
+        logger.error("Autopay error details:", {
           error: autopayError.message,
           stack: autopayError.stack,
           userId: firstUser._id,
@@ -2156,7 +2157,7 @@ export const notifyWaitlistUsers = async (eventId) => {
       }
     } else {
       // Debug: Log why autopay wasn't triggered
-      console.warn(
+      logger.warn(
         `Autopay not triggered for waitlist entry: autopayEnabled=${firstWaitlistEntry.autopayEnabled}, paymentMethod=${firstWaitlistEntry.paymentMethod}`
       );
     }
@@ -2180,11 +2181,11 @@ export const notifyWaitlistUsers = async (eventId) => {
       notifiedAt: new Date(),
     });
 
-    console.warn(
+    logger.warn(
       `Notified waitlist user ${firstUser._id} about available spot for event ${eventId}`
     );
   } catch (error) {
-    console.error("Error notifying waitlist users:", error);
+    logger.error("Error notifying waitlist users:", error);
     // Don't throw error to not block cancellation
   }
 };
@@ -2611,11 +2612,11 @@ async function sendEventReminder(event, reminderTime, reminderType) {
       notificationType: "event_reminder",
     });
 
-    console.log(
+    logger.info(
       `Sent ${reminderType} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
     );
   } catch (error) {
-    console.error(`Error sending reminder for event ${event._id}:`, error);
+    logger.error(`Error sending reminder for event ${event._id}:`, error);
   }
 }
 
@@ -2625,7 +2626,7 @@ async function sendEventReminder(event, reminderTime, reminderType) {
 export async function scheduleEventReminders() {
   try {
     const now = new Date();
-    console.log(
+    logger.info(
       `[Scheduler] Running event reminder check at ${now.toISOString()}`
     );
 
@@ -2638,7 +2639,7 @@ export async function scheduleEventReminders() {
       status: "approved",
       deletedAt: null,
     });
-    console.log(
+    logger.info(
       `[Scheduler] Found ${upcomingEvents.length} upcoming events in the next 25 hours.`
     );
 
@@ -2647,7 +2648,7 @@ export async function scheduleEventReminders() {
       const diffMs = eventStart.getTime() - now.getTime();
       const diffDays = diffMs / (1000 * 60 * 60 * 24);
       const diffHours = diffMs / (1000 * 60 * 60);
-      console.log(
+      logger.info(
         `[Scheduler] Event '${event.name}' (${event._id}) starts at ${eventStart.toISOString()} (${diffDays.toFixed(2)} days, ${diffHours.toFixed(2)} hours from now)`
       );
 
@@ -2657,13 +2658,13 @@ export async function scheduleEventReminders() {
         (diffDays < 1 && !event.reminder1DaySent && diffHours > 1)
       ) {
         if (!event.reminder1DaySent) {
-          console.log(
+          logger.info(
             `[Scheduler] Sending 1-day reminder for event '${event.name}' (${event._id})`
           );
           await sendEventReminder(event, now, "1 day");
           await Event.findByIdAndUpdate(event._id, { reminder1DaySent: true });
         } else {
-          console.log(
+          logger.info(
             `[Scheduler] 1-day reminder already sent for event '${event.name}' (${event._id})`
           );
         }
@@ -2674,24 +2675,24 @@ export async function scheduleEventReminders() {
         (diffHours < 1 && !event.reminder1HourSent && diffHours > 0)
       ) {
         if (!event.reminder1HourSent) {
-          console.log(
+          logger.info(
             `[Scheduler] Sending 1-hour reminder for event '${event.name}' (${event._id})`
           );
           await sendEventReminder(event, now, "1 hour");
           await Event.findByIdAndUpdate(event._id, { reminder1HourSent: true });
         } else {
-          console.log(
+          logger.info(
             `[Scheduler] 1-hour reminder already sent for event '${event.name}' (${event._id})`
           );
         }
       } else {
-        console.log(
+        logger.info(
           `[Scheduler] No reminder needed for event '${event.name}' (${event._id}) at this time.`
         );
       }
     }
   } catch (error) {
-    console.error("Error scheduling event reminders:", error);
+    logger.error("Error scheduling event reminders:", error);
   }
 }
 
@@ -2700,7 +2701,7 @@ export async function scheduleEventReminders() {
  */
 export function startReminderScheduler() {
   // Run immediately on start
-  console.log(
+  logger.info(
     `[Scheduler] Starting event reminder scheduler at ${new Date().toISOString()}`
   );
   scheduleEventReminders();
@@ -2708,7 +2709,7 @@ export function startReminderScheduler() {
   // Then run every 5 minutes
   reminderInterval = setInterval(
     () => {
-      console.log(
+      logger.info(
         `[Scheduler] Triggered event reminder scheduler at ${new Date().toISOString()}`
       );
       scheduleEventReminders();
@@ -2716,7 +2717,7 @@ export function startReminderScheduler() {
     5 * 60 * 1000
   );
 
-  console.log("Event reminder scheduler started (interval: 5 minutes)");
+  logger.info("Event reminder scheduler started (interval: 5 minutes)");
 }
 
 /**
@@ -2725,7 +2726,7 @@ export function startReminderScheduler() {
 export function stopReminderScheduler() {
   if (reminderInterval) {
     clearInterval(reminderInterval);
-    console.log("Event reminder scheduler stopped");
+    logger.info("Event reminder scheduler stopped");
   }
 }
 
@@ -3213,7 +3214,7 @@ export const sendCertificatesForCompletedWorkshops = async () => {
           workshopFailed++;
         }
       } catch (error) {
-        console.error(
+        logger.error(
           `Error sending certificate to ${attendee.email}:`,
           error.message
         );

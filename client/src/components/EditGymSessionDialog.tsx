@@ -148,7 +148,7 @@ export default function EditGymSessionDialog({
       reset();
       onSuccess?.();
     } catch (error) {
-      console.error("Edit session error:", error);
+      logger.error("Edit session error:", error);
       toast({
         title: "Error",
         description:

@@ -13,7 +13,7 @@ export default function EventFiltersExample() {
             professor: "",
           } as EventFilterState
         }
-        onFilterChange={(filters) => console.log("Filters:", filters)}
+        onFilterChange={(filters) => logger.info("Filters:", filters)}
         locations={[]}
         professors={[]}
       />

@@ -71,7 +71,7 @@ export default function BigCalendarView({
       try {
         // Fetch complete event details from the database
         const token = localStorage.getItem("token");
-        console.log(
+        logger.info(
           "Fetching event:",
           eventId,
           "API URL:",
@@ -85,24 +85,24 @@ export default function BigCalendarView({
           },
         });
 
-        console.log("API Response status:", response.status);
+        logger.info("API Response status:", response.status);
 
         if (response.ok) {
           const data = await response.json();
-          console.log("API Response data:", data);
+          logger.info("API Response data:", data);
           const eventData = data.data || data;
-          console.log("Setting selected event:", eventData);
+          logger.info("Setting selected event:", eventData);
           setSelectedEvent(eventData);
           onEventClick?.(eventData);
         } else {
           // Fallback to the resource data if API call fails
-          console.warn("API call failed, using fallback data");
+          logger.warn("API call failed, using fallback data");
           const event = calendarEvent.resource as Event;
           setSelectedEvent(event);
           onEventClick?.(event);
         }
       } catch (error) {
-        console.error("Error fetching event details:", error);
+        logger.error("Error fetching event details:", error);
         // Fallback to the resource data if fetch fails
         const event = calendarEvent.resource as Event;
         setSelectedEvent(event);

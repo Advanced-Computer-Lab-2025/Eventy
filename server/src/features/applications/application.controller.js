@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { ApplicationService } from "./application.service.js";
 import {
   validateBazaarApplication,
@@ -193,7 +194,7 @@ export class ApplicationController {
                 populatedApplication.createdBy,
                 populatedApplication.event || null
               ).catch((err) => {
-                console.error(
+                logger.error(
                   `Failed to send QR code email to ${attendee.email}:`,
                   err
                 );
@@ -202,7 +203,7 @@ export class ApplicationController {
             });
           }
         } catch (emailError) {
-          console.error("Error preparing QR code emails:", emailError);
+          logger.error("Error preparing QR code emails:", emailError);
           // Don't fail the request if email preparation fails
         }
       }

@@ -21,14 +21,14 @@ export default function EmailVerified() {
     const verifyEmail = async () => {
       try {
         const token = params?.token;
-        console.log("Token from params:", token);
+        logger.info("Token from params:", token);
         if (!token) {
           setStatus("error");
           setMessage("Invalid verification link");
           return;
         }
 
-        console.log(
+        logger.info(
           "Calling verification endpoint:",
           `/api/auth/verify-email/${token}`
         );
@@ -36,7 +36,7 @@ export default function EmailVerified() {
           `http://localhost:4000/api/auth/verify-email/${token}`
         );
         const data = await response.json();
-        console.log("Verification response:", response.status, data);
+        logger.info("Verification response:", response.status, data);
 
         if (response.ok) {
           setStatus("success");

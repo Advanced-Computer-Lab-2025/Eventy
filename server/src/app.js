@@ -1,3 +1,4 @@
+import logger from "./utils/logger.js";
 import express from "express";
 import cors from "cors";
 import path from "path";
@@ -36,9 +37,9 @@ app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
 // Log all incoming requests
 app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  logger.info(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
   if (["POST", "PUT", "PATCH"].includes(req.method)) {
-    console.log("Body:", req.body);
+    logger.info("Body:", req.body);
   }
   next();
 });

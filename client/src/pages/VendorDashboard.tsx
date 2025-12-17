@@ -304,9 +304,9 @@ export default function VendorDashboard() {
   // Fetch applications data
   const fetchApplicationsData = async () => {
     try {
-      console.log("=== Starting application fetch ===");
+      logger.info("=== Starting application fetch ===");
 
-      console.log("Fetching applications by status...");
+      logger.info("Fetching applications by status...");
       const results = await Promise.allSettled([
         bazaarApiService.getPendingApplications(),
         bazaarApiService.getRejectedApplications(),
@@ -322,17 +322,17 @@ export default function VendorDashboard() {
       const cancelled =
         results[3].status === "fulfilled" ? results[3].value : [];
 
-      console.log("Pending applications:", pending);
-      console.log("Rejected applications:", rejected);
-      console.log("Approved applications:", approved);
-      console.log("Cancelled applications:", cancelled);
+      logger.info("Pending applications:", pending);
+      logger.info("Rejected applications:", rejected);
+      logger.info("Approved applications:", approved);
+      logger.info("Cancelled applications:", cancelled);
 
       const totalApplications =
         pending.length + rejected.length + approved.length + cancelled.length;
-      console.log("Total applications found:", totalApplications);
+      logger.info("Total applications found:", totalApplications);
 
       if (totalApplications === 0) {
-        console.log("No applications found in database for this user");
+        logger.info("No applications found in database for this user");
       }
 
       setPendingApplications(pending);
@@ -340,9 +340,9 @@ export default function VendorDashboard() {
       setApprovedApplications(approved);
       setCancelledApplications(cancelled);
 
-      console.log("=== Application fetch completed ===");
+      logger.info("=== Application fetch completed ===");
     } catch (err) {
-      console.error("Error fetching applications:", err);
+      logger.error("Error fetching applications:", err);
       toast({
         title: "Error",
         description: "Failed to load applications data.",
@@ -561,14 +561,14 @@ export default function VendorDashboard() {
 
       // This will be called from BoothApplicationDialog, so we don't submit here
       // The actual submission happens when user clicks on a booth in the map
-      console.log("Platform booth form validated:", {
+      logger.info("Platform booth form validated:", {
         attendees: validAttendees,
         boothSize,
         durationWeeks,
         selectedMapLocation,
       });
     } catch (error) {
-      console.error("Error submitting platform booth application:", error);
+      logger.error("Error submitting platform booth application:", error);
       toast({
         title: "Application Failed",
         description: "Failed to submit your application. Please try again.",

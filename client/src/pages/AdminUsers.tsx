@@ -118,7 +118,7 @@ export default function AdminUsers() {
       });
       fetchUsers(); // Refresh the users list
     } catch (error: any) {
-      console.error(`${action} error:`, error);
+      logger.error(`${action} error:`, error);
       const errorMsg =
         error.response?.data?.message || `Failed to ${action} user`;
       setError(errorMsg);
@@ -145,8 +145,8 @@ export default function AdminUsers() {
       });
       fetchUsers();
     } catch (error: any) {
-      console.error("Delete error:", error);
-      console.error("Error response:", error.response?.data);
+      logger.error("Delete error:", error);
+      logger.error("Error response:", error.response?.data);
 
       let errorMsg;
       if (error.response?.status === 403) {
@@ -187,7 +187,7 @@ export default function AdminUsers() {
       );
       setUsers(response.data.data);
     } catch (err) {
-      console.error("Failed to fetch users:", err);
+      logger.error("Failed to fetch users:", err);
       setError("Failed to load users");
       setUsers([]);
     } finally {
@@ -208,7 +208,7 @@ export default function AdminUsers() {
       );
       setPendingUsers(response.data.data);
     } catch (err) {
-      console.error("Failed to fetch pending users:", err);
+      logger.error("Failed to fetch pending users:", err);
       setPendingUsers([]);
     } finally {
       setPendingLoading(false);
@@ -232,7 +232,7 @@ export default function AdminUsers() {
       await fetchPendingUsers(); // Remove user from pending table
       await fetchUsers(); // Add user to main table with new role
     } catch (error: any) {
-      console.error("Assign role error:", error);
+      logger.error("Assign role error:", error);
       setError(error.response?.data?.message || "Failed to assign role");
     } finally {
       setAssigningRole(null);

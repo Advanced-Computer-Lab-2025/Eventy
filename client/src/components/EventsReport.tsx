@@ -116,7 +116,7 @@ export default function EventsReport() {
       setReportData(data.data);
       setError("");
     } catch (err: any) {
-      console.error("Error fetching report:", err);
+      logger.error("Error fetching report:", err);
       const errorMessage = err.message || "An error occurred";
       setError(errorMessage);
       toast({
@@ -198,7 +198,7 @@ export default function EventsReport() {
         description: `Event data exported as ${format.toUpperCase()}`,
       });
     } catch (err: any) {
-      console.error("Export error:", err);
+      logger.error("Export error:", err);
       toast({
         title: "Export failed",
         description: err.message || "Failed to export event data",

@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { Event } from "../events/event.model.js";
 import { User } from "../users/user.model.js";
 import AIModelService from "./ai.service.js";
@@ -233,7 +234,7 @@ export const getRecommendationsForUser = async (userId) => {
       reason: "Based on your recent activity",
     };
   } catch (error) {
-    console.error("AI Recommendation Error:", error);
+    logger.error("AI Recommendation Error:", error);
     return {
       type: "hidden",
       events: [],

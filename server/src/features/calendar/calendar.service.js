@@ -1,5 +1,6 @@
 import { google } from "googleapis";
 import dotenv from "dotenv";
+import { calendarLogger as logger } from "../../utils/logger.js";
 
 dotenv.config();
 
@@ -34,7 +35,7 @@ export const getTokensFromCode = async (code) => {
     const { tokens } = await oauth2Client.getToken(code);
     return tokens;
   } catch (error) {
-    console.error("Error getting tokens:", error);
+    logger.error("Failed to get OAuth tokens:", error);
     throw error;
   }
 };
@@ -115,7 +116,7 @@ export const addEventToGoogleCalendar = async (tokens, eventDetails) => {
       htmlLink: response.data.htmlLink,
     };
   } catch (error) {
-    console.error("Error adding event to Google Calendar:", error);
+    logger.error("Failed to add event to Google Calendar:", error);
     throw error;
   }
 };
@@ -180,7 +181,7 @@ export const updateGoogleCalendarEvent = async (
       htmlLink: response.data.htmlLink,
     };
   } catch (error) {
-    console.error("Error updating Google Calendar event:", error);
+    logger.error("Failed to update Google Calendar event:", error);
     throw error;
   }
 };
@@ -202,7 +203,7 @@ export const deleteGoogleCalendarEvent = async (tokens, googleEventId) => {
 
     return { success: true };
   } catch (error) {
-    console.error("Error deleting Google Calendar event:", error);
+    logger.error("Failed to delete Google Calendar event:", error);
     throw error;
   }
 };
@@ -227,7 +228,7 @@ export const getUserCalendarEvents = async (tokens, timeMin, timeMax) => {
 
     return response.data.items || [];
   } catch (error) {
-    console.error("Error getting calendar events:", error);
+    logger.error("Failed to get calendar events:", error);
     throw error;
   }
 };
@@ -244,7 +245,7 @@ export const refreshAccessToken = async (refreshToken) => {
     const { credentials } = await oauth2Client.refreshAccessToken();
     return credentials;
   } catch (error) {
-    console.error("Error refreshing access token:", error);
+    logger.error("Failed to refresh Google OAuth access token:", error);
     throw error;
   }
 };

@@ -95,7 +95,7 @@ export default function SportsFacilities() {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      console.warn("Reserve response:", res.status, data);
+      logger.warn("Reserve response:", res.status, data);
       if (data.success && data.data) {
         // Normalize schedule dates to local YYYY-MM-DD (use local date parts)
         const normalize = (arr: unknown[]) =>
@@ -115,10 +115,10 @@ export default function SportsFacilities() {
         };
         setCourtSchedules(normalized);
         // warn with sample so devs can inspect if needed
-        console.warn("Fetched court schedules (normalized):", normalized);
+        logger.warn("Fetched court schedules (normalized):", normalized);
       }
     } catch (err) {
-      console.error("Fetch error:", err);
+      logger.error("Fetch error:", err);
       toast({
         title: "Error",
         description: "Failed to load court schedules",
@@ -139,7 +139,7 @@ export default function SportsFacilities() {
         const payload = JSON.parse(atob(token.split(".")[1]));
         role = payload.role;
       } catch (error) {
-        console.error("Failed to decode token:", error);
+        logger.error("Failed to decode token:", error);
       }
     }
 
@@ -152,7 +152,7 @@ export default function SportsFacilities() {
           role = userData.role || null;
         }
       } catch (error) {
-        console.error("Failed to parse user from localStorage:", error);
+        logger.error("Failed to parse user from localStorage:", error);
       }
     }
 
@@ -250,7 +250,7 @@ export default function SportsFacilities() {
       // Refresh schedules so the slot becomes booked
       await fetchCourtSchedules();
     } catch (err) {
-      console.error("Reserve error:", err);
+      logger.error("Reserve error:", err);
       const message =
         (err && (err as any).message) || "Failed to reserve court";
       toast({ title: "Error", description: message, variant: "destructive" });

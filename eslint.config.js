@@ -105,12 +105,8 @@ export default [
           varsIgnorePattern: "^_",
         },
       ],
-      "no-console": [
-        "warn",
-        {
-          allow: ["warn", "error"],
-        },
-      ],
+      // Disabled - using professional logger (consola) instead
+      // "no-console": ["warn", { allow: ["warn", "error"] }],
       ...reactHooks.configs.recommended.rules,
     },
     settings: {
@@ -192,12 +188,8 @@ export default [
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/explicit-module-boundary-types": "off",
       "@typescript-eslint/no-require-imports": "warn",
-      "no-console": [
-        "warn",
-        {
-          allow: ["warn", "error"],
-        },
-      ],
+      // Disabled - using professional logger (consola) instead
+      // "no-console": ["warn", { allow: ["warn", "error"] }],
       "no-undef": "warn",
       ...reactHooks.configs.recommended.rules,
     },

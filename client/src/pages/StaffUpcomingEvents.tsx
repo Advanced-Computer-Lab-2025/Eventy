@@ -223,7 +223,7 @@ export default function StaffUpcomingEvents() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     };
     fetchProfessors();

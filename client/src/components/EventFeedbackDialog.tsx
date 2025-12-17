@@ -85,7 +85,7 @@ export default function EventFeedbackDialog({
         });
       }
     } catch (error) {
-      console.error("Error fetching user feedback:", error);
+      logger.error("Error fetching user feedback:", error);
       // Silent fail - allow user to submit if check fails
     } finally {
       setCheckingSubmission(false);
@@ -107,11 +107,11 @@ export default function EventFeedbackDialog({
       if (!response.ok) throw new Error("Failed to fetch feedback");
       const data = await response.json();
       // debug: log returned feedback to inspect populated user fields
-      // eslint-disable-next-line no-console
-      console.log("fetched feedback:", data.data.feedback);
+
+      logger.info("fetched feedback:", data.data.feedback);
       setComments(data.data.feedback);
     } catch (error) {
-      console.error("Error fetching feedback:", error);
+      logger.error("Error fetching feedback:", error);
       toast({
         title: "Error",
         description: "Failed to load feedback",

@@ -194,7 +194,7 @@ export default function CreateTripForm() {
         setLocation("/events-office/dashboard");
       } else {
         // more verbose error output to help debugging
-        console.error("Submit failed:", response.status, json);
+        logger.error("Submit failed:", response.status, json);
         const msg =
           json?.message ?? json?.error ?? `Server returned ${response.status}`;
         toast({
@@ -204,7 +204,7 @@ export default function CreateTripForm() {
         });
       }
     } catch (error) {
-      console.error("Error submitting form:", error);
+      logger.error("Error submitting form:", error);
       toast({
         title: "Unexpected error",
         description: "Error submitting form. See console for details.",

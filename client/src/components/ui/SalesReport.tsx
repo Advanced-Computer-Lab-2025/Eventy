@@ -122,7 +122,7 @@ export default function SalesReport() {
       const data = await response.json();
       setReportData(data.data);
     } catch (err: any) {
-      console.error("Error fetching report:", err);
+      logger.error("Error fetching report:", err);
       setError(err.message || "An error occurred");
     } finally {
       setLoading(false);
@@ -202,7 +202,7 @@ export default function SalesReport() {
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
     } catch (err: any) {
-      console.error("Export failed:", err);
+      logger.error("Export failed:", err);
       alert(`Export failed: ${err.message || "Please try again."}`);
     } finally {
       setExporting(false);

@@ -40,7 +40,7 @@ export default function CalendarPopover() {
         setEvents(data.data || []);
       }
     } catch (err) {
-      console.error("Error fetching events:", err);
+      // Error is expected when user is not logged in or has no events
     }
   };
 

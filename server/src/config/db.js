@@ -1,3 +1,4 @@
+import logger from "../utils/logger.js";
 import mongoose from "mongoose";
 
 const maskCredentials = (uri) => {
@@ -34,52 +35,52 @@ const connectDB = async () => {
   const uri = process.env.MONGO_URI;
 
   if (!uri) {
-    console.error(
+    logger.error(
       "MONGO_URI is not set in environment variables. Please set it in your .env file."
     );
     process.exit(1);
   }
 
-  console.log(`Attempting MongoDB connection using: ${maskCredentials(uri)}`);
+  logger.info(`Attempting MongoDB connection using: ${maskCredentials(uri)}`);
 
   try {
     await mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
-    console.log("MongoDB Connected successfully!");
+    logger.info("MongoDB Connected successfully!");
     return;
   } catch (error) {
-    console.error(`Error connecting to MongoDB: ${error.message}`);
+    logger.error(`Error connecting to MongoDB: ${error.message}`);
 
     if (/authentication failed|bad auth|auth failed/i.test(error.message)) {
-      console.error(
+      logger.error(
         "Authentication error detected. Will retry once with authSource=admin appended for troubleshooting."
       );
       const alt = appendAuthSourceAdmin(uri);
-      console.log(`Retrying with: ${maskCredentials(alt)}`);
+      logger.info(`Retrying with: ${maskCredentials(alt)}`);
       try {
         await mongoose.connect(alt, { serverSelectionTimeoutMS: 5000 });
-        console.log("MongoDB Connected successfully on retry!");
+        logger.info("MongoDB Connected successfully on retry!");
         return;
       } catch (err2) {
-        console.error(`Retry failed: ${err2.message}`);
+        logger.error(`Retry failed: ${err2.message}`);
       }
 
       const built = buildUriFromParts();
       if (built) {
-        console.error(
+        logger.error(
           "Attempting a second retry by building the connection string from MONGO_USER/MONGO_PASS/MONGO_HOST (this will URL-encode credentials)."
         );
-        console.log(`Retrying with: ${maskCredentials(built)}`);
+        logger.info(`Retrying with: ${maskCredentials(built)}`);
         try {
           await mongoose.connect(built, { serverSelectionTimeoutMS: 5000 });
-          console.log("MongoDB Connected successfully on second retry!");
+          logger.info("MongoDB Connected successfully on second retry!");
           return;
         } catch (err3) {
-          console.error(`Second retry failed: ${err3.message}`);
+          logger.error(`Second retry failed: ${err3.message}`);
         }
       }
     }
 
-    console.error(
+    logger.error(
       "Check that the username and password are correct, that the user exists in your MongoDB Atlas project, and that your current IP address is allowed in Network Access."
     );
     process.exit(1);

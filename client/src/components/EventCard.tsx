@@ -313,7 +313,7 @@ export default function EventCard({
         });
       } catch (err) {
         if ((err as Error).name !== "AbortError") {
-          console.error("Error sharing:", err);
+          logger.error("Error sharing:", err);
         }
       }
     } else {
@@ -487,7 +487,7 @@ export default function EventCard({
       const data = await res.json();
       setResaleTickets(data.data || []);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       toast({
         title: "Error",
         description: "Could not load resale tickets.",
@@ -601,7 +601,7 @@ export default function EventCard({
           setIsOnWaitlist(data.data?.isOnWaitlist || false);
         }
       } catch (error) {
-        console.error("Error checking waitlist status:", error);
+        logger.error("Error checking waitlist status:", error);
       } finally {
         setIsCheckingWaitlist(false);
       }
@@ -1725,7 +1725,7 @@ export default function EventCard({
         onOpenChange={setShowWaitlistDialog}
         onJoined={async () => {
           // Set state optimistically first - this will update the UI immediately
-          console.log("onJoined callback called, setting isOnWaitlist to true");
+          logger.info("onJoined callback called, setting isOnWaitlist to true");
           setIsOnWaitlist(true);
 
           // Use setTimeout to ensure state update is processed before async operations
@@ -1752,7 +1752,7 @@ export default function EventCard({
 
               if (res.ok) {
                 const data = await res.json();
-                console.log(
+                logger.info(
                   "Waitlist status verified:",
                   data.data?.isOnWaitlist
                 );
@@ -1760,12 +1760,12 @@ export default function EventCard({
                 setIsOnWaitlist(data.data?.isOnWaitlist || false);
               } else {
                 // If check fails, keep optimistic state
-                console.warn(
+                logger.warn(
                   "Failed to verify waitlist status, keeping optimistic state"
                 );
               }
             } catch (error) {
-              console.error("Error checking waitlist status:", error);
+              logger.error("Error checking waitlist status:", error);
               // Keep optimistic state on error
             }
           }, 0);

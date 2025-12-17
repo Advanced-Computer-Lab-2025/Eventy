@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 // features/applications/application.service.js
 
 import mongoose from "mongoose";
@@ -148,7 +149,7 @@ class ApplicationServiceClass {
       // Call NotificationService to create the notification
       await NotificationService.createNotification(notificationData);
     } catch (error) {
-      console.error(
+      logger.error(
         "Failed to send notification for pending vendor request:",
         error
       );
@@ -401,13 +402,13 @@ class ApplicationServiceClass {
                         populatedOtherApp
                       );
                     } catch (error) {
-                      console.error("Failed to send rejection email:", error);
+                      logger.error("Failed to send rejection email:", error);
                     }
                   }
                 }
               } catch (error) {
                 // Log error but continue with other applications
-                console.error(
+                logger.error(
                   `Failed to reject application ${otherAppId}:`,
                   error
                 );
@@ -422,7 +423,7 @@ class ApplicationServiceClass {
         }
       } catch (error) {
         // Log error but don't fail the approval if poll check fails
-        console.error(
+        logger.error(
           "Error checking/rejecting other applications in poll:",
           error
         );
@@ -453,7 +454,7 @@ class ApplicationServiceClass {
         );
       } catch (error) {
         // Log error but don't fail the status update if email fails
-        console.error("Failed to send application status email:", error);
+        logger.error("Failed to send application status email:", error);
       }
     }
 

@@ -169,7 +169,7 @@ export default function ApplicationPaymentDialog({
           setStripePromise(loadStripe(publishableKey));
         }
       } catch (error) {
-        console.error("Failed to load Stripe key:", error);
+        logger.error("Failed to load Stripe key:", error);
         toast({
           title: "Payment System Error",
           description:

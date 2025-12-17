@@ -25,13 +25,10 @@ export const favoritesApi = {
         return response.data.data || [];
       }
 
-      console.error("Failed to fetch favorites:", response.data);
+      logger.error("Failed to fetch favorites:", response.data);
       return [];
     } catch (error: any) {
-      console.error(
-        "Error fetching favorites:",
-        error?.response?.data || error
-      );
+      logger.error("Error fetching favorites:", error?.response?.data || error);
       // Don't throw - return empty array to prevent UI blocking
       return [];
     }
@@ -50,7 +47,7 @@ export const favoritesApi = {
 
       throw new Error(response.data.message || "Failed to add to favorites");
     } catch (error: any) {
-      console.error(
+      logger.error(
         "Error adding to favorites:",
         error?.response?.data || error
       );
@@ -73,7 +70,7 @@ export const favoritesApi = {
         response.data.message || "Failed to remove from favorites"
       );
     } catch (error: any) {
-      console.error(
+      logger.error(
         "Error removing from favorites:",
         error?.response?.data || error
       );
@@ -87,7 +84,7 @@ export const favoritesApi = {
       const favorites = await favoritesApi.getFavorites();
       return favorites.some((event) => event._id === eventId);
     } catch (error) {
-      console.error("Error checking favorite status:", error);
+      logger.error("Error checking favorite status:", error);
       return false;
     }
   },

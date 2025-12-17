@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import {
   getAuthUrl,
   getTokensFromCode,
@@ -41,7 +42,7 @@ export const initiateGoogleAuth = async (req, res) => {
       authUrl: authUrlWithState,
     });
   } catch (error) {
-    console.error("Error initiating Google auth:", error);
+    logger.error("Error initiating Google auth:", error);
     res.status(500).json({
       success: false,
       message: "Failed to initiate authentication",
@@ -89,7 +90,7 @@ export const handleOAuthCallback = async (req, res) => {
     // Redirect to calendar page with success indicator
     res.redirect("http://localhost:5000/calendar?calendar_connected=true");
   } catch (error) {
-    console.error("Error handling OAuth callback:", error);
+    logger.error("Error handling OAuth callback:", error);
     res.redirect("http://localhost:5000/calendar?calendar_error=auth_failed");
   }
 };
@@ -157,7 +158,7 @@ export const addEventToCalendar = async (req, res) => {
       data: result,
     });
   } catch (error) {
-    console.error("Error adding event to calendar:", error);
+    logger.error("Error adding event to calendar:", error);
     res.status(500).json({
       success: false,
       message: "Failed to add event to calendar",
@@ -226,7 +227,7 @@ export const removeEventFromCalendar = async (req, res) => {
       message: "Event removed from Google Calendar",
     });
   } catch (error) {
-    console.error("Error removing event from calendar:", error);
+    logger.error("Error removing event from calendar:", error);
     res.status(500).json({
       success: false,
       message: "Failed to remove event from calendar",
@@ -276,7 +277,7 @@ export const syncCalendar = async (req, res) => {
         );
 
         if (alreadySynced) {
-          console.log(`Event ${event.name} already synced for user ${userId}`);
+          logger.info(`Event ${event.name} already synced for user ${userId}`);
           skippedCount++;
           results.push({
             eventId: event._id,
@@ -287,7 +288,7 @@ export const syncCalendar = async (req, res) => {
         }
 
         // Add event to Google Calendar
-        console.log(`Syncing event ${event.name} for user ${userId}`);
+        logger.info(`Syncing event ${event.name} for user ${userId}`);
         const result = await addEventToGoogleCalendar(tokens, {
           name: event.name,
           description: event.description,
@@ -317,7 +318,7 @@ export const syncCalendar = async (req, res) => {
           googleEventId: result.eventId,
         });
       } catch (error) {
-        console.error(`Failed to sync event ${event.name}:`, error.message);
+        logger.error(`Failed to sync event ${event.name}:`, error.message);
         results.push({
           eventId: event._id,
           eventName: event.name,
@@ -338,7 +339,7 @@ export const syncCalendar = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error syncing calendar:", error);
+    logger.error("Error syncing calendar:", error);
     res.status(500).json({
       success: false,
       message: "Failed to sync calendar",
@@ -363,7 +364,7 @@ export const getCalendarStatus = async (req, res) => {
       },
     });
   } catch (error) {
-    console.error("Error getting calendar status:", error);
+    logger.error("Error getting calendar status:", error);
     res.status(500).json({
       success: false,
       message: "Failed to get calendar status",
@@ -389,7 +390,7 @@ export const disconnectCalendar = async (req, res) => {
       message: "Google Calendar disconnected successfully",
     });
   } catch (error) {
-    console.error("Error disconnecting calendar:", error);
+    logger.error("Error disconnecting calendar:", error);
     res.status(500).json({
       success: false,
       message: "Failed to disconnect calendar",

@@ -4,7 +4,7 @@ import { ThemeProvider } from "../ThemeProvider";
 export default function HeaderExample() {
   return (
     <ThemeProvider>
-      <Header onSearch={(query) => console.log("Search:", query)} />
+      <Header onSearch={(query) => logger.info("Search:", query)} />
     </ThemeProvider>
   );
 }

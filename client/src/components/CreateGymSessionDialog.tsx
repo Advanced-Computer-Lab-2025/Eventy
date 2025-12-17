@@ -145,7 +145,7 @@ export default function CreateGymSessionDialog({
         onSuccess(createdDate);
       }
     } catch (error) {
-      console.error("Failed to create gym session:", error);
+      logger.error("Failed to create gym session:", error);
       toast({
         title: "Error",
         description:

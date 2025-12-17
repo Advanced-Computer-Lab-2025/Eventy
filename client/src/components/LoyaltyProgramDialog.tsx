@@ -87,7 +87,7 @@ export default function LoyaltyProgramDialog({
 
       setVendorStatus(data.data);
     } catch (error: any) {
-      console.error("Error fetching vendor status:", error);
+      logger.error("Error fetching vendor status:", error);
       toast({
         title: "Error",
         description: "Failed to fetch loyalty program status",
@@ -135,7 +135,7 @@ export default function LoyaltyProgramDialog({
       // Refresh status after cancellation
       await fetchVendorStatus();
     } catch (error: any) {
-      console.error("Error cancelling loyalty program:", error);
+      logger.error("Error cancelling loyalty program:", error);
       toast({
         title: "Error",
         description: error.message || "Failed to cancel loyalty program",
@@ -199,7 +199,7 @@ export default function LoyaltyProgramDialog({
       });
       onOpenChange(false);
     } catch (error: any) {
-      console.error("Error applying to loyalty program:", error);
+      logger.error("Error applying to loyalty program:", error);
 
       // More specific error messages based on the error type
       let errorMessage = "Failed to apply to the loyalty program";

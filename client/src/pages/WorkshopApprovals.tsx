@@ -93,7 +93,7 @@ export default function WorkshopApprovals() {
       setAllWorkshops(workshops);
       applyFilters(workshops, statusFilter, facultyFilter);
     } catch (err: any) {
-      console.error("Error fetching workshops:", err);
+      logger.error("Error fetching workshops:", err);
       setAllWorkshops([]);
       setFilteredWorkshops([]);
     } finally {
@@ -206,7 +206,7 @@ export default function WorkshopApprovals() {
       setShowDetailsDialog(false);
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error(
+      logger.error(
         "Error approving workshop:",
         err.response?.data || err.message
       );
@@ -226,7 +226,7 @@ export default function WorkshopApprovals() {
       setShowDetailsDialog(false);
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error(
+      logger.error(
         "Error rejecting workshop:",
         err.response?.data || err.message
       );
@@ -254,7 +254,7 @@ export default function WorkshopApprovals() {
       setStatusFilter(["needs_revision"]);
       fetchAllWorkshops();
     } catch (err: any) {
-      console.error(
+      logger.error(
         "Error requesting edits:",
         err.response?.data || err.message
       );

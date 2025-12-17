@@ -311,7 +311,7 @@ export default function EventsOfficeDashboard() {
         }
       }
     } catch (e: any) {
-      console.error("Failed to fetch pending workshops");
+      logger.error("Failed to fetch pending workshops");
     }
   };
 
@@ -384,7 +384,7 @@ export default function EventsOfficeDashboard() {
         description: "The event has been successfully archived.",
       });
     } catch (err: any) {
-      console.error("Error archiving event:", err);
+      logger.error("Error archiving event:", err);
       toast({
         title: "Failed to archive event",
         description:
@@ -471,7 +471,7 @@ export default function EventsOfficeDashboard() {
         setUpcomingEvents(data.data || []);
       }
     } catch (err) {
-      console.error("Failed to refresh events", err);
+      logger.error("Failed to refresh events", err);
     }
   };
 
@@ -642,11 +642,11 @@ export default function EventsOfficeDashboard() {
         setTransactions(transactionsData);
       } else {
         const errorData = await res.json().catch(() => ({}));
-        console.error("Failed to fetch transactions:", res.status, errorData);
+        logger.error("Failed to fetch transactions:", res.status, errorData);
         setTransactions([]);
       }
     } catch (e) {
-      console.error("Error fetching transactions:", e);
+      logger.error("Error fetching transactions:", e);
       setTransactions([]);
     } finally {
       setLoadingCharts(false);
@@ -745,7 +745,7 @@ export default function EventsOfficeDashboard() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     };
     fetchProfessors();
@@ -880,7 +880,7 @@ export default function EventsOfficeDashboard() {
           acc[monthKey] = (acc[monthKey] || 0) + amount;
         } catch (e) {
           // Skip transactions with invalid dates
-          console.error("Error processing transaction date:", e);
+          logger.error("Error processing transaction date:", e);
         }
         return acc;
       },
@@ -1613,7 +1613,7 @@ export default function EventsOfficeDashboard() {
         open={isCreateGymDialogOpen}
         onOpenChange={setIsCreateGymDialogOpen}
         onSuccess={(createdDate) => {
-          console.log("Gym session created for:", createdDate);
+          logger.info("Gym session created for:", createdDate);
           // Optionally navigate to sports facilities page
           // setLocation("/sports");
         }}

@@ -97,7 +97,7 @@ export default function CalendarPage() {
       });
 
       if (!res.ok) {
-        console.error("Failed to fetch events:", res.statusText);
+        logger.error("Failed to fetch events:", res.statusText);
         setEvents([]);
         return;
       }
@@ -106,7 +106,7 @@ export default function CalendarPage() {
       setEvents(data.data || []);
       setFilteredEvents(data.data || []);
     } catch (err) {
-      console.error("Error fetching events:", err);
+      logger.error("Error fetching events:", err);
       setEvents([]);
     } finally {
       setLoading(false);

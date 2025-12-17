@@ -11,7 +11,7 @@ export default function CreateEventDialogExample() {
       <CreateEventDialog
         open={open}
         onOpenChange={setOpen}
-        onSubmit={(data) => console.log("Event data:", data)}
+        onSubmit={(data) => logger.info("Event data:", data)}
       />
     </div>
   );

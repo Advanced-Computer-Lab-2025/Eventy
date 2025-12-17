@@ -90,7 +90,7 @@ export function ImageCropper({
       const croppedBlob = await getCroppedImg(imgRef.current, completedCrop);
       onCropComplete(croppedBlob);
     } catch (error) {
-      console.error("Error cropping image:", error);
+      logger.error("Error cropping image:", error);
     } finally {
       setIsProcessing(false);
     }

@@ -86,7 +86,7 @@ export default function AdminDashboardPage() {
 
         setConferences(data.data || []);
       } catch (err: any) {
-        console.error("Error fetching conferences:", err);
+        logger.error("Error fetching conferences:", err);
         setConferences([]);
       } finally {
         setLoading(false);
@@ -128,7 +128,7 @@ export default function AdminDashboardPage() {
       setUpcomingEvents((prev) => prev.filter((e) => e._id !== eventId));
       setAllEvents((prev) => prev.filter((e) => e._id !== eventId));
     } catch (err: any) {
-      console.error(err.message || "Failed to delete event");
+      logger.error(err.message || "Failed to delete event");
     }
   };
 
@@ -216,7 +216,7 @@ export default function AdminDashboardPage() {
 
         setApprovedEventsCount(count);
       } catch (err) {
-        console.error("Error fetching approved events count:", err);
+        logger.error("Error fetching approved events count:", err);
         setApprovedEventsCount(0);
       } finally {
         setApprovedLoading(false);
@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     };
     fetchProfessors();
@@ -294,7 +294,7 @@ export default function AdminDashboardPage() {
 
         setActiveUsersCount(count);
       } catch (err) {
-        console.error("Error fetching active users count:", err);
+        logger.error("Error fetching active users count:", err);
         setActiveUsersCount(0);
       } finally {
         setActiveUsersLoading(false);

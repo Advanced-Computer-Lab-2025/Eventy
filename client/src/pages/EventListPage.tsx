@@ -41,7 +41,7 @@ export default function EventListPage() {
       alert("Event deleted successfully ✅");
     } catch (err) {
       alert("Failed to delete event ❌");
-      console.error(err);
+      logger.error(err);
     }
   };
 

@@ -116,7 +116,7 @@ function StripeResaleForm({
         onSuccess();
       }
     } catch (err: any) {
-      console.error("Payment Error:", err);
+      logger.error("Payment Error:", err);
       toast({
         title: "Payment Failed",
         description: err.message || "An unknown error occurred.",

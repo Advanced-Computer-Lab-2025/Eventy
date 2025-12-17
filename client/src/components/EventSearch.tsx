@@ -62,7 +62,7 @@ export default function EventSearch({
         onSearchResults(data.data || []);
         hasInitiallyFetched.current = true;
       } catch (err) {
-        console.error("Error fetching events:", err);
+        logger.error("Error fetching events:", err);
         onError?.("Unable to load events. Please try again later.");
       } finally {
         setIsSearching(false);
@@ -145,7 +145,7 @@ export default function EventSearch({
           );
           if (!response.ok) {
             // Only show error if it's a real server/network error
-            console.error("Error fetching events:", response.statusText);
+            logger.error("Error fetching events:", response.statusText);
             onError?.("Unable to load events. Please try again later.");
             // Do NOT clear previous results
             return;
@@ -156,7 +156,7 @@ export default function EventSearch({
           // Don't call onError for empty results - let parent handle display
         }
       } catch (err) {
-        console.error("Error fetching events:", err);
+        logger.error("Error fetching events:", err);
         onError?.("Unable to load events. Please try again later.");
         // Do NOT clear previous results
       } finally {

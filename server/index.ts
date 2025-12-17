@@ -1,3 +1,4 @@
+import logger from "./src/utils/logger.js";
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
@@ -56,13 +57,13 @@ app.use((req, res, next) => {
   // Register all API routes from routes/index.js under the /api path
   // This MUST be done BEFORE Vite's catch-all route to prevent API routes
   // from being intercepted by the frontend router
-  console.log("🔵 Registering API routes at /api");
-  console.log(
+  logger.info("🔵 Registering API routes at /api");
+  logger.info(
     "🔵 Routes being imported:",
     allRoutes ? "✅ Success" : "❌ Failed"
   );
   app.use("/api", allRoutes);
-  console.log("✅ API routes registered successfully");
+  logger.info("✅ API routes registered successfully");
 
   // Test route to verify API routes are working
   app.get("/api/test", (req, res) => {
@@ -96,6 +97,6 @@ app.use((req, res, next) => {
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
   app.listen(5000, () => {
-    console.log("Server running on: http://localhost:5000");
+    logger.info("Server running on: http://localhost:5000");
   });
 })();

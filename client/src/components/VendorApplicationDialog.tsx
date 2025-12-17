@@ -180,7 +180,7 @@ export default function VendorApplicationDialog({
         onApplicationSubmitted();
       }
     } catch (error) {
-      console.error("Error submitting application:", error);
+      logger.error("Error submitting application:", error);
 
       // Check if it's a duplicate application error
       if (

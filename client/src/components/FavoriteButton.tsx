@@ -44,7 +44,7 @@ export const FavoriteButton = ({
         throw new Error(result?.error || "Failed to update favorites");
       }
     } catch (error) {
-      console.error("Error toggling favorite:", error);
+      logger.error("Error toggling favorite:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Failed to update favorites";
       toast({

@@ -71,7 +71,7 @@ export default function DocumentViewer({
       // Clean up the blob URL
       window.URL.revokeObjectURL(blobUrl);
     } catch (error) {
-      console.error("Download failed:", error);
+      logger.error("Download failed:", error);
       // Fallback to opening in new tab if download fails
       window.open(url, "_blank");
     }

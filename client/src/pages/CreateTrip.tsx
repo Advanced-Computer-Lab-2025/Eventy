@@ -24,7 +24,7 @@ export default function TripManagement() {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
-        console.warn("No token in localStorage, fetch aborted.");
+        logger.warn("No token in localStorage, fetch aborted.");
         setTrips([]);
         return;
       }
@@ -36,7 +36,7 @@ export default function TripManagement() {
 
       const json = await res.json().catch(() => null);
       if (!res.ok) {
-        console.error("Failed to fetch trips:", res.status, json);
+        logger.error("Failed to fetch trips:", res.status, json);
         setTrips([]);
         return;
       }
@@ -45,7 +45,7 @@ export default function TripManagement() {
       const data = json?.data ?? json ?? [];
       setTrips(Array.isArray(data) ? data : []);
     } catch (error) {
-      console.error("Error fetching trips:", error);
+      logger.error("Error fetching trips:", error);
       setTrips([]);
     } finally {
       setLoading(false);

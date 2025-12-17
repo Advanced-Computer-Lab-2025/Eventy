@@ -54,7 +54,7 @@ export const useFavorites = () => {
   // Fetch user's favorite events
   const fetchFavorites = useCallback(async () => {
     if (isFetching) {
-      console.log("Already fetching favorites, skipping...");
+      logger.info("Already fetching favorites, skipping...");
       return;
     }
 
@@ -70,7 +70,7 @@ export const useFavorites = () => {
       const error = err as ApiError;
       const errorMessage =
         error?.response?.data?.message || "Failed to fetch favorites";
-      console.error("Error fetching favorites:", errorMessage);
+      logger.error("Error fetching favorites:", errorMessage);
       setError(errorMessage);
       updateSharedFavorites([]);
     } finally {
@@ -113,7 +113,7 @@ export const useFavorites = () => {
 
       return { success: true, data: result };
     } catch (err: any) {
-      console.error("Error adding to favorites:", err);
+      logger.error("Error adding to favorites:", err);
       return {
         success: false,
         error: err?.response?.data?.message || "Failed to add to favorites",
@@ -142,7 +142,7 @@ export const useFavorites = () => {
 
       return { success: true };
     } catch (err: any) {
-      console.error("Error removing from favorites:", err);
+      logger.error("Error removing from favorites:", err);
       // Revert on error
       await fetchFavorites();
       return {

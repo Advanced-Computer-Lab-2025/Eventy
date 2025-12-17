@@ -4,7 +4,7 @@ import {
   validateBoothApplication,
 } from "./server/src/features/applications/application.validation.js";
 
-console.log("Testing validation schemas...");
+logger.info("Testing validation schemas...");
 
 // Test bazaar validation
 const bazaarData = {
@@ -13,7 +13,7 @@ const bazaarData = {
 };
 
 const bazaarResult = validateBazaarApplication.validate(bazaarData);
-console.log(
+logger.info(
   "Bazaar validation result:",
   bazaarResult.error ? bazaarResult.error.message : "Valid"
 );
@@ -27,9 +27,9 @@ const boothData = {
 };
 
 const boothResult = validateBoothApplication.validate(boothData);
-console.log(
+logger.info(
   "Booth validation result:",
   boothResult.error ? boothResult.error.message : "Valid"
 );
 
-console.log("Validation test completed!");
+logger.info("Validation test completed!");

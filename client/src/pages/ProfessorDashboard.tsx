@@ -98,7 +98,7 @@ export default function ProfessorDashboard() {
         setWorkshops(data.data || []);
       }
     } catch (err) {
-      console.error("Failed to fetch workshops:", err);
+      logger.error("Failed to fetch workshops:", err);
     } finally {
       setLoading(false);
     }
@@ -121,7 +121,7 @@ export default function ProfessorDashboard() {
         }))
       );
     } catch (err) {
-      console.error("Failed to fetch professors", err);
+      logger.error("Failed to fetch professors", err);
     }
   };
 
@@ -263,7 +263,7 @@ export default function ProfessorDashboard() {
 
   // Helper function to handle registration (placeholder logic)
   const handleRegisterEvent = (eventId: string) => {
-    console.log("Registering for event:", eventId);
+    logger.info("Registering for event:", eventId);
     // Add logic here if professors need to register for events
   };
 

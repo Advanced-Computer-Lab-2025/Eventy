@@ -62,13 +62,6 @@ const userSchema = new mongoose.Schema(
     // Track viewed events for recommendations
     viewedEvents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Event" }],
 
-    status: {
-      type: String,
-      required: true,
-      enum: ["pending", "active", "deleted", "blocked"],
-      default: "active",
-    },
-
     walletBalance: { type: Number, default: 0 },
 
     representatives: [

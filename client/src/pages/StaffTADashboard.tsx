@@ -108,7 +108,7 @@ export default function StaffTADashboard() {
         setEvents(data.data || []);
       }
     } catch (err) {
-      console.error("Failed to fetch events:", err);
+      logger.error("Failed to fetch events:", err);
     } finally {
       setLoading(false);
     }
@@ -131,7 +131,7 @@ export default function StaffTADashboard() {
         setRegisteredEvents(data.data || []);
       }
     } catch (err) {
-      console.error("Error fetching registered events:", err);
+      logger.error("Error fetching registered events:", err);
     }
   };
 
@@ -210,7 +210,7 @@ export default function StaffTADashboard() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     };
 
@@ -273,7 +273,7 @@ export default function StaffTADashboard() {
   };
 
   const handleRegisterEvent = (eventId: string) => {
-    console.log("Register for event:", eventId);
+    logger.info("Register for event:", eventId);
   };
 
   const availableLocations = useMemo(() => {
@@ -622,7 +622,7 @@ export default function StaffTADashboard() {
                           vendors={event.vendors || []}
                           showDetailedView={true}
                           onRegister={() => handleRegisterEvent(event._id)}
-                          onShare={() => console.log("Share:", event.name)}
+                          onShare={() => logger.info("Share:", event.name)}
                           onViewDetails={() => handleCardClick(event._id)}
                         />
                       ))}

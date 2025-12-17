@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import Stripe from "stripe";
 import { Transaction } from "./transaction.model.js";
 import { User } from "../users/user.model.js";
@@ -73,7 +74,7 @@ export class TransactionService {
 
       // Optional: Send receipt for free events too if desired
       // const user = await User.findById(userId);
-      // sendPaymentReceipt(user.toObject(), transaction, event).catch(console.error);
+      // sendPaymentReceipt(user.toObject(), transaction, event).catch(err => logger.error(err));
 
       return { message: "Registration successful", transaction };
     }
@@ -102,8 +103,7 @@ export class TransactionService {
           // FIX APPLIED HERE: Send Email Receipt for Wallet Payment
           // ============================================================
           sendPaymentReceipt(updatedUser.toObject(), transaction, event).catch(
-            (err) =>
-              console.error("Failed to send wallet payment receipt:", err)
+            (err) => logger.error("Failed to send wallet payment receipt:", err)
           );
 
           return { message: "Payment successful via wallet", transaction };
@@ -288,7 +288,7 @@ export class TransactionService {
 
         if (totalAmountToPay > 0) {
           sendPaymentReceipt(buyer.toObject(), buyerTransaction, event).catch(
-            console.error
+            (err) => logger.error(err)
           );
         }
 
@@ -297,7 +297,7 @@ export class TransactionService {
           transaction: buyerTransaction,
         };
       } catch (error) {
-        console.error("Resale Swap Failed. Rolling back.", error);
+        logger.error("Resale Swap Failed. Rolling back.", error);
         buyer.walletBalance += totalAmountToPay;
         await buyer.save();
         buyerTransaction.status = "failed";
@@ -418,7 +418,7 @@ export class TransactionService {
                   "platform_booth"
                 );
               } catch (error) {
-                console.error(
+                logger.error(
                   "Error sending platform booth event notification:",
                   error
                 );
@@ -480,7 +480,7 @@ export class TransactionService {
                 buyerUser.toObject(),
                 transaction,
                 event
-              ).catch(console.error);
+              ).catch((err) => logger.error(err));
             }
           }
 
@@ -512,8 +512,8 @@ export class TransactionService {
       );
 
       if (user) {
-        sendPaymentReceipt(user.toObject(), transaction, null).catch(
-          console.error
+        sendPaymentReceipt(user.toObject(), transaction, null).catch((err) =>
+          logger.error(err)
         );
       }
 
@@ -582,7 +582,7 @@ export class TransactionService {
               "platform_booth"
             );
           } catch (error) {
-            console.error(
+            logger.error(
               "Error sending platform booth event notification:",
               error
             );
@@ -610,7 +610,7 @@ export class TransactionService {
             stripeReceiptUrl = charge.receipt_url || null;
           }
         } catch (error) {
-          console.error(
+          logger.error(
             "Error retrieving Stripe receipt URL:",
             error?.message || error
           );
@@ -629,7 +629,7 @@ export class TransactionService {
             transaction,
             updatedApplication.toObject(),
             stripeReceiptUrl
-          ).catch(console.error);
+          ).catch((err) => logger.error(err));
         }
 
         return {
@@ -644,7 +644,7 @@ export class TransactionService {
       const event = await Event.findById(transaction.relatedEntity.id);
       if (userDetails && event) {
         sendPaymentReceipt(userDetails.toObject(), transaction, event).catch(
-          console.error
+          (err) => logger.error(err)
         );
       }
       return { message: "Event payment confirmed successfully", transaction };

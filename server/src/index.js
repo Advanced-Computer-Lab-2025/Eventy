@@ -1,3 +1,4 @@
+import logger from "./utils/logger.js";
 import "dotenv/config"; // Make sure this is at the very top
 import app from "./app.js";
 import connectDB from "./config/db.js";
@@ -21,9 +22,9 @@ const startServer = async () => {
       if (isEventUserIdx && !isOurNewIndex) {
         try {
           await Feedback.collection.dropIndex(idx.name);
-          console.log(`Dropped legacy Feedback index: ${idx.name}`);
+          logger.info(`Dropped legacy Feedback index: ${idx.name}`);
         } catch (dropErr) {
-          console.warn(
+          logger.warn(
             `Could not drop legacy Feedback index ${idx.name}:`,
             dropErr?.message || dropErr
           );
@@ -32,7 +33,7 @@ const startServer = async () => {
     }
     await Feedback.syncIndexes();
   } catch (e) {
-    console.error("Failed to ensure Feedback indexes", e);
+    logger.error("Failed to ensure Feedback indexes", e);
   }
 
   // Initialize the certificate scheduler (every 5 minutes)
@@ -40,17 +41,17 @@ const startServer = async () => {
 
   // Start the Express server
   const server = app.listen(PORT, () => {
-    console.log(`Server listening on port ${PORT}`);
+    logger.info(`Server listening on port ${PORT}`);
 
     // Start the event reminder scheduler
     startReminderScheduler();
-    console.log("Event reminder scheduler started");
+    logger.info("Event reminder scheduler started");
   });
 
   // handle listen errors (EADDRINUSE)
   server.on("error", (err) => {
     if (err && err.code === "EADDRINUSE") {
-      console.error(
+      logger.error(
         `Port ${PORT} is already in use. Stop the other process or change PORT.`
       );
       process.exit(1);

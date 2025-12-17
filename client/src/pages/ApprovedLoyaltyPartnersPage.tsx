@@ -53,7 +53,7 @@ export default function ApprovedLoyaltyPartnersPage() {
         setUserRole(role);
       }
     } catch (err) {
-      console.error("Error parsing user data:", err);
+      logger.error("Error parsing user data:", err);
     }
   }, []);
 
@@ -104,10 +104,10 @@ export default function ApprovedLoyaltyPartnersPage() {
       }
 
       const data = await response.json();
-      console.log("Fetched data:", data); // Debugging log
+      logger.info("Fetched data:", data); // Debugging log
       setPartners(data.data || []);
     } catch (error: any) {
-      console.error("Error fetching loyalty partners:", error);
+      logger.error("Error fetching loyalty partners:", error);
       setError(error.message || "Failed to fetch loyalty partners");
       toast({
         title: "Error",

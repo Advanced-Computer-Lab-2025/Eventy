@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import Feedback from "./feedback.model.js";
 import ApiError from "../../utils/ApiError.js";
 import { Event } from "../events/event.model.js";
@@ -180,20 +181,20 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
 
       if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
         try {
-          console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
+          logger.info("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
           await sendCommentDeletionWarning({
             userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
             userEmail: commentAuthor.email,
             eventName: event.name,
             commentBody: commentBody,
           });
-          console.log("Email sent successfully!"); // ✅ Add logging
+          logger.info("Email sent successfully!"); // ✅ Add logging
         } catch (emailError) {
-          console.error("Failed to send comment deletion warning:", emailError);
-          console.error("Email error details:", emailError.message); // ✅ Add detailed logging
+          logger.error("Failed to send comment deletion warning:", emailError);
+          logger.error("Email error details:", emailError.message); // ✅ Add detailed logging
         }
       } else {
-        console.log("Email not sent. Conditions:", {
+        logger.info("Email not sent. Conditions:", {
           // ✅ Debug logging
           hasAuthor: !!commentAuthor,
           authorRole: commentAuthor?.role,
@@ -243,17 +244,17 @@ export async function deleteCommentByAdmin(adminId, feedbackId) {
 
     if (commentAuthor && allowedRoles.includes(commentAuthor.role) && event) {
       try {
-        console.log("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
+        logger.info("Attempting to send email to:", commentAuthor.email); // ✅ Add logging
         await sendCommentDeletionWarning({
           userName: `${commentAuthor.firstName} ${commentAuthor.lastName}`,
           userEmail: commentAuthor.email,
           eventName: event.name,
           commentBody: commentBody,
         });
-        console.log("Email sent successfully!"); // ✅ Add logging
+        logger.info("Email sent successfully!"); // ✅ Add logging
       } catch (emailError) {
-        console.error("Failed to send comment deletion warning:", emailError);
-        console.error("Email error details:", emailError.message); // ✅ Add detailed logging
+        logger.error("Failed to send comment deletion warning:", emailError);
+        logger.error("Email error details:", emailError.message); // ✅ Add detailed logging
       }
     }
 

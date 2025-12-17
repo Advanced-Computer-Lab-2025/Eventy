@@ -60,7 +60,7 @@ export default function ProfessorHeader({
         localStorage.setItem("user", JSON.stringify(freshUserData));
       }
     } catch (err) {
-      console.error("Failed to fetch user profile", err);
+      logger.error("Failed to fetch user profile", err);
     }
   };
 

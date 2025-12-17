@@ -98,7 +98,7 @@ async function updateVendorStatus(
 
     return data.data; // updated application
   } catch (err: unknown) {
-    console.error(err);
+    logger.error(err);
     const errorMessage =
       err instanceof Error ? err.message : "Failed to update status";
     throw new Error(errorMessage);
@@ -181,7 +181,7 @@ export default function VendorRequests() {
         const payload = JSON.parse(atob(storedToken.split(".")[1]));
         setUserRole(payload?.role || null);
       } catch (err) {
-        console.error("Failed to decode token:", err);
+        logger.error("Failed to decode token:", err);
         setUserRole(null);
       }
     } else {

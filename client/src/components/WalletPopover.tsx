@@ -68,7 +68,7 @@ export default function WalletPopover({
 
         // Update Balance
         if (typeof responseData.walletBalance !== "undefined") {
-          console.log(
+          logger.info(
             "Wallet refreshed via single API call. New Balance:",
             responseData.walletBalance
           );
@@ -76,7 +76,7 @@ export default function WalletPopover({
         }
       }
     } catch (error) {
-      console.error("Failed to refresh wallet data:", error);
+      logger.error("Failed to refresh wallet data:", error);
     } finally {
       setLoading(false);
     }

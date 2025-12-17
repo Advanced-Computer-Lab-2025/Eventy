@@ -46,7 +46,7 @@ export default function BoothVotePage() {
         setUserRole(role);
       }
     } catch (err) {
-      console.error("Error parsing user data:", err);
+      logger.error("Error parsing user data:", err);
     }
   }, []);
 

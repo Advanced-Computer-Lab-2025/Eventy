@@ -128,7 +128,7 @@ export default function BoothApplicationDialog({
         (attendee) => attendee.name.trim() && attendee.email.trim()
       );
 
-      console.log("Submitting booth application with data:", {
+      logger.info("Submitting booth application with data:", {
         boothId,
         attendees: validAttendees,
         boothSize,
@@ -154,7 +154,7 @@ export default function BoothApplicationDialog({
 
       onOpenChange(false);
     } catch (error) {
-      console.error("Error submitting booth application:", error);
+      logger.error("Error submitting booth application:", error);
 
       // Extract error message from the error object
       const errorMessage =

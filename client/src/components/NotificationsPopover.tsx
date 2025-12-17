@@ -115,7 +115,7 @@ export default function NotificationsPopover() {
         );
       }
     } catch (err) {
-      console.error("Failed to mark as read:", err);
+      logger.error("Failed to mark as read:", err);
     }
   };
 

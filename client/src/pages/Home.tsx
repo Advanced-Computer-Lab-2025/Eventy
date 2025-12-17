@@ -249,7 +249,7 @@ export default function Home() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     };
     fetchProfessors();
@@ -387,10 +387,10 @@ export default function Home() {
                         capacity={event.capacity}
                         registrationDeadline={event.registrationDeadline}
                         eventData={event}
-                        onRegister={() => console.log("Register:", event._id)}
+                        onRegister={() => logger.info("Register:", event._id)}
                         showDetailedView={true}
-                        onSave={() => console.log("Save:", event.name)}
-                        onShare={() => console.log("Share:", event.name)}
+                        onSave={() => logger.info("Save:", event.name)}
+                        onShare={() => logger.info("Share:", event.name)}
                       />
                     ))}
                 </div>

@@ -80,7 +80,7 @@ function LiveEventCard({ event }: { event: Event }) {
         );
         setIsRegistered(registered || false);
       } catch (err) {
-        console.error("Error checking registration:", err);
+        logger.error("Error checking registration:", err);
       }
     };
 
@@ -106,7 +106,7 @@ function LiveEventCard({ event }: { event: Event }) {
         setImages(result.data?.images || []);
       }
     } catch (err) {
-      console.error("Error fetching images:", err);
+      logger.error("Error fetching images:", err);
     } finally {
       setLoadingImages(false);
     }
@@ -176,7 +176,7 @@ function LiveEventCard({ event }: { event: Event }) {
         });
       }
     } catch (err) {
-      console.error("Upload error:", err);
+      logger.error("Upload error:", err);
       toast({
         title: "Error",
         description: "Failed to upload image. Please try again.",
@@ -441,13 +441,13 @@ export default function LiveMoments() {
       const user = localStorage.getItem("user");
       if (user) {
         const parsed = JSON.parse(user);
-        console.log("Parsed user from localStorage:", parsed);
+        logger.info("Parsed user from localStorage:", parsed);
         setUserRole(parsed.role);
         setCurrentUserId(parsed._id || parsed.id);
-        console.log("Set current user ID to:", parsed._id || parsed.id);
+        logger.info("Set current user ID to:", parsed._id || parsed.id);
       }
     } catch (err) {
-      console.error("Error parsing user data:", err);
+      logger.error("Error parsing user data:", err);
     }
   }, []);
 
@@ -470,11 +470,11 @@ export default function LiveMoments() {
             userId = parsed._id || parsed.id;
           }
         } catch (err) {
-          console.error("Error getting user ID:", err);
+          logger.error("Error getting user ID:", err);
         }
       }
 
-      console.log("Query running with user ID:", userId);
+      logger.info("Query running with user ID:", userId);
       const response = await fetch(`${API_BASE_URL}/api/events/ongoing`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -484,7 +484,7 @@ export default function LiveMoments() {
 
       if (!response.ok) {
         const errorText = await response.text();
-        console.error(
+        logger.error(
           "Failed to fetch ongoing events:",
           response.status,
           errorText
@@ -493,7 +493,7 @@ export default function LiveMoments() {
       }
 
       const result = await response.json();
-      console.log("Ongoing events response:", result);
+      logger.info("Ongoing events response:", result);
       const events = result.data || [];
 
       // Fetch image counts for all events
@@ -524,7 +524,7 @@ export default function LiveMoments() {
 
       setEventImageCounts(counts);
 
-      console.log("Current User ID in filter:", userId);
+      logger.info("Current User ID in filter:", userId);
 
       // Filter events: show only if user is registered OR event has photos
       const filteredEvents = events.filter((event: Event) => {
@@ -532,7 +532,7 @@ export default function LiveMoments() {
 
         // Log attendees for debugging
         if (event.name === "Yehia's Bazaar") {
-          console.log("DEBUG - Yehia's Bazaar details:", {
+          logger.info("DEBUG - Yehia's Bazaar details:", {
             eventId: event._id,
             attendees: event.attendees,
             attendeesType: typeof event.attendees,
@@ -549,7 +549,7 @@ export default function LiveMoments() {
               attendeeId === userId || String(attendeeId) === String(userId);
 
             if (event.name === "Yehia's Bazaar") {
-              console.log("Checking attendee:", {
+              logger.info("Checking attendee:", {
                 attendee,
                 attendeeId,
                 userId,
@@ -562,7 +562,7 @@ export default function LiveMoments() {
             return match;
           });
 
-        console.log(`Event: ${event.name}`, {
+        logger.info(`Event: ${event.name}`, {
           eventId: event._id,
           hasPhotos,
           isRegistered,
@@ -574,7 +574,7 @@ export default function LiveMoments() {
         return hasPhotos || isRegistered;
       });
 
-      console.log(
+      logger.info(
         `Total events: ${events.length}, Filtered events: ${filteredEvents.length}`
       );
 

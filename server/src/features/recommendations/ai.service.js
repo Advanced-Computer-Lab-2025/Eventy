@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { pipeline } from "@xenova/transformers";
 
 class AIModelService {
@@ -7,14 +8,14 @@ class AIModelService {
   static async getInstance() {
     if (!this.instance) {
       if (!this.modelPromise) {
-        console.log("Loading AI Model (Xenova/all-MiniLM-L6-v2)...");
+        logger.info("Loading AI Model (Xenova/all-MiniLM-L6-v2)...");
         this.modelPromise = pipeline(
           "feature-extraction",
           "Xenova/all-MiniLM-L6-v2"
         );
       }
       this.instance = await this.modelPromise;
-      console.log("AI Model Loaded.");
+      logger.info("AI Model Loaded.");
     }
     return this.instance;
   }

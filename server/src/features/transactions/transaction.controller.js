@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { TransactionService } from "./transaction.service.js";
 
 /**
@@ -38,7 +39,7 @@ export class TransactionController {
 
       res.status(200).json(result);
     } catch (error) {
-      console.error("Payment error:", error);
+      logger.error("Payment error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -65,7 +66,7 @@ export class TransactionController {
         await this.transactionService.confirmStripePayment(paymentIntentId);
       res.status(200).json(result);
     } catch (error) {
-      console.error("Stripe confirmation error:", error);
+      logger.error("Stripe confirmation error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -89,7 +90,7 @@ export class TransactionController {
 
       res.status(200).json(result);
     } catch (error) {
-      console.error("Wallet top-up error:", error);
+      logger.error("Wallet top-up error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -115,7 +116,7 @@ export class TransactionController {
 
       res.status(200).json(transactions);
     } catch (error) {
-      console.error("Get transactions error:", error);
+      logger.error("Get transactions error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -140,7 +141,7 @@ export class TransactionController {
 
       res.status(200).json({ data: transactions });
     } catch (error) {
-      console.error("Get all transactions error:", error);
+      logger.error("Get all transactions error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -172,7 +173,7 @@ export class TransactionController {
 
       res.status(200).json(result);
     } catch (error) {
-      console.error("Application payment error:", error);
+      logger.error("Application payment error:", error);
       res.status(400).json({ error: error.message });
     }
   }
@@ -193,7 +194,7 @@ export class TransactionController {
       }
       res.status(200).json({ publishableKey });
     } catch (error) {
-      console.error("Error getting Stripe publishable key:", error);
+      logger.error("Error getting Stripe publishable key:", error);
       res.status(500).json({ error: "Failed to get Stripe publishable key" });
     }
   }
@@ -218,7 +219,7 @@ export class TransactionController {
 
       res.status(200).json(result);
     } catch (error) {
-      console.error("Resale Purchase error:", error);
+      logger.error("Resale Purchase error:", error);
       res.status(400).json({ error: error.message });
     }
   }

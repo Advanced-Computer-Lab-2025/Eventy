@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import BazaarCard from "./BazaarCard";
+import { logger } from "@/lib/logger";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -82,7 +83,7 @@ export default function BazaarList({
         });
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      logger.error("Bazaar registration failed:", error);
       toast({
         title: "Registration Error",
         description: "An error occurred while registering for the event",
@@ -120,7 +121,7 @@ export default function BazaarList({
     if (onShare) {
       onShare(bazaarId);
     } else {
-      console.log(`Share bazaar: ${bazaarId}`);
+      logger.debug("Sharing bazaar:", bazaarId);
     }
   };
 
@@ -128,7 +129,7 @@ export default function BazaarList({
     if (onEdit) {
       onEdit(bazaarId);
     } else {
-      console.log(`Edit bazaar: ${bazaarId}`);
+      logger.debug("Editing bazaar:", bazaarId);
     }
   };
 

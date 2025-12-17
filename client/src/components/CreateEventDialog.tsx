@@ -61,7 +61,7 @@ export default function CreateEventDialog({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Event created:", formData);
+    logger.info("Event created:", formData);
     onSubmit?.(formData);
     onOpenChange(false);
   };

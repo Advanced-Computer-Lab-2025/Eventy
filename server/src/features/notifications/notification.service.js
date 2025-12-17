@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import Notification from "./notification.model.js";
 import { User } from "../users/user.model.js";
 
@@ -127,7 +128,7 @@ class NotificationService {
           );
           vendorName = vendor?.companyName || vendor?.firstName || "Vendor";
         } catch (err) {
-          console.error(
+          logger.error(
             "Error looking up vendor for platform booth notification:",
             err
           );
@@ -155,11 +156,11 @@ class NotificationService {
       // Create notification
       await NotificationService.createNotification(notificationData);
 
-      console.warn(
+      logger.warn(
         `Notification sent to ${users.length} users about new ${eventType}`
       );
     } catch (error) {
-      console.error("Error sending event notification:", error);
+      logger.error("Error sending event notification:", error);
       // Don't throw error to not block event creation
     }
   }
@@ -193,7 +194,7 @@ class NotificationService {
 
       await NotificationService.createNotification(notificationData);
     } catch (error) {
-      console.error("Error sending role-specific notification:", error);
+      logger.error("Error sending role-specific notification:", error);
     }
   }
 }

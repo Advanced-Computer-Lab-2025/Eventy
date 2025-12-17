@@ -90,7 +90,7 @@ export default function CreateWorkshop() {
         }
       }
     } catch (err) {
-      console.error("Failed to parse user from localStorage", err);
+      logger.error("Failed to parse user from localStorage", err);
     }
 
     (async () => {
@@ -114,7 +114,7 @@ export default function CreateWorkshop() {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          console.error("Failed to fetch professors: ", res.status);
+          logger.error("Failed to fetch professors: ", res.status);
           return;
         }
         const payload = await res.json();
@@ -127,7 +127,7 @@ export default function CreateWorkshop() {
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     })();
   }, []);
@@ -206,7 +206,7 @@ export default function CreateWorkshop() {
 
       setTimeout(() => setLocation("/professor/workshops"), 1500);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       toast({
         title: "Error",
         description:

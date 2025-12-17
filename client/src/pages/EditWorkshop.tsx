@@ -99,7 +99,7 @@ export default function EditWorkshop() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        console.error("Failed to fetch professors: ", res.status);
+        logger.error("Failed to fetch professors: ", res.status);
         return;
       }
       const payload = await res.json();
@@ -112,7 +112,7 @@ export default function EditWorkshop() {
         }))
       );
     } catch (err) {
-      console.error("Failed to fetch professors", err);
+      logger.error("Failed to fetch professors", err);
     }
   };
 
@@ -172,7 +172,7 @@ export default function EditWorkshop() {
       setWorkshopStatus(workshop.status || "");
       setRevisionComments(workshop.revisionComments || "");
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setErrorMsg(
         err instanceof Error ? err.message : "Failed to load workshop"
       );
@@ -247,7 +247,7 @@ export default function EditWorkshop() {
 
       setTimeout(() => setLocation("/professor/workshops"), 1500);
     } catch (error) {
-      console.error(error);
+      logger.error(error);
       setErrorMsg(error instanceof Error ? error.message : "Unexpected error");
       toast({
         title: "Error",

@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import ApiError from "../../utils/ApiError.js";
 import ApiResponse from "../../utils/ApiResponse.js";
 import * as eventService from "./event.service.js";
@@ -39,7 +40,7 @@ export class EventsController {
         .status(201)
         .json(new ApiResponse(201, bazaar, "Bazaar created successfully"));
     } catch (err) {
-      console.error("Error in createBazaar controller:", err);
+      logger.error("Error in createBazaar controller:", err);
       next(new ApiError(400, err.message));
     }
   }
@@ -115,7 +116,7 @@ export class EventsController {
           new ApiResponse(200, updatedBazaar, "Bazaar updated successfully")
         );
     } catch (err) {
-      console.error("Error editing bazaar:", err);
+      logger.error("Error editing bazaar:", err);
       next(err);
     }
   }
@@ -345,7 +346,7 @@ export class EventsController {
         }
       } catch (notifErr) {
         // Log but do not fail the main request
-        console.error(
+        logger.error(
           "Failed to create notification for workshop submission",
           notifErr
         );
@@ -588,7 +589,7 @@ export class EventsController {
             eventId
           );
           if (calendarSyncResult.synced && calendarSyncResult.googleEventId) {
-            console.log("✅ Event auto-synced to Google Calendar");
+            logger.info("✅ Event auto-synced to Google Calendar");
             // Save the Google Event ID per user to the event document
             const event = await Event.findById(eventId);
             if (event) {
@@ -610,11 +611,11 @@ export class EventsController {
               await event.save();
             }
           } else {
-            console.log("ℹ️ Calendar sync skipped:", calendarSyncResult.reason);
+            logger.info("ℹ️ Calendar sync skipped:", calendarSyncResult.reason);
           }
         } catch (syncError) {
           // Don't fail registration if calendar sync fails
-          console.warn(
+          logger.warn(
             "⚠️ Calendar sync error (non-blocking):",
             syncError.message
           );
@@ -633,7 +634,7 @@ export class EventsController {
         return res.status(err.statusCode).json({ message: err.message });
       }
       // General fallback
-      console.error("registerForEvent error:", err);
+      logger.error("registerForEvent error:", err);
       return res.status(500).json({ message: err.message });
     }
   }
@@ -1021,7 +1022,7 @@ export class EventsController {
             userId,
             userCalendarEvent.googleEventId
           ).catch((err) => {
-            console.warn(
+            logger.warn(
               `Warning: Could not remove event from Google Calendar: ${err.message}`
             );
             // Don't throw error - registration cancellation should succeed even if calendar removal fails
@@ -1356,7 +1357,7 @@ export class EventsController {
         data: { count },
       });
     } catch (error) {
-      console.error("Error counting approved events:", error);
+      logger.error("Error counting approved events:", error);
       next(error);
     }
   }
@@ -1391,7 +1392,7 @@ export class EventsController {
 
       return res.status(200).json({ success: true });
     } catch (error) {
-      console.error("Error recording view:", error);
+      logger.error("Error recording view:", error);
       // Don't block the UI for this background task
       return res.status(200).json({ success: false });
     }

@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { LoyaltyPartner } from "./loyaltyPartner.model.js";
 import { User } from "../users/user.model.js";
 import NotificationService from "../notifications/notification.service.js";
@@ -127,7 +128,7 @@ export const LoyaltyPartnerService = {
 
       return partners;
     } catch (error) {
-      console.error("Error fetching approved loyalty partners:", error);
+      logger.error("Error fetching approved loyalty partners:", error);
       throw new Error("Failed to fetch loyalty partners");
     }
   },

@@ -1,3 +1,4 @@
+import logger from "./logger.js";
 import cron from "node-cron";
 import { sendCertificatesForCompletedWorkshops } from "../features/events/event.service.js";
 
@@ -13,37 +14,37 @@ let isRunning = false;
 const sendCertificatesJob = async () => {
   // Prevent concurrent executions
   if (isRunning) {
-    console.log("⏳ Certificate job already running, skipping this execution");
+    logger.info("⏳ Certificate job already running, skipping this execution");
     return;
   }
 
   isRunning = true;
-  console.log("\n🔍 Starting automated certificate sending job...");
-  console.log(`⏰ Time: ${new Date().toLocaleString()}`);
+  logger.info("\n🔍 Starting automated certificate sending job...");
+  logger.info(`⏰ Time: ${new Date().toLocaleString()}`);
 
   try {
     const result = await sendCertificatesForCompletedWorkshops();
 
-    console.log("\n✅ Certificate job completed successfully!");
-    console.log(`📊 Summary:`);
-    console.log(`   - Workshops processed: ${result.workshopsProcessed}`);
-    console.log(`   - Certificates sent: ${result.totalSent}`);
-    console.log(`   - Failed: ${result.totalFailed}`);
+    logger.info("\n✅ Certificate job completed successfully!");
+    logger.info(`📊 Summary:`);
+    logger.info(`   - Workshops processed: ${result.workshopsProcessed}`);
+    logger.info(`   - Certificates sent: ${result.totalSent}`);
+    logger.info(`   - Failed: ${result.totalFailed}`);
 
     if (result.workshops && result.workshops.length > 0) {
-      console.log("\n📋 Workshop Details:");
+      logger.info("\n📋 Workshop Details:");
       result.workshops.forEach((workshop) => {
-        console.log(
+        logger.info(
           `   • ${workshop.workshopName}: ${workshop.sent} sent, ${workshop.failed} failed`
         );
       });
     }
   } catch (error) {
-    console.error("\n❌ Certificate job failed:", error.message);
-    console.error("Stack trace:", error.stack);
+    logger.error("\n❌ Certificate job failed:", error.message);
+    logger.error("Stack trace:", error.stack);
   } finally {
     isRunning = false;
-    console.log("\n" + "=".repeat(60) + "\n");
+    logger.info("\n" + "=".repeat(60) + "\n");
   }
 };
 
@@ -56,15 +57,15 @@ export const initCertificateScheduler = () => {
   // Cron format: "minute hour day month weekday"
   const schedule = "*/5 * * * *"; // every 5 minutes
 
-  console.log("\n🚀 Certificate Scheduler Initialized");
-  console.log(`⏰ Schedule: Every 5 minutes`);
+  logger.info("\n🚀 Certificate Scheduler Initialized");
+  logger.info(`⏰ Schedule: Every 5 minutes`);
 
   cron.schedule(schedule, sendCertificatesJob, {
     timezone: "Africa/Cairo", // Adjust to your timezone
   });
 
   // Optional: Run immediately on startup for testing (comment out in production)
-  // console.log("🧪 Running initial certificate check...");
+  // logger.info("🧪 Running initial certificate check...");
   // sendCertificatesJob();
 };
 
@@ -73,7 +74,7 @@ export const initCertificateScheduler = () => {
  * Can be called via API endpoint
  */
 export const triggerCertificateJobManually = async () => {
-  console.log("\n🔧 Manual trigger activated for certificate sending...");
+  logger.info("\n🔧 Manual trigger activated for certificate sending...");
   return await sendCertificatesJob();
 };
 

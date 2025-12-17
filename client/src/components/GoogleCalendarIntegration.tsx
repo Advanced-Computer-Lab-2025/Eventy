@@ -59,7 +59,7 @@ export default function GoogleCalendarIntegration() {
         setIsConnected(data.data.connected);
       }
     } catch (error) {
-      console.error("Error checking calendar status:", error);
+      logger.error("Error checking calendar status:", error);
     }
   };
 
@@ -85,7 +85,7 @@ export default function GoogleCalendarIntegration() {
         });
       }
     } catch (error) {
-      console.error("Error connecting calendar:", error);
+      logger.error("Error connecting calendar:", error);
       toast({
         title: "Error",
         description: "An error occurred while connecting to Google Calendar.",
@@ -121,7 +121,7 @@ export default function GoogleCalendarIntegration() {
         });
       }
     } catch (error) {
-      console.error("Error disconnecting calendar:", error);
+      logger.error("Error disconnecting calendar:", error);
       toast({
         title: "Error",
         description: "An error occurred while disconnecting Google Calendar.",
@@ -157,7 +157,7 @@ export default function GoogleCalendarIntegration() {
         });
       }
     } catch (error) {
-      console.error("Error syncing calendar:", error);
+      logger.error("Error syncing calendar:", error);
       toast({
         title: "Error",
         description: "An error occurred while syncing your calendar.",

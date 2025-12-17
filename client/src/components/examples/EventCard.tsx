@@ -13,9 +13,9 @@ export default function EventCardExample() {
         location="Engineering Building, Room 301"
         attendees={45}
         vendors={[]}
-        onRegister={() => console.log("Register clicked")}
-        onSave={() => console.log("Save clicked")}
-        onShare={() => console.log("Share clicked")}
+        onRegister={() => logger.info("Register clicked")}
+        onSave={() => logger.info("Save clicked")}
+        onShare={() => logger.info("Share clicked")}
       />
     </div>
   );

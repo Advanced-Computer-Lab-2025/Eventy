@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { LoyaltyPartnerService } from "./loyaltyPartner.service.js";
 import { applyLoyaltyProgramSchema } from "./loyaltyPartner.validation.js";
 
@@ -13,7 +14,7 @@ export const LoyaltyPartnerController = {
         data: status,
       });
     } catch (err) {
-      console.error("Error getting loyalty program status:", err);
+      logger.error("Error getting loyalty program status:", err);
 
       const statusCode = err.statusCode || 500;
       const message = err.message || "Failed to get loyalty program status";
@@ -44,7 +45,7 @@ export const LoyaltyPartnerController = {
         application: newApplication,
       });
     } catch (err) {
-      console.error(err);
+      logger.error(err);
 
       if (err.name === "ValidationError") {
         return res
@@ -82,7 +83,7 @@ export const LoyaltyPartnerController = {
         cancelledAt: result.cancelledAt,
       });
     } catch (err) {
-      console.error("Error cancelling loyalty program:", err);
+      logger.error("Error cancelling loyalty program:", err);
 
       const statusCode = err.statusCode || 500;
       const message = err.message || "Failed to cancel loyalty program";
@@ -94,7 +95,7 @@ export const LoyaltyPartnerController = {
     }
   },
 
-  async getStatus(req, res) {
+  async getVendorStatus(req, res) {
     try {
       const vendorId = req.user.id; // Get vendor ID from authenticated user
       const status = await LoyaltyPartnerService.getVendorStatus(vendorId);
@@ -104,7 +105,7 @@ export const LoyaltyPartnerController = {
         data: status,
       });
     } catch (err) {
-      console.error("Error getting vendor loyalty status:", err);
+      logger.error("Error getting vendor loyalty status:", err);
 
       const statusCode = err.statusCode || 500;
       const message = err.message || "Failed to get loyalty status";
@@ -126,7 +127,7 @@ export const LoyaltyPartnerController = {
         count: partners.length,
       });
     } catch (err) {
-      console.error("Error fetching loyalty partners:", err);
+      logger.error("Error fetching loyalty partners:", err);
 
       const statusCode = err.statusCode || 500;
       const message = err.message || "Failed to fetch loyalty partners";

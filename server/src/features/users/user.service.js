@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import bcrypt from "bcryptjs";
 import { User } from "./user.model.js";
 import ApiError from "../../utils/ApiError.js";
@@ -145,12 +146,12 @@ class UserService {
   // Favorites methods (moved from controller, same logic)
   async addToFavorites(userId, eventId, role) {
     try {
-      console.log("Service addToFavorites called:", { userId, eventId, role });
+      logger.info("Service addToFavorites called:", { userId, eventId, role });
 
       // --- Validate eventId ---
       const { error } = favoriteEventSchema.validate({ eventId });
       if (error) {
-        console.error("Validation error:", error);
+        logger.error("Validation error:", error);
         throw new ApiError(
           400,
           `Invalid event ID: ${error.details[0].message}`
@@ -160,7 +161,7 @@ class UserService {
       // Check if user is allowed to add to favorites
       const allowedRoles = ["student", "staff", "ta", "professor"];
       if (!allowedRoles.includes(role)) {
-        console.error("Unauthorized role:", role);
+        logger.error("Unauthorized role:", role);
         throw new ApiError(
           403,
           "Only students, staff, TAs, and professors can add events to favorites"
@@ -202,14 +203,14 @@ class UserService {
         { new: true, fields: { favoriteEvents: 1 } } // Return only favoriteEvents
       );
 
-      console.log("[Service] Updated user favorites:", user.favoriteEvents);
+      logger.info("[Service] Updated user favorites:", user.favoriteEvents);
 
       return {
         message: "Event added to favorites",
         data: { eventId, favoritesCount: user.favoriteEvents.length },
       };
     } catch (err) {
-      console.error("[Service] addToFavorites error:", err);
+      logger.error("[Service] addToFavorites error:", err);
       if (err instanceof ApiError) throw err;
       throw new ApiError(500, err.message || "Error in addToFavorites");
     }
@@ -262,7 +263,7 @@ class UserService {
 
   async getFavoriteEvents(userId, role) {
     try {
-      console.log(
+      logger.info(
         "[getFavoriteEvents] Service called for user:",
         userId,
         "role:",
@@ -326,14 +327,14 @@ class UserService {
         })
       );
 
-      console.log(
+      logger.info(
         "[getFavoriteEvents] favorites count:",
         eventsWithAttendees.length
       );
 
       return { data: eventsWithAttendees };
     } catch (err) {
-      console.error("[getFavoriteEvents] Error:", err);
+      logger.error("[getFavoriteEvents] Error:", err);
       if (err instanceof ApiError) throw err;
       throw new ApiError(500, err.message || "Error in getFavoriteEvents");
     }

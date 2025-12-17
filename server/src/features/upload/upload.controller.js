@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import path from "path";
 import fs from "fs";
 
@@ -54,14 +55,14 @@ export class UploadController {
         },
       });
     } catch (error) {
-      console.error("Error uploading file:", error);
+      logger.error("Error uploading file:", error);
 
       // Clean up file if it was uploaded but error occurred
       if (req.file && req.file.path) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
-          console.error("Error deleting file:", unlinkError);
+          logger.error("Error deleting file:", unlinkError);
         }
       }
 
@@ -119,14 +120,14 @@ export class UploadController {
         },
       });
     } catch (error) {
-      console.error("Error uploading vendor document:", error);
+      logger.error("Error uploading vendor document:", error);
 
       // Clean up file if it was uploaded but error occurred
       if (req.file && req.file.path) {
         try {
           fs.unlinkSync(req.file.path);
         } catch (unlinkError) {
-          console.error("Error deleting file:", unlinkError);
+          logger.error("Error deleting file:", unlinkError);
         }
       }
 

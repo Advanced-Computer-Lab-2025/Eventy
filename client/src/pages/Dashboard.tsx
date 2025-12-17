@@ -107,7 +107,7 @@ export default function Dashboard() {
                   <EventListItem
                     key={event.id}
                     {...event}
-                    onClick={() => console.log("Event clicked:", event.title)}
+                    onClick={() => logger.info("Event clicked:", event.title)}
                   />
                 ))}
               </CardContent>
@@ -196,9 +196,9 @@ export default function Dashboard() {
                         }
                         vendors={event.vendors || []}
                         price={event.price}
-                        onRegister={() => console.log("hakoona batata")}
-                        onSave={() => console.log("Save:", event.name)}
-                        onShare={() => console.log("Share:", event.name)}
+                        onRegister={() => logger.info("hakoona batata")}
+                        onSave={() => logger.info("Save:", event.name)}
+                        onShare={() => logger.info("Share:", event.name)}
                       />
                     ))}
                   </div>
@@ -221,9 +221,9 @@ export default function Dashboard() {
           <div className="space-y-6">
             <QuickActions
               onCreateEvent={() => setShowCreateDialog(true)}
-              onImport={() => console.log("Import events")}
-              onExport={() => console.log("Export data")}
-              onSettings={() => console.log("Settings")}
+              onImport={() => logger.info("Import events")}
+              onExport={() => logger.info("Export data")}
+              onSettings={() => logger.info("Settings")}
             />
 
             <Card>

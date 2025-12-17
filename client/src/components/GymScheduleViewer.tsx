@@ -111,7 +111,7 @@ export default function GymScheduleViewer({
         setSessions(data.data);
       }
     } catch (error) {
-      console.error("Failed to fetch gym sessions:", error);
+      logger.error("Failed to fetch gym sessions:", error);
       toast({
         title: "Error",
         description: "Failed to load gym sessions. Please try again.",
@@ -219,7 +219,7 @@ export default function GymScheduleViewer({
       setSelectedSession(null);
       fetchGymSessions(); // Refresh the sessions list
     } catch (error) {
-      console.error("Cancel session error:", error);
+      logger.error("Cancel session error:", error);
       toast({
         title: "Error",
         description:

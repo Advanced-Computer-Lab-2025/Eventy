@@ -138,7 +138,7 @@ export default function EditTrip() {
       });
       setRestrictedRoles(tripData.restrictedRoles || []);
     } catch (error) {
-      console.error("Error fetching trip:", error);
+      logger.error("Error fetching trip:", error);
       toast({
         title: "Error",
         description: "Failed to load trip details",
@@ -300,7 +300,7 @@ export default function EditTrip() {
         setLocation("/events-office/dashboard");
       }, 1000);
     } catch (error: any) {
-      console.error("Error updating trip:", error);
+      logger.error("Error updating trip:", error);
       // Only show toast if error wasn't already handled above
       if (error.message && !error.message.includes("already started")) {
         toast({

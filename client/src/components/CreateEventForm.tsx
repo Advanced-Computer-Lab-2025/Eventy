@@ -110,7 +110,7 @@ export default function CreateEventForm({
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
-          console.error("Failed to fetch professors: ", res.status);
+          logger.error("Failed to fetch professors: ", res.status);
           return;
         }
         const payload = await res.json();
@@ -123,7 +123,7 @@ export default function CreateEventForm({
           }))
         );
       } catch (err) {
-        console.error("Failed to fetch professors", err);
+        logger.error("Failed to fetch professors", err);
       }
     })();
   }, [includeProfessors]);

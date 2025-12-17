@@ -301,7 +301,7 @@ export default function Recommendations() {
   //
   //     window.location.reload();
   //   } catch (err) {
-  //     console.error("Failed to reset", err);
+  //     logger.error("Failed to reset", err);
   //   }
   // };
 
@@ -328,7 +328,7 @@ export default function Recommendations() {
         }
       }
     } catch (error) {
-      console.error("Failed to fetch recommendations:", error);
+      logger.error("Failed to fetch recommendations:", error);
     } finally {
       setLoading(false);
     }

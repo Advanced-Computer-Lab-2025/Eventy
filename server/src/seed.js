@@ -1,3 +1,4 @@
+import logger from "./utils/logger.js";
 import "dotenv/config";
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
@@ -10,7 +11,7 @@ async function seedUsers() {
   try {
     // Connect to MongoDB
     await mongoose.connect(MONGODB_URI);
-    console.log("Connected to MongoDB");
+    logger.info("Connected to MongoDB");
 
     // Hash password for the users
     const hashedPassword = await bcrypt.hash("password123", 10);
@@ -31,40 +32,40 @@ async function seedUsers() {
 
     // Insert users into database
     const createdUsers = await User.insertMany(users);
-    console.log(`\nSuccessfully created ${createdUsers.length} users:\n`);
+    logger.info(`\nSuccessfully created ${createdUsers.length} users:\n`);
 
-    console.log("OFFICE USERS:");
+    logger.info("OFFICE USERS:");
     createdUsers
       .filter((u) => u.role === "office")
       .forEach((user) => {
-        console.log(
+        logger.info(
           `  - ${user.firstName} ${user.lastName} (${user.email}) - Role: ${user.role}`
         );
       });
 
-    console.log("\nADMIN USERS:");
+    logger.info("\nADMIN USERS:");
     createdUsers
       .filter((u) => u.role === "admin")
       .forEach((user) => {
-        console.log(
+        logger.info(
           `  - ${user.firstName} ${user.lastName} (${user.email}) - Role: ${user.role}`
         );
       });
 
-    console.log("\n✅ All users use password: password123");
-    console.log("✅ Admin logins:");
-    console.log("   - admin1@guc.edu.eg / password123");
-    console.log("   - admin2@guc.edu.eg / password123");
-    console.log("✅ Office logins:");
-    console.log("   - sarah.office@guc.edu.eg / password123");
-    console.log("   - michael.office@guc.edu.eg / password123");
-    console.log("   - emily.office@guc.edu.eg / password123\n");
+    logger.info("\n✅ All users use password: password123");
+    logger.info("✅ Admin logins:");
+    logger.info("   - admin1@guc.edu.eg / password123");
+    logger.info("   - admin2@guc.edu.eg / password123");
+    logger.info("✅ Office logins:");
+    logger.info("   - sarah.office@guc.edu.eg / password123");
+    logger.info("   - michael.office@guc.edu.eg / password123");
+    logger.info("   - emily.office@guc.edu.eg / password123\n");
 
     // Close the connection
     await mongoose.connection.close();
-    console.log("Database connection closed");
+    logger.info("Database connection closed");
   } catch (error) {
-    console.error("Error seeding users:", error);
+    logger.error("Error seeding users:", error);
     process.exit(1);
   }
 }

@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { User } from "../users/user.model.js";
 import { Event } from "./event.model.js";
 import { google } from "googleapis";
@@ -123,7 +124,7 @@ export const syncEventToGoogleCalendar = async (userId, eventId) => {
       sendNotifications: true,
     });
 
-    console.log(
+    logger.info(
       `✅ Event synced to Google Calendar for user ${userId}: ${response.data.id}`
     );
 
@@ -133,7 +134,7 @@ export const syncEventToGoogleCalendar = async (userId, eventId) => {
       googleEventId: response.data.id,
     };
   } catch (error) {
-    console.error("Calendar sync error:", error.message);
+    logger.error("Calendar sync error:", error.message);
 
     // Handle token refresh
     if (error.message.includes("invalid_grant")) {
@@ -142,7 +143,7 @@ export const syncEventToGoogleCalendar = async (userId, eventId) => {
         // Retry sync
         return syncEventToGoogleCalendar(userId, eventId);
       } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError.message);
+        logger.error("Token refresh failed:", refreshError.message);
         return {
           success: false,
           synced: false,
@@ -203,7 +204,7 @@ export const removeEventFromGoogleCalendar = async (userId, googleEventId) => {
       sendNotifications: true,
     });
 
-    console.log(
+    logger.info(
       `✅ Event removed from Google Calendar for user ${userId}: ${googleEventId}`
     );
 
@@ -212,7 +213,7 @@ export const removeEventFromGoogleCalendar = async (userId, googleEventId) => {
       removed: true,
     };
   } catch (error) {
-    console.error("Calendar removal error:", error.message);
+    logger.error("Calendar removal error:", error.message);
     return {
       success: false,
       removed: false,
@@ -253,10 +254,10 @@ export const refreshGoogleCalendarToken = async (userId) => {
 
     await user.save();
 
-    console.log(`✅ Calendar token refreshed for user ${userId}`);
+    logger.info(`✅ Calendar token refreshed for user ${userId}`);
     return user;
   } catch (error) {
-    console.error("Token refresh error:", error.message);
+    logger.error("Token refresh error:", error.message);
     throw error;
   }
 };

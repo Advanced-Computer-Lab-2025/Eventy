@@ -186,7 +186,7 @@ export default function FeedbackDashboard() {
       setAllRatings(mapped);
       setRatings(mapped);
     } catch (err) {
-      console.error("Error fetching ratings:", err);
+      logger.error("Error fetching ratings:", err);
       setRatings([]);
       setAllRatings([]);
     } finally {

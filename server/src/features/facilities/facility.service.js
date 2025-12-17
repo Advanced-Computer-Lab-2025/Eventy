@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import { CourtBooking, GymSession } from "./facility.model.js";
 import {
   sendGymSessionCancellationEmail,
@@ -225,7 +226,7 @@ class FacilitiesServiceClass {
 
     // Notify all attendees if there are any
     if (session.attendees && session.attendees.length > 0) {
-      console.log(
+      logger.info(
         `📧 Notifying ${session.attendees.length} participants about cancellation...`
       );
 
@@ -246,7 +247,7 @@ class FacilitiesServiceClass {
           (r) => r.status === "fulfilled"
         ).length;
         const failed = results.filter((r) => r.status === "rejected").length;
-        console.log(
+        logger.info(
           `✅ Email notifications completed: ${succeeded} sent, ${failed} failed`
         );
       });
@@ -354,7 +355,7 @@ class FacilitiesServiceClass {
 
     // Notify all attendees if there are any
     if (session.attendees && session.attendees.length > 0) {
-      console.log(
+      logger.info(
         `📧 Notifying ${session.attendees.length} participants about session update...`
       );
 
@@ -377,7 +378,7 @@ class FacilitiesServiceClass {
           (r) => r.status === "fulfilled"
         ).length;
         const failed = results.filter((r) => r.status === "rejected").length;
-        console.log(
+        logger.info(
           `✅ Update email notifications completed: ${succeeded} sent, ${failed} failed`
         );
       });

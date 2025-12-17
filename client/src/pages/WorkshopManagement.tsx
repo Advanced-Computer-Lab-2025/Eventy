@@ -101,7 +101,7 @@ export default function WorkshopManagement() {
       const data = await res.json();
       setWorkshops(data.data || []);
     } catch (err) {
-      console.error(err);
+      logger.error(err);
       setError(err instanceof Error ? err.message : "Failed to load workshops");
     } finally {
       setLoading(false);

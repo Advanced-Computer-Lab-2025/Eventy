@@ -63,7 +63,7 @@ export default function MyEvents() {
         });
 
         if (!res.ok) {
-          console.error("Failed to fetch events:", res.statusText);
+          logger.error("Failed to fetch events:", res.statusText);
           setRegisteredEvents([]);
           return;
         }
@@ -71,7 +71,7 @@ export default function MyEvents() {
         const data = await res.json();
         setRegisteredEvents(data.data || []);
       } catch (err) {
-        console.error("Error fetching events:", err);
+        logger.error("Error fetching events:", err);
         setRegisteredEvents([]);
       } finally {
         setLoading(false);

@@ -36,7 +36,7 @@ export default function ProtectedRoute({
           setLocation("/");
         }
       } catch (error) {
-        console.error("Failed to decode token:", error);
+        logger.error("Failed to decode token:", error);
         setLocation(redirectTo);
       }
     };

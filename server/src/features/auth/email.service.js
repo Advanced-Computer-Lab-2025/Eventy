@@ -1,3 +1,4 @@
+import logger from "../../utils/logger.js";
 import nodemailer from "nodemailer";
 import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
@@ -25,9 +26,9 @@ const transporter = nodemailer.createTransport({
 // Verify transporter on startup for clearer diagnostics
 transporter.verify((err, success) => {
   if (err) {
-    console.error("❌ Email transporter verification failed:", err.message);
+    logger.error("❌ Email transporter verification failed:", err.message);
   } else {
-    console.log("✅ Email transporter is ready:", success);
+    logger.info("✅ Email transporter is ready:", success);
   }
 });
 
@@ -52,7 +53,7 @@ export const sendRegistrationEmail = async (user) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Email send attempt:", {
+    logger.info("✅ Email send attempt:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
@@ -61,10 +62,10 @@ export const sendRegistrationEmail = async (user) => {
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error("❌ Error sending email:", error?.message || error);
+    logger.error("❌ Error sending email:", error?.message || error);
   }
 };
 
@@ -221,19 +222,19 @@ export const sendVerificationEmail = async (user) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Verification email sent:", {
+    logger.info("✅ Verification email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return verificationToken; // Return token for testing purposes
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending verification email:",
       error?.message || error
     );
@@ -442,17 +443,17 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Cancellation email sent to ${user.email}:`, {
+    logger.info(`✅ Cancellation email sent to ${user.email}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending cancellation email to ${user.email}:`,
       error?.message || error
     );
@@ -731,17 +732,17 @@ export const sendGymSessionUpdateEmail = async (
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Update email sent to ${user.email}:`, {
+    logger.info(`✅ Update email sent to ${user.email}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending update email to ${user.email}:`,
       error?.message || error
     );
@@ -952,7 +953,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(
+    logger.info(
       `✅ Vendor application status email sent to ${vendor?.email}:`,
       {
         messageId: info?.messageId,
@@ -964,10 +965,10 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     );
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending vendor application status email to ${vendor?.email}:`,
       error?.message || error
     );
@@ -991,7 +992,7 @@ export const sendVisitorQRCodesEmail = async (
     const vendorEmail = vendor?.email;
 
     if (!vendorEmail) {
-      console.error("❌ Vendor email not found");
+      logger.error("❌ Vendor email not found");
       return;
     }
 
@@ -1168,7 +1169,7 @@ export const sendVisitorQRCodesEmail = async (
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ QR codes email sent to ${vendorEmail}:`, {
+    logger.info(`✅ QR codes email sent to ${vendorEmail}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
@@ -1176,10 +1177,10 @@ export const sendVisitorQRCodesEmail = async (
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(`❌ Error sending QR codes email:`, error?.message || error);
+    logger.error(`❌ Error sending QR codes email:`, error?.message || error);
     // Do not throw
   }
 };
@@ -1202,7 +1203,7 @@ export const sendAttendeeQRCodeEmail = async (
     const attendeeName = attendee?.name || "Visitor";
 
     if (!attendeeEmail) {
-      console.error("❌ Attendee email not found");
+      logger.error("❌ Attendee email not found");
       return;
     }
 
@@ -1267,7 +1268,7 @@ export const sendAttendeeQRCodeEmail = async (
         throw new Error("QR code buffer is empty");
       }
     } catch (qrError) {
-      console.error(`❌ Error generating QR code:`, qrError);
+      logger.error(`❌ Error generating QR code:`, qrError);
       throw new Error(`Failed to generate QR code: ${qrError.message}`);
     }
 
@@ -1389,7 +1390,7 @@ export const sendAttendeeQRCodeEmail = async (
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ QR code email sent to ${attendeeEmail}:`, {
+    logger.info(`✅ QR code email sent to ${attendeeEmail}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
@@ -1397,10 +1398,10 @@ export const sendAttendeeQRCodeEmail = async (
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending QR code email to ${attendee?.email}:`,
       error?.message || error
     );
@@ -1614,7 +1615,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(
+    logger.info(
       `✅ Payment receipt sent to ${user.email} for transaction ${transaction._id}:`,
       {
         messageId: info?.messageId,
@@ -1623,9 +1624,9 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       }
     );
     if (info?.rejected?.length)
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending payment receipt to ${user.email}:`,
       error?.message || error
     );
@@ -1769,19 +1770,19 @@ export const sendStudentEmailVerification = async (user) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log("✅ Student verification email sent:", {
+    logger.info("✅ Student verification email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return verificationToken; // Return token for testing purposes
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending student verification email:",
       error?.message || error
     );
@@ -2051,7 +2052,7 @@ export const sendVendorPaymentReceipt = async (
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Vendor payment receipt sent to ${vendor.email}:`, {
+    logger.info(`✅ Vendor payment receipt sent to ${vendor.email}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
@@ -2061,10 +2062,10 @@ export const sendVendorPaymentReceipt = async (
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending vendor payment receipt to ${vendor.email}:`,
       error?.message || error
     );
@@ -2091,7 +2092,7 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
 
     const attendeeEmail = attendee?.email;
     if (!attendeeEmail) {
-      console.error("❌ Attendee email not found");
+      logger.error("❌ Attendee email not found");
       return;
     }
 
@@ -2306,7 +2307,7 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(
+    logger.info(
       `✅ Workshop certificate sent to ${attendeeEmail} for workshop "${workshop.name}":`,
       {
         messageId: info?.messageId,
@@ -2318,12 +2319,12 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
     );
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending certificate email to ${attendee?.email}:`,
       error?.message || error
     );
@@ -2489,19 +2490,19 @@ export const sendCommentDeletionWarning = async ({
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.log(`✅ Comment deletion warning email sent to ${userEmail}:`, {
+    logger.info(`✅ Comment deletion warning email sent to ${userEmail}:`, {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending comment deletion warning email to ${userEmail}:`,
       error?.message || error
     );
@@ -2740,7 +2741,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
     };
 
     const info = await transporter.sendMail(mailOptions);
-    console.log(
+    logger.info(
       `✅ Event registration email with calendar invite sent to ${user?.email}:`,
       {
         messageId: info?.messageId,
@@ -2750,12 +2751,12 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
     );
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Error sending event registration email:`,
       error?.message || error
     );
@@ -2913,19 +2914,19 @@ export const sendWaitlistAutopaySuccessEmail = async (
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.warn("✅ Waitlist autopay success email sent:", {
+    logger.warn("✅ Waitlist autopay success email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending waitlist autopay success email:",
       error?.message || error
     );
@@ -3078,19 +3079,19 @@ export const sendWaitlistSpotAvailableEmail = async (user, event) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.warn("✅ Waitlist spot available email sent:", {
+    logger.warn("✅ Waitlist spot available email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending waitlist spot available email:",
       error?.message || error
     );
@@ -3238,19 +3239,19 @@ export const sendWaitlistAutopayFailedEmail = async (user, event, reason) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.warn("✅ Waitlist autopay failed email sent:", {
+    logger.warn("✅ Waitlist autopay failed email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending waitlist autopay failed email:",
       error?.message || error
     );
@@ -3403,19 +3404,19 @@ export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
 
   try {
     const info = await transporter.sendMail(mailOptions);
-    console.warn("✅ Waitlist payment required email sent:", {
+    logger.warn("✅ Waitlist payment required email sent:", {
       messageId: info?.messageId,
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
 
     if (info?.rejected && info.rejected.length > 0) {
-      console.error("⚠️ Some recipients were rejected:", info.rejected);
+      logger.error("⚠️ Some recipients were rejected:", info.rejected);
     }
 
     return true;
   } catch (error) {
-    console.error(
+    logger.error(
       "❌ Error sending waitlist payment required email:",
       error?.message || error
     );

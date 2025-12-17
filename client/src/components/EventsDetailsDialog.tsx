@@ -60,7 +60,7 @@ export default function EventDetailsDialog({
               })
             );
           })
-          .catch((err) => console.error("Failed to record view", err));
+          .catch((err) => logger.error("Failed to record view", err));
       }
     }
   }, [open, event]);
