@@ -1247,7 +1247,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
   let buffer, mimeType, filename;
 
   switch (format.toLowerCase()) {
-    case "xlsx":
+    case "xlsx": {
       const workbook = new ExcelJS.Workbook();
       const worksheet = workbook.addWorksheet("Registered Users", {
         views: [{ state: "frozen", xSplit: 0, ySplit: 2 }],
@@ -1443,7 +1443,8 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
       filename = `${sanitizedEventName}_registered_users_${timestamp}.xlsx`;
       break;
-    case "pdf":
+    }
+    case "pdf": {
       const doc = new PDFDocument({ margin: 50, size: "A4" });
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
@@ -1583,8 +1584,8 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       mimeType = "application/pdf";
       filename = `${sanitizedEventName}_registered_users_${timestamp}.pdf`;
       break;
-
-    case "csv":
+    }
+    case "csv": {
       const parser = new Parser({
         fields: [
           { label: "First Name", value: "firstName" },
@@ -1597,6 +1598,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       mimeType = "text/csv";
       filename = `${sanitizedEventName}_registered_users_${timestamp}.csv`;
       break;
+    }
   }
 
   return { buffer, filename, mimeType };
@@ -2605,7 +2607,7 @@ async function sendEventReminder(event, reminderTime, reminderType) {
     // Use reminderType for message
     await NotificationService.createNotification({
       title: `⏰ Event Reminder: ${event.name}`,
-      message: `The event \"${event.name}\" is starting in ${reminderType}.`,
+      message: `The event "${event.name}" is starting in ${reminderType}.`,
       link: `/events/${event._id}`,
       recipients: usersToNotify.map((user) => user._id),
       event: event._id,
@@ -2613,7 +2615,7 @@ async function sendEventReminder(event, reminderTime, reminderType) {
     });
 
     logger.info(
-      `Sent ${reminderType} reminder for event \"${event.name}\" to ${usersToNotify.length} users`
+      `Sent ${reminderType} reminder for event "${event.name}" to ${usersToNotify.length} users`
     );
   } catch (error) {
     logger.error(`Error sending reminder for event ${event._id}:`, error);

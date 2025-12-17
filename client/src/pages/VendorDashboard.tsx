@@ -28,6 +28,7 @@ import {
 } from "recharts";
 import VendorHeader from "@/components/VendorHeader";
 import { Button } from "@/components/ui/button";
+import { logger } from "@/lib/logger";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent } from "@/components/ui/tabs";

@@ -23,7 +23,7 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 // CalendarPopover removed from events office header
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function EventsOfficeHeader() {
   const [location, setLocation] = useLocation();
@@ -33,21 +33,16 @@ export default function EventsOfficeHeader() {
     email?: string;
     role?: string;
     companyName?: string;
-  } | null>(null);
-  const [isReportsOpen, setIsReportsOpen] = useState(false);
-  const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
-
-  useEffect(() => {
+  } | null>(() => {
     try {
       const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      }
-    } catch (err) {
-      // ignore
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
+  const [isReportsOpen, setIsReportsOpen] = useState(false);
+  const [isApprovalsOpen, setIsApprovalsOpen] = useState(false);
 
   const goHome = () => setLocation("/events-office/dashboard");
 

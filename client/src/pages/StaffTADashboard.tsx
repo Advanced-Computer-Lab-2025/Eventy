@@ -24,6 +24,7 @@ import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface RegisteredEvent {
   _id: string;

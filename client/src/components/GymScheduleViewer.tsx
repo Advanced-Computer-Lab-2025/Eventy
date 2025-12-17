@@ -64,7 +64,9 @@ export default function GymScheduleViewer({
         const parsed = JSON.parse(user);
         return parsed._id || parsed.id;
       }
-    } catch {}
+    } catch {
+      // Ignore parse errors
+    }
     return null;
   })();
   const [loading, setLoading] = useState(true);

@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import AdminHeader from "@/components/AdminHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import EventsReport from "@/components/EventsReport";
 
 export default function EventsReportPage() {
-  const [role, setRole] = useState<string | null>(null);
   const getRole = () => {
     try {
       const user = JSON.parse(localStorage.getItem("user") || "null");
@@ -14,9 +13,7 @@ export default function EventsReportPage() {
       return null;
     }
   };
-  useEffect(() => {
-    setRole(getRole());
-  }, []);
+  const [role] = useState<string | null>(getRole());
   return (
     <div className="min-h-screen bg-background">
       {role === "admin" ? <AdminHeader /> : <EventsOfficeHeader />}

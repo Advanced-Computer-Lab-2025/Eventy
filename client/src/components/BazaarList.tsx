@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import BazaarCard from "./BazaarCard";
 import { logger } from "@/lib/logger";
 import { Card, CardContent } from "@/components/ui/card";
@@ -43,7 +43,6 @@ export default function BazaarList({
   className = "",
 }: BazaarListProps) {
   const [searchTerm, setSearchTerm] = useState("");
-  const [filteredBazaars, setFilteredBazaars] = useState<Bazaar[]>(bazaars);
   const { toast } = useToast();
 
   const handleRegisterEvent = async (eventId: string) => {
@@ -92,21 +91,16 @@ export default function BazaarList({
     }
   };
 
-  // Filter bazaars based on search term
-  useEffect(() => {
-    let filtered = bazaars;
+  // Filter bazaars based on search term using useMemo
+  const filteredBazaars = useMemo(() => {
+    if (!searchTerm) return bazaars;
 
-    // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(
-        (bazaar) =>
-          bazaar.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bazaar.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          bazaar.location.toLowerCase().includes(searchTerm.toLowerCase())
-      );
-    }
-
-    setFilteredBazaars(filtered);
+    return bazaars.filter(
+      (bazaar) =>
+        bazaar.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bazaar.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        bazaar.location.toLowerCase().includes(searchTerm.toLowerCase())
+    );
   }, [bazaars, searchTerm]);
 
   const handleRegister = (bazaarId: string) => {

@@ -5,7 +5,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Gift } from "lucide-react";
 import LoyaltyProgramDialog from "./LoyaltyProgramDialog";
 
@@ -27,19 +27,14 @@ export default function VendorHeader({
     email?: string;
     role?: string;
     companyName?: string;
-  } | null>(null);
-
-  useEffect(() => {
+  } | null>(() => {
     try {
       const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      }
-    } catch (err) {
-      // ignore
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   // Check URL hash on component mount and when it changes
   useEffect(() => {

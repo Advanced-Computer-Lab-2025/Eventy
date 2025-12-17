@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 
 import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import { logger } from "@/lib/logger";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StaffHeader from "@/components/StaffHeader";

@@ -1,7 +1,7 @@
 "use client";
 
 import { LogOut, User } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useLocation } from "wouter";
 import {
   DropdownMenu,
@@ -22,16 +22,14 @@ export default function ProfileMenu() {
     email?: string;
     role?: string;
     companyName?: string;
-  } | null>(null);
-
-  useEffect(() => {
+  } | null>(() => {
     try {
       const raw = localStorage.getItem("user");
-      if (raw) setUser(JSON.parse(raw));
-    } catch (err) {
-      // ignore
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("token");

@@ -12,6 +12,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { logger } from "@/lib/logger";
 
 interface Workshop {
   _id: string;

@@ -1,4 +1,3 @@
-import logger from "./logger.js";
 /**
  * Production-ready server logger using Consola
  * Automatically adjusts log levels based on NODE_ENV

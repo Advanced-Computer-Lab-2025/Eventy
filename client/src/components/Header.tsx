@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 import ProfileMenu from "./ProfileMenu";
 
@@ -32,19 +32,14 @@ export default function Header({
     firstName?: string;
     lastName?: string;
     email?: string;
-  } | null>(null);
-
-  useEffect(() => {
+  } | null>(() => {
     try {
       const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      }
-    } catch (err) {
-      // ignore
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   const handleLogout = () => {
     localStorage.removeItem("token");

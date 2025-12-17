@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
+import { logger } from "@/lib/logger";
 
 type Slot = {
   startTime: string;
