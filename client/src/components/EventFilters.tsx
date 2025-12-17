@@ -182,8 +182,8 @@ export default function EventFilters({
     onFilterChange({
       eventType: "all",
       location: "all",
-      startDate: "",
-      endDate: "",
+      startDate: undefined,
+      endDate: undefined,
       professor: "",
       showUpcoming: true,
       showPast: true,

@@ -25,6 +25,25 @@ export default function CalendarPopover() {
   const [, setLocation] = useLocation();
   const [events, setEvents] = useState<Event[]>([]);
 
+  const fetchUserEvents = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data.data || []);
+      }
+    } catch (err) {
+      console.error("Error fetching events:", err);
+    }
+  };
+
   useEffect(() => {
     fetchUserEvents();
 
@@ -45,25 +64,6 @@ export default function CalendarPopover() {
       window.removeEventListener("event:unregistered", handleCancellation);
     };
   }, []);
-
-  const fetchUserEvents = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setEvents(data.data || []);
-      }
-    } catch (err) {
-      console.error("Error fetching events:", err);
-    }
-  };
 
   const handleDateClick = (date: Date) => {
     // Navigate to calendar page with selected date

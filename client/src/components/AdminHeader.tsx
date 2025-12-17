@@ -6,29 +6,26 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 // Calendar popover removed per request
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function AdminHeader() {
   const [location, setLocation] = useLocation();
+
+  // Initialize state directly from localStorage to avoid setState in useEffect
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;
     role?: string;
     companyName?: string;
-  } | null>(null);
-
-  useEffect(() => {
+  } | null>(() => {
     try {
       const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed);
-      }
-    } catch (err) {
-      // ignore
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">

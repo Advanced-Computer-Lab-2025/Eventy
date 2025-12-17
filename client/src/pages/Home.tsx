@@ -55,8 +55,8 @@ export default function Home() {
   const [filters, setFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,
@@ -144,8 +144,8 @@ export default function Home() {
       next.location = filters.location;
     }
     if (filters.startDate && filters.endDate) {
-      next.startDate = filters.startDate;
-      next.endDate = filters.endDate;
+      next.startDate = filters.startDate.toISOString();
+      next.endDate = filters.endDate.toISOString();
     }
     if (filters.professor) {
       (next as any).professor = filters.professor;
