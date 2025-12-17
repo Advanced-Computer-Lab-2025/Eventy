@@ -3,10 +3,8 @@ import { Calendar, momentLocalizer, View } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { Button } from "@/components/ui/button";
-import { MapPin, Clock, Calendar as CalendarIcon, Users } from "lucide-react";
 
 const localizer = momentLocalizer(moment);
 const API_BASE_URL =

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, MapPin, Info, Clock, CalendarIcon } from "lucide-react";
+import { MapPin, Info, Clock, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { Button } from "@/components/ui/button";

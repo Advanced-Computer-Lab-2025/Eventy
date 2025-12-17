@@ -2,7 +2,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Home, ArrowLeft } from "lucide-react";
 import { useLocation } from "wouter";
-import Header from "@/components/Header";
 
 export default function NotFound() {
   const [, setLocation] = useLocation();

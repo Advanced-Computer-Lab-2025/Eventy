@@ -2,17 +2,13 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   GraduationCap,
-  Dumbbell,
-  BookOpen,
   FolderOpen,
   Clock,
   CheckCircle2,
   AlertCircle,
-  Calendar,
 } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";

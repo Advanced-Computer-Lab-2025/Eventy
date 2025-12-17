@@ -1,16 +1,8 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  Calendar,
-  Users,
-  TrendingUp,
-  UserCheck,
-  Grid2x2,
-  List,
-} from "lucide-react";
+import { Calendar, Users, TrendingUp, Grid2x2, List } from "lucide-react";
 import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";

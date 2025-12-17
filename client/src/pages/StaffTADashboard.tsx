@@ -2,10 +2,6 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import {
   Users,
-  Calendar,
-  Dumbbell,
-  BookOpen,
-  ArrowRight,
   FolderOpen,
   Clock,
   CheckCircle2,
@@ -17,14 +13,7 @@ import {
   List,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StaffHeader from "@/components/StaffHeader";
 import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";

@@ -1,30 +1,18 @@
 import { useEffect, useState, useRef } from "react";
 import { useLocation } from "wouter";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import BigCalendarView from "@/components/BigCalendarView";
-import CalendarHeatmap from "@/components/CalendarHeatmap";
-import MiniCalendar from "@/components/MiniCalendar";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   CalendarDays,
   CheckCircle2,
-  Clock,
   Plus,
-  Calendar,
-  Edit,
-  Search,
   AlertCircle,
   X,
   ClipboardList,
   Dumbbell,
   Store,
   Plane,
-  Archive,
-  FileText,
-  Users,
   PieChart as PieChartIcon,
-  Grid2x2,
-  List,
 } from "lucide-react";
 import {
   PieChart,
@@ -49,9 +37,6 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import StatCard from "@/components/StatCard";
-import BazaarList from "@/components/BazaarList";
-import EventSearch from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
 import EmptyState from "@/components/EmptyState";

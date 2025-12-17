@@ -1,11 +1,4 @@
-import {
-  Home,
-  Store,
-  CheckCircle,
-  Clock,
-  XCircle,
-  Calendar,
-} from "lucide-react";
+import { Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";

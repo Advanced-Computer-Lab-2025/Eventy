@@ -5,12 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 import { format } from "date-fns";
-import {
-  generateQRCodeDataURL,
-  generateQRCodeBuffer,
-  generateAttendeeToken,
-  createAttendeeQRData,
-} from "../../utils/qrcode.service.js";
+import { generateAttendeeToken } from "../../utils/qrcode.service.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -2753,7 +2748,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
         rejected: info?.rejected,
       }
     );
-    
+
     if (info?.rejected && info.rejected.length > 0) {
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }
@@ -2761,8 +2756,8 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
     return true;
   } catch (error) {
     console.error(
-   `❌ Error sending event registration email:`,
-    error?.message || error
+      `❌ Error sending event registration email:`,
+      error?.message || error
     );
     return false;
   }
@@ -3413,7 +3408,7 @@ export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
       accepted: info?.accepted,
       rejected: info?.rejected,
     });
-    
+
     if (info?.rejected && info.rejected.length > 0) {
       console.error("⚠️ Some recipients were rejected:", info.rejected);
     }

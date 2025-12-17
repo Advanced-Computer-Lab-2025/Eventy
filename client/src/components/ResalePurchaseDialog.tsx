@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2, CreditCard, Wallet, CheckCircle2 } from "lucide-react";
+import { Loader2, CreditCard, Wallet } from "lucide-react";
 import { Label } from "@/components/ui/label";
 
 // --- Configuration ---

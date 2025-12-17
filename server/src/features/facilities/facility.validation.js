@@ -1,5 +1,4 @@
 import Joi from "joi";
-import mongoose from "mongoose";
 
 export const gymSessionsQuerySchema = Joi.object({
   month: Joi.number().integer().min(1).max(12).required().messages({

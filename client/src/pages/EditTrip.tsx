@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
-import {
-  Calendar,
-  MapPin,
-  Users,
-  DollarSign,
-  CalendarIcon,
-} from "lucide-react";
+import { MapPin, Users, DollarSign, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";

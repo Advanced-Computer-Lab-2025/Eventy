@@ -1,12 +1,10 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";

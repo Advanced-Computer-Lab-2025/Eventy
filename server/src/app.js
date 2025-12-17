@@ -3,7 +3,6 @@ import cors from "cors";
 import path from "path";
 import session from "express-session";
 import allRoutes from "./routes/index.js";
-import userRoutes from "./features/users/user.route.js";
 
 import dotenv from "dotenv";
 import { errorMiddleware } from "./middlewares/error.middleware.js";

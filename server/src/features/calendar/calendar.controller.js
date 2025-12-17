@@ -2,9 +2,7 @@ import {
   getAuthUrl,
   getTokensFromCode,
   addEventToGoogleCalendar,
-  updateGoogleCalendarEvent,
   deleteGoogleCalendarEvent,
-  getUserCalendarEvents,
   refreshAccessToken,
 } from "./calendar.service.js";
 import { User } from "../users/user.model.js";

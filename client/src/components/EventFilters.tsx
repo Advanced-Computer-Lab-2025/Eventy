@@ -11,7 +11,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Input } from "@/components/ui/input";
 import {
   Popover,
   PopoverContent,
@@ -26,7 +25,6 @@ import {
   User,
   AlertCircle,
   CalendarDays,
-  CalendarIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 

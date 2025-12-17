@@ -1,17 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation } from "wouter";
-import {
-  Calendar,
-  Clock,
-  ChevronLeft,
-  ChevronRight,
-  Dumbbell,
-  Search,
-  Bell,
-  User as UserIcon,
-  Home,
-  ArrowLeft,
-} from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StudentHeader from "@/components/StudentHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
@@ -19,14 +8,11 @@ import StaffHeader from "@/components/StaffHeader";
 import AdminHeader from "@/components/AdminHeader";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
-import ThemeToggle from "@/components/ThemeToggle";
-import Logo from "@/components/Logo";
 
 type Slot = {
   startTime: string;

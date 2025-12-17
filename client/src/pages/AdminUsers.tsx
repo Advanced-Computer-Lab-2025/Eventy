@@ -4,7 +4,6 @@ import {
   Plus,
   Search,
   MoreVertical,
-  Shield,
   UserX,
   UserCheck,
   Filter,

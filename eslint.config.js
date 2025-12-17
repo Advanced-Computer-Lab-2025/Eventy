@@ -5,6 +5,7 @@ import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
 import prettier from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
+import unusedImports from "eslint-plugin-unused-imports";
 
 export default [
   // Base recommended configs
@@ -78,12 +79,15 @@ export default [
       react,
       "react-hooks": reactHooks,
       prettier,
+      "unused-imports": unusedImports,
     },
     rules: {
       "prettier/prettier": "error",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "no-unused-vars": [
+      "no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
         "warn",
         {
           argsIgnorePattern: "^_",
@@ -147,13 +151,16 @@ export default [
       react,
       "react-hooks": reactHooks,
       prettier,
+      "unused-imports": unusedImports,
     },
     rules: {
       ...typescript.configs.recommended.rules,
       "prettier/prettier": "error",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "@typescript-eslint/no-unused-vars": [
+      "@typescript-eslint/no-unused-vars": "off",
+      "unused-imports/no-unused-imports": "error",
+      "unused-imports/no-unused-vars": [
         "warn",
         {
           argsIgnorePattern: "^_",

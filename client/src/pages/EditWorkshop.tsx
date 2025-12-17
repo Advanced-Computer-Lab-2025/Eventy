@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
-  Calendar,
   Clock,
   Users,
   DollarSign,

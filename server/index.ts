@@ -1,5 +1,5 @@
 import express, { type Request, Response, NextFunction } from "express";
-import { createServer, type Server } from "http";
+import { createServer } from "http";
 import { setupVite, serveStatic, log } from "./vite";
 // @ts-expect-error - JS module without types
 import allRoutes from "./src/routes/index.js";

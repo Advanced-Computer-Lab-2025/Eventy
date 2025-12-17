@@ -3,9 +3,9 @@ import { useLocation } from "wouter";
 import StudentHeader from "@/components/StudentHeader";
 import BigCalendarView from "@/components/BigCalendarView";
 import GoogleCalendarIntegration from "@/components/GoogleCalendarIntegration";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar as CalendarIcon, Download, Filter } from "lucide-react";
+import { Download } from "lucide-react";
 import {
   Select,
   SelectContent,

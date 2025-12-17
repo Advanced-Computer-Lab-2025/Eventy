@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { Calendar, Clock, Users, DollarSign, CalendarIcon } from "lucide-react";
+import { Clock, Users, DollarSign, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Gift, X, CalendarIcon } from "lucide-react";
+import { Gift, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import {
   Popover,

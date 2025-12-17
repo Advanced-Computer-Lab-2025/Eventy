@@ -1,10 +1,8 @@
-import mongoose from "mongoose";
 import { User } from "./user.model.js";
 import {
   UserValidation,
   createManagementAccountSchema,
   toggleBlockUserSchema,
-  favoriteEventSchema,
 } from "./user.validation.js";
 import {
   sendRegistrationEmail,

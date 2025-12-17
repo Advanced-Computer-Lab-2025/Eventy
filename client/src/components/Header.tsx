@@ -1,29 +1,13 @@
 "use client";
 
-import {
-  Search,
-  Bell,
-  LayoutGrid,
-  User,
-  Home,
-  LogOut,
-  Store,
-  Star,
-} from "lucide-react";
+import { Search, Bell, LayoutGrid, Home, Store } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
-import {
-  DropdownMenu,
-  DropdownMenuTrigger,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+
 import ProfileMenu from "./ProfileMenu";
 
 interface HeaderProps {

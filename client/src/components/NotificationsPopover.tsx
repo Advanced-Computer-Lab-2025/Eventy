@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
-import {
-  Bell,
-  Trash2,
-  ArrowUpDown,
-  User,
-  AlertTriangle,
-  Mail,
-} from "lucide-react";
+import { Bell, Trash2, ArrowUpDown, AlertTriangle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,

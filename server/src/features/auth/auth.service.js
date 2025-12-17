@@ -6,7 +6,6 @@ import {
 } from "./auth.validation.js";
 import jwt from "jsonwebtoken";
 import { sendStudentEmailVerification } from "./email.service.js";
-import { waitForDebugger } from "inspector";
 export const signUpUser = async (data) => {
   const { role } = data;
 

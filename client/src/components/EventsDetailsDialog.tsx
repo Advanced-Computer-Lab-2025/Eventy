@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import CategoryBadge from "./CategoryBadge";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 
 interface EventDetailsDialogProps {
   open: boolean;

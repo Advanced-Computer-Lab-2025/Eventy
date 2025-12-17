@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
   Camera,
-  Upload,
   Eye,
   ChevronLeft,
   ChevronRight,

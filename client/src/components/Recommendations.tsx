@@ -1,13 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
-import {
-  Sparkles,
-  TrendingUp,
-  Calendar,
-  MapPin,
-  ArrowRight,
-  RotateCcw,
-} from "lucide-react";
+import { Sparkles, TrendingUp, Calendar, MapPin } from "lucide-react";
 import { getEventImage } from "@/lib/eventImages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

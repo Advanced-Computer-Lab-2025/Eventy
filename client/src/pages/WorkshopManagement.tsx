@@ -1,14 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Calendar,
-  MapPin,
-  Users,
-  DollarSign,
-  Edit,
-  Plus,
-  ArrowLeft,
-} from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Edit, Plus } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";

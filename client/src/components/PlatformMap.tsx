@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import Booths from "./Booths";
 import { useToast } from "@/hooks/use-toast";
 

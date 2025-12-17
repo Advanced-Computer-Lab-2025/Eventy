@@ -4,13 +4,9 @@ import {
   validateBoothApplication,
 } from "./application.validation.js";
 import ApiError from "../../utils/ApiError.js";
-import {
-  sendVisitorQRCodesEmail,
-  sendAttendeeQRCodeEmail,
-} from "../auth/email.service.js";
+import { sendAttendeeQRCodeEmail } from "../auth/email.service.js";
 import Application from "./application.model.js";
 import jwt from "jsonwebtoken";
-import { generateAttendeeToken } from "../../utils/qrcode.service.js";
 
 export class ApplicationController {
   async applyToBazaar(req, res, next) {

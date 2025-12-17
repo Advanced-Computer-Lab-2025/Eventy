@@ -1,13 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import {
-  Calendar,
-  MapPin,
-  Users,
-  Info,
-  Clock,
-  CalendarIcon,
-} from "lucide-react";
+import { MapPin, Users, Info, Clock, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";

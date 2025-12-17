@@ -1,6 +1,4 @@
 import { getRecommendationsForUser } from "./recommendation.service.js";
-import { User } from "../users/user.model.js";
-import { Event } from "../events/event.model.js";
 
 export const getRecommendations = async (req, res) => {
   try {

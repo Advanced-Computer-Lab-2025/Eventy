@@ -1,19 +1,16 @@
 import {
   Home,
   CheckCircle2,
-  Plane,
   ClipboardList,
   Dumbbell,
   Archive,
   FileText,
-  PieChart,
   Gift,
   Star,
   ChevronDown,
   Camera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,

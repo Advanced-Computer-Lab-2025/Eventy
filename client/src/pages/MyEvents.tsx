@@ -1,29 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import {
-  Heart,
-  Calendar,
-  MapPin,
-  Clock,
-  Store,
-  GraduationCap,
-  Route,
-  Megaphone,
-  Search,
-  Bell,
-  User as UserIcon,
-  Home,
-  Dumbbell,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import CategoryBadge, { EventCategory } from "@/components/CategoryBadge";
+
+import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
-import ThemeToggle from "@/components/ThemeToggle";
-import Logo from "@/components/Logo";
 import StudentHeader from "@/components/StudentHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import StaffHeader from "@/components/StaffHeader";
