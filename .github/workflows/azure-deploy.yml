@@ -1,0 +1,49 @@
+name: Deploy Backend to Azure
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/**"
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+          cache: "npm"
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install dependencies and prepare deployment
+        run: |
+          cd server
+          npm ci --production
+          cd ..
+          # Create clean deployment directory with server contents at root
+          mkdir deployment
+          cp -r server/src deployment/
+          cp -r server/types deployment/
+          cp -r server/uploads deployment/
+          cp server/package*.json deployment/
+          cp server/index.ts deployment/
+          cp server/routes.ts deployment/
+          cp server/storage.ts deployment/
+          cp server/vite.ts deployment/
+          # Copy node_modules
+          cp -r server/node_modules deployment/
+          ls -la deployment/
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: eventy-backend-api  # ⚠️ CHANGE THIS to your Azure Web App name!
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: ./deployment
