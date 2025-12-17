@@ -44,15 +44,9 @@ app.use((req, res, next) => {
 
 (async () => {
   // CORS configuration
-  const allowedOrigins = [
-    "http://localhost:5000",
-    "http://localhost:5173",
-    process.env.FRONTEND_URL,
-  ].filter(Boolean);
-
   app.use(
     cors({
-      origin: allowedOrigins,
+      origin: "http://localhost:5000",
       credentials: true,
     })
   );
@@ -70,16 +64,6 @@ app.use((req, res, next) => {
   );
   app.use("/api", allRoutes);
   logger.info("✅ API routes registered successfully");
-
-  // Health check endpoint for deployment monitoring
-  app.get("/health", (_req, res) => {
-    res.status(200).json({
-      status: "healthy",
-      timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
-      environment: process.env.NODE_ENV,
-    });
-  });
 
   // Test route to verify API routes are working
   app.get("/api/test", (req, res) => {
@@ -112,10 +96,7 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    logger.info(
-      `Server running on port ${PORT} in ${process.env.NODE_ENV || "development"} mode`
-    );
+  app.listen(5000, () => {
+    logger.info("Server running on: http://localhost:5000");
   });
 })();
