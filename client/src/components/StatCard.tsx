@@ -33,7 +33,7 @@ export default function StatCard({
         <div className="relative">
           <div>
             <p
-              className={`text-sm ${titleColor || (themed ? "text-muted-foreground" : "text-gray-900")} mb-1`}
+              className={`text-sm ${titleColor || "text-muted-foreground"} mb-1 dark:text-muted-foreground`}
             >
               {title}
             </p>
