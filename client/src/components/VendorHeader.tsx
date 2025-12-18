@@ -5,7 +5,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Gift } from "lucide-react";
 import LoyaltyProgramDialog from "./LoyaltyProgramDialog";
 
