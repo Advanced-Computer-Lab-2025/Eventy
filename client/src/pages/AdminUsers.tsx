@@ -261,6 +261,25 @@ export default function AdminUsers() {
     return `${user.firstName || ""} ${user.lastName || ""}`.trim() || "-";
   };
 
+  // Helper function to get formatted role label
+  const getRoleLabel = (role: string | null): string => {
+    if (!role) return "Unassigned";
+    // Replace underscores with spaces and capitalize each word
+    return role
+      .replace(/_/g, " ")
+      .split(" ")
+      .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+      .join(" ");
+  };
+
+  // Helper function to get role badge color classes
+  const getRoleBadgeClass = (role: string | null): string => {
+    if (!role)
+      return "bg-gray-100 text-gray-700 border-gray-200 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-800";
+    // Unified purple color for all roles with dark mode support
+    return "bg-purple-100 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800";
+  };
+
   const filteredUsers = users.filter((user) => {
     const q = searchQuery.toLowerCase();
     const displayName = getDisplayName(user).toLowerCase();
@@ -341,35 +360,35 @@ export default function AdminUsers() {
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("student")}
                           >
-                            student
+                            Student
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("staff")}
                           >
-                            staff
+                            Staff
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => setRoleFilter("ta")}>
-                            ta
+                            TA
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("professor")}
                           >
-                            professor
+                            Professor
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("vendor")}
                           >
-                            vendor
+                            Vendor
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("admin")}
                           >
-                            admin
+                            Admin
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => setRoleFilter("events_office")}
                           >
-                            events_office
+                            Events Office
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -421,9 +440,12 @@ export default function AdminUsers() {
                     </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
-                      <div className="w-32">
-                        <Badge className="capitalize w-full justify-center">
-                          {user.role || "Unassigned"}
+                      <div className="w-24">
+                        <Badge
+                          variant="outline"
+                          className={`w-full justify-center ${getRoleBadgeClass(user.role)}`}
+                        >
+                          {getRoleLabel(user.role)}
                         </Badge>
                       </div>
                     </TableCell>
@@ -431,13 +453,16 @@ export default function AdminUsers() {
                     <TableCell>
                       <div className="w-20">
                         {user.status === "active" ? (
-                          <Badge className="w-full justify-center bg-green-500 hover:bg-green-600">
+                          <Badge
+                            variant="outline"
+                            className="w-full justify-center bg-green-100 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800"
+                          >
                             Active
                           </Badge>
                         ) : (
                           <Badge
-                            variant="destructive"
-                            className="w-full justify-center"
+                            variant="outline"
+                            className="w-full justify-center bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800"
                           >
                             Blocked
                           </Badge>
@@ -537,7 +562,14 @@ export default function AdminUsers() {
                       </TableCell>
                       <TableCell>{user.email}</TableCell>
                       <TableCell>
-                        <Badge variant="outline">Unassigned</Badge>
+                        <div className="w-28">
+                          <Badge
+                            variant="outline"
+                            className={`w-full justify-center ${getRoleBadgeClass(null)}`}
+                          >
+                            Unassigned
+                          </Badge>
+                        </div>
                       </TableCell>
                       <TableCell>{user.studentStaffId || "-"}</TableCell>
                       <TableCell className="text-right">
