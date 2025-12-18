@@ -274,8 +274,16 @@ export default function WorkshopApprovals() {
     setShowEditRequestDialog(true);
   };
 
-  if (loading && allWorkshops.length === 0)
-    return <p className="p-8">Loading workshops...</p>;
+  if (loading && allWorkshops.length === 0) {
+    return (
+      <div className="min-h-screen bg-background">
+        <EventsOfficeHeader />
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-muted-foreground">Loading workshops...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -540,7 +548,7 @@ export default function WorkshopApprovals() {
                                 <>
                                   <Button
                                     size="sm"
-                                    className="bg-green-600 hover:bg-green-700 text-white"
+                                    className="bg-green-600 hover:bg-green-700 text-white focus-visible:ring-0 focus:outline-none border-0"
                                     onClick={() => handleApprove(workshop._id)}
                                   >
                                     <CheckCircle className="h-4 w-4" />
@@ -652,7 +660,7 @@ export default function WorkshopApprovals() {
           {selectedWorkshop?.status === "pending" && (
             <DialogFooter className="flex justify-end gap-3 mt-4">
               <Button
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-green-600 hover:bg-green-700 focus-visible:ring-0 focus:outline-none border-0"
                 onClick={() => handleApprove(selectedWorkshop._id)}
               >
                 <CheckCircle className="mr-2 h-4 w-4" /> Approve
