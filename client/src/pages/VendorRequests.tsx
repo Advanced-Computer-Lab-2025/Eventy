@@ -617,7 +617,7 @@ export default function VendorRequests() {
                                   <>
                                     <Button
                                       size="sm"
-                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      className="bg-green-600 hover:bg-green-700 text-white focus-visible:ring-0 focus:outline-none border-0"
                                       onClick={() => handleApprove(request._id)}
                                       data-testid={`button-approve-${request._id}`}
                                     >
