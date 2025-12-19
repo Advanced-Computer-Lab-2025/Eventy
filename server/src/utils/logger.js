@@ -16,8 +16,7 @@
  * - apiLogger, authLogger, dbLogger, emailLogger, paymentLogger
  */
 
-import consolaPkg from "consola";
-const { createConsola } = consolaPkg;
+import { createConsola } from "consola";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
