@@ -5,6 +5,7 @@ on:
       - main
       - feat/azure-deploy
     paths: ["client/**"]
+  workflow_dispatch:
 
 jobs:
   deploy:
