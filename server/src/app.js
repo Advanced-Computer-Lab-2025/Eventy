@@ -12,10 +12,19 @@ dotenv.config();
 
 const app = express();
 
+app.set("trust proxy", 1);
+
+// 1. Setup CORS before anything else
+// Since you haven't deployed the frontend yet,
+// we add localhost so you can still test locally.
+const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000"].filter(
+  Boolean
+); // Removes undefined values if CLIENT_URL isn't set yet
+
 // Global Middlewares
 app.use(
   cors({
-    origin: "http://localhost:5000",
+    origin: allowedOrigins,
     credentials: true,
   })
 );
