@@ -12,8 +12,8 @@ on:
 
 env:
   AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
-  AZURE_WEBAPP_PACKAGE_PATH: "./server"
-  NODE_VERSION: "24.x"
+  AZURE_WEBAPP_PACKAGE_PATH: "./server" 
+  NODE_VERSION: "22.x" # Using current stable LTS for better compatibility
 
 jobs:
   build-and-deploy:
@@ -38,7 +38,7 @@ jobs:
       - name: Create .env file placeholder
         run: |
           cd server
-          echo "# Environment variables will be set in Azure App Settings" > .env
+          echo "# Env vars managed in Azure Portal" > .env
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
