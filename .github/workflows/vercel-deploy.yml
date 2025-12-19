@@ -1,7 +1,9 @@
 name: Deploy Frontend to Vercel
 on:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feat/azure-deploy
     paths: ["client/**"]
 
 jobs:
