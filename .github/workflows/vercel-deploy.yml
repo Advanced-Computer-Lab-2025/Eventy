@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - feat/azure-deploy
-    paths: ["client/**"]
+    paths: ["client/**", "package.json", "package-lock.json"] # Added root files to trigger
   workflow_dispatch:
 
 jobs:
@@ -19,14 +19,20 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: 'npm'
+          # FIX: Point to the actual location of your lock file
+          cache-dependency-path: 'package-lock.json' 
 
       - name: Install dependencies
-        working-directory: ./client
+        # FIX: Run in root because that's where package.json is
         run: npm install
 
       - name: Build frontend
-        working-directory: ./client
+        # If your build script is in the root package.json:
         run: npm run build
+        # OR if you must run the build inside the client folder:
+        # working-directory: ./client
+        # run: npm run build
 
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
@@ -34,5 +40,5 @@ jobs:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./client
+          working-directory: ./ # Usually root if package.json is there
           vercel-args: "--prod"
