@@ -13,7 +13,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: ${{ secrets.AZURE_WEBAPP_NAME }}
   AZURE_WEBAPP_PACKAGE_PATH: "./server" 
-  NODE_VERSION: "22.x" # Using current stable LTS for better compatibility
+  NODE_VERSION: "22.x"1
 
 jobs:
   build-and-deploy:
@@ -26,23 +26,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
+          node-version: "22.x"
           cache: "npm"
           cache-dependency-path: server/package-lock.json
 
       - name: Install dependencies
         run: |
           cd server
-          npm ci --omit=dev
-
-      - name: Create .env file placeholder
-        run: |
-          cd server
-          echo "# Env vars managed in Azure Portal" > .env
+          npm ci --production
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: ./server
