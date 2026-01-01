@@ -5,7 +5,25 @@ on:
     branches:
       - main
       - feat/azure-deploy
-    paths: ["client/**", "package.json", "package-lock.json"] # Added root files to trigger
+    paths: [
+        "client/**",
+        "package.json",
+        "package-lock.json",
+        "vercel.json",
+        "client/vercel.json",
+      ] # Added Vercel configs to trigger
+  pull_request:
+    branches:
+      - main
+      - feat/azure-deploy
+    paths:
+      [
+        "client/**",
+        "package.json",
+        "package-lock.json",
+        "vercel.json",
+        "client/vercel.json",
+      ]
   workflow_dispatch:
 
 jobs:
@@ -19,9 +37,9 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: 'npm'
+          cache: "npm"
           # FIX: Point to the actual location of your lock file
-          cache-dependency-path: 'package-lock.json' 
+          cache-dependency-path: "package-lock.json"
 
       - name: Install dependencies
         # FIX: Run in root because that's where package.json is
@@ -34,6 +52,15 @@ jobs:
         # working-directory: ./client
         # run: npm run build
 
+      - name: Choose Vercel deploy type
+        id: vercel
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "args=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "args=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
@@ -41,4 +68,4 @@ jobs:
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           working-directory: ./ # Usually root if package.json is there
-          vercel-args: "--prod"
+          vercel-args: ${{ steps.vercel.outputs.args }}
