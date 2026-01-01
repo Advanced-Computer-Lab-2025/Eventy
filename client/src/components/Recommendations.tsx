@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { EventPaymentDialog } from "./EventPaymentDialog";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface RecommendationResponse {
   type: "popular" | "personalized";
@@ -90,8 +92,7 @@ function CompactEventCard({ event }: { event: any }) {
     }
     setIsRegistering(true);
     try {
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+      const API_BASE_URL = getApiBaseUrl();
       const res = await fetch(
         `${API_BASE_URL}/api/events/${event._id}/register`,
         {
@@ -286,8 +287,7 @@ export default function Recommendations() {
   // const handleReset = async () => {
   //   try {
   //     const token = localStorage.getItem("token");
-  //     const API_BASE_URL =
-  //       import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  //     const API_BASE_URL = getApiBaseUrl();
   //
   //     await fetch(`${API_BASE_URL}/api/recommendations/reset`, {
   //       method: "POST",
@@ -313,8 +313,7 @@ export default function Recommendations() {
         return;
       }
 
-      const API_BASE_URL =
-        import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+      const API_BASE_URL = getApiBaseUrl();
       const res = await fetch(`${API_BASE_URL}/api/recommendations`, {
         headers: { Authorization: `Bearer ${token}` },
       });

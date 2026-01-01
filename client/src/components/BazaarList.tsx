@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search, Store } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export interface Bazaar {
   _id: string;
@@ -44,6 +45,7 @@ export default function BazaarList({
 }: BazaarListProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const API_BASE_URL = getApiBaseUrl();
 
   const handleRegisterEvent = async (eventId: string) => {
     try {
@@ -58,7 +60,7 @@ export default function BazaarList({
       }
 
       const response = await fetch(
-        `http://localhost:4000/api/events/${eventId}/register`,
+        `${API_BASE_URL}/api/events/${eventId}/register`,
         {
           method: "POST",
           headers: {

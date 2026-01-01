@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Event {
   _id: string;
@@ -50,8 +51,7 @@ interface EventImage {
   uploadedAt: string;
 }
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 // Component for displaying a single event with sliding images
 function LiveEventCard({ event }: { event: Event }) {

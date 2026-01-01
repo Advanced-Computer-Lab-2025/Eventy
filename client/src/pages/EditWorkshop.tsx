@@ -31,6 +31,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface WorkshopFormData {
   name: string;
@@ -54,6 +56,7 @@ export default function EditWorkshop() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const workshopId = params?.id;
+  const API_BASE_URL = getApiBaseUrl();
 
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
@@ -95,7 +98,7 @@ export default function EditWorkshop() {
     if (!token) return;
 
     try {
-      const res = await fetch("http://localhost:4000/api/users/professors", {
+      const res = await fetch(`${API_BASE_URL}/api/users/professors`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
@@ -124,12 +127,9 @@ export default function EditWorkshop() {
         return;
       }
 
-      const res = await fetch(
-        `http://localhost:4000/api/events/${workshopId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/events/${workshopId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (!res.ok) {
         throw new Error("Failed to fetch workshop details");
@@ -222,7 +222,7 @@ export default function EditWorkshop() {
       if (!token) throw new Error("Not authenticated. Please log in first.");
 
       const res = await fetch(
-        `http://localhost:4000/api/events/workshops/${workshopId}`,
+        `${API_BASE_URL}/api/events/workshops/${workshopId}`,
         {
           method: "PATCH",
           headers: {

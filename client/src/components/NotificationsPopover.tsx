@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, format } from "date-fns";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Notification {
   _id: string;
@@ -69,7 +70,7 @@ export default function NotificationsPopover() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await fetch("http://localhost:4000/api/notifications/me", {
+      const res = await fetch(`${getApiBaseUrl()}/api/notifications/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -96,7 +97,7 @@ export default function NotificationsPopover() {
       if (!token) return;
 
       const res = await fetch(
-        `http://localhost:4000/api/notifications/${notificationId}`,
+        `${getApiBaseUrl()}/api/notifications/${notificationId}`,
         {
           method: "PATCH",
           headers: {
@@ -132,7 +133,7 @@ export default function NotificationsPopover() {
       if (!token) return;
 
       const res = await fetch(
-        `http://localhost:4000/api/notifications/${notificationToDelete}`,
+        `${getApiBaseUrl()}/api/notifications/${notificationToDelete}`,
         {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },

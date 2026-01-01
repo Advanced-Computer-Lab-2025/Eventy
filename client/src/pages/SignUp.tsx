@@ -17,6 +17,7 @@ import Logo from "@/components/Logo";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { FileUploadWithCrop } from "@/components/ui/file-upload-with-crop";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function SignUp() {
   const [, setLocation] = useLocation();
@@ -97,7 +98,7 @@ export default function SignUp() {
     }
 
     try {
-      const res = await fetch("http://localhost:4000/api/auth/signup", {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -148,7 +149,7 @@ export default function SignUp() {
     }
 
     try {
-      const res = await fetch("http://localhost:4000/api/auth/signup", {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(staffForm),
@@ -177,7 +178,7 @@ export default function SignUp() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:4000/api/auth/signup", {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

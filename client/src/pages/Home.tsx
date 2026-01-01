@@ -10,6 +10,8 @@ import EmptyState from "@/components/EmptyState";
 import Recommendations from "@/components/Recommendations";
 import { useToast } from "@/hooks/use-toast";
 import { getEventImage } from "@/lib/eventImages";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 // Define Event type for type safety
 interface Event {
@@ -228,8 +230,7 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    const baseUrl =
-      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+    const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem("token");
     const fetchProfessors = async () => {
       try {

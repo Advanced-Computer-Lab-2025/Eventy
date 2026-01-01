@@ -25,6 +25,7 @@ import EventSort from "@/components/EventSort";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface RegisteredEvent {
   _id: string;
@@ -47,6 +48,7 @@ interface MyEvent {
 
 export default function StaffTADashboard() {
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [events, setEvents] = useState<RegisteredEvent[]>([]);
   const [registeredEvents, setRegisteredEvents] = useState<MyEvent[]>([]);
   const [loading, setLoading] = useState(true);
@@ -100,7 +102,7 @@ export default function StaffTADashboard() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/api/events/me/events", {
+      const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -120,7 +122,7 @@ export default function StaffTADashboard() {
       const token = localStorage.getItem("token");
       if (!token) return;
 
-      const res = await fetch("http://localhost:4000/api/events/me/events", {
+      const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -156,7 +158,7 @@ export default function StaffTADashboard() {
     setDialogOpen(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:4000/api/events/${eventId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -190,8 +192,7 @@ export default function StaffTADashboard() {
   // Fetch professors for filter
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const baseUrl =
-      (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:4000";
+    const baseUrl = API_BASE_URL;
 
     const fetchProfessors = async () => {
       try {

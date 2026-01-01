@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { Search, X, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export interface EventSearchFilters {
   type?: string;
@@ -34,8 +36,7 @@ export default function EventSearch({
   const hasInitiallyFetched = useRef(false);
   const scrollPositionRef = useRef(0);
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_BASE_URL = getApiBaseUrl();
   const API_URL = `${API_BASE_URL}/api/events/upcoming`;
   const SEARCH_URL = `${API_BASE_URL}/api/events/search`;
   const token = localStorage.getItem("token");

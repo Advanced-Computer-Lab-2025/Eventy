@@ -16,6 +16,7 @@ import EventCard from "@/components/EventCard";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Workshop {
   _id: string;
@@ -26,6 +27,7 @@ interface Workshop {
 
 export default function ProfessorDashboard() {
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -90,7 +92,7 @@ export default function ProfessorDashboard() {
         return;
       }
 
-      const res = await fetch("http://localhost:4000/api/events/me/workshops", {
+      const res = await fetch(`${API_BASE_URL}/api/events/me/workshops`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
@@ -109,7 +111,7 @@ export default function ProfessorDashboard() {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
-      const res = await fetch("http://localhost:4000/api/users/professors", {
+      const res = await fetch(`${API_BASE_URL}/api/users/professors`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) return;

@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import CreatePrivilegedUserForm from "@/components/CreatePrivilegedUserForm";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 import {
   Table,
@@ -59,6 +60,7 @@ interface User {
 
 export default function AdminUsers() {
   const { toast } = useToast();
+  const API_BASE_URL = getApiBaseUrl();
   const [users, setUsers] = useState<User[]>([]);
   const [pendingUsers, setPendingUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -103,7 +105,7 @@ export default function AdminUsers() {
   ) => {
     try {
       await axios.patch(
-        `http://localhost:4000/api/users/${userId}/block-status`,
+        `${API_BASE_URL}/api/users/${userId}/block-status`,
         { action },
         {
           headers: {
@@ -132,7 +134,7 @@ export default function AdminUsers() {
 
   const handleDeleteUser = async (userId: string) => {
     try {
-      await axios.delete(`http://localhost:4000/api/users/${userId}/delete`, {
+      await axios.delete(`${API_BASE_URL}/api/users/${userId}/delete`, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
         },
@@ -177,14 +179,11 @@ export default function AdminUsers() {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get(
-        "http://localhost:4000/api/users/getusers",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/users/getusers`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setUsers(response.data.data);
     } catch (err) {
       logger.error("Failed to fetch users:", err);
@@ -198,14 +197,11 @@ export default function AdminUsers() {
   const fetchPendingUsers = async () => {
     try {
       setPendingLoading(true);
-      const response = await axios.get(
-        "http://localhost:4000/api/users/pending",
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
+      const response = await axios.get(`${API_BASE_URL}/api/users/pending`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      });
       setPendingUsers(response.data.data);
     } catch (err) {
       logger.error("Failed to fetch pending users:", err);
@@ -219,7 +215,7 @@ export default function AdminUsers() {
     try {
       setAssigningRole(userId);
       await axios.patch(
-        `http://localhost:4000/api/users/${userId}/assign-role`,
+        `${API_BASE_URL}/api/users/${userId}/assign-role`,
         { role },
         {
           headers: {

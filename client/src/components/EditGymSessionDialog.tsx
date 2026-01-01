@@ -20,6 +20,8 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type GymSession = {
   _id: string;
@@ -76,6 +78,7 @@ export default function EditGymSessionDialog({
   onSuccess,
 }: EditGymSessionDialogProps) {
   const { toast } = useToast();
+  const API_BASE_URL = getApiBaseUrl();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
@@ -122,7 +125,7 @@ export default function EditGymSessionDialog({
         updateData.duration = Number(data.durationMinutes);
 
       const response = await fetch(
-        `http://localhost:4000/api/facilities/gym/sessions/${session._id}`,
+        `${API_BASE_URL}/api/facilities/gym/sessions/${session._id}`,
         {
           method: "PATCH",
           headers: {

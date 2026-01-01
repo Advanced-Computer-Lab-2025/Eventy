@@ -27,9 +27,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { cn } from "@/lib/utils";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 export default function EditTrip() {
   const [, params] = useRoute("/events-office/events/trip/edit/:id");

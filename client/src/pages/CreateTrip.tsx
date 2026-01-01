@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function TripManagement() {
   const [, setLocation] = useLocation();
@@ -15,8 +16,7 @@ export default function TripManagement() {
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
 
-  const apiBase =
-    (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+  const apiBase = getApiBaseUrl();
 
   // Fetch trips from the backend admin trips endpoint and handle ApiResponse wrapper
   const fetchTrips = async () => {

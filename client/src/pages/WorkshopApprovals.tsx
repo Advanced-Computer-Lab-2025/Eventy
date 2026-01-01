@@ -45,6 +45,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function WorkshopApprovals() {
   const [allWorkshops, setAllWorkshops] = useState<any[]>([]);
@@ -59,8 +60,7 @@ export default function WorkshopApprovals() {
   const [searchInput, setSearchInput] = useState("");
   const searchTimerRef = useRef<number | null>(null);
 
-  const apiBase =
-    (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+  const apiBase = getApiBaseUrl();
 
   // Compute unique faculties dynamically from workshops data
   const facultyOptions = useMemo(() => {

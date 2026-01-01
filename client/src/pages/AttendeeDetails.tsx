@@ -24,6 +24,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Logo from "@/components/Logo";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface AttendeeData {
   attendee: {
@@ -54,8 +55,7 @@ export default function AttendeeDetails() {
   const [data, setData] = useState<AttendeeData | null>(null);
   const [errorMessage, setErrorMessage] = useState("");
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_BASE_URL = getApiBaseUrl();
 
   useEffect(() => {
     const fetchAttendeeData = async () => {

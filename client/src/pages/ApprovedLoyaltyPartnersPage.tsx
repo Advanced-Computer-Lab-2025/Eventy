@@ -24,6 +24,8 @@ import StaffHeader from "@/components/StaffHeader";
 import ProfessorHeader from "@/components/ProfessorHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Partner {
   vendorId: string;
@@ -39,6 +41,7 @@ interface Partner {
 export default function ApprovedLoyaltyPartnersPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+  const API_BASE_URL = getApiBaseUrl();
   const [partners, setPartners] = useState<Partner[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +89,7 @@ export default function ApprovedLoyaltyPartnersPage() {
       }
 
       const response = await fetch(
-        "http://localhost:4000/api/loyalty-partners/partners",
+        `${API_BASE_URL}/api/loyalty-partners/partners`,
         {
           method: "GET",
           headers: {

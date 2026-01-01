@@ -46,9 +46,10 @@ import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { getEventImage } from "@/lib/eventImages";
 import { useToast } from "@/hooks/use-toast";
 import RestrictAccessDialog from "@/components/RestrictAccessDialog";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface Bazaar {
   _id: string;
@@ -725,11 +726,9 @@ export default function EventsOfficeDashboard() {
   // Fetch professors for dropdown
   useEffect(() => {
     const token = localStorage.getItem("token");
-    const baseUrl =
-      (import.meta as any).env.VITE_API_BASE_URL || "http://localhost:4000";
     const fetchProfessors = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/users/professors`, {
+        const res = await fetch(`${API_BASE_URL}/api/users/professors`, {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             "Content-Type": "application/json",

@@ -14,7 +14,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-const API_BASE_URL = "http://localhost:4000";
+import { getApiBaseUrl } from "@/lib/apiBase";
+
+const API_BASE_URL = getApiBaseUrl();
 
 interface Event {
   _id: string;

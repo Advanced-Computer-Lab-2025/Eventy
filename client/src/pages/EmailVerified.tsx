@@ -8,10 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function EmailVerified() {
   const [, params] = useRoute("/verify-email/:token");
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -33,7 +36,7 @@ export default function EmailVerified() {
           `/api/auth/verify-email/${token}`
         );
         const response = await fetch(
-          `http://localhost:4000/api/auth/verify-email/${token}`
+          `${API_BASE_URL}/api/auth/verify-email/${token}`
         );
         const data = await response.json();
         logger.info("Verification response:", response.status, data);
