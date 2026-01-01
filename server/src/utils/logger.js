@@ -16,21 +16,51 @@
  * - apiLogger, authLogger, dbLogger, emailLogger, paymentLogger
  */
 
-import * as consola from "consola";
-
-const createConsola =
-  consola.createConsola ?? consola.default?.createConsola ?? consola.default;
-
-if (typeof createConsola !== "function") {
-  throw new Error(
-    "Failed to initialize logger: consola.createConsola export not found"
-  );
-}
+import * as consolaImport from "consola";
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
 
-// Create logger instance with environment-specific configuration
+const consolaDefault = consolaImport?.default;
+const consolaInstance = consolaImport.consola ?? consolaDefault;
+const createConsolaFn =
+  consolaImport.createConsola ?? consolaDefault?.createConsola ?? null;
+
+// Create logger instance with environment-specific configuration.
+// In some Azure/Oryx installs, consola may be resolved as a CommonJS module
+// where `createConsola` isn't exposed as a named export. In that case, fall
+// back to the default consola instance so the server can still boot.
+export const logger =
+  (typeof createConsolaFn === "function"
+    ? createConsolaFn({
+        level: isDevelopment ? 5 : 3, // 5=trace in dev, 3=info in prod
+        fancy: isDevelopment, // Colored output in development
+        formatOptions: {
+          colors: isDevelopment,
+          compact: isProduction,
+          date: true, // Always include timestamps on server
+        },
+      })
+    : consolaInstance) ?? console;
+
+if (!logger || typeof logger.info !== "function") {
+  // Extremely defensive fallback
+  // eslint-disable-next-line no-console
+  console.warn("Logger initialization fell back to console");
+}
+
+if (typeof logger.withTag !== "function") {
+  // Provide a minimal shim so existing code can keep calling withTag.
+  logger.withTag = () => logger;
+}
+
+// If we're using the consola instance fallback, apply some of the same config.
+if (logger?.options && typeof logger.options === "object") {
+  logger.options.level = isDevelopment ? 5 : 3;
+}
+
+/*
+// Previous code (kept for reference):
 export const logger = createConsola({
   level: isDevelopment ? 5 : 3, // 5=trace in dev, 3=info in prod
   fancy: isDevelopment, // Colored output in development
@@ -40,6 +70,7 @@ export const logger = createConsola({
     date: true, // Always include timestamps on server
   },
 });
+*/
 
 // In production, be more conservative with logging and sanitize output
 if (isProduction) {
