@@ -6,7 +6,7 @@ import { startReminderScheduler } from "./features/events/event.service.js";
 import { initCertificateScheduler } from "./utils/certificate-scheduler.js";
 import Feedback from "./features/feedback/feedback.model.js";
 
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 4000;
 
 const startServer = async () => {
   // Connect to the database before starting the server

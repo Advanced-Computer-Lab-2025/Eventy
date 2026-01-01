@@ -22,6 +22,15 @@ router.get("/", (req, res) => {
   res.json({ message: "Welcome to the Eventy API!" });
 });
 
+// Health check endpoint for uptime monitoring / deployment verification
+router.get("/health", (_req, res) => {
+  res.json({
+    ok: true,
+    service: "eventy-api",
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // import authRoutes from '../features/auth/auth.route.js';
 router.use("/auth", authRoutes);
 
