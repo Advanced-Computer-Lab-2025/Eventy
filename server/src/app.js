@@ -17,14 +17,71 @@ app.set("trust proxy", 1);
 // 1. Setup CORS before anything else
 // Since you haven't deployed the frontend yet,
 // we add localhost so you can still test locally.
-const allowedOrigins = [process.env.CLIENT_URL, "http://localhost:5000"].filter(
-  Boolean
-); // Removes undefined values if CLIENT_URL isn't set yet
+const isProd = process.env.NODE_ENV === "production";
+
+const envAllowed = [process.env.CLIENT_URL, process.env.CLIENT_ORIGIN]
+  .filter(Boolean)
+  .flatMap((v) => String(v).split(","))
+  .map((v) => v.trim())
+  .filter(Boolean);
+
+const allowVercelPreviews =
+  String(process.env.ALLOW_VERCEL_PREVIEWS || "").toLowerCase() === "true";
+
+const vercelProjectSlug = (() => {
+  const candidate = process.env.CLIENT_URL || process.env.CLIENT_ORIGIN;
+  if (!candidate) return null;
+  const first = String(candidate).split(",")[0]?.trim();
+  if (!first) return null;
+
+  try {
+    const { hostname } = new URL(first);
+    if (!hostname.endsWith(".vercel.app")) return null;
+    return hostname.replace(/\.vercel\.app$/i, "");
+  } catch (_e) {
+    return null;
+  }
+})();
+
+const allowedOrigins = [...envAllowed, "http://localhost:5000"].filter(Boolean);
 
 // Global Middlewares
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+
+      if (vercelProjectSlug) {
+        try {
+          const { hostname, protocol } = new URL(origin);
+          if (
+            protocol === "https:" &&
+            hostname.endsWith(".vercel.app") &&
+            (hostname === `${vercelProjectSlug}.vercel.app` ||
+              hostname.startsWith(`${vercelProjectSlug}-`))
+          ) {
+            return callback(null, true);
+          }
+        } catch (_e) {
+          // ignore invalid origin
+        }
+      }
+
+      if (allowVercelPreviews) {
+        try {
+          const { hostname, protocol } = new URL(origin);
+          if (protocol === "https:" && hostname.endsWith(".vercel.app")) {
+            return callback(null, true);
+          }
+        } catch (_e) {
+          // ignore invalid origin
+        }
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
@@ -35,7 +92,11 @@ app.use(
     secret: process.env.JWT_SECRET || "calendar-secret-key",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false, maxAge: 600000 }, // 10 minutes
+    cookie: {
+      secure: isProd,
+      sameSite: isProd ? "none" : "lax",
+      maxAge: 600000,
+    },
   })
 );
 

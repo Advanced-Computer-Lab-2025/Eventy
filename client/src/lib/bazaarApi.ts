@@ -1,6 +1,7 @@
+import { getApiBaseUrl } from "./apiBase";
+
 // API service for bazaars
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 export interface Bazaar {
   _id: string;

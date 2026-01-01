@@ -13,9 +13,10 @@ import EventSort from "@/components/EventSort";
 import EventFilters, { EventFilterState } from "@/components/EventFilters";
 import EventCountBadge from "@/components/EventCountBadge";
 import EventsDetailsDialog from "@/components/EventsDetailsDialog";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface Conference {
   _id: string;
@@ -226,12 +227,10 @@ export default function AdminDashboardPage() {
   }, []);
 
   useEffect(() => {
-    const baseUrl =
-      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
     const token = localStorage.getItem("token");
     const fetchProfessors = async () => {
       try {
-        const res = await fetch(`${baseUrl}/api/users/professors`, {
+        const res = await fetch(`${API_BASE_URL}/api/users/professors`, {
           headers: {
             ...(token ? { Authorization: `Bearer ${token}` } : {}),
             "Content-Type": "application/json",

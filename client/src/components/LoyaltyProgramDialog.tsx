@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface LoyaltyProgramDialogProps {
   open: boolean;
@@ -67,7 +68,7 @@ export default function LoyaltyProgramDialog({
       }
 
       const response = await fetch(
-        "http://localhost:4000/api/loyalty-partners/status",
+        `${getApiBaseUrl()}/api/loyalty-partners/status`,
         {
           method: "GET",
           headers: {
@@ -107,7 +108,7 @@ export default function LoyaltyProgramDialog({
       }
 
       const response = await fetch(
-        "http://localhost:4000/api/loyalty-partners/cancel",
+        `${getApiBaseUrl()}/api/loyalty-partners/cancel`,
         {
           method: "DELETE",
           headers: {
@@ -166,7 +167,7 @@ export default function LoyaltyProgramDialog({
       }
 
       const response = await fetch(
-        "http://localhost:4000/api/loyalty-partners/apply",
+        `${getApiBaseUrl()}/api/loyalty-partners/apply`,
         {
           method: "POST",
           headers: {

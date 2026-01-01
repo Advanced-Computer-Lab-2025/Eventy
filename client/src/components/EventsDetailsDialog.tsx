@@ -19,6 +19,8 @@ import {
 import CategoryBadge from "./CategoryBadge";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface EventDetailsDialogProps {
   open: boolean;
@@ -46,8 +48,7 @@ export default function EventDetailsDialog({
     if (open && event?._id) {
       const token = localStorage.getItem("token");
       if (token) {
-        const API_BASE_URL =
-          import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+        const API_BASE_URL = getApiBaseUrl();
         fetch(`${API_BASE_URL}/api/events/${event._id}/view`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },

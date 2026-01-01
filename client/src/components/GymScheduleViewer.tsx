@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import EditGymSessionDialog from "@/components/EditGymSessionDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type GymSession = {
   _id: string;
@@ -78,6 +79,7 @@ export default function GymScheduleViewer({
   );
   const [isCancelling, setIsCancelling] = useState(false);
   const { toast } = useToast();
+  const API_BASE_URL = getApiBaseUrl();
 
   const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
   const year = currentDate.getFullYear();
@@ -98,7 +100,7 @@ export default function GymScheduleViewer({
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/facilities/gym/sessions?month=${month}&year=${year}`,
+        `${API_BASE_URL}/api/facilities/gym/sessions?month=${month}&year=${year}`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : {},
         }
@@ -143,7 +145,7 @@ export default function GymScheduleViewer({
   const handleRegister = async (sessionId: string) => {
     //gym session registration logic
     const response = await fetch(
-      `http://localhost:4000/api/facilities/gym/sessions/${sessionId}/register`,
+      `${API_BASE_URL}/api/facilities/gym/sessions/${sessionId}/register`,
       {
         method: "POST",
         headers: {
@@ -196,7 +198,7 @@ export default function GymScheduleViewer({
       }
 
       const response = await fetch(
-        `http://localhost:4000/api/facilities/gym/sessions/${selectedSession._id}/cancel`,
+        `${API_BASE_URL}/api/facilities/gym/sessions/${selectedSession._id}/cancel`,
         {
           method: "PATCH",
           headers: {

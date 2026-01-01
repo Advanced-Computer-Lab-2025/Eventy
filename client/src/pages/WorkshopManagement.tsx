@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Workshop {
   _id: string;
@@ -32,6 +33,7 @@ interface Workshop {
 
 export default function WorkshopManagement() {
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,10 +51,8 @@ export default function WorkshopManagement() {
     setParticipantsError("");
     try {
       const token = localStorage.getItem("token");
-      const baseUrl =
-        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
       const res = await fetch(
-        `${baseUrl}/api/events/workshops/${workshopId}/participants`,
+        `${API_BASE_URL}/api/events/workshops/${workshopId}/participants`,
         {
           headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         }
@@ -89,9 +89,7 @@ export default function WorkshopManagement() {
         return;
       }
 
-      const baseUrl =
-        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
-      const res = await fetch(`${baseUrl}/api/events/me/workshops`, {
+      const res = await fetch(`${API_BASE_URL}/api/events/me/workshops`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 

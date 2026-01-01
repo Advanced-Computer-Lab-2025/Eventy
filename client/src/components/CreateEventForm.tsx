@@ -15,6 +15,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Info, Clock, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export interface CreateEventFormValues {
   name: string;
@@ -104,8 +106,7 @@ export default function CreateEventForm({
 
     (async () => {
       try {
-        const baseUrl =
-          (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+        const baseUrl = getApiBaseUrl();
         const res = await fetch(`${baseUrl}/api/users/professors`, {
           headers: { Authorization: `Bearer ${token}` },
         });

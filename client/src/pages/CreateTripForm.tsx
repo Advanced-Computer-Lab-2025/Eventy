@@ -18,6 +18,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function CreateTripForm() {
   const { toast } = useToast();
@@ -44,8 +45,7 @@ export default function CreateTripForm() {
     { value: "professor", label: "Professors" },
   ];
 
-  const apiBase =
-    (import.meta.env.VITE_API_URL as string) || "http://localhost:4000";
+  const apiBase = getApiBaseUrl();
 
   const handleSubmit = async (e?: FormEvent) => {
     if (e) {

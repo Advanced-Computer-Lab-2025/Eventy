@@ -6,6 +6,8 @@ import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EmptyState from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Event {
   _id: string;
@@ -202,8 +204,7 @@ export default function StaffUpcomingEvents() {
   ]);
 
   useEffect(() => {
-    const baseUrl =
-      (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+    const baseUrl = getApiBaseUrl();
     const token = localStorage.getItem("token");
     const fetchProfessors = async () => {
       try {

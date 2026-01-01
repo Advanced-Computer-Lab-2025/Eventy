@@ -11,9 +11,9 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface RestrictAccessDialogProps {
   open: boolean;

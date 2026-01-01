@@ -25,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 
@@ -56,8 +57,7 @@ export default function CreateBazaar() {
     { value: "vendor", label: "Vendors" },
   ];
 
-  const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+  const API_BASE_URL = getApiBaseUrl();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

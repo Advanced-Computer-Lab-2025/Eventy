@@ -4,6 +4,9 @@
   "description": "The backend server for the Eventy project",
   "main": "src/index.js",
   "type": "module",
+  "engines": {
+    "node": ">=22 <23"
+  },
   "scripts": {
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",

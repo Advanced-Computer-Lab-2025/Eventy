@@ -30,6 +30,7 @@ import { Label } from "@/components/ui/label";
 import { useState, useEffect } from "react";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import {
   Table,
@@ -68,7 +69,7 @@ async function updateVendorStatus(
 
   try {
     const response = await fetch(
-      `http://localhost:4000/api/applications/${requestId}/status`,
+      `${getApiBaseUrl()}/api/applications/${requestId}/status`,
       {
         method: "PATCH",
         headers: {
@@ -195,7 +196,7 @@ export default function VendorRequests() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch(`http://localhost:4000/api/applications`, {
+      const res = await fetch(`${getApiBaseUrl()}/api/applications`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",

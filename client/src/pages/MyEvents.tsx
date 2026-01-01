@@ -9,6 +9,7 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StaffHeader from "@/components/StaffHeader";
 import EventCard from "@/components/EventCard";
 import EventFeedbackDialog from "@/components/EventFeedbackDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 // Helper to get token
 const getToken = () => localStorage.getItem("token");
@@ -32,6 +33,7 @@ interface RegisteredEvent {
 
 export default function MyEvents() {
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>(
     []
   );
@@ -54,9 +56,7 @@ export default function MyEvents() {
     const fetchEvents = async () => {
       setLoading(true);
       try {
-        const apiBaseUrl = "http://localhost:4000";
-
-        const res = await fetch(`${apiBaseUrl}/api/events/me/events`, {
+        const res = await fetch(`${API_BASE_URL}/api/events/me/events`, {
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${getToken()}`,
@@ -130,8 +130,7 @@ export default function MyEvents() {
     setDetailsLoading(true);
     setDialogOpen(true);
     try {
-      const apiBaseUrl = "http://localhost:4000";
-      const res = await fetch(`${apiBaseUrl}/api/events/${eventId}`, {
+      const res = await fetch(`${API_BASE_URL}/api/events/${eventId}`, {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${getToken()}`,

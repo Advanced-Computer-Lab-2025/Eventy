@@ -5,10 +5,10 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 import { Card } from "@/components/ui/card";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { Button } from "@/components/ui/button";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 const localizer = momentLocalizer(moment);
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface Event {
   _id: string;

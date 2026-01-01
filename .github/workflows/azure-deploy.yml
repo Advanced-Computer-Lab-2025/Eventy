@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - feat/azure-deploy
+      - feat/azure-vercel-deployment
     paths:
       - "server/**"
       - ".github/workflows/azure-deploy.yml"
@@ -26,18 +26,18 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "22.x"
+          node-version: ${{ env.NODE_VERSION }}
           cache: "npm"
           cache-dependency-path: server/package-lock.json
 
-      - name: Install dependencies
+      - name: Create deployment package
         run: |
           cd server
-          npm ci --production
+          zip -r ../server-deploy.zip . -x "node_modules/*" ".env" ".env.*" "**/*.log"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          package: ./server-deploy.zip

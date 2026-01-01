@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import GymScheduleViewer from "@/components/GymScheduleViewer";
 import CreateGymSessionDialog from "@/components/CreateGymSessionDialog";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type Slot = {
   startTime: string;
@@ -51,6 +52,7 @@ const formatTimeToAMPM = (time: string) => {
 
 export default function SportsFacilities() {
   const [, setLocation] = useLocation();
+  const API_BASE_URL = getApiBaseUrl();
   const [courtSchedules, setCourtSchedules] = useState<
     Record<CourtType, CourtSchedule[]>
   >({
@@ -91,7 +93,7 @@ export default function SportsFacilities() {
     const token = localStorage.getItem("token");
     try {
       setLoading(true);
-      const res = await fetch("http://localhost:4000/api/facilities/courts", {
+      const res = await fetch(`${API_BASE_URL}/api/facilities/courts`, {
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
@@ -218,22 +220,19 @@ export default function SportsFacilities() {
     try {
       const token = localStorage.getItem("token");
 
-      const res = await fetch(
-        "http://localhost:4000/api/facilities/courts/reserve",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-          },
-          body: JSON.stringify({
-            date: bodyDate,
-            courtType,
-            startTime,
-            endTime,
-          }),
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/facilities/courts/reserve`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({
+          date: bodyDate,
+          courtType,
+          startTime,
+          endTime,
+        }),
+      });
 
       const data = await res.json();
 

@@ -7,9 +7,9 @@ import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 import EmptyState from "@/components/EmptyState";
 import { Archive } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 export default function ArchivedEvents() {
   const [events, setEvents] = useState<any[]>([]);

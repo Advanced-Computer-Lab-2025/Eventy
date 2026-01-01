@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Participant {
   _id: string;
@@ -24,8 +25,7 @@ const WorkshopParticipants: React.FC<Props> = ({ workshopId }) => {
       setLoading(true);
       try {
         const token = localStorage.getItem("token");
-        const baseUrl =
-          (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
+        const baseUrl = getApiBaseUrl();
         const res = await axios.get(
           `${baseUrl}/api/events/workshops/${workshopId}/participants`,
           {

@@ -16,6 +16,7 @@ import {
 import Logo from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export default function Login() {
   const [location] = useLocation();
@@ -62,7 +63,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://localhost:4000/api/auth/login", {
+      const res = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),

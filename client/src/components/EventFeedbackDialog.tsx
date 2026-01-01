@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Star } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface EventFeedbackDialogProps {
   open: boolean;
@@ -63,7 +64,7 @@ export default function EventFeedbackDialog({
       setCheckingSubmission(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/feedback/events/${eventId}/me`,
+        `${getApiBaseUrl()}/api/feedback/events/${eventId}/me`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -97,7 +98,7 @@ export default function EventFeedbackDialog({
       setLoading(true);
       const token = localStorage.getItem("token");
       const response = await fetch(
-        `http://localhost:4000/api/feedback/events/${eventId}`,
+        `${getApiBaseUrl()}/api/feedback/events/${eventId}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -193,7 +194,7 @@ export default function EventFeedbackDialog({
       if (comment.trim().length > 0) body.comment = comment;
 
       const response = await fetch(
-        `http://localhost:4000/api/feedback/events/${eventId}`,
+        `${getApiBaseUrl()}/api/feedback/events/${eventId}`,
         {
           method: "POST",
           headers: {

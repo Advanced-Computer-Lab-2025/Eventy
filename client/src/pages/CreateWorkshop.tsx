@@ -24,6 +24,7 @@ import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface WorkshopFormData {
   name: string;
@@ -45,6 +46,7 @@ interface WorkshopFormData {
 
 export default function CreateWorkshop() {
   const [, setLocation] = useLocation();
+  const apiBaseUrl = getApiBaseUrl();
 
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
@@ -108,9 +110,7 @@ export default function CreateWorkshop() {
           setLoading(false);
           return;
         }
-        const baseUrl =
-          (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
-        const res = await fetch(`${baseUrl}/api/users/professors`, {
+        const res = await fetch(`${apiBaseUrl}/api/users/professors`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (!res.ok) {
@@ -181,9 +181,7 @@ export default function CreateWorkshop() {
         return;
       }
 
-      const baseUrl =
-        (import.meta as any).env.VITE_API_URL || "http://localhost:4000";
-      const res = await fetch(`${baseUrl}/api/events/workshops`, {
+      const res = await fetch(`${apiBaseUrl}/api/events/workshops`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

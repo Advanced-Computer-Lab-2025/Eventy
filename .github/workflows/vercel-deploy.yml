@@ -1,22 +1,71 @@
 name: Deploy Frontend to Vercel
+
 on:
   push:
     branches:
       - main
-      - feat/azure-deploy
-    paths: ["client/**"]
+      - feat/azure-vercel-deployment
+    paths: [
+        "client/**",
+        "package.json",
+        "package-lock.json",
+        "vercel.json",
+        "client/vercel.json",
+      ] # Added Vercel configs to trigger
+  pull_request:
+    branches:
+      - main
+      - feat/azure-vercel-deployment
+    paths:
+      [
+        "client/**",
+        "package.json",
+        "package-lock.json",
+        "vercel.json",
+        "client/vercel.json",
+      ]
   workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
+
+      - name: Use Node.js 18
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+          # FIX: Point to the actual location of your lock file
+          cache-dependency-path: "package-lock.json"
+
+      - name: Install dependencies
+        # FIX: Run in root because that's where package.json is
+        run: npm install
+
+      - name: Build frontend
+        # If your build script is in the root package.json:
+        run: npm run build
+        # OR if you must run the build inside the client folder:
+        # working-directory: ./client
+        # run: npm run build
+
+      - name: Choose Vercel deploy type
+        id: vercel
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "args=--prod" >> $GITHUB_OUTPUT
+          else
+            echo "args=" >> $GITHUB_OUTPUT
+          fi
+
       - name: Deploy to Vercel
         uses: amondnet/vercel-action@v20
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./client
-          vercel-args: "--prod"
+          working-directory: ./ # Usually root if package.json is there
+          vercel-args: ${{ steps.vercel.outputs.args }}

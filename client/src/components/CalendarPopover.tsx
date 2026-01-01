@@ -8,8 +8,9 @@ import {
 } from "@/components/ui/popover";
 import MiniCalendar from "./MiniCalendar";
 import { useLocation } from "wouter";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL = "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface Event {
   _id: string;

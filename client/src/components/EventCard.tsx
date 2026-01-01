@@ -35,9 +35,9 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 async function deleteEvent(eventId: string) {
   const token = localStorage.getItem("token");

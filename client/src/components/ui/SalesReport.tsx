@@ -25,9 +25,9 @@ import {
 import { Calendar } from "@/components/ui/calendar";
 import { Loader2, Download, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:4000";
+const API_BASE_URL = getApiBaseUrl();
 
 interface EventSale {
   _id: string;

@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Props {
   onSuccess?: () => void;
@@ -20,6 +21,7 @@ export default function CreatePrivilegedUserForm({
   onSuccess,
   onCancel,
 }: Props) {
+  const API_BASE_URL = getApiBaseUrl();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -37,7 +39,7 @@ export default function CreatePrivilegedUserForm({
     setError(null);
     try {
       await axios.post(
-        "http://localhost:4000/api/users/create-management-account",
+        `${API_BASE_URL}/api/users/create-management-account`,
         form,
         {
           headers: {

@@ -27,6 +27,8 @@ import {
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 type CreateGymSessionDialogProps = {
   open: boolean;
@@ -48,6 +50,7 @@ export default function CreateGymSessionDialog({
   onOpenChange,
   onSuccess,
 }: CreateGymSessionDialogProps) {
+  const API_BASE_URL = getApiBaseUrl();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<{
     date: Date | undefined;
@@ -96,7 +99,7 @@ export default function CreateGymSessionDialog({
       };
 
       const response = await fetch(
-        "http://localhost:4000/api/facilities/admin/gym/sessions",
+        `${API_BASE_URL}/api/facilities/admin/gym/sessions`,
         {
           method: "POST",
           headers: {
