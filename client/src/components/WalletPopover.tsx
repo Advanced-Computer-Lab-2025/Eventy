@@ -135,18 +135,18 @@ export default function WalletPopover({
             Recent Activity
           </div>
 
-          {/* ScrollArea */}
-          <ScrollArea className="flex-1 w-full h-full">
-            {loading && transactions.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground text-sm">
-                Refreshing data...
-              </div>
-            ) : transactions.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground opacity-60">
-                <Wallet className="h-10 w-10 mb-3 opacity-30" />
-                <p className="text-sm">No transactions yet</p>
-              </div>
-            ) : (
+          {/* Main content area: show centered empty state or scrollable list */}
+          {loading && transactions.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center p-8 text-center text-muted-foreground text-sm">
+              Refreshing data...
+            </div>
+          ) : transactions.length === 0 ? (
+            <div className="flex-1 flex items-center justify-center flex-col text-center text-muted-foreground opacity-60">
+              <Wallet className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No transactions yet</p>
+            </div>
+          ) : (
+            <ScrollArea className="flex-1 w-full">
               <div className="divide-y divide-purple-100/50 dark:divide-white/5">
                 {transactions.map((tx) => (
                   <div
@@ -194,8 +194,8 @@ export default function WalletPopover({
                   </div>
                 ))}
               </div>
-            )}
-          </ScrollArea>
+            </ScrollArea>
+          )}
 
           {/* Footer */}
           <div className="p-3 border-t border-purple-100/50 dark:border-white/5 bg-muted/30 backdrop-blur-sm shrink-0">
