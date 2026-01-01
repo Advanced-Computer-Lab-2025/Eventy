@@ -1,6 +1,7 @@
 import logger from "../../utils/logger.js";
 import path from "path";
 import fs from "fs";
+import { put } from "@vercel/blob";
 
 export class UploadController {
   async upload(req, res, next) {
@@ -34,17 +35,30 @@ export class UploadController {
         });
       }
 
-      // Generate the public URL for the uploaded file
-      // The file is already saved to disk by multer
-      const relativePath = `/uploads/id-cards/${path.basename(file.path)}`;
+      let fileUrl;
 
-      // Construct full URL (optional - can be used if frontend and backend are on different origins)
-      const protocol = req.protocol;
-      const host = req.get("host");
-      const fullUrl = `${protocol}://${host}${relativePath}`;
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const fileBuffer = fs.readFileSync(file.path);
+        const { url } = await put(`id-cards/${file.filename}`, fileBuffer, {
+          access: "public",
+          contentType: file.mimetype,
+        });
 
-      // Return full URL (you can change this to relativePath if preferred)
-      const fileUrl = fullUrl;
+        fileUrl = url;
+
+        // Remove the temporary local file after uploading to Blob
+        try {
+          fs.unlinkSync(file.path);
+        } catch (unlinkError) {
+          logger.error("Error deleting temp file:", unlinkError);
+        }
+      } else {
+        // Fallback: keep local URL for non-Vercel/local development
+        const relativePath = `/uploads/id-cards/${path.basename(file.path)}`;
+        const protocol = req.protocol;
+        const host = req.get("host");
+        fileUrl = `${protocol}://${host}${relativePath}`;
+      }
 
       res.status(200).json({
         success: true,
@@ -102,20 +116,38 @@ export class UploadController {
         });
       }
 
-      // Generate the public URL for the uploaded file
-      // The file is already saved to disk by multer
-      const relativePath = `/uploads/vendor-documents/${path.basename(file.path)}`;
+      let fileUrl;
 
-      // Construct full URL
-      const protocol = req.protocol;
-      const host = req.get("host");
-      const fullUrl = `${protocol}://${host}${relativePath}`;
+      if (process.env.BLOB_READ_WRITE_TOKEN) {
+        const fileBuffer = fs.readFileSync(file.path);
+        const { url } = await put(
+          `vendor-documents/${file.filename}`,
+          fileBuffer,
+          {
+            access: "public",
+            contentType: file.mimetype,
+          }
+        );
+
+        fileUrl = url;
+
+        try {
+          fs.unlinkSync(file.path);
+        } catch (unlinkError) {
+          logger.error("Error deleting temp file:", unlinkError);
+        }
+      } else {
+        const relativePath = `/uploads/vendor-documents/${path.basename(file.path)}`;
+        const protocol = req.protocol;
+        const host = req.get("host");
+        fileUrl = `${protocol}://${host}${relativePath}`;
+      }
 
       res.status(200).json({
         success: true,
         message: "Vendor document uploaded successfully",
         data: {
-          url: fullUrl,
+          url: fileUrl,
           filename: file.filename,
         },
       });
