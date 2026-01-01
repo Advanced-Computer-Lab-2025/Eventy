@@ -16,7 +16,16 @@
  * - apiLogger, authLogger, dbLogger, emailLogger, paymentLogger
  */
 
-import { createConsola } from "consola";
+import * as consola from "consola";
+
+const createConsola =
+  consola.createConsola ?? consola.default?.createConsola ?? consola.default;
+
+if (typeof createConsola !== "function") {
+  throw new Error(
+    "Failed to initialize logger: consola.createConsola export not found"
+  );
+}
 
 const isDevelopment = process.env.NODE_ENV === "development";
 const isProduction = process.env.NODE_ENV === "production";
