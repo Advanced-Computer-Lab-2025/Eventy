@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { logger } from "@/lib/logger";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -17,7 +18,14 @@ export default function ProtectedRoute({
 
   useEffect(() => {
     const checkAuth = () => {
-      const token = localStorage.getItem("token");
+      let token: string | null = null;
+      try {
+        token = localStorage.getItem("token");
+      } catch (error) {
+        logger.warn("Storage access blocked; redirecting to login", error);
+        setLocation(redirectTo);
+        return;
+      }
 
       if (!token) {
         setLocation(redirectTo);
@@ -26,7 +34,13 @@ export default function ProtectedRoute({
 
       try {
         // Decode JWT token to get user role
-        const payload = JSON.parse(atob(token.split(".")[1]));
+        const parts = token.split(".");
+        const payloadBase64 = parts.length >= 2 ? parts[1] : "";
+        if (!payloadBase64) {
+          throw new Error("Invalid token format");
+        }
+
+        const payload = JSON.parse(atob(payloadBase64));
         const userRole = payload.role;
 
         if (allowedRoles.includes(userRole)) {

@@ -1,7 +1,6 @@
-/* React Big Calendar Custom Styles */
-
-/* Import the base styles */
 @import "react-big-calendar/lib/css/react-big-calendar.css";
+
+/* React Big Calendar Custom Styles */
 
 /* Calendar container */
 .rbc-calendar {

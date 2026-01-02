@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./apiBase";
+import { logger } from "./logger";
 
 // API service for bazaars
 const API_BASE_URL = getApiBaseUrl();
@@ -50,8 +51,17 @@ export interface ApiResponse<T> {
 }
 
 class BazaarApiService {
+  private safeGetToken(): string | null {
+    try {
+      return localStorage.getItem("token");
+    } catch {
+      // Storage can be blocked by browser privacy/tracking prevention.
+      return null;
+    }
+  }
+
   private getAuthHeaders(): HeadersInit {
-    const token = localStorage.getItem("token");
+    const token = this.safeGetToken();
     return {
       "Content-Type": "application/json",
       ...(token && { Authorization: `Bearer ${token}` }),
@@ -292,7 +302,7 @@ class BazaarApiService {
 
   async uploadIdCard(file: File): Promise<{ url: string; filename: string }> {
     try {
-      const token = localStorage.getItem("token");
+      const token = this.safeGetToken();
       const formData = new FormData();
       formData.append("file", file);
 
