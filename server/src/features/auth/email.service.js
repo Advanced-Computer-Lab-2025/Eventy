@@ -13,6 +13,31 @@ const __dirname = path.dirname(__filename);
 
 dotenv.config();
 
+const frontendPublicBaseUrl = (() => {
+  const candidate = process.env.CLIENT_URL;
+
+  if (!candidate) return null;
+  const first = String(candidate).split(",")[0]?.trim();
+  if (!first) return null;
+  return first.replace(/\/$/, "");
+})();
+
+const resolvePublicEmailAssetPath = (assetPath) => {
+  const normalized = assetPath.startsWith("/") ? assetPath : `/${assetPath}`;
+
+  // Prefer a stable public URL (e.g. Vercel) in production.
+  if (frontendPublicBaseUrl) {
+    return `${frontendPublicBaseUrl}${normalized}`;
+  }
+
+  // Local-dev fallback when the monorepo exists on disk.
+  return path.resolve(
+    __dirname,
+    "../../../../client/public",
+    normalized.slice(1)
+  );
+};
+
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
   port: 465,
@@ -100,11 +125,8 @@ export const sendVerificationEmail = async (user) => {
     roleDescriptions[user?.role?.toLowerCase()] ||
     "You'll have access to all the features available for your role.";
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  // Path/URL to logo image (prefer frontend public URL in production)
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -272,10 +294,7 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
     .join(" ");
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -499,11 +518,8 @@ export const sendGymSessionUpdateEmail = async (
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  // Path/URL to logo image (prefer frontend public URL in production)
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   // Check what changed
   const dateChanged = oldDate !== newDate;
@@ -776,10 +792,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
   const statusTextColor = isApproved ? "#065f46" : "#991b1b";
 
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   let applicationDetailsHtml = `
     <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid ${statusColor}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
@@ -1059,10 +1072,7 @@ export const sendVisitorQRCodesEmail = async (
       });
     }
 
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const qrCodesHTML = qrCodeDataUrls
       .map(
@@ -1272,11 +1282,7 @@ export const sendAttendeeQRCodeEmail = async (
       throw new Error(`Failed to generate QR code: ${qrError.message}`);
     }
 
-    // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1428,10 +1434,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       : "Credit/Debit Card";
 
   const eventName = event?.name || "Wallet Top-Up";
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1648,11 +1651,7 @@ export const sendStudentEmailVerification = async (user) => {
 
   const verificationUrl = `http://localhost:5000/verify-email/${verificationToken}`;
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1824,10 +1823,7 @@ export const sendVendorPaymentReceipt = async (
   const formattedAmount = (transaction.amount || 0).toFixed(2);
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   // Build application details HTML
   let applicationDetailsHtml = `
@@ -2120,11 +2116,8 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
             .join(", ")
         : "N/A";
 
-    // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    // Path/URL to logo image (prefer frontend public URL in production)
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2346,10 +2339,7 @@ export const sendCommentDeletionWarning = async ({
   eventName,
   commentBody,
 }) => {
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2577,10 +2567,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
     });
 
     // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2794,10 +2781,7 @@ export const sendWaitlistAutopaySuccessEmail = async (
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2959,10 +2943,7 @@ export const sendWaitlistSpotAvailableEmail = async (user, event) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -3125,10 +3106,7 @@ export const sendWaitlistAutopayFailedEmail = async (user, event, reason) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -3284,10 +3262,7 @@ export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
