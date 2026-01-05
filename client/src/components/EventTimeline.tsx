@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Clock, ArrowRight } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface Event {
   _id: string;
@@ -26,6 +27,24 @@ export default function EventTimeline({
   className = "",
   maxEvents = 10,
 }: EventTimelineProps) {
+  const apiBase = getApiBaseUrl();
+
+  const normalizeImageUrl = (url: string) => {
+    if (url.startsWith("/uploads/")) {
+      return apiBase ? `${apiBase}${url}` : url;
+    }
+
+    if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url) && apiBase) {
+      try {
+        const parsed = new URL(url);
+        return `${apiBase}${parsed.pathname}${parsed.search}`;
+      } catch {
+        return url;
+      }
+    }
+
+    return url;
+  };
   const sortedEvents = useMemo(() => {
     const now = new Date();
     return [...events]
@@ -192,7 +211,7 @@ export default function EventTimeline({
                           {event.bannerImage && (
                             <div className="flex-shrink-0">
                               <img
-                                src={event.bannerImage}
+                                src={normalizeImageUrl(event.bannerImage)}
                                 alt={event.name}
                                 className="w-20 h-20 object-cover rounded-lg"
                               />

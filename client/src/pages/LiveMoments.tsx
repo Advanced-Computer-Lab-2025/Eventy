@@ -213,10 +213,29 @@ function LiveEventCard({ event }: { event: Event }) {
 
   // Handle image URL - check if it's already a full URL or just a path
   const getImageUrl = (imageUrl: string) => {
-    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
-      return imageUrl; // Already a full URL
+    // If it's a relative uploads path, prefer the configured backend.
+    if (imageUrl.startsWith("/uploads/")) {
+      return API_BASE_URL ? `${API_BASE_URL}${imageUrl}` : imageUrl;
     }
-    return `${API_BASE_URL}${imageUrl}`; // Relative path, prepend base URL
+
+    // Rewrite any localhost/loopback absolute URLs to the configured backend.
+    if (
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(imageUrl) &&
+      API_BASE_URL
+    ) {
+      try {
+        const parsed = new URL(imageUrl);
+        return `${API_BASE_URL}${parsed.pathname}${parsed.search}`;
+      } catch {
+        return imageUrl;
+      }
+    }
+
+    if (imageUrl.startsWith("http://") || imageUrl.startsWith("https://")) {
+      return imageUrl;
+    }
+
+    return API_BASE_URL ? `${API_BASE_URL}${imageUrl}` : imageUrl;
   };
 
   const currentImage =

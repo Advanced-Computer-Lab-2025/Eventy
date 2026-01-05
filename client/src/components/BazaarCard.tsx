@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import VendorApplicationDialog from "./VendorApplicationDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 export interface BazaarCardProps {
   id: string;
@@ -42,6 +43,29 @@ export default function BazaarCard({
   onShare,
   onEdit,
 }: BazaarCardProps) {
+  const apiBase = getApiBaseUrl();
+
+  const normalizedBannerImage = (() => {
+    if (!bannerImage) return bannerImage;
+
+    if (bannerImage.startsWith("/uploads/")) {
+      return apiBase ? `${apiBase}${bannerImage}` : bannerImage;
+    }
+
+    if (
+      /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(bannerImage) &&
+      apiBase
+    ) {
+      try {
+        const parsed = new URL(bannerImage);
+        return `${apiBase}${parsed.pathname}${parsed.search}`;
+      } catch {
+        return bannerImage;
+      }
+    }
+
+    return bannerImage;
+  })();
   const [isApplicationDialogOpen, setIsApplicationDialogOpen] = useState(false);
   // Format dates for display
   const formatDate = (dateString: string) => {
@@ -118,7 +142,7 @@ export default function BazaarCard({
       <div className="relative aspect-[16/9] overflow-hidden bg-muted">
         {bannerImage ? (
           <img
-            src={bannerImage}
+            src={normalizedBannerImage}
             alt={name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />

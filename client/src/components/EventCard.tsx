@@ -39,6 +39,28 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_BASE_URL = getApiBaseUrl();
 
+function normalizeBackendAssetUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+
+  if (url.startsWith("/uploads/")) {
+    return API_BASE_URL ? `${API_BASE_URL}${url}` : url;
+  }
+
+  if (
+    API_BASE_URL &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url)
+  ) {
+    try {
+      const parsed = new URL(url);
+      return `${API_BASE_URL}${parsed.pathname}${parsed.search}`;
+    } catch {
+      return url;
+    }
+  }
+
+  return url;
+}
+
 async function deleteEvent(eventId: string) {
   const token = localStorage.getItem("token");
   const response = await fetch(
@@ -385,7 +407,8 @@ export default function EventCard({
     : String(category)
         .replace(/_/g, " ")
         .replace(/\b\w/g, (c) => c.toUpperCase());
-  const imageSrc = image || getEventImage(eventTypeForImage, title);
+  const imageSrc =
+    normalizeBackendAssetUrl(image) || getEventImage(eventTypeForImage, title);
   const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
   );
@@ -393,13 +416,10 @@ export default function EventCard({
   const handleDirectRegister = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/register`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/register`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         const err = await res.json();
         toast({
@@ -502,13 +522,10 @@ export default function EventCard({
     setIsCanceling(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/cancel`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/cancel`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || "Failed to cancel registration");
