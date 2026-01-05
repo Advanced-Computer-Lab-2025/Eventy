@@ -23,7 +23,18 @@ import {
 import { User } from "../users/user.model.js";
 import NotificationService from "../notifications/notification.service.js";
 import fs from "fs";
-import { put } from "@vercel/blob";
+
+async function getVercelPut() {
+  try {
+    const mod = await import("@vercel/blob");
+    return mod.put;
+  } catch (err) {
+    throw new ApiError(
+      500,
+      "Vercel Blob is not available on this server. Ensure '@vercel/blob' is installed and included in the Azure deployment package."
+    );
+  }
+}
 
 //Write your code in this class!!!
 
@@ -1411,7 +1422,12 @@ export class EventsController {
 
       let imageUrl;
 
-      if (process.env.BLOB_READ_WRITE_TOKEN && req.file.path) {
+      const blobToken =
+        process.env.BLOB_READ_WRITE_TOKEN ||
+        process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
+
+      if (blobToken && req.file.path) {
+        const put = await getVercelPut();
         const fileBuffer = fs.readFileSync(req.file.path);
         const { url } = await put(
           `event-images/${req.file.filename}`,
@@ -1419,6 +1435,7 @@ export class EventsController {
           {
             access: "public",
             contentType: req.file.mimetype,
+            token: blobToken,
           }
         );
 

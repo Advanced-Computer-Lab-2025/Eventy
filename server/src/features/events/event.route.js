@@ -17,7 +17,10 @@ router.post(
   eventsController.recordView.bind(eventsController)
 );
 // Configure multer for event images
-const isVercel = !!process.env.BLOB_READ_WRITE_TOKEN;
+const blobToken =
+  process.env.BLOB_READ_WRITE_TOKEN ||
+  process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
+const isVercel = !!blobToken;
 const eventImagesDir = isVercel
   ? os.tmpdir()
   : path.join(process.cwd(), "uploads", "event-images");

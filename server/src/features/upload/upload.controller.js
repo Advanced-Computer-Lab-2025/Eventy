@@ -1,7 +1,19 @@
 import logger from "../../utils/logger.js";
 import path from "path";
 import fs from "fs";
-import { put } from "@vercel/blob";
+
+async function getVercelPut() {
+  try {
+    const mod = await import("@vercel/blob");
+    return mod.put;
+  } catch (err) {
+    const error = new Error(
+      "Vercel Blob is not available on this server. Ensure '@vercel/blob' is installed and included in the Azure deployment package."
+    );
+    error.cause = err;
+    throw error;
+  }
+}
 
 export class UploadController {
   async upload(req, res, next) {
@@ -15,6 +27,9 @@ export class UploadController {
       }
 
       const file = req.file;
+      const blobToken =
+        process.env.BLOB_READ_WRITE_TOKEN ||
+        process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
 
       // Validate file type (images only)
       const allowedMimeTypes = [
@@ -37,11 +52,13 @@ export class UploadController {
 
       let fileUrl;
 
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
+      if (blobToken && file.path) {
+        const put = await getVercelPut();
         const fileBuffer = fs.readFileSync(file.path);
         const { url } = await put(`id-cards/${file.filename}`, fileBuffer, {
           access: "public",
           contentType: file.mimetype,
+          token: blobToken,
         });
 
         fileUrl = url;
@@ -95,6 +112,9 @@ export class UploadController {
       }
 
       const file = req.file;
+      const blobToken =
+        process.env.BLOB_READ_WRITE_TOKEN ||
+        process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
 
       // Validate file type (images and PDFs for vendor documents)
       const allowedMimeTypes = [
@@ -118,7 +138,8 @@ export class UploadController {
 
       let fileUrl;
 
-      if (process.env.BLOB_READ_WRITE_TOKEN) {
+      if (blobToken && file.path) {
+        const put = await getVercelPut();
         const fileBuffer = fs.readFileSync(file.path);
         const { url } = await put(
           `vendor-documents/${file.filename}`,
@@ -126,6 +147,7 @@ export class UploadController {
           {
             access: "public",
             contentType: file.mimetype,
+            token: blobToken,
           }
         );
 

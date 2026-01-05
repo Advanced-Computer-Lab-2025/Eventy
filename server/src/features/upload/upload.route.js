@@ -10,7 +10,10 @@ const router = express.Router();
 const uploadController = new UploadController();
 
 // Ensure uploads directory exists
-const isVercel = !!process.env.BLOB_READ_WRITE_TOKEN;
+const blobToken =
+  process.env.BLOB_READ_WRITE_TOKEN ||
+  process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
+const isVercel = !!blobToken;
 const uploadsDir = isVercel
   ? os.tmpdir()
   : path.join(process.cwd(), "uploads", "id-cards");
