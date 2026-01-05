@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { EventsController } from "./event.controller.js";
 import authMiddleware from ".././../middlewares/auth.middleware.js";
 import roleMiddleware from "../../middlewares/role.middleware.js";
@@ -16,8 +17,12 @@ router.post(
   eventsController.recordView.bind(eventsController)
 );
 // Configure multer for event images
-const eventImagesDir = path.join(process.cwd(), "uploads", "event-images");
-if (!fs.existsSync(eventImagesDir)) {
+const isVercel = !!process.env.BLOB_READ_WRITE_TOKEN;
+const eventImagesDir = isVercel
+  ? os.tmpdir()
+  : path.join(process.cwd(), "uploads", "event-images");
+
+if (!isVercel && !fs.existsSync(eventImagesDir)) {
   fs.mkdirSync(eventImagesDir, { recursive: true });
 }
 

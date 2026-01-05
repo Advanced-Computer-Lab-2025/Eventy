@@ -44,9 +44,31 @@ app.use((req, res, next) => {
 
 (async () => {
   // CORS configuration
+  const allowedOrigins = (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  // Always allow local dev.
+  if (!allowedOrigins.includes("http://localhost:5000")) {
+    allowedOrigins.push("http://localhost:5000");
+  }
+
   app.use(
     cors({
-      origin: "http://localhost:5000",
+      origin: (
+        origin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void
+      ) => {
+        // Some clients (curl, server-to-server) send no origin.
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked origin: ${origin}`));
+      },
       credentials: true,
     })
   );

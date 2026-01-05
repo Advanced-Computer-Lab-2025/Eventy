@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import os from "os";
 import { UploadController } from "./upload.controller.js";
 import authMiddleware from "../../middlewares/auth.middleware.js";
 
@@ -9,14 +10,21 @@ const router = express.Router();
 const uploadController = new UploadController();
 
 // Ensure uploads directory exists
-const uploadsDir = path.join(process.cwd(), "uploads", "id-cards");
-if (!fs.existsSync(uploadsDir)) {
+const isVercel = !!process.env.BLOB_READ_WRITE_TOKEN;
+const uploadsDir = isVercel
+  ? os.tmpdir()
+  : path.join(process.cwd(), "uploads", "id-cards");
+
+if (!isVercel && !fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
 // Ensure vendor documents directory exists
-const vendorDocsDir = path.join(process.cwd(), "uploads", "vendor-documents");
-if (!fs.existsSync(vendorDocsDir)) {
+const vendorDocsDir = isVercel
+  ? os.tmpdir()
+  : path.join(process.cwd(), "uploads", "vendor-documents");
+
+if (!isVercel && !fs.existsSync(vendorDocsDir)) {
   fs.mkdirSync(vendorDocsDir, { recursive: true });
 }
 
