@@ -139,21 +139,28 @@ jobs:
           EOF
           )
 
-          cat <<EOF | reviewdog -f=rdjson -reporter=github-pr-comment -filter-mode=nofilter -name="vercel-preview"
-          {
-            "source": { "name": "vercel-preview" },
+          export BODY
+          python3 - <<'PY' | reviewdog -f=rdjson -reporter=github-pr-review -filter-mode=nofilter -name="vercel-preview"
+          import json
+          import os
+
+          body = os.environ.get("BODY", "")
+          payload = {
+            "source": {"name": "vercel-preview"},
             "diagnostics": [
               {
-                "message": ${BODY@Q},
+                "message": body,
                 "location": {
                   "path": "README.md",
                   "range": {
-                    "start": { "line": 1, "column": 1 },
-                    "end": { "line": 1, "column": 1 }
-                  }
+                    "start": {"line": 1, "column": 1},
+                    "end": {"line": 1, "column": 1},
+                  },
                 },
-                "severity": "INFO"
+                "severity": "INFO",
               }
-            ]
+            ],
           }
-          EOF
+
+          print(json.dumps(payload))
+          PY
