@@ -1,4 +1,5 @@
 import EventHero from "../EventHero";
+import { logger } from "@/lib/logger";
 
 export default function EventHeroExample() {
   return (

@@ -13,6 +13,7 @@ import { MdAttachMoney } from "react-icons/md";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/lib/bazaarApi";
+import { logger } from "@/lib/logger";
 import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,

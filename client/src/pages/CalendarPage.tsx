@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const API_BASE_URL = getApiBaseUrl();
 

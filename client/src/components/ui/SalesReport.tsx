@@ -26,6 +26,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Loader2, Download, CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const API_BASE_URL = getApiBaseUrl();
 

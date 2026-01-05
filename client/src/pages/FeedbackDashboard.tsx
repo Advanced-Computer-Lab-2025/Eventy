@@ -29,6 +29,7 @@ import StaffHeader from "@/components/StaffHeader";
 import VendorHeader from "@/components/VendorHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useToast } from "@/hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface EventItem {
   id: string;

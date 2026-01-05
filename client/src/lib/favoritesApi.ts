@@ -1,4 +1,5 @@
 import api from "./api";
+import { logger } from "./logger";
 
 export interface FavoriteEvent {
   _id: string;

@@ -10,6 +10,7 @@ import EventSort from "@/components/EventSort";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import EventCard from "@/components/EventCard";
+import { logger } from "@/lib/logger";
 
 //todo: remove mock functionality
 const recentEvents = [

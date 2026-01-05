@@ -25,6 +25,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 interface WorkshopFormData {
   name: string;

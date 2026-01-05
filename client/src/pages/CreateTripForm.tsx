@@ -19,6 +19,7 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 export default function CreateTripForm() {
   const { toast } = useToast();

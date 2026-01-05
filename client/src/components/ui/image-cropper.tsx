@@ -12,6 +12,7 @@ import {
   DialogTitle,
 } from "./dialog";
 import { Loader2 } from "lucide-react";
+import { logger } from "@/lib/logger";
 
 interface ImageCropperProps {
   image: string;

@@ -1,4 +1,5 @@
 import EventListItem from "../EventListItem";
+import { logger } from "@/lib/logger";
 
 export default function EventListItemExample() {
   return (
