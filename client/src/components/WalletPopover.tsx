@@ -16,6 +16,8 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { WalletTopUpDialog } from "./WalletTopUpDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 interface WalletPopoverProps {
   balance: number;
@@ -26,6 +28,7 @@ export default function WalletPopover({
   balance: initialBalance,
   onRefreshBalance,
 }: WalletPopoverProps) {
+  const apiBase = getApiBaseUrl();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [topUpOpen, setTopUpOpen] = useState(false);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -47,7 +50,7 @@ export default function WalletPopover({
       // 1. Single Fetch: Gets both Transactions AND Balance
       // Added timestamp to prevent caching
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/me?t=${new Date().getTime()}`,
+        `${apiBase}/api/transactions/me?t=${new Date().getTime()}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           cache: "no-store",

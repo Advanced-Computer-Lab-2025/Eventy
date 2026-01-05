@@ -20,6 +20,7 @@ import {
   CheckCircle2,
   Sparkles,
 } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 interface WaitlistDialogProps {
   open: boolean;
@@ -88,7 +89,7 @@ export function WaitlistDialog({
       };
 
       const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${eventId}/waitlist`,
+        `${getApiBaseUrl()}/api/events/${eventId}/waitlist`,
         {
           method: "POST",
           headers: {

@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CreditCard, Wallet } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { getApiBaseUrl } from "@/lib/apiBase";
 // Assuming you have this or standard inputs
 
 // --- Stripe Form Component (Unchanged) ---
@@ -98,18 +99,16 @@ function EventPaymentForm({
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
         const token = localStorage.getItem("token");
+        const apiBase = getApiBaseUrl();
         // Confirm payment with backend
-        const confirmRes = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/transactions/confirm`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
-          }
-        );
+        const confirmRes = await fetch(`${apiBase}/api/transactions/confirm`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ paymentIntentId: paymentIntent.id }),
+        });
         if (!confirmRes.ok) {
           const errData = await confirmRes.json();
           throw new Error(
@@ -120,7 +119,7 @@ function EventPaymentForm({
         }
         // Register for event
         const regRes = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/events/${eventId}/register`,
+          `${apiBase}/api/events/${eventId}/register`,
           {
             method: "POST",
             headers: {
@@ -205,6 +204,7 @@ export function EventPaymentDialog({
   const [paymentMethod, setPaymentMethod] = useState<"card" | "wallet">("card");
   const { toast } = useToast();
   const { theme } = useTheme();
+  const apiBase = getApiBaseUrl();
 
   // Reset state when dialog closes
   useEffect(() => {
@@ -225,19 +225,16 @@ export function EventPaymentDialog({
 
       // For waitlist mode, we still need to create a payment intent
       // so the user can enter their card details for autopay
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/pay/${eventId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            paymentMethod: "credit_card",
-          }),
-        }
-      );
+      const res = await fetch(`${apiBase}/api/transactions/pay/${eventId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          paymentMethod: "credit_card",
+        }),
+      });
 
       const data = await res.json();
 
@@ -283,17 +280,14 @@ export function EventPaymentDialog({
       }
 
       // Step A: Deduct Money
-      const payRes = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/pay/${eventId}`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ paymentMethod: "wallet" }),
-        }
-      );
+      const payRes = await fetch(`${apiBase}/api/transactions/pay/${eventId}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ paymentMethod: "wallet" }),
+      });
 
       const payData = await payRes.json();
 
@@ -305,15 +299,12 @@ export function EventPaymentDialog({
 
       // Step B: Register User (Since wallet payment is successful)
       // We skip the 'confirm' step for wallet, but we still need to register the user to the event
-      const regRes = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${eventId}/register`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const regRes = await fetch(`${apiBase}/api/events/${eventId}/register`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (!regRes.ok) {
         const regData = await regRes.json();

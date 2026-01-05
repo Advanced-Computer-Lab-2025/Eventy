@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, CreditCard } from "lucide-react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 // --- Internal Payment Form Component (This logic is correct, no changes needed) ---
 function PaymentForm({
@@ -61,8 +62,9 @@ function PaymentForm({
 
       if (paymentIntent && paymentIntent.status === "succeeded") {
         const token = localStorage.getItem("token");
+        const apiBase = getApiBaseUrl();
         const confirmResponse = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/transactions/confirm`,
+          `${apiBase}/api/transactions/confirm`,
           {
             method: "POST",
             headers: {
@@ -165,20 +167,18 @@ export function WalletTopUpDialog({
     setIsLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/transactions/wallet/top-up`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            amount: topUpAmount,
-            paymentMethod: "credit_card",
-          }),
-        }
-      );
+      const apiBase = getApiBaseUrl();
+      const res = await fetch(`${apiBase}/api/transactions/wallet/top-up`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          amount: topUpAmount,
+          paymentMethod: "credit_card",
+        }),
+      });
 
       const data = await res.json();
       if (!res.ok || !data.clientSecret) {
