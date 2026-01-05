@@ -118,7 +118,8 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  app.listen(5000, () => {
-    logger.info("Server running on: http://localhost:5000");
+  const port = Number(process.env.PORT || process.env.WEBSITES_PORT) || 5000;
+  server.listen(port, "0.0.0.0", () => {
+    logger.info(`Server listening on port ${port}`);
   });
 })();
