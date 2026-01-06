@@ -493,21 +493,31 @@ export const getUpcomingEventsService = async (
    # Server
    PORT=4000
    NODE_ENV=development
-
-   # Frontend URL
-   CLIENT_URL=http://localhost:5000
    ```
 
-   Create a `.env` file in the client directory:
+# Frontend URL (development example)
 
-   ```env
-   # Backend Connection
-   VITE_API_BASE_URL=http://localhost:4000
-   VITE_WS_BASE_URL=ws://localhost:4000
+CLIENT_URL=http://localhost:5000
 
-   # Stripe Payment
-   VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxx
-   ```
+# Production/Preview: set CLIENT_URL to your Vercel domain
+
+# CLIENT_URL=https://<YOUR_VERCEL_DOMAIN>
+
+````
+
+Create a `.env` file in the client directory:
+
+```env
+# Backend Connection (development example)
+VITE_API_BASE_URL=http://localhost:4000
+VITE_WS_BASE_URL=ws://localhost:4000
+
+# Production/Preview: set VITE_API_BASE_URL to your backend origin
+# VITE_API_BASE_URL=https://<YOUR_BACKEND_ORIGIN>
+
+# Stripe Payment
+VITE_STRIPE_PUBLISHABLE_KEY=pk_test_xxxxxxxxxxxxxxxxxxx
+````
 
 4. **Run the application**
 
@@ -521,9 +531,10 @@ export const getUpcomingEventsService = async (
    npm run dev
    ```
 
-5. **Access the application**
-   - Frontend: http://localhost:5000
-   - Backend API: http://localhost:4000
+5. **Access the application (development)**
+
+- Frontend: http://localhost:5000
+- Backend API: http://localhost:4000
 
 ## API References
 

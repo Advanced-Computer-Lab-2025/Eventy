@@ -40,8 +40,8 @@ npm install googleapis ical-generator react-big-calendar @react-oauth/google mom
      - Application type: Web application
      - Name: Eventy Web Client
      - Authorized redirect URIs:
-       - `http://localhost:5000/api/calendar/oauth2callback`
-       - `http://localhost:4000/api/calendar/oauth2callback`
+       - `http://localhost:4000/api/calendar/oauth2callback` (development)
+       - `https://<YOUR_BACKEND_ORIGIN>/api/calendar/oauth2callback` (production)
      - Click "Create"
 
 5. **Copy Credentials**
@@ -56,7 +56,10 @@ Create or update `.env` in your project root:
 # Google Calendar Integration
 GOOGLE_CLIENT_ID=your_client_id_here.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your_client_secret_here
-GOOGLE_REDIRECT_URI=http://localhost:5000/api/calendar/oauth2callback
+GOOGLE_REDIRECT_URI=http://localhost:4000/api/calendar/oauth2callback
+
+# Production example:
+# GOOGLE_REDIRECT_URI=https://<YOUR_BACKEND_ORIGIN>/api/calendar/oauth2callback
 
 # Make sure these are also set
 EMAIL_USER=your_email@gmail.com
@@ -149,7 +152,8 @@ In your header/navigation component:
    ```
 
 2. **Navigate to Calendar page**
-   - Go to http://localhost:5000/calendar
+
+- Go to http://localhost:5000/calendar (development)
 
 3. **Connect Google Calendar**
    - Click "Calendar Integration" button
@@ -176,7 +180,7 @@ In your header/navigation component:
 **Solution:** Make sure your redirect URI in Google Cloud Console exactly matches:
 
 ```
-http://localhost:5000/api/calendar/oauth2callback
+http://localhost:4000/api/calendar/oauth2callback
 ```
 
 (No trailing slash, correct port number)
