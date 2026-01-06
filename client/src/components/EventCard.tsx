@@ -380,11 +380,9 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
-  const displayCategory = isPlatformBooth
-    ? "Platform Booth"
-    : String(category)
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+  const badgeCategory = isPlatformBooth
+    ? "platform_booth"
+    : String(category).toLowerCase();
   const imageSrc = image || getEventImage(eventTypeForImage, title);
   const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
@@ -776,7 +774,7 @@ export default function EventCard({
           />
           {!showDetailedView && (
             <div className="absolute top-3 left-3">
-              <CategoryBadge category={displayCategory as EventCategory} />
+              <CategoryBadge category={badgeCategory} />
             </div>
           )}
         </div>
@@ -789,7 +787,7 @@ export default function EventCard({
                 <CardTitle className="text-xl break-words whitespace-normal">
                   {title}
                 </CardTitle>
-                <CategoryBadge category={displayCategory as EventCategory} />
+                <CategoryBadge category={badgeCategory} />
               </div>
             </CardHeader>
 
@@ -996,19 +994,19 @@ export default function EventCard({
                     </div>
                   ) : (
                     <div className="flex gap-2 w-full items-center">
-                      <Button className="flex-1" disabled>
-                        Registered
-                      </Button>
                       <Button
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 order-1"
                         onClick={handleViewDetailsClick}
                       >
                         View Details
                       </Button>
+                      <Button className="flex-1 order-2" disabled>
+                        Registered
+                      </Button>
                       {canShowFavorites && (
                         <div
-                          className="relative flex-shrink-0"
+                          className="relative flex-shrink-0 order-3"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FavoriteButton eventId={id} />
@@ -1020,7 +1018,7 @@ export default function EventCard({
                   <div className="flex gap-2 w-full items-center">
                     {onEdit && (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-2"
                         onClick={() => onEdit()}
                         data-testid={`button-edit-${id}`}
                       >
@@ -1030,7 +1028,7 @@ export default function EventCard({
                     )}
                     {onArchive && (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-3"
                         onClick={async (e) => {
                           if ((e as any).stopPropagation)
                             (e as any).stopPropagation();
@@ -1054,7 +1052,7 @@ export default function EventCard({
                     {onViewDetails && (
                       <Button
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 order-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           onViewDetails();
@@ -1065,7 +1063,7 @@ export default function EventCard({
                     )}
                     {canShowDelete && (
                       <Trash2
-                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0"
+                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0 order-4"
                         onClick={(e) => {
                           if ((e as any).stopPropagation)
                             (e as any).stopPropagation();
@@ -1083,7 +1081,7 @@ export default function EventCard({
                   <div className="flex gap-2 w-full items-center">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 order-1"
                       onClick={handleViewDetailsClick}
                     >
                       View Details
@@ -1091,7 +1089,7 @@ export default function EventCard({
 
                     {showResaleMarketplaceOption ? (
                       <Button
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                        className="flex-1 order-2 bg-purple-600 hover:bg-purple-700 text-white"
                         onClick={handleFetchResaleTickets}
                         // removed variant="secondary"
                       >
@@ -1101,7 +1099,7 @@ export default function EventCard({
                     ) : isFull && canJoinWaitlist ? (
                       isCheckingWaitlist ? (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           disabled
                           variant="outline"
                           data-testid={`button-checking-waitlist-${id}`}
@@ -1110,7 +1108,7 @@ export default function EventCard({
                         </Button>
                       ) : isOnWaitlist ? (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           disabled
                           variant="outline"
                           data-testid={`button-waitlisted-${id}`}
@@ -1119,7 +1117,7 @@ export default function EventCard({
                         </Button>
                       ) : (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           onClick={() => setShowWaitlistDialog(true)}
                           data-testid={`button-join-waitlist-${id}`}
                         >
@@ -1128,7 +1126,7 @@ export default function EventCard({
                       )
                     ) : (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-2"
                         onClick={() =>
                           requiresPayment
                             ? setShowPaymentDialog(true)
@@ -1142,7 +1140,7 @@ export default function EventCard({
                     )}
                     {canShowFavorites && (
                       <div
-                        className="relative flex-shrink-0"
+                        className="relative flex-shrink-0 order-3"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <FavoriteButton eventId={id} />
@@ -1437,29 +1435,33 @@ export default function EventCard({
                       </div>
                     ) : (
                       <div className="flex gap-2 w-full items-center">
-                        <Button className="flex-1" disabled>
-                          Registered
-                        </Button>
                         <Button
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 order-1"
                           onClick={handleViewDetailsClick}
                         >
                           View Details
                         </Button>
+                        <Button className="flex-1 order-2" disabled>
+                          Registered
+                        </Button>
                         {canShowFavorites && (
                           <div
-                            className="relative flex-shrink-0"
+                            className="relative flex-shrink-0 order-3"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <FavoriteButton eventId={id} />
                           </div>
                         )}
-                        {inlineShareButton && <ShareButton />}
+                        {inlineShareButton && (
+                          <div className="order-4">
+                            <ShareButton />
+                          </div>
+                        )}
                         {onUnarchive && (
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-5"
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
@@ -1491,7 +1493,7 @@ export default function EventCard({
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-1"
                             onClick={handleViewDetailsClick}
                           >
                             View Details
@@ -1500,7 +1502,7 @@ export default function EventCard({
                           {/* --- NEW LOGIC FOR DASHBOARD (Upcoming Events) --- */}
                           {showResaleMarketplaceOption ? (
                             <Button
-                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                              className="flex-1 order-2 bg-purple-600 hover:bg-purple-700 text-white"
                               onClick={handleFetchResaleTickets}
                               // removed variant="secondary"
                             >
@@ -1510,7 +1512,7 @@ export default function EventCard({
                           ) : isFull && canJoinWaitlist ? (
                             isCheckingWaitlist ? (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 disabled
                                 variant="outline"
                                 data-testid={`button-checking-waitlist-${id}`}
@@ -1519,7 +1521,7 @@ export default function EventCard({
                               </Button>
                             ) : isOnWaitlist ? (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 disabled
                                 variant="outline"
                                 data-testid={`button-waitlisted-${id}`}
@@ -1528,7 +1530,7 @@ export default function EventCard({
                               </Button>
                             ) : (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 onClick={() => setShowWaitlistDialog(true)}
                                 data-testid={`button-join-waitlist-${id}`}
                               >
@@ -1542,7 +1544,7 @@ export default function EventCard({
                                   ? setShowPaymentDialog(true)
                                   : handleDirectRegister()
                               }
-                              className="flex-1"
+                              className="flex-1 order-2"
                               data-testid={`button-register-${id}`}
                               disabled={!canRegister}
                             >
@@ -1553,32 +1555,40 @@ export default function EventCard({
                           )}
                           {canShowFavorites && (
                             <div
-                              className="relative flex-shrink-0"
+                              className="relative flex-shrink-0 order-3"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <FavoriteButton eventId={id} />
                             </div>
                           )}
-                          {inlineShareButton && <ShareButton />}
+                          {inlineShareButton && (
+                            <div className="order-4">
+                              <ShareButton />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-1"
                             onClick={handleViewDetailsClick}
                           >
                             View Details
                           </Button>
                           {canShowFavorites && (
                             <div
-                              className="relative flex-shrink-0"
+                              className="relative flex-shrink-0 order-3"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <FavoriteButton eventId={id} />
                             </div>
                           )}
-                          {inlineShareButton && <ShareButton />}
+                          {inlineShareButton && (
+                            <div className="order-4">
+                              <ShareButton />
+                            </div>
+                          )}
                         </div>
                       )}
                     </>
