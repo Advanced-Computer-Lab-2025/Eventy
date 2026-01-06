@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import {
   Popover,
   PopoverContent,
@@ -50,6 +50,7 @@ export default function CreateGymSessionDialog({
   onOpenChange,
   onSuccess,
 }: CreateGymSessionDialogProps) {
+  const todayStart = startOfDay(new Date());
   const API_BASE_URL = getApiBaseUrl();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState<{
@@ -238,6 +239,7 @@ export default function CreateGymSessionDialog({
                     mode="single"
                     selected={formData.date}
                     onSelect={(date) => setFormData({ ...formData, date })}
+                    disabled={(date) => startOfDay(date) < todayStart}
                     initialFocus
                   />
                 </PopoverContent>
