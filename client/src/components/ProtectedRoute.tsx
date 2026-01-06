@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { logger } from "@/lib/logger";
+import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthToken } from "@/lib/authToken";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;
@@ -17,45 +19,62 @@ export default function ProtectedRoute({
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
-    const checkAuth = () => {
-      let token: string | null = null;
-      try {
-        token = localStorage.getItem("token");
-      } catch (error) {
-        logger.warn("Storage access blocked; redirecting to login", error);
-        setLocation(redirectTo);
-        return;
-      }
+    const checkAuth = async () => {
+      const token = getAuthToken();
+      if (token) {
+        try {
+          // Decode JWT token to get user role
+          const parts = token.split(".");
+          const payloadBase64 = parts.length >= 2 ? parts[1] : "";
+          if (!payloadBase64) {
+            throw new Error("Invalid token format");
+          }
 
-      if (!token) {
-        setLocation(redirectTo);
-        return;
-      }
+          const payload = JSON.parse(atob(payloadBase64));
+          const userRole = payload.role;
 
-      try {
-        // Decode JWT token to get user role
-        const parts = token.split(".");
-        const payloadBase64 = parts.length >= 2 ? parts[1] : "";
-        if (!payloadBase64) {
-          throw new Error("Invalid token format");
-        }
+          if (allowedRoles.includes(userRole)) {
+            setIsAuthorized(true);
+            return;
+          }
 
-        const payload = JSON.parse(atob(payloadBase64));
-        const userRole = payload.role;
-
-        if (allowedRoles.includes(userRole)) {
-          setIsAuthorized(true);
-        } else {
-          // User is authenticated but doesn't have permission
           setLocation("/");
+          return;
+        } catch (error) {
+          logger.error("Failed to decode token:", error);
+          // Fall through to cookie session check.
         }
+      }
+
+      // Cookie-based session check (works with Vercel /api proxy).
+      try {
+        const base = getApiBaseUrl();
+        const res = await fetch(`${base}/api/auth/me`, {
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          setLocation(redirectTo);
+          return;
+        }
+
+        const data = await res.json();
+        const userRole = data?.user?.role;
+
+        if (userRole && allowedRoles.includes(userRole)) {
+          setIsAuthorized(true);
+          return;
+        }
+
+        // Authenticated but not authorized
+        setLocation("/");
       } catch (error) {
-        logger.error("Failed to decode token:", error);
+        logger.error("Session check failed:", error);
         setLocation(redirectTo);
       }
     };
 
-    checkAuth();
+    void checkAuth();
   }, [allowedRoles, redirectTo, setLocation]);
 
   // Show nothing while checking authorization

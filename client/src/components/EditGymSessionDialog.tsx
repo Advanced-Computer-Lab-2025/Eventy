@@ -22,6 +22,7 @@ import { cn } from "@/lib/utils";
 import { CalendarIcon } from "lucide-react";
 import { logger } from "@/lib/logger";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { getAuthToken } from "@/lib/authToken";
 
 type GymSession = {
   _id: string;
@@ -47,9 +48,10 @@ type EditFormData = {
 };
 
 // Convert 12-hour format (hh:mm AM/PM) to 24-hour format (HH:MM) for input
-const convertTo24HourFormat = (time12h: string): string => {
-  const match = time12h.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
-  if (!match) return time12h;
+const convertTo24HourFormat = (time12h: string | null | undefined): string => {
+  const safeTime = typeof time12h === "string" ? time12h : "";
+  const match = safeTime.match(/^(\d{1,2}):(\d{2})\s?(AM|PM)$/i);
+  if (!match) return safeTime;
 
   let [, hours, minutes, period] = match;
   let hour = parseInt(hours, 10);
@@ -109,10 +111,7 @@ export default function EditGymSessionDialog({
     setIsSubmitting(true);
 
     try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
+      const token = getAuthToken();
 
       // Transform field names to match API contract (time and duration)
       const updateData: any = {};
@@ -128,9 +127,10 @@ export default function EditGymSessionDialog({
         `${API_BASE_URL}/api/facilities/gym/sessions/${session._id}`,
         {
           method: "PATCH",
+          credentials: "include",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
           },
           body: JSON.stringify(updateData),
         }
