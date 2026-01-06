@@ -17,6 +17,7 @@ import ProfileMenu from "./ProfileMenu";
 import NotificationsPopover from "./NotificationsPopover";
 import WalletPopover from "./WalletPopover";
 import CalendarPopover from "./CalendarPopover";
+import { logger } from "@/lib/logger";
 
 interface StudentHeaderProps {
   homeHref?: string;

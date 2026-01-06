@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import CategoryBadge, { type EventCategory } from "./CategoryBadge";
 import { getEventImage } from "@/lib/eventImages";
+import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
 import { useState, useEffect } from "react";
 import { EventPaymentDialog } from "./EventPaymentDialog";

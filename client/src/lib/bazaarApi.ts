@@ -1,4 +1,5 @@
 import { getApiBaseUrl } from "./apiBase";
+import { logger } from "@/lib/logger";
 
 // API service for bazaars
 const API_BASE_URL = getApiBaseUrl();

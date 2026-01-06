@@ -151,7 +151,6 @@ export default function MiniCalendar({
                   opacity-60
                   ${today ? "bg-primary text-primary-foreground opacity-100" : ""}
                   ${hasEvents && !today ? "font-bold" : ""}
-                  ${!hasEvents && !today ? "text-muted-foreground" : ""}
                 `}
               >
                 <div className="flex flex-col items-center justify-center h-full">
@@ -216,7 +215,6 @@ export default function MiniCalendar({
                   hover:bg-accent hover:scale-105
                   ${today ? "bg-primary text-primary-foreground" : ""}
                   ${hasEvents && !today ? "font-bold" : ""}
-                  ${!hasEvents && !today ? "text-muted-foreground" : ""}
                 `}
               >
                 <div className="flex flex-col items-center justify-center h-full">
@@ -282,7 +280,6 @@ export default function MiniCalendar({
                   opacity-60
                   ${today ? "bg-primary text-primary-foreground opacity-100" : ""}
                   ${hasEvents && !today ? "font-bold" : ""}
-                  ${!hasEvents && !today ? "text-muted-foreground" : ""}
                 `}
               >
                 <div className="flex flex-col items-center justify-center h-full">

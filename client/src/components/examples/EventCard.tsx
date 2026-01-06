@@ -1,4 +1,5 @@
 import EventCard from "../EventCard";
+import { logger } from "@/lib/logger";
 
 export default function EventCardExample() {
   return (

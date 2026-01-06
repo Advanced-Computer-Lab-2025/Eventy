@@ -23,6 +23,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import EditGymSessionDialog from "@/components/EditGymSessionDialog";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 type GymSession = {
   _id: string;

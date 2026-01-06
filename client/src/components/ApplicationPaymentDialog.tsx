@@ -21,6 +21,7 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { useTheme } from "@/components/ThemeProvider";
+import { logger } from "@/lib/logger";
 
 interface ApplicationPaymentDialogProps {
   open: boolean;

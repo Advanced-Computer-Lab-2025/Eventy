@@ -6,6 +6,7 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import { useLocation } from "wouter";
 import { useToast } from "@/hooks/use-toast";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 export default function TripManagement() {
   const [, setLocation] = useLocation();

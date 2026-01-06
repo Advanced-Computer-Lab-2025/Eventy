@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const localizer = momentLocalizer(moment);
 const API_BASE_URL = getApiBaseUrl();
@@ -56,13 +57,14 @@ export default function BigCalendarView({
   useEffect(() => {
     if (!defaultDate) return;
     const nextTime = defaultDate.getTime();
-    const currentTime = currentDate.getTime();
-    if (nextTime !== currentTime) setCurrentDate(defaultDate);
-  }, [defaultDate, currentDate]);
+    setCurrentDate((prev) =>
+      prev.getTime() === nextTime ? prev : defaultDate
+    );
+  }, [defaultDate]);
 
   useEffect(() => {
-    if (defaultView !== currentView) setCurrentView(defaultView);
-  }, [defaultView, currentView]);
+    setCurrentView(defaultView);
+  }, [defaultView]);
 
   // Transform events for react-big-calendar
   const calendarEvents = useMemo(() => {

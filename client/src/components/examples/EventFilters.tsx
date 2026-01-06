@@ -1,4 +1,5 @@
 import EventFilters, { EventFilterState } from "../EventFilters";
+import { logger } from "@/lib/logger";
 
 export default function EventFiltersExample() {
   return (

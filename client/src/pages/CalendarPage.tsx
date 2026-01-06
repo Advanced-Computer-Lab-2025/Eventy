@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -42,17 +43,40 @@ export default function CalendarPage() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
 
   useEffect(() => {
-    const query = location.split("?")[1] ?? "";
-    const params = new URLSearchParams(query);
-    const dateParam = params.get("date");
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ date?: string }>;
+      const raw = custom.detail?.date;
+      if (!raw) return;
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) return;
+      setSelectedDate(parsed);
+    };
 
+    window.addEventListener("calendar:jumpToDate", handler as EventListener);
+    return () => {
+      window.removeEventListener(
+        "calendar:jumpToDate",
+        handler as EventListener
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    // Allow other UI (e.g., CalendarPopover/MiniCalendar) to deep-link the calendar.
+    // Example: /calendar?date=2026-01-06T00:00:00.000Z
+    const dateParam = new URLSearchParams(window.location.search).get("date");
     if (!dateParam) {
       setSelectedDate(null);
       return;
     }
 
     const parsed = new Date(dateParam);
-    setSelectedDate(Number.isNaN(parsed.getTime()) ? null : parsed);
+    if (Number.isNaN(parsed.getTime())) {
+      setSelectedDate(null);
+      return;
+    }
+
+    setSelectedDate(parsed);
   }, [location]);
 
   useEffect(() => {
@@ -127,10 +151,6 @@ export default function CalendarPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleMiniCalendarDateClick = (date: Date) => {
-    setSelectedDate(date);
   };
 
   const exportCalendar = () => {

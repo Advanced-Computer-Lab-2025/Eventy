@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { favoritesApi, FavoriteEvent } from "../lib/favoritesApi";
+import { logger } from "@/lib/logger";
 
 type ApiError = Error & {
   response?: {

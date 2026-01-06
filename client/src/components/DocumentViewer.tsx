@@ -8,6 +8,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, FileImage, FileText } from "lucide-react";
 import { useState, useEffect } from "react";
+import { logger } from "@/lib/logger";
 
 interface DocumentViewerProps {
   open: boolean;
