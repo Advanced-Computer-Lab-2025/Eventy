@@ -139,9 +139,15 @@ export default function EditWorkshop() {
       const workshop = data.data;
 
       // Parse dates and times
-      const startDate = new Date(workshop.startDate);
-      const endDate = new Date(workshop.endDate);
-      const deadline = new Date(workshop.registrationDeadline);
+      const parseDateOrUndefined = (value: unknown) => {
+        if (typeof value !== "string" || !value) return undefined;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? undefined : d;
+      };
+
+      const startDate = parseDateOrUndefined(workshop.startDate);
+      const endDate = parseDateOrUndefined(workshop.endDate);
+      const deadline = parseDateOrUndefined(workshop.registrationDeadline);
 
       setFormData({
         name: workshop.name || "",

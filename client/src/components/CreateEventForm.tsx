@@ -68,11 +68,18 @@ export default function CreateEventForm({
   formId,
   onCancel,
 }: CreateEventFormProps) {
+  const isValidDate = (d: unknown): d is Date =>
+    d instanceof Date && !Number.isNaN(d.getTime());
+
   const [values, setValues] = useState<CreateEventFormValues>({
     name: initialValues.name || "",
-    startDate: initialValues.startDate || undefined,
+    startDate: isValidDate(initialValues.startDate)
+      ? initialValues.startDate
+      : undefined,
     startTime: initialValues.startTime || "",
-    endDate: initialValues.endDate || undefined,
+    endDate: isValidDate(initialValues.endDate)
+      ? initialValues.endDate
+      : undefined,
     endTime: initialValues.endTime || "",
     description: initialValues.description || "",
     websiteUrl: initialValues.websiteUrl || "",
@@ -142,8 +149,12 @@ export default function CreateEventForm({
     const nextErrors: Record<string, string> = {};
     if (!values.name.trim()) nextErrors.name = "Name is required";
     if (!values.startDate) nextErrors.startDate = "Start date is required";
+    else if (!isValidDate(values.startDate))
+      nextErrors.startDate = "Start date must be a valid date";
     if (!values.startTime) nextErrors.startTime = "Start time is required";
     if (!values.endDate) nextErrors.endDate = "End date is required";
+    else if (!isValidDate(values.endDate))
+      nextErrors.endDate = "End date must be a valid date";
     if (!values.endTime) nextErrors.endTime = "End time is required";
     if (!values.description.trim())
       nextErrors.description = "Description is required";
@@ -181,7 +192,7 @@ export default function CreateEventForm({
     }
 
     // Logical date/time validation
-    if (values.startDate && values.startTime) {
+    if (values.startDate && values.startTime && isValidDate(values.startDate)) {
       const start = new Date(
         `${format(values.startDate, "yyyy-MM-dd")}T${values.startTime}:00`
       );
@@ -199,7 +210,9 @@ export default function CreateEventForm({
       values.startDate &&
       values.startTime &&
       values.endDate &&
-      values.endTime
+      values.endTime &&
+      isValidDate(values.startDate) &&
+      isValidDate(values.endDate)
     ) {
       const start = new Date(
         `${format(values.startDate, "yyyy-MM-dd")}T${values.startTime}:00`
