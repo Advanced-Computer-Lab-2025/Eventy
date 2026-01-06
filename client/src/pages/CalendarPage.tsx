@@ -33,13 +33,27 @@ interface Event {
 }
 
 export default function CalendarPage() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const query = location.split("?")[1] ?? "";
+    const params = new URLSearchParams(query);
+    const dateParam = params.get("date");
+
+    if (!dateParam) {
+      setSelectedDate(null);
+      return;
+    }
+
+    const parsed = new Date(dateParam);
+    setSelectedDate(Number.isNaN(parsed.getTime()) ? null : parsed);
+  }, [location]);
 
   useEffect(() => {
     fetchUserEvents();
@@ -117,11 +131,6 @@ export default function CalendarPage() {
 
   const handleMiniCalendarDateClick = (date: Date) => {
     setSelectedDate(date);
-    // Switch to day view in big calendar
-    const calendarTab = document.querySelector('[data-calendar-tab="big"]');
-    if (calendarTab) {
-      (calendarTab as HTMLElement).click();
-    }
   };
 
   const exportCalendar = () => {
@@ -206,7 +215,7 @@ export default function CalendarPage() {
               <BigCalendarView
                 events={filteredEvents}
                 defaultDate={selectedDate || undefined}
-                defaultView={selectedDate ? "day" : "month"}
+                defaultView="month"
                 customToolbarComponent={
                   <div className="flex items-center gap-2">
                     <Select

@@ -100,30 +100,23 @@ export default function MiniCalendar({
     setCurrentDate(new Date());
   };
 
-  const getEventsForDate = (day: number): Event[] => {
-    const date = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
-    );
+  const getEventsForDate = (date: Date): Event[] => {
     const dateKey = date.toISOString().split("T")[0];
     return eventsByDate.get(dateKey) || [];
   };
 
-  const isToday = (day: number): boolean => {
+  const isToday = (date: Date): boolean => {
     const today = new Date();
     return (
-      day === today.getDate() &&
-      currentDate.getMonth() === today.getMonth() &&
-      currentDate.getFullYear() === today.getFullYear()
+      date.getDate() === today.getDate() &&
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear()
     );
   };
 
-  const handleDayClick = (day: number) => {
-    const selectedDate = new Date(
-      currentDate.getFullYear(),
-      currentDate.getMonth(),
-      day
+  const handleDayClick = (selectedDate: Date) => {
+    setCurrentDate(
+      new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
     );
     onDateClick?.(selectedDate);
   };
@@ -131,28 +124,163 @@ export default function MiniCalendar({
   const renderCalendarDays = () => {
     const days = [];
 
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    const prevMonthLastDay = new Date(year, month, 0).getDate();
+    const totalCells = Math.ceil((startingDayOfWeek + daysInMonth) / 7) * 7;
+    const trailingDays = totalCells - (startingDayOfWeek + daysInMonth);
+
     // Empty cells for days before the first day of the month
     for (let i = 0; i < startingDayOfWeek; i++) {
-      days.push(<div key={`empty-${i}`} className="aspect-square p-1"></div>);
+      const dayNumber = prevMonthLastDay - startingDayOfWeek + 1 + i;
+      const date = new Date(year, month - 1, dayNumber);
+      const dayEvents = getEventsForDate(date);
+      const hasEvents = dayEvents.length > 0;
+      const today = isToday(date);
+
+      days.push(
+        <TooltipProvider key={`prev-${dayNumber}`}>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => handleDayClick(date)}
+                className={`
+                  aspect-square p-1 rounded-lg text-sm font-medium
+                  transition-all duration-200 relative
+                  hover:bg-accent hover:scale-105
+                  opacity-60
+                  ${today ? "bg-primary text-primary-foreground opacity-100" : ""}
+                  ${hasEvents && !today ? "font-bold" : ""}
+                  ${!hasEvents && !today ? "text-muted-foreground" : ""}
+                `}
+              >
+                <div className="flex flex-col items-center justify-center h-full">
+                  <span>{dayNumber}</span>
+                  {hasEvents && (
+                    <div className="flex items-center justify-center -mt-0.5">
+                      <div
+                        className={`w-1 h-1 rounded-full ${
+                          today ? "bg-primary-foreground" : "bg-primary"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              </button>
+            </TooltipTrigger>
+            {hasEvents && (
+              <TooltipContent side="right" className="max-w-xs">
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm">
+                    {dayEvents.length} Event{dayEvents.length > 1 ? "s" : ""}
+                  </p>
+                  <div className="space-y-1">
+                    {dayEvents.map((event) => (
+                      <div key={event._id} className="text-xs">
+                        <p className="font-medium">{event.name}</p>
+                        {event.location && (
+                          <p className="text-muted-foreground">
+                            📍 {event.location}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground italic">
+                    Click to view in calendar
+                  </p>
+                </div>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      );
     }
 
     // Days of the month
     for (let day = 1; day <= daysInMonth; day++) {
-      const dayEvents = getEventsForDate(day);
+      const date = new Date(year, month, day);
+      const dayEvents = getEventsForDate(date);
       const hasEvents = dayEvents.length > 0;
-      const today = isToday(day);
+      const today = isToday(date);
 
       days.push(
         <TooltipProvider key={day}>
           <Tooltip delayDuration={200}>
             <TooltipTrigger asChild>
               <button
-                onClick={() => handleDayClick(day)}
+                onClick={() => handleDayClick(date)}
                 className={`
                   aspect-square p-1 rounded-lg text-sm font-medium
                   transition-all duration-200 relative
                   hover:bg-accent hover:scale-105
                   ${today ? "bg-primary text-primary-foreground" : ""}
+                  ${hasEvents && !today ? "font-bold" : ""}
+                  ${!hasEvents && !today ? "text-muted-foreground" : ""}
+                `}
+              >
+                <div className="flex flex-col items-center justify-center h-full">
+                  <span>{day}</span>
+                  {hasEvents && (
+                    <div className="flex items-center justify-center -mt-0.5">
+                      <div
+                        className={`w-1 h-1 rounded-full ${
+                          today ? "bg-primary-foreground" : "bg-primary"
+                        }`}
+                      />
+                    </div>
+                  )}
+                </div>
+              </button>
+            </TooltipTrigger>
+            {hasEvents && (
+              <TooltipContent side="right" className="max-w-xs">
+                <div className="space-y-2">
+                  <p className="font-semibold text-sm">
+                    {dayEvents.length} Event{dayEvents.length > 1 ? "s" : ""}
+                  </p>
+                  <div className="space-y-1">
+                    {dayEvents.map((event) => (
+                      <div key={event._id} className="text-xs">
+                        <p className="font-medium">{event.name}</p>
+                        {event.location && (
+                          <p className="text-muted-foreground">
+                            📍 {event.location}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground italic">
+                    Click to view in calendar
+                  </p>
+                </div>
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+      );
+    }
+
+    // Trailing days from next month
+    for (let day = 1; day <= trailingDays; day++) {
+      const date = new Date(year, month + 1, day);
+      const dayEvents = getEventsForDate(date);
+      const hasEvents = dayEvents.length > 0;
+      const today = isToday(date);
+
+      days.push(
+        <TooltipProvider key={`next-${day}`}>
+          <Tooltip delayDuration={200}>
+            <TooltipTrigger asChild>
+              <button
+                onClick={() => handleDayClick(date)}
+                className={`
+                  aspect-square p-1 rounded-lg text-sm font-medium
+                  transition-all duration-200 relative
+                  hover:bg-accent hover:scale-105
+                  opacity-60
+                  ${today ? "bg-primary text-primary-foreground opacity-100" : ""}
                   ${hasEvents && !today ? "font-bold" : ""}
                   ${!hasEvents && !today ? "text-muted-foreground" : ""}
                 `}
