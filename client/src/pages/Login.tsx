@@ -168,7 +168,7 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@guc.edu.eg"
+                    placeholder="Enter your email"
                     className="pl-10"
                     value={formData.email}
                     onChange={(e) =>
