@@ -39,7 +39,16 @@ export default function StudentHeader({
   homeHref = "/home",
 }: StudentHeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed.user || parsed;
+    } catch {
+      return null;
+    }
+  });
   const apiBase = getApiBaseUrl();
 
   // Function to fetch fresh user data (including walletBalance)
@@ -79,19 +88,8 @@ export default function StudentHeader({
   };
 
   useEffect(() => {
-    // 1. Initial Load from LocalStorage (fast render)
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        // Handle case where localStorage accidentally saved the wrapper
-        setUser(parsed.user || parsed);
-      }
-    } catch (err) {
-      // ignore
-    }
-
-    // 2. Fetch fresh data from API (accurate balance)
+    // Fetch fresh data from API (accurate balance)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserProfile();
   }, []);
 

@@ -46,14 +46,17 @@ export default function CalendarPopover() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserEvents();
 
     // Listen for registration and cancellation events to keep calendar in sync
     const handleRegistration = () => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 
     const handleCancellation = () => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 
@@ -67,6 +70,13 @@ export default function CalendarPopover() {
   }, []);
 
   const handleDateClick = (date: Date) => {
+    // If the calendar page is already open, query-string navigation may not trigger a rerender.
+    // Broadcast a date jump so the page can update its BigCalendarView immediately.
+    window.dispatchEvent(
+      new CustomEvent("calendar:jumpToDate", {
+        detail: { date: date.toISOString() },
+      })
+    );
     // Navigate to calendar page with selected date
     setLocation(`/calendar?date=${date.toISOString()}`);
   };

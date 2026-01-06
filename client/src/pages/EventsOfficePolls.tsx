@@ -533,7 +533,9 @@ export default function EventsOfficePolls() {
                           />
                         </TableCell>
                         <TableCell>
-                          {req?.createdBy?.companyName || "Unknown"}
+                          {(typeof req?.createdBy === "string"
+                            ? undefined
+                            : req?.createdBy?.companyName) || "Unknown"}
                         </TableCell>
                         <TableCell>{req.locationPreference || "-"}</TableCell>
                         <TableCell>{req.boothSize || "-"}</TableCell>

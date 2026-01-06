@@ -66,6 +66,14 @@ export default function Home() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const { toast } = useToast();
 
+  const safeProfessorForLocationOptions = useMemo(() => {
+    if (!filters.professor) return "";
+    if (professorOptions.length === 0) return filters.professor;
+    return professorOptions.some((p) => p.id === filters.professor)
+      ? filters.professor
+      : "";
+  }, [filters.professor, professorOptions]);
+
   const handleSearchResults = (results: any[]) => {
     // Sort events to prioritize bazaars first, then by startDate
     const sortedResults = [...results].sort((a, b) => {
@@ -115,10 +123,11 @@ export default function Home() {
         return false;
       }
       // Filter by professor
-      if (filters.professor) {
+      if (safeProfessorForLocationOptions) {
         const eventProfessors = (event as any).professors || [];
         const hasProfessor = eventProfessors.some(
-          (p: any) => String(p._id || p.id || p) === filters.professor
+          (p: any) =>
+            String(p._id || p.id || p) === safeProfessorForLocationOptions
         );
         if (!hasProfessor) return false;
       }
@@ -135,25 +144,14 @@ export default function Home() {
       if (loc) uniqueLocations.add(loc);
     });
     return Array.from(uniqueLocations);
-  }, [allEvents, filters.eventType, filters.professor]);
+  }, [allEvents, filters.eventType, safeProfessorForLocationOptions]);
 
-  const appliedFilters: EventSearchFilters = useMemo(() => {
-    const next: EventSearchFilters = {};
-    if (filters.eventType !== "all") {
-      next.type = filters.eventType;
-    }
-    if (filters.location !== "all") {
-      next.location = filters.location;
-    }
-    if (filters.startDate && filters.endDate) {
-      next.startDate = filters.startDate.toISOString();
-      next.endDate = filters.endDate.toISOString();
-    }
-    if (filters.professor) {
-      (next as any).professor = filters.professor;
-    }
-    return next;
-  }, [filters]);
+  const safeLocation = useMemo(() => {
+    if (filters.location === "all") return "all";
+    return locationOptions.includes(filters.location)
+      ? filters.location
+      : "all";
+  }, [filters.location, locationOptions]);
 
   // compute professorOptions dynamically by filtering API professors based on available events
   const computedProfessorOptions = useMemo(() => {
@@ -167,13 +165,13 @@ export default function Home() {
         return false;
       }
       // Filter by location
-      if (filters.location !== "all") {
+      if (safeLocation !== "all") {
         const eventLocation =
           event.location ||
           (event.eventType === "platform_booth"
             ? (event as any).locationPreference
             : "");
-        if (eventLocation !== filters.location) return false;
+        if (eventLocation !== safeLocation) return false;
       }
       return true;
     });
@@ -194,40 +192,45 @@ export default function Home() {
     return professorOptions.filter((prof) =>
       availableProfessorIds.has(prof.id)
     );
-  }, [allEvents, filters.eventType, filters.location, professorOptions]);
+  }, [allEvents, filters.eventType, safeLocation, professorOptions]);
 
-  // Clear invalid filter selections when options change
-  useEffect(() => {
-    let needsUpdate = false;
-    const newFilters = { ...filters };
+  const safeProfessor = useMemo(() => {
+    if (!filters.professor) return "";
+    const optionsToValidate =
+      computedProfessorOptions.length > 0
+        ? computedProfessorOptions
+        : professorOptions;
+    if (optionsToValidate.length === 0) return filters.professor;
+    return optionsToValidate.some((p) => p.id === filters.professor)
+      ? filters.professor
+      : "";
+  }, [filters.professor, computedProfessorOptions, professorOptions]);
 
-    // Clear location if it's no longer available
-    if (
-      filters.location !== "all" &&
-      !locationOptions.includes(filters.location)
-    ) {
-      newFilters.location = "all";
-      needsUpdate = true;
+  const displayFilters = useMemo(() => {
+    return {
+      ...filters,
+      location: safeLocation,
+      professor: safeProfessor,
+    };
+  }, [filters, safeLocation, safeProfessor]);
+
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (displayFilters.eventType !== "all") {
+      next.type = displayFilters.eventType;
     }
-
-    // Clear professor if it's no longer available
-    if (
-      filters.professor &&
-      !computedProfessorOptions.some((p) => p.id === filters.professor)
-    ) {
-      newFilters.professor = "";
-      needsUpdate = true;
+    if (displayFilters.location !== "all") {
+      next.location = displayFilters.location;
     }
-
-    if (needsUpdate) {
-      setFilters(newFilters);
+    if (displayFilters.startDate && displayFilters.endDate) {
+      next.startDate = displayFilters.startDate.toISOString();
+      next.endDate = displayFilters.endDate.toISOString();
     }
-  }, [
-    locationOptions,
-    computedProfessorOptions,
-    filters.location,
-    filters.professor,
-  ]);
+    if (displayFilters.professor) {
+      (next as any).professor = displayFilters.professor;
+    }
+    return next;
+  }, [displayFilters]);
 
   useEffect(() => {
     const baseUrl = getApiBaseUrl();
@@ -278,7 +281,7 @@ export default function Home() {
             <aside className="lg:w-72 flex-shrink-0">
               <div className="sticky top-32 space-y-4">
                 <EventFilters
-                  filters={filters}
+                  filters={displayFilters}
                   onFilterChange={setFilters}
                   locations={locationOptions}
                   professors={computedProfessorOptions}

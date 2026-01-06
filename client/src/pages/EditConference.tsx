@@ -218,11 +218,13 @@ export default function EditConference() {
 
   const initialValues: Partial<CreateEventFormValues> = {
     name: conference.name,
-    startDate: formatDateForInput(conference.startDate),
+    startDate: conference.startDate
+      ? new Date(conference.startDate)
+      : undefined,
     // Use separate startTime field if available, otherwise extract from date
     startTime:
       (conference as any).startTime ?? formatTimeForInput(conference.startDate),
-    endDate: formatDateForInput(conference.endDate),
+    endDate: conference.endDate ? new Date(conference.endDate) : undefined,
     // Use separate endTime field if available, otherwise extract from date
     endTime:
       (conference as any).endTime ?? formatTimeForInput(conference.endDate),

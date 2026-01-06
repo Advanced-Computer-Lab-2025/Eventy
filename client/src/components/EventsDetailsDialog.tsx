@@ -112,7 +112,7 @@ export default function EventDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#1D1825] border-purple-100 dark:border-[#6A33B8]/30 shadow-2xl shadow-purple-900/20">
+      <DialogContent className="max-w-xl p-0 overflow-hidden bg-background text-foreground border-border shadow-2xl">
         <AnimatePresence mode="wait">
           <motion.div
             key={event._id || event.id}
@@ -123,11 +123,11 @@ export default function EventDetailsDialog({
           >
             {/* ================= HEADER ================= */}
             <div className="relative p-6 pb-2 shrink-0">
-              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#6A33B8]/10 to-transparent pointer-events-none" />
+              <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
 
               <div className="relative z-10 space-y-1 pr-12">
                 <div className="flex flex-wrap items-center gap-3">
-                  <DialogTitle className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                  <DialogTitle className="text-2xl md:text-3xl font-bold leading-tight">
                     {event.name}
                   </DialogTitle>
                   <div className="mt-1">
@@ -135,8 +135,8 @@ export default function EventDetailsDialog({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/70 pt-2">
-                  <MapPin className="w-4 h-4 text-[#6A33B8] dark:text-[#9F7AEA]" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                  <MapPin className="w-4 h-4 text-primary" />
                   <span>{event.location || "Location TBD"}</span>
                 </div>
               </div>

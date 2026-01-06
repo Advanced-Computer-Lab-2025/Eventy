@@ -72,7 +72,7 @@ export default function EditWorkshop() {
     fundingSource: "",
     resources: "",
     capacity: "",
-    deadline: "",
+    deadline: undefined,
   });
 
   const [professorsOptions, setProfessorsOptions] = useState<

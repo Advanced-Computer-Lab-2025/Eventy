@@ -50,33 +50,21 @@ export default function StaffUpcomingEvents() {
   const [eventFilters, setEventFilters] = useState<EventFilterState>({
     eventType: "all",
     location: "all",
-    startDate: "",
-    endDate: "",
+    startDate: undefined,
+    endDate: undefined,
     professor: "",
     showUpcoming: true,
     showPast: true,
   });
   const { toast } = useToast();
 
-  const appliedFilters: EventSearchFilters = useMemo(() => {
-    const next: EventSearchFilters = {};
-    if (eventFilters.eventType !== "all") {
-      next.type = eventFilters.eventType;
-    }
-    if (eventFilters.location !== "all") {
-      next.location = eventFilters.location;
-    }
-    if (eventFilters.startDate) {
-      next.startDate = eventFilters.startDate;
-    }
-    if (eventFilters.endDate) {
-      next.endDate = eventFilters.endDate;
-    }
-    if (eventFilters.professor) {
-      (next as any).professor = eventFilters.professor;
-    }
-    return next;
-  }, [eventFilters]);
+  const safeProfessorForLocationOptions = useMemo(() => {
+    if (!eventFilters.professor) return "";
+    if (professorOptions.length === 0) return eventFilters.professor;
+    return professorOptions.some((p) => p.id === eventFilters.professor)
+      ? eventFilters.professor
+      : "";
+  }, [eventFilters.professor, professorOptions]);
 
   const handleSearchResults = (results: any[]) => {
     setEvents(results);
@@ -108,10 +96,11 @@ export default function StaffUpcomingEvents() {
       ) {
         return false;
       }
-      if (eventFilters.professor) {
+      if (safeProfessorForLocationOptions) {
         const eventProfessors = (event as any).professors || [];
         const hasProfessor = eventProfessors.some(
-          (p: any) => String(p._id || p.id || p) === eventFilters.professor
+          (p: any) =>
+            String(p._id || p.id || p) === safeProfessorForLocationOptions
         );
         if (!hasProfessor) return false;
       }
@@ -128,7 +117,14 @@ export default function StaffUpcomingEvents() {
       )
       .filter(Boolean) as string[];
     return Array.from(new Set(locations));
-  }, [allEvents, eventFilters.eventType, eventFilters.professor]);
+  }, [allEvents, eventFilters.eventType, safeProfessorForLocationOptions]);
+
+  const safeLocation = useMemo(() => {
+    if (eventFilters.location === "all") return "all";
+    return availableLocations.includes(eventFilters.location)
+      ? eventFilters.location
+      : "all";
+  }, [eventFilters.location, availableLocations]);
 
   const computedProfessorOptions = useMemo(() => {
     const filteredEvents = allEvents.filter((event) => {
@@ -138,13 +134,13 @@ export default function StaffUpcomingEvents() {
       ) {
         return false;
       }
-      if (eventFilters.location !== "all") {
+      if (safeLocation !== "all") {
         const eventLocation =
           event.location ||
           (event.eventType === "platform_booth"
             ? (event as any).locationPreference
             : "");
-        if (eventLocation !== eventFilters.location) return false;
+        if (eventLocation !== safeLocation) return false;
       }
       return true;
     });
@@ -163,45 +159,45 @@ export default function StaffUpcomingEvents() {
     return professorOptions.filter((prof) =>
       availableProfessorIds.has(prof.id)
     );
-  }, [
-    allEvents,
-    eventFilters.eventType,
-    eventFilters.location,
-    professorOptions,
-  ]);
+  }, [allEvents, eventFilters.eventType, safeLocation, professorOptions]);
 
-  useEffect(() => {
-    let needsUpdate = false;
-    const newFilters = { ...eventFilters };
-
-    if (
-      eventFilters.location !== "all" &&
-      !availableLocations.includes(eventFilters.location)
-    ) {
-      newFilters.location = "all";
-      needsUpdate = true;
-    }
-
-    const allProfessorOptions =
+  const safeProfessor = useMemo(() => {
+    if (!eventFilters.professor) return "";
+    const optionsToValidate =
       professorOptions.length > 0 ? professorOptions : computedProfessorOptions;
-    if (
-      eventFilters.professor &&
-      !allProfessorOptions.some((p) => p.id === eventFilters.professor)
-    ) {
-      newFilters.professor = "";
-      needsUpdate = true;
-    }
+    if (optionsToValidate.length === 0) return eventFilters.professor;
+    return optionsToValidate.some((p) => p.id === eventFilters.professor)
+      ? eventFilters.professor
+      : "";
+  }, [eventFilters.professor, professorOptions, computedProfessorOptions]);
 
-    if (needsUpdate) {
-      setEventFilters(newFilters);
+  const displayFilters = useMemo(() => {
+    return {
+      ...eventFilters,
+      location: safeLocation,
+      professor: safeProfessor,
+    };
+  }, [eventFilters, safeLocation, safeProfessor]);
+
+  const appliedFilters: EventSearchFilters = useMemo(() => {
+    const next: EventSearchFilters = {};
+    if (displayFilters.eventType !== "all") {
+      next.type = displayFilters.eventType;
     }
-  }, [
-    availableLocations,
-    professorOptions,
-    computedProfessorOptions,
-    eventFilters.location,
-    eventFilters.professor,
-  ]);
+    if (displayFilters.location !== "all") {
+      next.location = displayFilters.location;
+    }
+    if (displayFilters.startDate) {
+      next.startDate = displayFilters.startDate.toISOString().slice(0, 10);
+    }
+    if (displayFilters.endDate) {
+      next.endDate = displayFilters.endDate.toISOString().slice(0, 10);
+    }
+    if (displayFilters.professor) {
+      (next as any).professor = displayFilters.professor;
+    }
+    return next;
+  }, [displayFilters]);
 
   useEffect(() => {
     const baseUrl = getApiBaseUrl();
@@ -247,7 +243,7 @@ export default function StaffUpcomingEvents() {
             <aside className="lg:w-72 flex-shrink-0">
               <div className="sticky top-32 space-y-4">
                 <EventFilters
-                  filters={eventFilters}
+                  filters={displayFilters}
                   onFilterChange={setEventFilters}
                   locations={availableLocations}
                   professors={computedProfessorOptions}

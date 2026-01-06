@@ -39,7 +39,16 @@ export default function ProfessorHeader({
   homeHref = "/professor",
 }: ProfessorHeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed.user || parsed;
+    } catch {
+      return null;
+    }
+  });
   const apiBase = getApiBaseUrl();
 
   // 2. Fetch User Profile Logic
@@ -75,17 +84,8 @@ export default function ProfessorHeader({
   };
 
   useEffect(() => {
-    // Initial Load from LocalStorage
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed.user || parsed);
-      }
-    } catch (err) {
-      // ignore
-    }
     // Fetch fresh data immediately
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserProfile();
   }, []);
 

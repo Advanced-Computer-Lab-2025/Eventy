@@ -449,27 +449,29 @@ function LiveEventCard({ event }: { event: Event }) {
 
 export default function LiveMoments() {
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole] = useState<string | null>(() => {
+    try {
+      const user = localStorage.getItem("user");
+      if (!user) return null;
+      const parsed = JSON.parse(user);
+      return parsed.role ?? null;
+    } catch {
+      return null;
+    }
+  });
   const [eventImageCounts, setEventImageCounts] = useState<
     Record<string, number>
   >({});
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-
-  // Get user role and ID from localStorage
-  useEffect(() => {
+  const [currentUserId] = useState<string | null>(() => {
     try {
       const user = localStorage.getItem("user");
-      if (user) {
-        const parsed = JSON.parse(user);
-        logger.info("Parsed user from localStorage:", parsed);
-        setUserRole(parsed.role);
-        setCurrentUserId(parsed._id || parsed.id);
-        logger.info("Set current user ID to:", parsed._id || parsed.id);
-      }
-    } catch (err) {
-      logger.error("Error parsing user data:", err);
+      if (!user) return null;
+      const parsed = JSON.parse(user);
+      return parsed._id || parsed.id || null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   const {
     data: ongoingEvents,

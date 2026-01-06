@@ -262,7 +262,9 @@ export default function EventCard({
           );
           setIsAlreadyListed(listed);
         }
-      } catch (e) {}
+      } catch (e) {
+        logger.debug("Failed to parse token for resale listings", e);
+      }
     }
   }, [eventData]);
 
@@ -346,7 +348,9 @@ export default function EventCard({
           title: "Link copied",
           description: "Event link copied to clipboard!",
         });
-      } catch (err) {}
+      } catch (err) {
+        logger.debug("Failed to copy event link to clipboard", err);
+      }
     }
   };
 
@@ -403,11 +407,9 @@ export default function EventCard({
   const eventTypeForImage = isPlatformBooth
     ? "platform_booth"
     : String(category);
-  const displayCategory = isPlatformBooth
-    ? "Platform Booth"
-    : String(category)
-        .replace(/_/g, " ")
-        .replace(/\b\w/g, (c) => c.toUpperCase());
+  const badgeCategory = isPlatformBooth
+    ? "platform_booth"
+    : String(category).toLowerCase();
   const imageSrc =
     normalizeBackendAssetUrl(image) || getEventImage(eventTypeForImage, title);
   const requiresPayment = ["trip", "workshop"].includes(
@@ -448,7 +450,9 @@ export default function EventCard({
             detail: { eventId: id, event: data?.event || null },
           })
         );
-      } catch (e) {}
+      } catch (e) {
+        logger.debug("Failed to dispatch event registration notification", e);
+      }
     } catch {
       toast({
         title: "Error",
@@ -576,7 +580,9 @@ export default function EventCard({
       const payload = JSON.parse(atob(token.split(".")[1]));
       currentUserId = payload?.id || payload?._id || "";
     }
-  } catch {}
+  } catch (err) {
+    logger.debug("Failed to parse token for current user id", err);
+  }
 
   const isActuallyRegistered =
     Array.isArray(attendeesList) &&
@@ -655,7 +661,9 @@ export default function EventCard({
         role
       );
     }
-  } catch {}
+  } catch (err) {
+    logger.debug("Failed to parse token for role permissions", err);
+  }
 
   const canShowDelete = roleAllowsDelete && canDelete;
   const canShowFavorites = roleAllowsFavorites;
@@ -794,7 +802,7 @@ export default function EventCard({
           />
           {!showDetailedView && (
             <div className="absolute top-3 left-3">
-              <CategoryBadge category={displayCategory as EventCategory} />
+              <CategoryBadge category={badgeCategory} />
             </div>
           )}
         </div>
@@ -807,7 +815,7 @@ export default function EventCard({
                 <CardTitle className="text-xl break-words whitespace-normal">
                   {title}
                 </CardTitle>
-                <CategoryBadge category={displayCategory as EventCategory} />
+                <CategoryBadge category={badgeCategory} />
               </div>
             </CardHeader>
 
@@ -969,7 +977,12 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {}
+                            } catch (err) {
+                              logger.debug(
+                                "Failed to parse token for workshop role check",
+                                err
+                              );
+                            }
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-${id}`}
@@ -1014,19 +1027,19 @@ export default function EventCard({
                     </div>
                   ) : (
                     <div className="flex gap-2 w-full items-center">
-                      <Button className="flex-1" disabled>
-                        Registered
-                      </Button>
                       <Button
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 order-1"
                         onClick={handleViewDetailsClick}
                       >
                         View Details
                       </Button>
+                      <Button className="flex-1 order-2" disabled>
+                        Registered
+                      </Button>
                       {canShowFavorites && (
                         <div
-                          className="relative flex-shrink-0"
+                          className="relative flex-shrink-0 order-3"
                           onClick={(e) => e.stopPropagation()}
                         >
                           <FavoriteButton eventId={id} />
@@ -1038,7 +1051,7 @@ export default function EventCard({
                   <div className="flex gap-2 w-full items-center">
                     {onEdit && (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-2"
                         onClick={() => onEdit()}
                         data-testid={`button-edit-${id}`}
                       >
@@ -1048,13 +1061,18 @@ export default function EventCard({
                     )}
                     {onArchive && (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-3"
                         onClick={async (e) => {
                           if ((e as any).stopPropagation)
                             (e as any).stopPropagation();
                           try {
                             await onArchive();
-                          } catch (err) {}
+                          } catch (err) {
+                            logger.debug(
+                              "Failed to parse token for registration state",
+                              err
+                            );
+                          }
                         }}
                         disabled={isArchiving}
                         data-testid={`button-archive-${id}`}
@@ -1072,7 +1090,7 @@ export default function EventCard({
                     {onViewDetails && (
                       <Button
                         variant="outline"
-                        className="flex-1"
+                        className="flex-1 order-1"
                         onClick={(e) => {
                           e.stopPropagation();
                           onViewDetails();
@@ -1083,7 +1101,7 @@ export default function EventCard({
                     )}
                     {canShowDelete && (
                       <Trash2
-                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0"
+                        className="h-5 w-5 text-red-600 cursor-pointer hover:text-red-700 transition-colors flex-shrink-0 order-4"
                         onClick={(e) => {
                           if ((e as any).stopPropagation)
                             (e as any).stopPropagation();
@@ -1101,7 +1119,7 @@ export default function EventCard({
                   <div className="flex gap-2 w-full items-center">
                     <Button
                       variant="outline"
-                      className="flex-1"
+                      className="flex-1 order-1"
                       onClick={handleViewDetailsClick}
                     >
                       View Details
@@ -1109,7 +1127,7 @@ export default function EventCard({
 
                     {showResaleMarketplaceOption ? (
                       <Button
-                        className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                        className="flex-1 order-2 bg-purple-600 hover:bg-purple-700 text-white"
                         onClick={handleFetchResaleTickets}
                         // removed variant="secondary"
                       >
@@ -1119,7 +1137,7 @@ export default function EventCard({
                     ) : isFull && canJoinWaitlist ? (
                       isCheckingWaitlist ? (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           disabled
                           variant="outline"
                           data-testid={`button-checking-waitlist-${id}`}
@@ -1128,7 +1146,7 @@ export default function EventCard({
                         </Button>
                       ) : isOnWaitlist ? (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           disabled
                           variant="outline"
                           data-testid={`button-waitlisted-${id}`}
@@ -1137,7 +1155,7 @@ export default function EventCard({
                         </Button>
                       ) : (
                         <Button
-                          className="flex-1"
+                          className="flex-1 order-2"
                           onClick={() => setShowWaitlistDialog(true)}
                           data-testid={`button-join-waitlist-${id}`}
                         >
@@ -1146,7 +1164,7 @@ export default function EventCard({
                       )
                     ) : (
                       <Button
-                        className="flex-1"
+                        className="flex-1 order-2"
                         onClick={() =>
                           requiresPayment
                             ? setShowPaymentDialog(true)
@@ -1160,7 +1178,7 @@ export default function EventCard({
                     )}
                     {canShowFavorites && (
                       <div
-                        className="relative flex-shrink-0"
+                        className="relative flex-shrink-0 order-3"
                         onClick={(e) => e.stopPropagation()}
                       >
                         <FavoriteButton eventId={id} />
@@ -1218,7 +1236,12 @@ export default function EventCard({
                         e.stopPropagation();
                         try {
                           await onUnarchive();
-                        } catch (err) {}
+                        } catch (err) {
+                          logger.debug(
+                            "Failed to parse token for favorites role",
+                            err
+                          );
+                        }
                       }}
                       disabled={isUnarchiving}
                       data-testid={`button-unarchive-${id}`}
@@ -1352,7 +1375,12 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {}
+                            } catch (err) {
+                              logger.debug(
+                                "Failed to parse token for delete permission",
+                                err
+                              );
+                            }
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-compact-${id}`}
@@ -1437,7 +1465,12 @@ export default function EventCard({
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {}
+                              } catch (err) {
+                                logger.debug(
+                                  "Failed to parse token for waitlist auth",
+                                  err
+                                );
+                              }
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1455,34 +1488,43 @@ export default function EventCard({
                       </div>
                     ) : (
                       <div className="flex gap-2 w-full items-center">
-                        <Button className="flex-1" disabled>
-                          Registered
-                        </Button>
                         <Button
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 order-1"
                           onClick={handleViewDetailsClick}
                         >
                           View Details
                         </Button>
+                        <Button className="flex-1 order-2" disabled>
+                          Registered
+                        </Button>
                         {canShowFavorites && (
                           <div
-                            className="relative flex-shrink-0"
+                            className="relative flex-shrink-0 order-3"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <FavoriteButton eventId={id} />
                           </div>
                         )}
-                        {inlineShareButton && <ShareButton />}
+                        {inlineShareButton && (
+                          <div className="order-4">
+                            <ShareButton />
+                          </div>
+                        )}
                         {onUnarchive && (
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-5"
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {}
+                              } catch (err) {
+                                logger.debug(
+                                  "Failed to parse token for resale auth",
+                                  err
+                                );
+                              }
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1509,7 +1551,7 @@ export default function EventCard({
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-1"
                             onClick={handleViewDetailsClick}
                           >
                             View Details
@@ -1518,7 +1560,7 @@ export default function EventCard({
                           {/* --- NEW LOGIC FOR DASHBOARD (Upcoming Events) --- */}
                           {showResaleMarketplaceOption ? (
                             <Button
-                              className="flex-1 bg-purple-600 hover:bg-purple-700 text-white"
+                              className="flex-1 order-2 bg-purple-600 hover:bg-purple-700 text-white"
                               onClick={handleFetchResaleTickets}
                               // removed variant="secondary"
                             >
@@ -1528,7 +1570,7 @@ export default function EventCard({
                           ) : isFull && canJoinWaitlist ? (
                             isCheckingWaitlist ? (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 disabled
                                 variant="outline"
                                 data-testid={`button-checking-waitlist-${id}`}
@@ -1537,7 +1579,7 @@ export default function EventCard({
                               </Button>
                             ) : isOnWaitlist ? (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 disabled
                                 variant="outline"
                                 data-testid={`button-waitlisted-${id}`}
@@ -1546,7 +1588,7 @@ export default function EventCard({
                               </Button>
                             ) : (
                               <Button
-                                className="flex-1"
+                                className="flex-1 order-2"
                                 onClick={() => setShowWaitlistDialog(true)}
                                 data-testid={`button-join-waitlist-${id}`}
                               >
@@ -1560,7 +1602,7 @@ export default function EventCard({
                                   ? setShowPaymentDialog(true)
                                   : handleDirectRegister()
                               }
-                              className="flex-1"
+                              className="flex-1 order-2"
                               data-testid={`button-register-${id}`}
                               disabled={!canRegister}
                             >
@@ -1571,32 +1613,40 @@ export default function EventCard({
                           )}
                           {canShowFavorites && (
                             <div
-                              className="relative flex-shrink-0"
+                              className="relative flex-shrink-0 order-3"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <FavoriteButton eventId={id} />
                             </div>
                           )}
-                          {inlineShareButton && <ShareButton />}
+                          {inlineShareButton && (
+                            <div className="order-4">
+                              <ShareButton />
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex gap-2 w-full items-center">
                           <Button
                             variant="outline"
-                            className="flex-1"
+                            className="flex-1 order-1"
                             onClick={handleViewDetailsClick}
                           >
                             View Details
                           </Button>
                           {canShowFavorites && (
                             <div
-                              className="relative flex-shrink-0"
+                              className="relative flex-shrink-0 order-3"
                               onClick={(e) => e.stopPropagation()}
                             >
                               <FavoriteButton eventId={id} />
                             </div>
                           )}
-                          {inlineShareButton && <ShareButton />}
+                          {inlineShareButton && (
+                            <div className="order-4">
+                              <ShareButton />
+                            </div>
+                          )}
                         </div>
                       )}
                     </>
@@ -1610,7 +1660,12 @@ export default function EventCard({
                           (e as any).stopPropagation();
                         try {
                           await onArchive();
-                        } catch (err) {}
+                        } catch (err) {
+                          logger.debug(
+                            "Failed to parse token for booth auth",
+                            err
+                          );
+                        }
                       }}
                       disabled={isArchiving}
                       data-testid={`button-archive-compact-${id}`}

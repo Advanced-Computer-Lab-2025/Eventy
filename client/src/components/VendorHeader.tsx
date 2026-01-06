@@ -5,7 +5,7 @@ import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Gift } from "lucide-react";
 import LoyaltyProgramDialog from "./LoyaltyProgramDialog";
 
@@ -20,7 +20,10 @@ export default function VendorHeader({
 }: VendorHeaderProps) {
   const [location, setLocation] = useLocation();
 
-  const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(false);
+  const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.location.hash.substring(1) === "loyalty-program";
+  });
   const [user, setUser] = useState<{
     firstName?: string;
     lastName?: string;
@@ -35,14 +38,6 @@ export default function VendorHeader({
       return null;
     }
   });
-
-  // Check URL hash on component mount and when it changes
-  useEffect(() => {
-    const hash = window.location.hash.substring(1);
-    if (hash === "loyalty-program") {
-      setIsLoyaltyDialogOpen(true);
-    }
-  }, []);
 
   const handleTabClick = (tab: string) => {
     if (onTabChange) {

@@ -242,8 +242,7 @@ export default function CreateBazaar() {
         const list = data.data || [];
         const b = list.find((ev: any) => ev._id === id);
         if (!b) throw new Error("Bazaar not found");
-        const toDate = (iso?: string) =>
-          iso ? new Date(iso).toISOString().slice(0, 10) : "";
+        const toDate = (iso?: string) => (iso ? new Date(iso) : undefined);
         const toTime = (iso?: string) =>
           iso ? new Date(iso).toISOString().slice(11, 16) : "";
         setFormData({

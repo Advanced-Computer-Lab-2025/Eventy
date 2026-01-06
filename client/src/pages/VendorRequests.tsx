@@ -44,7 +44,6 @@ import {
 import { useLocation } from "wouter";
 import DocumentViewer from "@/components/DocumentViewer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Badge as StatusBadge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -647,7 +646,7 @@ export default function VendorRequests() {
         </div>
 
         <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-          <DialogContent className="max-w-xl p-0 overflow-hidden bg-white dark:bg-[#1D1825] border-purple-100 dark:border-[#6A33B8]/30 shadow-2xl shadow-purple-900/20">
+          <DialogContent className="max-w-xl p-0 overflow-hidden bg-background text-foreground border-border shadow-2xl">
             <TooltipProvider delayDuration={500} skipDelayDuration={0}>
               {selected && (
                 <AnimatePresence mode="wait">
@@ -661,36 +660,32 @@ export default function VendorRequests() {
                   >
                     {/* Header */}
                     <div className="relative p-6 pb-2 shrink-0">
-                      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#6A33B8]/10 to-transparent pointer-events-none" />
+                      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
                       <div className="relative z-10 space-y-1 pr-12">
                         <div className="flex flex-wrap items-center gap-3">
-                          <DialogTitle className="text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">
+                          <DialogTitle className="text-2xl md:text-3xl font-bold leading-tight">
                             {selected?.createdBy?.companyName ||
                               "Vendor Application"}
                           </DialogTitle>
                           <div className="mt-1">
-                            <StatusBadge
-                              variant={
-                                selected.status === "approved"
-                                  ? "default"
-                                  : selected.status === "rejected"
-                                    ? "destructive"
-                                    : "secondary"
-                              }
+                            <Badge
+                              variant="outline"
                               className={
-                                selected.status === "pending"
-                                  ? "bg-yellow-100 text-yellow-800 border-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400"
-                                  : ""
+                                selected.status === "approved"
+                                  ? "bg-green-100 text-green-800 border-green-200/50 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50"
+                                  : selected.status === "rejected"
+                                    ? "bg-red-100 text-red-800 border-red-200/50 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50"
+                                    : "bg-yellow-100 text-yellow-800 border-yellow-200/50 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50"
                               }
                             >
                               {selected.status?.charAt(0).toUpperCase() +
                                 selected.status?.slice(1)}
-                            </StatusBadge>
+                            </Badge>
                           </div>
                         </div>
                         {selected?.createdBy?.email && (
-                          <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/70 pt-2">
-                            <Mail className="w-4 h-4 text-[#6A33B8] dark:text-[#9F7AEA]" />
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                            <Mail className="w-4 h-4 text-primary" />
                             <span>{selected.createdBy.email}</span>
                           </div>
                         )}
@@ -1081,7 +1076,7 @@ export default function VendorRequests() {
                     {selected?.status === "pending" && (
                       <div className="p-6 pt-4 border-t border-slate-200 dark:border-[#6A33B8]/20 flex gap-3 justify-end">
                         <Button
-                          className="bg-green-600 hover:bg-green-700 text-white"
+                          className="bg-green-600 hover:bg-green-700 text-white focus-visible:ring-0 focus:outline-none border-0"
                           onClick={async () => {
                             const updatedApp = await handleApprove(
                               selected._id

@@ -28,8 +28,8 @@ import ProfessorHeader from "@/components/ProfessorHeader";
 import StaffHeader from "@/components/StaffHeader";
 import VendorHeader from "@/components/VendorHeader";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
-import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
+import { useToast } from "@/hooks/use-toast";
 
 interface EventItem {
   id: string;

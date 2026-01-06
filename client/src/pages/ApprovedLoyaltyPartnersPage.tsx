@@ -271,14 +271,14 @@ export default function ApprovedLoyaltyPartnersPage() {
                           </p>
                         </TableCell>
                         <TableCell className="px-4">
-                          <div className="flex items-center gap-2 whitespace-nowrap">
+                          <div className="flex items-center gap-3 whitespace-nowrap">
                             <span className="text-sm">
                               {formatDate(partner.expiryDate)}
                             </span>
                             {isExpired(partner.expiryDate) && (
                               <Badge
-                                variant="destructive"
-                                className="text-xs shrink-0"
+                                variant="outline"
+                                className="text-xs shrink-0 ml-1 bg-red-100 text-red-800 border-red-200/50 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50"
                               >
                                 Expired
                               </Badge>
