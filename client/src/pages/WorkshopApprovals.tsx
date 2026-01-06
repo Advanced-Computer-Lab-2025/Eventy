@@ -8,6 +8,14 @@ import {
   SlidersHorizontal,
   Building2,
   Search,
+  Calendar,
+  Clock,
+  MapPin,
+  User,
+  AlignLeft,
+  DollarSign,
+  Landmark,
+  GraduationCap,
 } from "lucide-react";
 
 // top-level components (from components folder)
@@ -274,6 +282,44 @@ export default function WorkshopApprovals() {
     setShowEditRequestDialog(true);
   };
 
+  const formatWorkshopDate = (dateString?: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  const formatWorkshopTime = (dateString?: string) => {
+    if (!dateString) return "";
+    return new Date(dateString).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const startDateStr = selectedWorkshop
+    ? formatWorkshopDate(selectedWorkshop.startDate)
+    : "";
+  const endDateStr = selectedWorkshop
+    ? formatWorkshopDate(selectedWorkshop.endDate)
+    : "";
+  const startTimeStr = selectedWorkshop
+    ? selectedWorkshop.startTime ||
+      (selectedWorkshop.startDate
+        ? formatWorkshopTime(selectedWorkshop.startDate)
+        : "")
+    : "";
+  const endTimeStr = selectedWorkshop
+    ? selectedWorkshop.endTime ||
+      (selectedWorkshop.endDate
+        ? formatWorkshopTime(selectedWorkshop.endDate)
+        : "")
+    : "";
+
   if (loading && allWorkshops.length === 0) {
     return (
       <div className="min-h-screen bg-background">
@@ -449,11 +495,7 @@ export default function WorkshopApprovals() {
           <div className="flex-1">
             <Card>
               <CardHeader>
-                <CardTitle>
-                  Workshops{" "}
-                  {filteredWorkshops.length > 0 &&
-                    `(${filteredWorkshops.length})`}
-                </CardTitle>
+                <CardTitle>Workshops </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Search Bar */}
@@ -587,101 +629,232 @@ export default function WorkshopApprovals() {
 
       {/* Workshop Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>{selectedWorkshop?.name}</DialogTitle>
-            <DialogDescription>
-              Detailed information about the selected workshop
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="max-w-xl p-0 overflow-hidden bg-background text-foreground border-border shadow-2xl">
           {selectedWorkshop && (
-            <div className="space-y-3">
-              <p>
-                <strong>Faculty:</strong> {selectedWorkshop.faculty}
-              </p>
-              <p>
-                <strong>Description:</strong> {selectedWorkshop.description}
-              </p>
-              <p>
-                <strong>Location:</strong> {selectedWorkshop.location}
-              </p>
-              <p>
-                <strong>Start:</strong>{" "}
-                {new Date(selectedWorkshop.startDate).toLocaleString()}
-              </p>
-              <p>
-                <strong>End:</strong>{" "}
-                {new Date(selectedWorkshop.endDate).toLocaleString()}
-              </p>
-              <p>
-                <strong>Budget:</strong> {selectedWorkshop.requiredBudget}
-              </p>
-              <p>
-                <strong>Funding:</strong> {selectedWorkshop.fundingSource}
-              </p>
-              <p>
-                <strong>Status:</strong>{" "}
-                {selectedWorkshop.status === "needs_revision"
-                  ? "Edits Requested"
-                  : selectedWorkshop.status}
-              </p>
-              <p>
-                <strong>Created By:</strong>{" "}
-                {selectedWorkshop.createdBy?.firstName}{" "}
-                {selectedWorkshop.createdBy?.lastName}
-              </p>
-              {selectedWorkshop.professors &&
-                selectedWorkshop.professors.length > 0 && (
-                  <div>
-                    <strong>Participating Professors:</strong>
-                    <ul className="list-disc list-inside ml-2 mt-1">
-                      {selectedWorkshop.professors.map((prof: any) => (
-                        <li key={prof._id}>
-                          {prof.firstName} {prof.lastName} ({prof.email})
-                        </li>
-                      ))}
-                    </ul>
+            <div className="flex flex-col max-h-[85vh]">
+              {/* Header */}
+              <div className="relative p-6 pb-2 shrink-0">
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-primary/10 to-transparent pointer-events-none" />
+                <div className="relative z-10 space-y-1 pr-12">
+                  <div className="flex flex-wrap items-center gap-3">
+                    <DialogTitle className="text-2xl md:text-3xl font-bold leading-tight">
+                      {selectedWorkshop?.name}
+                    </DialogTitle>
+                    <div className="mt-1">
+                      <Badge
+                        variant="outline"
+                        className={
+                          selectedWorkshop.status === "approved"
+                            ? "bg-green-100 text-green-800 border-green-200/50 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50"
+                            : selectedWorkshop.status === "rejected"
+                              ? "bg-red-100 text-red-800 border-red-200/50 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50"
+                              : selectedWorkshop.status === "archived"
+                                ? "bg-blue-100 text-blue-700 border-blue-200/50 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800/50"
+                                : selectedWorkshop.status === "needs_revision"
+                                  ? "bg-yellow-100 text-yellow-800 border-yellow-200/50 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50"
+                                  : "bg-yellow-100 text-yellow-800 border-yellow-200/50 dark:bg-yellow-900/30 dark:text-yellow-400 dark:border-yellow-800/50"
+                        }
+                      >
+                        {selectedWorkshop.status === "approved"
+                          ? "Approved"
+                          : selectedWorkshop.status === "rejected"
+                            ? "Rejected"
+                            : selectedWorkshop.status === "archived"
+                              ? "Archived"
+                              : selectedWorkshop.status === "needs_revision"
+                                ? "Needs Revision"
+                                : selectedWorkshop.status === "pending"
+                                  ? "Pending"
+                                  : selectedWorkshop.status}
+                      </Badge>
+                    </div>
+                  </div>
+
+                  {selectedWorkshop.location && (
+                    <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-muted-foreground pt-2">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="w-4 h-4 text-primary" />
+                        <span>{selectedWorkshop.location}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Body */}
+              <div
+                className="
+                  overflow-y-auto p-6 pt-2 space-y-6 pr-4
+                  [&::-webkit-scrollbar]:w-1.5
+                  [&::-webkit-scrollbar-track]:bg-transparent
+                  [&::-webkit-scrollbar-thumb]:bg-gray-200
+                  [&::-webkit-scrollbar-thumb]:rounded-full
+                  dark:[&::-webkit-scrollbar-thumb]:bg-[#6A33B8]/10
+                  dark:[&::-webkit-scrollbar-thumb]:hover:bg-[#6A33B8]/40
+                  transition-colors
+                "
+              >
+                {/* Dates Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {startDateStr && (
+                    <div className="flex flex-col p-3 rounded-xl bg-purple-50/50 dark:bg-[#130F19] border border-purple-100 dark:border-[#6A33B8]/20">
+                      <span className="text-xs font-semibold uppercase text-[#6A33B8] dark:text-[#D6BCFA] mb-1">
+                        Start
+                      </span>
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-purple-50">
+                        <Calendar className="w-4 h-4 opacity-70" />
+                        {startDateStr}
+                      </div>
+                      {startTimeStr && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
+                          <Clock className="w-4 h-4 opacity-70" />
+                          {startTimeStr}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {endDateStr && (
+                    <div className="flex flex-col p-3 rounded-xl bg-purple-50/50 dark:bg-[#130F19] border border-purple-100 dark:border-[#6A33B8]/20">
+                      <span className="text-xs font-semibold uppercase text-[#6A33B8] dark:text-[#D6BCFA] mb-1">
+                        End
+                      </span>
+                      <div className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-purple-50">
+                        <Calendar className="w-4 h-4 opacity-70" />
+                        {endDateStr}
+                      </div>
+                      {endTimeStr && (
+                        <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-purple-200/60 mt-0.5">
+                          <Clock className="w-4 h-4 opacity-70" />
+                          {endTimeStr}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Description */}
+                <div className="space-y-2">
+                  <h4 className="flex items-center gap-2 text-sm font-semibold text-slate-900 dark:text-purple-100">
+                    <AlignLeft className="w-4 h-4 text-primary" /> Description
+                  </h4>
+                  <div className="text-sm leading-relaxed text-slate-600 dark:text-purple-200/80">
+                    {selectedWorkshop.description || "No description provided."}
+                  </div>
+                </div>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {selectedWorkshop.faculty && (
+                    <WorkshopDetailCard
+                      icon={GraduationCap}
+                      label="Faculty"
+                      value={String(selectedWorkshop.faculty)}
+                    />
+                  )}
+
+                  {selectedWorkshop.location && (
+                    <WorkshopDetailCard
+                      icon={MapPin}
+                      label="Location"
+                      value={String(selectedWorkshop.location)}
+                    />
+                  )}
+
+                  {selectedWorkshop.requiredBudget !== undefined &&
+                    selectedWorkshop.requiredBudget !== null && (
+                      <WorkshopDetailCard
+                        icon={DollarSign}
+                        label="Budget"
+                        value={`$${String(selectedWorkshop.requiredBudget)}`}
+                      />
+                    )}
+
+                  {selectedWorkshop.fundingSource && (
+                    <WorkshopDetailCard
+                      icon={Landmark}
+                      label="Funding"
+                      value={String(selectedWorkshop.fundingSource)}
+                    />
+                  )}
+
+                  {(selectedWorkshop.createdBy?.firstName ||
+                    selectedWorkshop.createdBy?.lastName) && (
+                    <WorkshopDetailCard
+                      icon={User}
+                      label="Created By"
+                      value={`${selectedWorkshop.createdBy?.firstName || ""} ${selectedWorkshop.createdBy?.lastName || ""}`.trim()}
+                      className="sm:col-span-2"
+                    />
+                  )}
+                </div>
+
+                {/* Professors */}
+                {selectedWorkshop.professors &&
+                  selectedWorkshop.professors.length > 0 && (
+                    <div className="pt-2">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-purple-100 mb-3">
+                        Participating Professors
+                      </h4>
+                      <div className="flex flex-wrap gap-2">
+                        {selectedWorkshop.professors.map((prof: any) => (
+                          <div
+                            key={prof._id}
+                            className="flex items-center gap-2 pl-1 pr-3 py-1.5 rounded-full bg-slate-100 dark:bg-[#130F19] border border-slate-200 dark:border-[#6A33B8]/30 text-sm transition-colors hover:bg-slate-200 dark:hover:border-[#6A33B8]/60"
+                          >
+                            <div className="w-6 h-6 rounded-full bg-purple-100 dark:bg-[#6A33B8]/20 text-purple-600 dark:text-[#D6BCFA] flex items-center justify-center">
+                              <User size={12} />
+                            </div>
+                            <span className="text-slate-700 dark:text-purple-100">
+                              {prof.firstName} {prof.lastName}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Revision Comments */}
+                {selectedWorkshop.revisionComments && (
+                  <div className="bg-slate-50 dark:bg-[#130F19] rounded-xl p-4 border border-slate-200 dark:border-[#6A33B8]/20">
+                    <h4 className="text-sm font-semibold text-slate-900 dark:text-purple-100 mb-2">
+                      Revision Comments
+                    </h4>
+                    <p className="text-sm text-slate-600 dark:text-purple-200/80 whitespace-pre-wrap">
+                      {selectedWorkshop.revisionComments}
+                    </p>
                   </div>
                 )}
-              {selectedWorkshop.revisionComments && (
-                <div className="mt-4 p-3 bg-muted rounded-md">
-                  <p>
-                    <strong>Revision Comments:</strong>
-                  </p>
-                  <p className="mt-1 text-sm">
-                    {selectedWorkshop.revisionComments}
-                  </p>
-                </div>
+              </div>
+
+              {/* Actions */}
+              {selectedWorkshop?.status === "pending" && (
+                <DialogFooter className="flex justify-end gap-3 p-6 pt-0 shrink-0">
+                  <Button
+                    className="bg-green-600 hover:bg-green-700 focus-visible:ring-0 focus:outline-none border-0"
+                    onClick={() => handleApprove(selectedWorkshop._id)}
+                  >
+                    <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={() => handleReject(selectedWorkshop._id)}
+                  >
+                    <XCircle className="mr-2 h-4 w-4" /> Reject
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="bg-blue-600 hover:bg-blue-700 text-white border-0"
+                    onClick={() => {
+                      setShowDetailsDialog(false);
+                      setShowEditRequestDialog(true);
+                    }}
+                  >
+                    <Edit className="mr-2 h-4 w-4" /> Request Edits
+                  </Button>
+                </DialogFooter>
               )}
             </div>
-          )}
-
-          {selectedWorkshop?.status === "pending" && (
-            <DialogFooter className="flex justify-end gap-3 mt-4">
-              <Button
-                className="bg-green-600 hover:bg-green-700 focus-visible:ring-0 focus:outline-none border-0"
-                onClick={() => handleApprove(selectedWorkshop._id)}
-              >
-                <CheckCircle className="mr-2 h-4 w-4" /> Approve
-              </Button>
-              <Button
-                variant="destructive"
-                onClick={() => handleReject(selectedWorkshop._id)}
-              >
-                <XCircle className="mr-2 h-4 w-4" /> Reject
-              </Button>
-              <Button
-                variant="outline"
-                className="bg-blue-600 hover:bg-blue-700 text-white border-0"
-                onClick={() => {
-                  setShowDetailsDialog(false);
-                  setShowEditRequestDialog(true);
-                }}
-              >
-                <Edit className="mr-2 h-4 w-4" /> Request Edits
-              </Button>
-            </DialogFooter>
           )}
         </DialogContent>
       </Dialog>
@@ -729,6 +902,36 @@ export default function WorkshopApprovals() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </div>
+  );
+}
+
+function WorkshopDetailCard({
+  icon: Icon,
+  label,
+  value,
+  className = "",
+}: {
+  icon: any;
+  label: string;
+  value: string;
+  className?: string;
+}) {
+  return (
+    <div
+      className={`flex items-start gap-3 p-3 rounded-xl border border-slate-100 dark:border-[#6A33B8]/20 bg-slate-50/50 dark:bg-[#130F19] ${className}`}
+    >
+      <div className="p-2 rounded-lg bg-purple-100 dark:bg-[#6A33B8]/20 text-[#6A33B8] dark:text-[#D6BCFA] shrink-0">
+        <Icon size={18} />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-medium text-slate-500 dark:text-purple-300/60 uppercase tracking-wide mb-0.5">
+          {label}
+        </p>
+        <p className="text-sm font-medium text-slate-900 dark:text-purple-50 break-words">
+          {value}
+        </p>
+      </div>
     </div>
   );
 }
