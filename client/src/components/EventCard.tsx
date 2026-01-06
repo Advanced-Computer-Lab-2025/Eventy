@@ -611,6 +611,24 @@ export default function EventCard({
           return;
         }
 
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const role = payload?.role;
+          const roleAllowsWaitlistStatus = [
+            "student",
+            "staff",
+            "ta",
+            "professor",
+          ].includes(role);
+          if (!roleAllowsWaitlistStatus) {
+            setIsCheckingWaitlist(false);
+            return;
+          }
+        } catch {
+          setIsCheckingWaitlist(false);
+          return;
+        }
+
         const res = await fetch(
           `${API_BASE_URL}/api/events/${id}/waitlist/status`,
           {
@@ -1808,6 +1826,22 @@ export default function EventCard({
               const token = localStorage.getItem("token");
               if (!token) {
                 // If no token, keep optimistic state
+                return;
+              }
+
+              try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                const role = payload?.role;
+                const roleAllowsWaitlistStatus = [
+                  "student",
+                  "staff",
+                  "ta",
+                  "professor",
+                ].includes(role);
+                if (!roleAllowsWaitlistStatus) {
+                  return;
+                }
+              } catch {
                 return;
               }
 
