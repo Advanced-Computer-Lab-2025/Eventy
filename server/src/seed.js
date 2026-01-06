@@ -5,7 +5,16 @@ import bcrypt from "bcryptjs";
 import { User } from "./features/users/user.model.js";
 
 const MONGODB_URI =
-  process.env.MONGO_URI || "mongodb://localhost:27017/eventy_db";
+  process.env.MONGO_URI ||
+  (process.env.NODE_ENV === "production"
+    ? undefined
+    : "mongodb://localhost:27017/eventy_db");
+
+if (!MONGODB_URI) {
+  throw new Error(
+    "Missing MONGO_URI. Set MONGO_URI in the environment before running the seed script."
+  );
+}
 
 async function seedUsers() {
   try {

@@ -49,8 +49,10 @@ app.use((req, res, next) => {
     .map((o) => o.trim())
     .filter(Boolean);
 
-  // Always allow local dev.
-  if (!allowedOrigins.includes("http://localhost:5000")) {
+  const isProd = process.env.NODE_ENV === "production";
+
+  // Allow local dev only when not in production.
+  if (!isProd && !allowedOrigins.includes("http://localhost:5000")) {
     allowedOrigins.push("http://localhost:5000");
   }
 

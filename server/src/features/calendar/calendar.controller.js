@@ -6,6 +6,7 @@ import {
   deleteGoogleCalendarEvent,
   refreshAccessToken,
 } from "./calendar.service.js";
+import { requireFrontendBaseUrl } from "../../utils/urls.js";
 import { User } from "../users/user.model.js";
 import { Event } from "../events/event.model.js";
 
@@ -58,15 +59,17 @@ export const handleOAuthCallback = async (req, res) => {
   try {
     const { code, state } = req.query;
 
+    const frontendBaseUrl = requireFrontendBaseUrl("calendar OAuth redirect");
+
     // Try to get userId from session first, fallback to state parameter
     let userId = req.session?.userId || state;
 
     if (!code) {
-      return res.redirect("http://localhost:5000/?calendar_error=no_code");
+      return res.redirect(`${frontendBaseUrl}/?calendar_error=no_code`);
     }
 
     if (!userId) {
-      return res.redirect("http://localhost:5000/?calendar_error=no_session");
+      return res.redirect(`${frontendBaseUrl}/?calendar_error=no_session`);
     }
 
     // Exchange code for tokens
@@ -88,10 +91,13 @@ export const handleOAuthCallback = async (req, res) => {
     }
 
     // Redirect to calendar page with success indicator
-    res.redirect("http://localhost:5000/calendar?calendar_connected=true");
+    res.redirect(`${frontendBaseUrl}/calendar?calendar_connected=true`);
   } catch (error) {
     logger.error("Error handling OAuth callback:", error);
-    res.redirect("http://localhost:5000/calendar?calendar_error=auth_failed");
+    const frontendBaseUrl = requireFrontendBaseUrl(
+      "calendar OAuth error redirect"
+    );
+    res.redirect(`${frontendBaseUrl}/calendar?calendar_error=auth_failed`);
   }
 };
 

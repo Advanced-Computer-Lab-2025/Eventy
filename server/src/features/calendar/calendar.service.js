@@ -4,11 +4,24 @@ import { calendarLogger as logger } from "../../utils/logger.js";
 
 dotenv.config();
 
+const redirectUri =
+  process.env.GOOGLE_REDIRECT_URI ||
+  (process.env.NODE_ENV === "production"
+    ? null
+    : "http://localhost:4000/api/calendar/oauth2callback");
+
+if (process.env.NODE_ENV === "production" && !redirectUri) {
+  // In production we must know the public callback URL.
+  // (The server cannot reliably infer its public origin on Azure without an explicit env var.)
+  throw new Error(
+    "Missing GOOGLE_REDIRECT_URI in production. Set GOOGLE_REDIRECT_URI=https://<YOUR_BACKEND_ORIGIN>/api/calendar/oauth2callback"
+  );
+}
+
 const oauth2Client = new google.auth.OAuth2(
   process.env.GOOGLE_CLIENT_ID,
   process.env.GOOGLE_CLIENT_SECRET,
-  process.env.GOOGLE_REDIRECT_URI ||
-    "http://localhost:5000/api/calendar/oauth2callback"
+  redirectUri
 );
 
 /**
