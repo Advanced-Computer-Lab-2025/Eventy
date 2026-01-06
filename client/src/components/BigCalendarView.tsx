@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { Calendar, momentLocalizer, View } from "react-big-calendar";
 import moment from "moment";
 import "react-big-calendar/lib/css/react-big-calendar.css";
@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { Button } from "@/components/ui/button";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const localizer = momentLocalizer(moment);
 const API_BASE_URL = getApiBaseUrl();
@@ -52,6 +53,18 @@ export default function BigCalendarView({
   const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [currentDate, setCurrentDate] = useState(defaultDate || new Date());
   const [currentView, setCurrentView] = useState<View>(defaultView);
+
+  useEffect(() => {
+    if (!defaultDate) return;
+    const nextTime = defaultDate.getTime();
+    setCurrentDate((prev) =>
+      prev.getTime() === nextTime ? prev : defaultDate
+    );
+  }, [defaultDate]);
+
+  useEffect(() => {
+    setCurrentView(defaultView);
+  }, [defaultView]);
 
   // Transform events for react-big-calendar
   const calendarEvents = useMemo(() => {

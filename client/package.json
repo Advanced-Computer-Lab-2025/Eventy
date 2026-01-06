@@ -53,6 +53,7 @@
     "@stripe/stripe-js": "^8.5.2",
     "@tanstack/react-query": "^5.60.5",
     "@vercel/blob": "^2.0.0",
+    "@vercel/analytics": "^1.0.0",
     "axios": "^1.12.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

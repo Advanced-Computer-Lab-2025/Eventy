@@ -1,4 +1,5 @@
 import QuickActions from "../QuickActions";
+import { logger } from "@/lib/logger";
 
 export default function QuickActionsExample() {
   return (

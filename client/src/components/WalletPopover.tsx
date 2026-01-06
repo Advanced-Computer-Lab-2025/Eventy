@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { WalletTopUpDialog } from "./WalletTopUpDialog";
+import { logger } from "@/lib/logger";
 
 interface WalletPopoverProps {
   balance: number;

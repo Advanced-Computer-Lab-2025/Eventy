@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import EventListItem from "@/components/EventListItem";
 import { getEventImage } from "@/lib/eventImages";
+import { logger } from "@/lib/logger";
 
 export default function EventListPage() {
   const [events, setEvents] = useState<any[]>([]);

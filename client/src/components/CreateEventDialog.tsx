@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { format } from "date-fns";
+import { logger } from "@/lib/logger";
 import {
   Popover,
   PopoverContent,

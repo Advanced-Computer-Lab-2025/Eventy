@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { logger } from "@/lib/logger";
 
 const API_BASE_URL = getApiBaseUrl();
 
@@ -33,13 +34,50 @@ interface Event {
 }
 
 export default function CalendarPage() {
-  const [, navigate] = useLocation();
+  const [location, navigate] = useLocation();
   const [userRole, setUserRole] = useState<string | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [filteredEvents, setFilteredEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const custom = e as CustomEvent<{ date?: string }>;
+      const raw = custom.detail?.date;
+      if (!raw) return;
+      const parsed = new Date(raw);
+      if (Number.isNaN(parsed.getTime())) return;
+      setSelectedDate(parsed);
+    };
+
+    window.addEventListener("calendar:jumpToDate", handler as EventListener);
+    return () => {
+      window.removeEventListener(
+        "calendar:jumpToDate",
+        handler as EventListener
+      );
+    };
+  }, []);
+
+  useEffect(() => {
+    // Allow other UI (e.g., CalendarPopover/MiniCalendar) to deep-link the calendar.
+    // Example: /calendar?date=2026-01-06T00:00:00.000Z
+    const dateParam = new URLSearchParams(window.location.search).get("date");
+    if (!dateParam) {
+      setSelectedDate(null);
+      return;
+    }
+
+    const parsed = new Date(dateParam);
+    if (Number.isNaN(parsed.getTime())) {
+      setSelectedDate(null);
+      return;
+    }
+
+    setSelectedDate(parsed);
+  }, [location]);
 
   useEffect(() => {
     fetchUserEvents();
@@ -112,15 +150,6 @@ export default function CalendarPage() {
       setEvents([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleMiniCalendarDateClick = (date: Date) => {
-    setSelectedDate(date);
-    // Switch to day view in big calendar
-    const calendarTab = document.querySelector('[data-calendar-tab="big"]');
-    if (calendarTab) {
-      (calendarTab as HTMLElement).click();
     }
   };
 
@@ -206,7 +235,7 @@ export default function CalendarPage() {
               <BigCalendarView
                 events={filteredEvents}
                 defaultDate={selectedDate || undefined}
-                defaultView={selectedDate ? "day" : "month"}
+                defaultView="month"
                 customToolbarComponent={
                   <div className="flex items-center gap-2">
                     <Select

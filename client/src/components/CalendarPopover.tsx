@@ -67,6 +67,13 @@ export default function CalendarPopover() {
   }, []);
 
   const handleDateClick = (date: Date) => {
+    // If the calendar page is already open, query-string navigation may not trigger a rerender.
+    // Broadcast a date jump so the page can update its BigCalendarView immediately.
+    window.dispatchEvent(
+      new CustomEvent("calendar:jumpToDate", {
+        detail: { date: date.toISOString() },
+      })
+    );
     // Navigate to calendar page with selected date
     setLocation(`/calendar?date=${date.toISOString()}`);
   };

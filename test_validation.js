@@ -4,6 +4,8 @@ import {
   validateBoothApplication,
 } from "./server/src/features/applications/application.validation.js";
 
+import { logger } from "./server/src/utils/logger.js";
+
 logger.info("Testing validation schemas...");
 
 // Test bazaar validation

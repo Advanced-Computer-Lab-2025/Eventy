@@ -154,7 +154,7 @@ export default function Login() {
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -181,6 +181,7 @@ export default function Login() {
                   <Input
                     id="password"
                     type="password"
+                    placeholder="Enter your password"
                     className="pl-10"
                     value={formData.password}
                     onChange={(e) =>

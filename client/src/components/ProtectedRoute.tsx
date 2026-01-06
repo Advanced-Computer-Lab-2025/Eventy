@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
+import { logger } from "@/lib/logger";
 
 type ProtectedRouteProps = {
   children: React.ReactNode;

@@ -18,6 +18,7 @@ import WalletPopover from "./WalletPopover"; // Import the WalletPopover
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { logger } from "@/lib/logger";
 
 interface ProfessorHeaderProps {
   homeHref?: string;

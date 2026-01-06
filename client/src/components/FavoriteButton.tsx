@@ -1,6 +1,7 @@
 import { Heart, Loader2 } from "lucide-react";
 import { useFavorites } from "../hooks/useFavorites";
 import { useToast } from "../hooks/use-toast";
+import { logger } from "@/lib/logger";
 
 interface FavoriteButtonProps {
   eventId: string;

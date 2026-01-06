@@ -22,6 +22,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import IdUploadButton from "@/components/IdUploadButton";
+import { logger } from "@/lib/logger";
 
 interface VendorApplicationDialogProps {
   open: boolean;
