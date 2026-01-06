@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { format } from "date-fns";
+import { format, startOfDay } from "date-fns";
 import {
   Popover,
   PopoverContent,
@@ -82,6 +82,7 @@ export default function EditGymSessionDialog({
   const { toast } = useToast();
   const API_BASE_URL = getApiBaseUrl();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const todayStart = startOfDay(new Date());
 
   const {
     register,
@@ -107,6 +108,15 @@ export default function EditGymSessionDialog({
 
   const onSubmit = async (data: EditFormData) => {
     if (!session) return;
+
+    if (data.date && startOfDay(data.date) < todayStart) {
+      toast({
+        title: "Validation Error",
+        description: "Date cannot be earlier than today.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     setIsSubmitting(true);
 
@@ -214,7 +224,7 @@ export default function EditGymSessionDialog({
                       mode="single"
                       selected={field.value}
                       onSelect={field.onChange}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => startOfDay(date) < todayStart}
                       initialFocus
                     />
                   </PopoverContent>
