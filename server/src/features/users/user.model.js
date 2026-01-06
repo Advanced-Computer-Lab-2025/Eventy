@@ -95,6 +95,13 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Refresh-token versioning for cookie-based sessions.
+    // Incrementing this invalidates all existing refresh tokens.
+    refreshTokenVersion: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );
