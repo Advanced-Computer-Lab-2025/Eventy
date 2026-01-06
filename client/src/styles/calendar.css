@@ -1,7 +1,6 @@
-/* React Big Calendar Custom Styles */
-
-/* Import the base styles */
 @import "react-big-calendar/lib/css/react-big-calendar.css";
+
+/* React Big Calendar Custom Styles */
 
 /* Calendar container */
 .rbc-calendar {
@@ -131,6 +130,17 @@
 
 /* Selected event */
 .rbc-selected {
+  outline: none;
+  outline-offset: 0;
+}
+
+/* Remove mouse-focus outline, keep keyboard focus via :focus-visible */
+.rbc-event:focus {
+  outline: none;
+}
+
+.rbc-event:focus-visible,
+.rbc-selected:focus-visible {
   outline: 2px solid hsl(var(--ring));
   outline-offset: 1px;
 }

@@ -26,6 +26,58 @@ import mongoose from "mongoose";
 import { differenceInHours } from "date-fns";
 import { Waitlist } from "./waitlist.model.js";
 
+const frontendPublicBaseUrl = (() => {
+  const candidate = process.env.CLIENT_URL;
+
+  if (!candidate) return null;
+  const first = String(candidate).split(",")[0]?.trim();
+  if (!first) return null;
+  return first.replace(/\/$/, "");
+})();
+
+const resolvePublicAsset = (assetPath) => {
+  const normalized = assetPath.startsWith("/") ? assetPath : `/${assetPath}`;
+  if (frontendPublicBaseUrl) return `${frontendPublicBaseUrl}${normalized}`;
+
+  // Local-dev fallback when the monorepo exists on disk.
+  return path.resolve(
+    __dirname,
+    "../../../../client/public",
+    normalized.slice(1)
+  );
+};
+
+const isHttpUrl = (value) => {
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+};
+
+const loadAssetBuffer = async (assetPathOrUrl) => {
+  if (!assetPathOrUrl) return null;
+
+  if (isHttpUrl(assetPathOrUrl)) {
+    try {
+      const res = await fetch(assetPathOrUrl);
+      if (!res.ok) return null;
+      const arrayBuffer = await res.arrayBuffer();
+      return Buffer.from(arrayBuffer);
+    } catch {
+      return null;
+    }
+  }
+
+  try {
+    if (!fs.existsSync(assetPathOrUrl)) return null;
+    return fs.readFileSync(assetPathOrUrl);
+  } catch {
+    return null;
+  }
+};
+
 // Store the interval ID for the reminder scheduler
 let reminderInterval;
 
@@ -1449,22 +1501,19 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       const chunks = [];
       doc.on("data", (chunk) => chunks.push(chunk));
 
-      const logoLight = path.join(
-        __dirname,
-        "../../../../client/public/images/logo-light.png"
-      );
-      const logoDark = path.join(
-        __dirname,
-        "../../../../client/public/images/logo-dark.png"
-      );
+      const logoLightAsset = resolvePublicAsset("/images/logo-light.png");
+      const logoDarkAsset = resolvePublicAsset("/images/logo-dark.png");
+
+      const logoLightBuffer = await loadAssetBuffer(logoLightAsset);
+      const logoDarkBuffer = await loadAssetBuffer(logoDarkAsset);
 
       // Watermark
-      if (fs.existsSync(logoLight)) {
+      if (logoLightBuffer) {
         doc
           .save()
           .opacity(0.03)
           .image(
-            logoLight,
+            logoLightBuffer,
             doc.page.width / 2 - 150,
             doc.page.height / 2 - 150,
             { width: 300, height: 300 }
@@ -1474,9 +1523,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
 
       // Header function for all pages
       const drawHeader = () => {
-        if (fs.existsSync(logoLight)) {
-          doc.image(logoLight, 50, 40, { width: 70 });
-        }
+        if (logoLightBuffer) doc.image(logoLightBuffer, 50, 40, { width: 70 });
         doc
           .fillColor("#1a202c")
           .fontSize(22)

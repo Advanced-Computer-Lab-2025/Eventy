@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useMemo } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,12 +29,8 @@ export default function MiniCalendar({
   className = "",
 }: MiniCalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [eventsByDate, setEventsByDate] = useState<Map<string, Event[]>>(
-    new Map()
-  );
 
-  useEffect(() => {
-    // Group events by date
+  const eventsByDate = useMemo(() => {
     const grouped = new Map<string, Event[]>();
     events.forEach((event) => {
       const startDate = new Date(event.startDate);
@@ -51,7 +47,7 @@ export default function MiniCalendar({
         currentDay.setDate(currentDay.getDate() + 1);
       }
     });
-    setEventsByDate(grouped);
+    return grouped;
   }, [events]);
 
   const getDaysInMonth = (date: Date) => {

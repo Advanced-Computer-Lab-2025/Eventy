@@ -272,11 +272,17 @@ export default function VendorDashboard() {
 
   // Fetch company name from localStorage
   const fetchCompanyName = () => {
-    const user = localStorage.getItem("user");
-    if (user) {
+    try {
+      const user = localStorage.getItem("user");
+      if (!user) {
+        setCompanyName("Vendor");
+        return;
+      }
+
       const userData = JSON.parse(user);
-      setCompanyName(userData.companyName || "Vendor");
-    } else {
+      setCompanyName(userData?.companyName || "Vendor");
+    } catch (error) {
+      logger.warn("Unable to read vendor name from storage", error);
       setCompanyName("Vendor");
     }
   };

@@ -44,9 +44,33 @@ app.use((req, res, next) => {
 
 (async () => {
   // CORS configuration
+  const allowedOrigins = (process.env.CORS_ORIGINS || "")
+    .split(",")
+    .map((o) => o.trim())
+    .filter(Boolean);
+
+  const isProd = process.env.NODE_ENV === "production";
+
+  // Allow local dev only when not in production.
+  if (!isProd && !allowedOrigins.includes("http://localhost:5000")) {
+    allowedOrigins.push("http://localhost:5000");
+  }
+
   app.use(
     cors({
-      origin: "http://localhost:5000",
+      origin: (
+        origin: string | undefined,
+        callback: (err: Error | null, allow?: boolean) => void
+      ) => {
+        // Some clients (curl, server-to-server) send no origin.
+        if (!origin) return callback(null, true);
+
+        if (allowedOrigins.includes(origin)) {
+          return callback(null, true);
+        }
+
+        return callback(new Error(`CORS blocked origin: ${origin}`));
+      },
       credentials: true,
     })
   );
@@ -96,7 +120,8 @@ app.use((req, res, next) => {
   // Other ports are firewalled. Default to 5000 if not specified.
   // this serves both the API and the client.
   // It is the only port that is not firewalled.
-  app.listen(5000, () => {
-    logger.info("Server running on: http://localhost:5000");
+  const port = Number(process.env.PORT || process.env.WEBSITES_PORT) || 5000;
+  server.listen(port, "0.0.0.0", () => {
+    logger.info(`Server listening on port ${port}`);
   });
 })();

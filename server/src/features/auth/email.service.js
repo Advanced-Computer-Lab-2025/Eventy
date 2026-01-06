@@ -7,11 +7,42 @@ import { fileURLToPath } from "url";
 import QRCode from "qrcode";
 import { format } from "date-fns";
 import { generateAttendeeToken } from "../../utils/qrcode.service.js";
+import {
+  buildFrontendUrl,
+  getFrontendBaseUrl,
+  requireFrontendBaseUrl,
+  rewriteLegacyLocalhostUrls,
+} from "../../utils/urls.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 dotenv.config();
+
+// Canonical frontend base URL for links embedded in emails.
+// - Dev: defaults to the local frontend dev origin (port 5000)
+// - Prod: must be set via CLIENT_URL or FRONTEND_URL
+const emailFrontendBaseUrl = requireFrontendBaseUrl("email links");
+
+const frontendPublicBaseUrl = (() => {
+  return getFrontendBaseUrl();
+})();
+
+const resolvePublicEmailAssetPath = (assetPath) => {
+  const normalized = assetPath.startsWith("/") ? assetPath : `/${assetPath}`;
+
+  // Prefer a stable public URL (e.g. Vercel) in production.
+  if (frontendPublicBaseUrl) {
+    return `${frontendPublicBaseUrl}${normalized}`;
+  }
+
+  // Local-dev fallback when the monorepo exists on disk.
+  return path.resolve(
+    __dirname,
+    "../../../../client/public",
+    normalized.slice(1)
+  );
+};
 
 const transporter = nodemailer.createTransport({
   host: "smtp.gmail.com",
@@ -22,6 +53,33 @@ const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// Ensure no emails ever ship with hardcoded localhost links in production.
+// Also normalizes legacy templates that still contain localhost URLs.
+const originalSendMail = transporter.sendMail.bind(transporter);
+transporter.sendMail = async (mailOptions) => {
+  const next = { ...(mailOptions || {}) };
+
+  if (typeof next.html === "string") {
+    next.html = rewriteLegacyLocalhostUrls(next.html);
+  }
+
+  if (typeof next.text === "string") {
+    next.text = rewriteLegacyLocalhostUrls(next.text);
+  }
+
+  if (
+    process.env.NODE_ENV === "production" &&
+    ((typeof next.html === "string" && next.html.includes("localhost")) ||
+      (typeof next.text === "string" && next.text.includes("localhost")))
+  ) {
+    throw new Error(
+      "Refusing to send email containing localhost links in production. Set CLIENT_URL to your deployed frontend origin."
+    );
+  }
+
+  return originalSendMail(next);
+};
 
 // Verify transporter on startup for clearer diagnostics
 transporter.verify((err, success) => {
@@ -45,7 +103,7 @@ export const sendRegistrationEmail = async (user) => {
     html: `
       <h2>Hi ${displayName},</h2>
       <p>Welcome to Eventy! Your registration was successful.</p>
-      <p><a href="http://localhost:5000/login">Click here to login</a></p>
+      <p><a href="${buildFrontendUrl("/login") || "#"}">Click here to login</a></p>
       <p>See you soon 👋</p>
     `,
     replyTo: process.env.EMAIL_USER,
@@ -86,7 +144,10 @@ export const sendVerificationEmail = async (user) => {
     { expiresIn: "24h" }
   );
 
-  const verificationUrl = `http://localhost:5000/verify-email/${verificationToken}`;
+  const verificationUrl =
+    buildFrontendUrl(`/verify-email/${verificationToken}`) ||
+    buildFrontendUrl(`/verify?token=${verificationToken}`) ||
+    "#";
 
   // Role-based greeting and description
   const roleDescriptions = {
@@ -100,11 +161,8 @@ export const sendVerificationEmail = async (user) => {
     roleDescriptions[user?.role?.toLowerCase()] ||
     "You'll have access to all the features available for your role.";
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  // Path/URL to logo image (prefer frontend public URL in production)
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -272,10 +330,7 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
     .join(" ");
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -370,13 +425,13 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/sports" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${emailFrontendBaseUrl}/sports" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Gym Schedule</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="http://localhost:5000/sports" 
+                          <a href="${emailFrontendBaseUrl}/sports" 
                              style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
                             View Gym Schedule
                           </a>
@@ -394,7 +449,7 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
                         Button not working?
                       </p>
                       <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
-                        <a href="http://localhost:5000/sports" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view the gym schedule</a>
+                        <a href="${emailFrontendBaseUrl}/sports" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view the gym schedule</a>
                       </p>
                     </div>
                     
@@ -499,11 +554,8 @@ export const sendGymSessionUpdateEmail = async (
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  // Path/URL to logo image (prefer frontend public URL in production)
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   // Check what changed
   const dateChanged = oldDate !== newDate;
@@ -659,13 +711,13 @@ export const sendGymSessionUpdateEmail = async (
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/sports" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${emailFrontendBaseUrl}/sports" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Gym Schedule</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="http://localhost:5000/sports" 
+                          <a href="${emailFrontendBaseUrl}/sports" 
                              style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
                             View Gym Schedule
                           </a>
@@ -683,7 +735,7 @@ export const sendGymSessionUpdateEmail = async (
                         Button not working?
                       </p>
                       <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
-                        <a href="http://localhost:5000/sports" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view the gym schedule</a>
+                        <a href="${emailFrontendBaseUrl}/sports" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view the gym schedule</a>
                       </p>
                     </div>
                     
@@ -776,10 +828,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
     : "linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)";
   const statusTextColor = isApproved ? "#065f46" : "#991b1b";
 
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   let applicationDetailsHtml = `
     <div style="background: linear-gradient(135deg, #f7fafc 0%, #edf2f7 100%); border-radius: 12px; padding: 28px; margin: 32px 0; border-left: 4px solid ${statusColor}; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
@@ -892,7 +941,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     <table role="presentation" style="width:100%;margin:32px 0;">
                       <tr>
                         <td align="center">
-                          <a href="http://localhost:5000/vendor/dashboard"
+                          <a href="${emailFrontendBaseUrl}/vendor/dashboard"
                              style="display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#ffffff;text-decoration:none;border-radius:25px;font-weight:600;font-size:16px;box-shadow:0 4px 14px 0 rgba(16,185,129,0.39);border:1px solid rgba(16,185,129,0.2);">
                             View Dashboard
                           </a>
@@ -908,7 +957,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                     <table role="presentation" style="width:100%;margin:32px 0;">
                       <tr>
                         <td align="center">
-                          <a href="http://localhost:5000/vendor/dashboard"
+                          <a href="${emailFrontendBaseUrl}/vendor/dashboard"
                              style="display:inline-block;padding:16px 48px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:#ffffff;text-decoration:none;border-radius:25px;font-weight:600;font-size:16px;box-shadow:0 4px 14px 0 rgba(16,185,129,0.39);border:1px solid rgba(16,185,129,0.2);">
                             Reapply
                           </a>
@@ -1059,10 +1108,7 @@ export const sendVisitorQRCodesEmail = async (
       });
     }
 
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const qrCodesHTML = qrCodeDataUrls
       .map(
@@ -1231,12 +1277,7 @@ export const sendAttendeeQRCodeEmail = async (
     const token = generateAttendeeToken(attendee, application._id.toString());
 
     // Use frontend route URL for QR code (opens the React page)
-    // Get base URL from environment variable or default to localhost:5000
-    const baseUrl =
-      process.env.CLIENT_URL ||
-      process.env.FRONTEND_URL ||
-      "http://localhost:5000";
-    const verificationUrl = `${baseUrl}/attendee/${token}`;
+    const verificationUrl = `${emailFrontendBaseUrl}/attendee/${token}`;
 
     let qrCodeBuffer;
     let qrCodeDataUrl;
@@ -1272,11 +1313,7 @@ export const sendAttendeeQRCodeEmail = async (
       throw new Error(`Failed to generate QR code: ${qrError.message}`);
     }
 
-    // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1428,10 +1465,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
       : "Credit/Debit Card";
 
   const eventName = event?.name || "Wallet Top-Up";
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1548,13 +1582,13 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/my-events" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${emailFrontendBaseUrl}/my-events" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View My Events</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="http://localhost:5000/my-events" 
+                          <a href="${emailFrontendBaseUrl}/my-events" 
                              style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
                             View My Events
                           </a>
@@ -1572,7 +1606,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                         Button not working?
                       </p>
                       <p style="margin: 0; font-size: 14px; color: #4a5568; line-height: 1.6;">
-                        <a href="http://localhost:5000/my-events" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your events</a>
+                        <a href="${emailFrontendBaseUrl}/my-events" style="color: #667eea; text-decoration: underline; font-weight: 600;">Click here to view your events</a>
                       </p>
                     </div>
                     
@@ -1646,13 +1680,12 @@ export const sendStudentEmailVerification = async (user) => {
     { expiresIn: "24h" }
   );
 
-  const verificationUrl = `http://localhost:5000/verify-email/${verificationToken}`;
+  const verificationUrl =
+    buildFrontendUrl(`/verify-email/${verificationToken}`) ||
+    buildFrontendUrl(`/verify?token=${verificationToken}`) ||
+    "#";
 
-  // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -1824,10 +1857,7 @@ export const sendVendorPaymentReceipt = async (
   const formattedAmount = (transaction.amount || 0).toFixed(2);
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   // Build application details HTML
   let applicationDetailsHtml = `
@@ -1989,13 +2019,13 @@ export const sendVendorPaymentReceipt = async (
                       <tr>
                         <td align="center">
                           <!--[if mso]>
-                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="http://localhost:5000/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
+                          <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="${emailFrontendBaseUrl}/vendor/dashboard" style="height:52px;v-text-anchor:middle;width:280px;" arcsize="48%" strokecolor="#10b981" fillcolor="#10b981">
                             <w:anchorlock/>
                             <center style="color:#ffffff;font-family:sans-serif;font-size:16px;font-weight:600;">View Dashboard</center>
                           </v:roundrect>
                           <![endif]-->
                           <!--[if !mso]><!-->
-                          <a href="http://localhost:5000/vendor/dashboard" 
+                          <a href="${emailFrontendBaseUrl}/vendor/dashboard" 
                              style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39); border: 1px solid rgba(16, 185, 129, 0.2); line-height: 20px; mso-hide: all;">
                             View Dashboard
                           </a>
@@ -2120,11 +2150,8 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
             .join(", ")
         : "N/A";
 
-    // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    // Path/URL to logo image (prefer frontend public URL in production)
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2261,7 +2288,7 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
                       <table role="presentation" style="width: 100%; margin: 32px 0;">
                         <tr>
                           <td align="center">
-                            <a href="http://localhost:5000/my-events" 
+                            <a href="${emailFrontendBaseUrl}/my-events" 
                                style="display: inline-block; padding: 16px 48px; background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%); color: #ffffff; text-decoration: none; border-radius: 25px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px 0 rgba(99, 102, 241, 0.4); border: 1px solid rgba(99, 102, 241, 0.2); line-height: 20px;">
                               View My Events
                             </a>
@@ -2346,10 +2373,7 @@ export const sendCommentDeletionWarning = async ({
   eventName,
   commentBody,
 }) => {
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2573,14 +2597,11 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
       location: event.location || "TBD",
       startDate: event.startDate,
       endDate: event.endDate,
-      url: `http://localhost:5000/events/${event._id}`,
+      url: `${emailFrontendBaseUrl}/events/${event._id}`,
     });
 
     // Path to logo image
-    const logoPath = path.resolve(
-      __dirname,
-      "../../../../client/public/images/logo-light.png"
-    );
+    const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
     const mailOptions = {
       from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2688,7 +2709,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
                       
                       <!-- Call to Action -->
                       <div style="text-align: center; margin: 40px 0 0;">
-                        <a href="http://localhost:5000/my-events" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
+                        <a href="${emailFrontendBaseUrl}/my-events" style="display: inline-block; padding: 16px 32px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);">
                           View My Events
                         </a>
                       </div>
@@ -2794,10 +2815,7 @@ export const sendWaitlistAutopaySuccessEmail = async (
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -2880,7 +2898,7 @@ export const sendWaitlistAutopaySuccessEmail = async (
                     
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 32px 0;">
-                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                            <a href="${emailFrontendBaseUrl}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
                         View Event Details
                       </a>
                     </div>
@@ -2959,10 +2977,7 @@ export const sendWaitlistSpotAvailableEmail = async (user, event) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -3045,7 +3060,7 @@ export const sendWaitlistSpotAvailableEmail = async (user, event) => {
                     
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 32px 0;">
-                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                      <a href="${emailFrontendBaseUrl}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
                         Register Now
                       </a>
                     </div>
@@ -3125,10 +3140,7 @@ export const sendWaitlistAutopayFailedEmail = async (user, event, reason) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -3205,7 +3217,7 @@ export const sendWaitlistAutopayFailedEmail = async (user, event, reason) => {
                     
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 32px 0;">
-                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                      <a href="${emailFrontendBaseUrl}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
                         Register Now
                       </a>
                     </div>
@@ -3284,10 +3296,7 @@ export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
     : "TBA";
 
   // Path to logo image
-  const logoPath = path.resolve(
-    __dirname,
-    "../../../../client/public/images/logo-light.png"
-  );
+  const logoPath = resolvePublicEmailAssetPath("/images/logo-light.png");
 
   const mailOptions = {
     from: `"Eventy Platform" <${process.env.EMAIL_USER}>`,
@@ -3370,7 +3379,7 @@ export const sendWaitlistPaymentRequiredEmail = async (user, event) => {
                     
                     <!-- CTA Button -->
                     <div style="text-align: center; margin: 32px 0;">
-                      <a href="${process.env.FRONTEND_URL || "http://localhost:5173"}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                      <a href="${emailFrontendBaseUrl}/events/${event._id}" style="display: inline-block; padding: 14px 32px; background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%); color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
                         Complete Payment
                       </a>
                     </div>

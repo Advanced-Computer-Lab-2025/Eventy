@@ -1,5 +1,23 @@
 import jwt from "jsonwebtoken";
 import { User } from "../features/users/user.model.js";
+
+const getCookieValue = (cookieHeader, name) => {
+  if (!cookieHeader) return null;
+  const parts = cookieHeader.split(";");
+  for (const part of parts) {
+    const [rawKey, ...rawValParts] = part.trim().split("=");
+    if (!rawKey) continue;
+    if (rawKey === name) {
+      const rawVal = rawValParts.join("=");
+      try {
+        return decodeURIComponent(rawVal);
+      } catch {
+        return rawVal;
+      }
+    }
+  }
+  return null;
+};
 export const validateToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
@@ -10,13 +28,19 @@ export const validateToken = (token) => {
 
 const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers["authorization"];
-  if (!authHeader) {
-    return res.status(401).json({ message: "Authorization header missing" });
-  }
+  const bearerToken =
+    typeof authHeader === "string" && authHeader.startsWith("Bearer ")
+      ? authHeader.split(" ")[1]
+      : null;
 
-  const token = authHeader.split(" ")[1];
+  const cookieName = process.env.AUTH_COOKIE_NAME || "auth_token";
+  const cookieToken = getCookieValue(req.headers?.cookie, cookieName);
+
+  const token = bearerToken || cookieToken;
   if (!token) {
-    return res.status(401).json({ message: "Token missing" });
+    return res
+      .status(401)
+      .json({ message: "Missing authentication (Bearer token or cookie)" });
   }
 
   try {

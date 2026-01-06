@@ -23,15 +23,16 @@ export default function FavoritesPage() {
     refetch,
   } = useFavorites();
   const { toast } = useToast();
-  const [userRole, setUserRole] = useState<string | null>(null);
-
-  useEffect(() => {
-    const user = localStorage.getItem("user");
-    if (user) {
-      const userData = JSON.parse(user);
-      setUserRole(userData.role);
+  const [userRole] = useState<string | null>(() => {
+    try {
+      const user = localStorage.getItem("user");
+      if (!user) return null;
+      const parsed = JSON.parse(user);
+      return parsed.role ?? null;
+    } catch {
+      return null;
     }
-  }, []);
+  });
 
   // Poll for updates every 30 seconds to check for archived events
   useEffect(() => {

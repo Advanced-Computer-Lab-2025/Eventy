@@ -6,6 +6,23 @@ import {
 } from "./auth.validation.js";
 import jwt from "jsonwebtoken";
 import { sendStudentEmailVerification } from "./email.service.js";
+
+const isRefreshEnabled = () =>
+  String(process.env.AUTH_REFRESH_ENABLED || "").toLowerCase() === "true";
+
+const getJwtSecret = () => process.env.JWT_SECRET || "supersecretkey";
+
+const getRefreshJwtSecret = () =>
+  process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET || "supersecretkey";
+
+const getAccessTokenExpiresIn = () => {
+  if (process.env.ACCESS_TOKEN_EXPIRES_IN)
+    return process.env.ACCESS_TOKEN_EXPIRES_IN;
+  return isRefreshEnabled() ? "15m" : "30d";
+};
+
+const getRefreshTokenExpiresIn = () =>
+  process.env.REFRESH_TOKEN_EXPIRES_IN || "30d";
 export const signUpUser = async (data) => {
   const { role } = data;
 
@@ -201,9 +218,22 @@ export const loginUser = async (data) => {
       role: user.role,
       email: user.email,
     },
-    process.env.JWT_SECRET || "supersecretkey",
-    { expiresIn: "30d" }
+    getJwtSecret(),
+    { expiresIn: getAccessTokenExpiresIn() }
   );
+
+  let refreshToken = null;
+  if (isRefreshEnabled()) {
+    const version = Number(user.refreshTokenVersion || 0);
+    refreshToken = jwt.sign(
+      {
+        id: user._id,
+        v: version,
+      },
+      getRefreshJwtSecret(),
+      { expiresIn: getRefreshTokenExpiresIn() }
+    );
+  }
 
   // ✅ Step 6: Personalized welcome message
   let welcomeMessage = `Welcome back, ${user.firstName || "User"}!`;
@@ -222,7 +252,80 @@ export const loginUser = async (data) => {
       walletBalance: user.walletBalance,
     },
     token,
+    ...(refreshToken ? { refreshToken } : {}),
   };
+};
+
+export const refreshAuthSession = async (refreshToken) => {
+  if (!isRefreshEnabled()) {
+    throw new Error("Refresh auth is disabled");
+  }
+
+  if (!refreshToken) {
+    throw new Error("Refresh token missing");
+  }
+
+  let decoded;
+  try {
+    decoded = jwt.verify(refreshToken, getRefreshJwtSecret());
+  } catch (_e) {
+    throw new Error("Invalid or expired refresh token");
+  }
+
+  const user = await User.findById(decoded.id);
+  if (!user) throw new Error("User not found");
+
+  if (user.status === "blocked") {
+    throw new Error("You are currently a blocked user");
+  }
+
+  const currentVersion = Number(user.refreshTokenVersion || 0);
+  if (Number(decoded.v || 0) !== currentVersion) {
+    throw new Error("Refresh token revoked");
+  }
+
+  const token = jwt.sign(
+    {
+      id: user._id,
+      role: user.role,
+      email: user.email,
+    },
+    getJwtSecret(),
+    { expiresIn: getAccessTokenExpiresIn() }
+  );
+
+  return {
+    token,
+    user: {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      companyName: user.companyName,
+      walletBalance: user.walletBalance,
+    },
+  };
+};
+
+export const revokeRefreshToken = async (refreshToken) => {
+  if (!isRefreshEnabled()) {
+    return;
+  }
+
+  if (!refreshToken) {
+    return;
+  }
+
+  try {
+    const decoded = jwt.verify(refreshToken, getRefreshJwtSecret());
+    const user = await User.findById(decoded.id);
+    if (!user) return;
+    user.refreshTokenVersion = Number(user.refreshTokenVersion || 0) + 1;
+    await user.save();
+  } catch (_e) {
+    // ignore invalid/expired refresh tokens
+  }
 };
 
 /**

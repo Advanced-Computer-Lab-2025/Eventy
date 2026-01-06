@@ -39,9 +39,10 @@ import {
 
 // Import the Purchase Dialog (Only used for PAID tickets now)
 import { ResalePurchaseDialog, ResaleListing } from "./ResalePurchaseDialog";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 // --- Configuration ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 
 interface ResaleMarketplaceDialogProps {
   open: boolean;

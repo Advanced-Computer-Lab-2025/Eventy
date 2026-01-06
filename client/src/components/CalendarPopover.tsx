@@ -46,14 +46,17 @@ export default function CalendarPopover() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserEvents();
 
     // Listen for registration and cancellation events to keep calendar in sync
     const handleRegistration = () => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 
     const handleCancellation = () => {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 

@@ -417,8 +417,8 @@ export default function EventsOfficePolls() {
                           variant="outline"
                           className={
                             poll.isActive
-                              ? "bg-green-100 text-green-700 border-green-200"
-                              : "bg-red-100 text-red-700 border-red-200"
+                              ? "bg-green-100 text-green-800 border-green-200/50 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800/50"
+                              : "bg-red-100 text-red-800 border-red-200/50 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800/50"
                           }
                         >
                           {poll.isActive ? "Active" : "Ended"}
@@ -533,7 +533,9 @@ export default function EventsOfficePolls() {
                           />
                         </TableCell>
                         <TableCell>
-                          {req?.createdBy?.companyName || "Unknown"}
+                          {(typeof req?.createdBy === "string"
+                            ? undefined
+                            : req?.createdBy?.companyName) || "Unknown"}
                         </TableCell>
                         <TableCell>{req.locationPreference || "-"}</TableCell>
                         <TableCell>{req.boothSize || "-"}</TableCell>

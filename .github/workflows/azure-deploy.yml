@@ -30,10 +30,15 @@ jobs:
           cache: "npm"
           cache-dependency-path: server/package-lock.json
 
+      - name: Install server production dependencies
+        run: |
+          cd server
+          npm ci --omit=dev
+
       - name: Create deployment package
         run: |
           cd server
-          zip -r ../server-deploy.zip . -x "node_modules/*" ".env" ".env.*" "**/*.log"
+          zip -r ../server-deploy.zip . -x ".env" ".env.*" "**/*.log"
 
       - name: Deploy to Azure Web App
         uses: azure/webapps-deploy@v3

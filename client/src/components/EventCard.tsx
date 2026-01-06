@@ -40,6 +40,28 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 
 const API_BASE_URL = getApiBaseUrl();
 
+function normalizeBackendAssetUrl(url: string | undefined): string | undefined {
+  if (!url) return url;
+
+  if (url.startsWith("/uploads/")) {
+    return API_BASE_URL ? `${API_BASE_URL}${url}` : url;
+  }
+
+  if (
+    API_BASE_URL &&
+    /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(url)
+  ) {
+    try {
+      const parsed = new URL(url);
+      return `${API_BASE_URL}${parsed.pathname}${parsed.search}`;
+    } catch {
+      return url;
+    }
+  }
+
+  return url;
+}
+
 async function deleteEvent(eventId: string) {
   const token = localStorage.getItem("token");
   const response = await fetch(
@@ -240,7 +262,9 @@ export default function EventCard({
           );
           setIsAlreadyListed(listed);
         }
-      } catch (e) {}
+      } catch (e) {
+        logger.debug("Failed to parse token for resale listings", e);
+      }
     }
   }, [eventData]);
 
@@ -324,7 +348,9 @@ export default function EventCard({
           title: "Link copied",
           description: "Event link copied to clipboard!",
         });
-      } catch (err) {}
+      } catch (err) {
+        logger.debug("Failed to copy event link to clipboard", err);
+      }
     }
   };
 
@@ -384,7 +410,8 @@ export default function EventCard({
   const badgeCategory = isPlatformBooth
     ? "platform_booth"
     : String(category).toLowerCase();
-  const imageSrc = image || getEventImage(eventTypeForImage, title);
+  const imageSrc =
+    normalizeBackendAssetUrl(image) || getEventImage(eventTypeForImage, title);
   const requiresPayment = ["trip", "workshop"].includes(
     String(category).toLowerCase()
   );
@@ -392,13 +419,10 @@ export default function EventCard({
   const handleDirectRegister = async () => {
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/register`,
-        {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/register`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         const err = await res.json();
         toast({
@@ -426,7 +450,9 @@ export default function EventCard({
             detail: { eventId: id, event: data?.event || null },
           })
         );
-      } catch (e) {}
+      } catch (e) {
+        logger.debug("Failed to dispatch event registration notification", e);
+      }
     } catch {
       toast({
         title: "Error",
@@ -501,13 +527,10 @@ export default function EventCard({
     setIsCanceling(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/events/${id}/cancel`,
-        {
-          method: "PATCH",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${API_BASE_URL}/api/events/${id}/cancel`, {
+        method: "PATCH",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) {
         const err = await res.json();
         throw new Error(err.message || "Failed to cancel registration");
@@ -557,7 +580,9 @@ export default function EventCard({
       const payload = JSON.parse(atob(token.split(".")[1]));
       currentUserId = payload?.id || payload?._id || "";
     }
-  } catch {}
+  } catch (err) {
+    logger.debug("Failed to parse token for current user id", err);
+  }
 
   const isActuallyRegistered =
     Array.isArray(attendeesList) &&
@@ -582,6 +607,24 @@ export default function EventCard({
       try {
         const token = localStorage.getItem("token");
         if (!token) {
+          setIsCheckingWaitlist(false);
+          return;
+        }
+
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          const role = payload?.role;
+          const roleAllowsWaitlistStatus = [
+            "student",
+            "staff",
+            "ta",
+            "professor",
+          ].includes(role);
+          if (!roleAllowsWaitlistStatus) {
+            setIsCheckingWaitlist(false);
+            return;
+          }
+        } catch {
           setIsCheckingWaitlist(false);
           return;
         }
@@ -636,7 +679,9 @@ export default function EventCard({
         role
       );
     }
-  } catch {}
+  } catch (err) {
+    logger.debug("Failed to parse token for role permissions", err);
+  }
 
   const canShowDelete = roleAllowsDelete && canDelete;
   const canShowFavorites = roleAllowsFavorites;
@@ -950,7 +995,12 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {}
+                            } catch (err) {
+                              logger.debug(
+                                "Failed to parse token for workshop role check",
+                                err
+                              );
+                            }
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-${id}`}
@@ -1035,7 +1085,12 @@ export default function EventCard({
                             (e as any).stopPropagation();
                           try {
                             await onArchive();
-                          } catch (err) {}
+                          } catch (err) {
+                            logger.debug(
+                              "Failed to parse token for registration state",
+                              err
+                            );
+                          }
                         }}
                         disabled={isArchiving}
                         data-testid={`button-archive-${id}`}
@@ -1199,7 +1254,12 @@ export default function EventCard({
                         e.stopPropagation();
                         try {
                           await onUnarchive();
-                        } catch (err) {}
+                        } catch (err) {
+                          logger.debug(
+                            "Failed to parse token for favorites role",
+                            err
+                          );
+                        }
                       }}
                       disabled={isUnarchiving}
                       data-testid={`button-unarchive-${id}`}
@@ -1333,7 +1393,12 @@ export default function EventCard({
                             e.stopPropagation();
                             try {
                               await onUnarchive();
-                            } catch (err) {}
+                            } catch (err) {
+                              logger.debug(
+                                "Failed to parse token for delete permission",
+                                err
+                              );
+                            }
                           }}
                           disabled={isUnarchiving}
                           data-testid={`button-unarchive-compact-${id}`}
@@ -1418,7 +1483,12 @@ export default function EventCard({
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {}
+                              } catch (err) {
+                                logger.debug(
+                                  "Failed to parse token for waitlist auth",
+                                  err
+                                );
+                              }
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1467,7 +1537,12 @@ export default function EventCard({
                               e.stopPropagation();
                               try {
                                 await onUnarchive();
-                              } catch (err) {}
+                              } catch (err) {
+                                logger.debug(
+                                  "Failed to parse token for resale auth",
+                                  err
+                                );
+                              }
                             }}
                             disabled={isUnarchiving}
                             data-testid={`button-unarchive-compact-${id}`}
@@ -1603,7 +1678,12 @@ export default function EventCard({
                           (e as any).stopPropagation();
                         try {
                           await onArchive();
-                        } catch (err) {}
+                        } catch (err) {
+                          logger.debug(
+                            "Failed to parse token for booth auth",
+                            err
+                          );
+                        }
                       }}
                       disabled={isArchiving}
                       data-testid={`button-archive-compact-${id}`}
@@ -1746,6 +1826,22 @@ export default function EventCard({
               const token = localStorage.getItem("token");
               if (!token) {
                 // If no token, keep optimistic state
+                return;
+              }
+
+              try {
+                const payload = JSON.parse(atob(token.split(".")[1]));
+                const role = payload?.role;
+                const roleAllowsWaitlistStatus = [
+                  "student",
+                  "staff",
+                  "ta",
+                  "professor",
+                ].includes(role);
+                if (!roleAllowsWaitlistStatus) {
+                  return;
+                }
+              } catch {
                 return;
               }
 

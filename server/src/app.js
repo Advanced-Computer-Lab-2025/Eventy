@@ -43,7 +43,10 @@ const vercelProjectSlug = (() => {
   }
 })();
 
-const allowedOrigins = [...envAllowed, "http://localhost:5000"].filter(Boolean);
+const allowedOrigins = [
+  ...envAllowed,
+  ...(isProd ? [] : ["http://localhost:5000"]),
+].filter(Boolean);
 
 // Global Middlewares
 app.use(

@@ -36,7 +36,9 @@ function CompactEventCard({ event }: { event: any }) {
       const payload = JSON.parse(atob(token.split(".")[1]));
       currentUserId = payload.id || payload._id;
       userRole = payload.role;
-    } catch (e) {}
+    } catch (e) {
+      logger.debug("Failed to parse token in recommendations", e);
+    }
   }
 
   // Check registration status

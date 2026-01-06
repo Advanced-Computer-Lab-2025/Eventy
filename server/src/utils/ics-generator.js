@@ -1,4 +1,5 @@
 import ical from "ical-generator";
+import { getFrontendBaseUrl } from "./urls.js";
 
 /**
  * Generate ICS file content for calendar invite
@@ -6,13 +7,15 @@ import ical from "ical-generator";
 export const generateICSFile = (eventDetails) => {
   const calendar = ical({ name: "Eventy - Campus Events" });
 
+  const fallbackUrl = getFrontendBaseUrl();
+
   calendar.createEvent({
     start: new Date(eventDetails.startDate),
     end: new Date(eventDetails.endDate),
     summary: eventDetails.name || eventDetails.summary,
     description: eventDetails.description || "",
     location: eventDetails.location || "TBD",
-    url: eventDetails.url || "http://localhost:5000",
+    url: eventDetails.url || fallbackUrl || undefined,
     organizer: {
       name: "Eventy Events Office",
       email: process.env.EMAIL_USER || "events@eventy.com",
@@ -42,6 +45,8 @@ export const generateICSFile = (eventDetails) => {
 export const generateICSFileForMultipleEvents = (events) => {
   const calendar = ical({ name: "Eventy - Campus Events" });
 
+  const fallbackUrl = getFrontendBaseUrl();
+
   events.forEach((eventDetails) => {
     calendar.createEvent({
       start: new Date(eventDetails.startDate),
@@ -49,7 +54,7 @@ export const generateICSFileForMultipleEvents = (events) => {
       summary: eventDetails.name || eventDetails.summary,
       description: eventDetails.description || "",
       location: eventDetails.location || "TBD",
-      url: eventDetails.url || "http://localhost:5000",
+      url: eventDetails.url || fallbackUrl || undefined,
       organizer: {
         name: "Eventy Events Office",
         email: process.env.EMAIL_USER || "events@eventy.com",

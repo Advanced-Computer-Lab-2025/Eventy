@@ -44,7 +44,6 @@ import {
 import { useLocation } from "wouter";
 import DocumentViewer from "@/components/DocumentViewer";
 import { motion, AnimatePresence } from "framer-motion";
-import { Badge as StatusBadge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,

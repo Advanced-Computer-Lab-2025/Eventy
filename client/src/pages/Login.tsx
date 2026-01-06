@@ -17,6 +17,7 @@ import Logo from "@/components/Logo";
 import { useToast } from "@/hooks/use-toast";
 import { ToastProvider, ToastViewport } from "@/components/ui/toast";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import { setAuthToken } from "@/lib/authToken";
 
 export default function Login() {
   const [location] = useLocation();
@@ -66,14 +67,19 @@ export default function Login() {
       const res = await fetch(`${getApiBaseUrl()}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify(formData),
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Login failed");
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
+      setAuthToken(data.token);
+      try {
+        localStorage.setItem("user", JSON.stringify(data.user));
+      } catch {
+        // Storage may be blocked; ignore.
+      }
 
       const role = (data?.user?.role ?? data?.role ?? "").toLowerCase();
 
@@ -162,7 +168,7 @@ export default function Login() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@guc.edu.eg"
+                    placeholder="Enter your email"
                     className="pl-10"
                     value={formData.email}
                     onChange={(e) =>

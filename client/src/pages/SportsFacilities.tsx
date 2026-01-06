@@ -98,7 +98,7 @@ export default function SportsFacilities() {
       });
       if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
       const data = await res.json();
-      logger.warn("Reserve response:", res.status, data);
+      logger.debug("Reserve response:", res.status, data);
       if (data.success && data.data) {
         // Normalize schedule dates to local YYYY-MM-DD (use local date parts)
         const normalize = (arr: unknown[]) =>
@@ -118,7 +118,7 @@ export default function SportsFacilities() {
         };
         setCourtSchedules(normalized);
         // warn with sample so devs can inspect if needed
-        logger.warn("Fetched court schedules (normalized):", normalized);
+        logger.debug("Fetched court schedules (normalized):", normalized);
       }
     } catch (err) {
       logger.error("Fetch error:", err);

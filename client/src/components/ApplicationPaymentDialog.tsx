@@ -13,7 +13,8 @@ import { MdAttachMoney } from "react-icons/md";
 import { bazaarApiService } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
 import { Application } from "@/lib/bazaarApi";
-import { loadStripe } from "@stripe/stripe-js";
+import { logger } from "@/lib/logger";
+import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import {
   Elements,
   PaymentElement,
@@ -21,7 +22,6 @@ import {
   useElements,
 } from "@stripe/react-stripe-js";
 import { useTheme } from "@/components/ThemeProvider";
-import { logger } from "@/lib/logger";
 
 interface ApplicationPaymentDialogProps {
   open: boolean;
@@ -231,13 +231,13 @@ export default function ApplicationPaymentDialog({
 
   const { theme } = useTheme();
 
-  const options = useMemo(
+  const options = useMemo<StripeElementsOptions | undefined>(
     () =>
       clientSecret
         ? {
             clientSecret,
             appearance: {
-              theme: "stripe",
+              theme: theme === "dark" ? "night" : "stripe",
               variables: {
                 ...(theme === "dark" && {
                   // These three control ALL text inside every input & dropdown,
@@ -267,10 +267,10 @@ export default function ApplicationPaymentDialog({
                         color: "#888888 !important",
                       },
                     }
-                  : {},
+                  : undefined,
             },
           }
-        : null,
+        : undefined,
     [clientSecret, theme]
   );
 

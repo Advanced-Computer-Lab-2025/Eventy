@@ -22,6 +22,19 @@ import {
 } from "./event.validation.js";
 import { User } from "../users/user.model.js";
 import NotificationService from "../notifications/notification.service.js";
+import fs from "fs";
+
+async function getVercelPut() {
+  try {
+    const mod = await import("@vercel/blob");
+    return mod.put;
+  } catch (err) {
+    throw new ApiError(
+      500,
+      "Vercel Blob is not available on this server. Ensure '@vercel/blob' is installed and included in the Azure deployment package."
+    );
+  }
+}
 
 //Write your code in this class!!!
 
@@ -1407,11 +1420,39 @@ export class EventsController {
         throw new ApiError(400, "Image file is required");
       }
 
-      // Construct the public URL for the uploaded image
-      const relativePath = `/uploads/event-images/${req.file.filename}`;
-      const protocol = req.protocol;
-      const host = req.get("host");
-      const imageUrl = `${protocol}://${host}${relativePath}`;
+      let imageUrl;
+
+      const blobToken =
+        process.env.BLOB_READ_WRITE_TOKEN ||
+        process.env.CUSTOMCONNSTR_BLOB_READ_WRITE_TOKEN;
+
+      if (blobToken && req.file.path) {
+        const put = await getVercelPut();
+        const fileBuffer = fs.readFileSync(req.file.path);
+        const { url } = await put(
+          `event-images/${req.file.filename}`,
+          fileBuffer,
+          {
+            access: "public",
+            contentType: req.file.mimetype,
+            token: blobToken,
+          }
+        );
+
+        imageUrl = url;
+
+        try {
+          fs.unlinkSync(req.file.path);
+        } catch (unlinkError) {
+          logger.error("Error deleting temp event image:", unlinkError);
+        }
+      } else {
+        // Fallback for local development/non-Blob environments
+        const relativePath = `/uploads/event-images/${req.file.filename}`;
+        const protocol = req.protocol;
+        const host = req.get("host");
+        imageUrl = `${protocol}://${host}${relativePath}`;
+      }
 
       const updatedEvent = await eventService.uploadImageToEvent(
         eventId,

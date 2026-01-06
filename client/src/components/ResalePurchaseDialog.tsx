@@ -19,9 +19,10 @@ import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { Loader2, CreditCard, Wallet } from "lucide-react";
 import { Label } from "@/components/ui/label";
+import { getApiBaseUrl } from "@/lib/apiBase";
 
 // --- Configuration ---
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_BASE_URL = getApiBaseUrl();
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY);
 
 // --- Types ---

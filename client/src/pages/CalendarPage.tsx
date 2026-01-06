@@ -43,7 +43,7 @@ export default function CalendarPage() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>("all");
 
   useEffect(() => {
-    const handler = (e: Event) => {
+    const handler = (e: globalThis.Event) => {
       const custom = e as CustomEvent<{ date?: string }>;
       const raw = custom.detail?.date;
       if (!raw) return;

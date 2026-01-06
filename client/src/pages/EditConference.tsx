@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useLocation, useRoute } from "wouter";
+import { format } from "date-fns";
 import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import CreateEventForm, {
   CreateEventFormValues,
@@ -106,10 +107,22 @@ export default function EditConference() {
         values.endTime && values.endTime.trim()
           ? values.endTime.trim()
           : "00:00";
+      const isValidDate = (d: unknown): d is Date =>
+        d instanceof Date && !Number.isNaN(d.getTime());
+
+      if (!isValidDate(values.startDate) || !isValidDate(values.endDate)) {
+        toast({
+          title: "Invalid date",
+          description: "Start date and end date must be valid.",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const payload: any = {
         name: values.name,
-        startDate: `${values.startDate}T${startTimeValue}:00.000Z`,
-        endDate: `${values.endDate}T${endTimeValue}:00.000Z`,
+        startDate: `${format(values.startDate, "yyyy-MM-dd")}T${startTimeValue}:00.000Z`,
+        endDate: `${format(values.endDate, "yyyy-MM-dd")}T${endTimeValue}:00.000Z`,
         startTime: startTimeValue, // Required by backend model
         endTime: endTimeValue, // Required by backend model
         description: values.description,
@@ -218,11 +231,19 @@ export default function EditConference() {
 
   const initialValues: Partial<CreateEventFormValues> = {
     name: conference.name,
-    startDate: formatDateForInput(conference.startDate),
+    startDate: (() => {
+      if (!conference.startDate) return undefined;
+      const d = new Date(conference.startDate);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })(),
     // Use separate startTime field if available, otherwise extract from date
     startTime:
       (conference as any).startTime ?? formatTimeForInput(conference.startDate),
-    endDate: formatDateForInput(conference.endDate),
+    endDate: (() => {
+      if (!conference.endDate) return undefined;
+      const d = new Date(conference.endDate);
+      return Number.isNaN(d.getTime()) ? undefined : d;
+    })(),
     // Use separate endTime field if available, otherwise extract from date
     endTime:
       (conference as any).endTime ?? formatTimeForInput(conference.endDate),

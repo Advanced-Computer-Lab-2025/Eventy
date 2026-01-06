@@ -98,11 +98,15 @@ export default function EditTrip() {
 
       setTrip(tripData);
 
+      const parseDateOrNull = (value: unknown) => {
+        if (typeof value !== "string" || !value) return null;
+        const d = new Date(value);
+        return Number.isNaN(d.getTime()) ? null : d;
+      };
+
       // Check if trip has already started and show toast, then redirect
       const now = new Date();
-      const tripStartDate = tripData.startDate
-        ? new Date(tripData.startDate)
-        : null;
+      const tripStartDate = parseDateOrNull(tripData.startDate);
       if (tripStartDate && tripStartDate <= now) {
         toast({
           title: "Cannot Edit Trip",
@@ -124,18 +128,23 @@ export default function EditTrip() {
         name: tripData.name || "",
         location: tripData.location || "",
         price: tripData.price?.toString() || "",
-        startDate: tripData.startDate
-          ? new Date(tripData.startDate)
-          : undefined,
+        startDate: (() => {
+          const d = parseDateOrNull(tripData.startDate);
+          return d ?? undefined;
+        })(),
         startTime:
           tripData.startTime || getTimeFromDate(tripData.startDate || ""),
-        endDate: tripData.endDate ? new Date(tripData.endDate) : undefined,
+        endDate: (() => {
+          const d = parseDateOrNull(tripData.endDate);
+          return d ?? undefined;
+        })(),
         endTime: tripData.endTime || getTimeFromDate(tripData.endDate || ""),
         description: tripData.description || "",
         capacity: tripData.capacity?.toString() || "",
-        registrationDeadline: tripData.registrationDeadline
-          ? new Date(tripData.registrationDeadline)
-          : undefined,
+        registrationDeadline: (() => {
+          const d = parseDateOrNull(tripData.registrationDeadline);
+          return d ?? undefined;
+        })(),
       });
       setRestrictedRoles(tripData.restrictedRoles || []);
     } catch (error) {

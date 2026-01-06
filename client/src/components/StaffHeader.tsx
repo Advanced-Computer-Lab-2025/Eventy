@@ -17,6 +17,7 @@ import WalletPopover from "./WalletPopover";
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
 import { useEffect, useState } from "react";
+import { getApiBaseUrl } from "@/lib/apiBase";
 import { logger } from "@/lib/logger";
 
 interface StaffHeaderProps {
@@ -37,27 +38,44 @@ export default function StaffHeader({
   homeHref = "/staff-ta",
 }: StaffHeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<UserData | null>(null);
+  const [user, setUser] = useState<UserData | null>(() => {
+    try {
+      const raw = localStorage.getItem("user");
+      if (!raw) return null;
+      const parsed = JSON.parse(raw);
+      return parsed.user || parsed;
+    } catch {
+      return null;
+    }
+  });
+  const apiBase = getApiBaseUrl();
 
   // 2. Fetch User Profile Logic
   const fetchUserProfile = async () => {
     try {
-      const token = localStorage.getItem("token");
+      let token: string | null = null;
+      try {
+        token = localStorage.getItem("token");
+      } catch (error) {
+        logger.warn("Storage access blocked; skipping profile fetch", error);
+        return;
+      }
       if (!token) return;
 
-      const res = await fetch(
-        `${import.meta.env.VITE_API_BASE_URL}/api/users/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await fetch(`${apiBase}/api/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
       if (res.ok) {
         const payload = await res.json();
         // Extract inner user object safely
         const freshUserData = payload.user || payload.data || payload;
         setUser(freshUserData);
-        localStorage.setItem("user", JSON.stringify(freshUserData));
+        try {
+          localStorage.setItem("user", JSON.stringify(freshUserData));
+        } catch {
+          // ignore
+        }
       }
     } catch (err) {
       logger.error("Failed to fetch user profile", err);
@@ -65,17 +83,8 @@ export default function StaffHeader({
   };
 
   useEffect(() => {
-    // Initial Load from LocalStorage
-    try {
-      const raw = localStorage.getItem("user");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        setUser(parsed.user || parsed);
-      }
-    } catch (err) {
-      // ignore
-    }
     // Fetch fresh data immediately
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserProfile();
   }, []);
 
