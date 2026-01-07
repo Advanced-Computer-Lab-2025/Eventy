@@ -173,7 +173,7 @@ class BazaarApiService {
     }
   }
 
-  async registerForBazaar(bazaarId: string): Promise<void> {
+  async registerForBazaar(_bazaarId: string): Promise<void> {
     try {
       // This method is deprecated - use applyToBazaar instead
       logger.warn(

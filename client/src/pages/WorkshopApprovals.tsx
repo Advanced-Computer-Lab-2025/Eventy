@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import axios from "axios";
 import {
   CheckCircle,
@@ -68,7 +68,18 @@ export default function WorkshopApprovals() {
   const [searchInput, setSearchInput] = useState("");
   const searchTimerRef = useRef<number | null>(null);
 
-  const apiBase = getApiBaseUrl();
+  const apiBase = useMemo(() => getApiBaseUrl(), []);
+
+  const statusFilterRef = useRef(statusFilter);
+  const facultyFilterRef = useRef(facultyFilter);
+
+  useEffect(() => {
+    statusFilterRef.current = statusFilter;
+  }, [statusFilter]);
+
+  useEffect(() => {
+    facultyFilterRef.current = facultyFilter;
+  }, [facultyFilter]);
 
   // Compute unique faculties dynamically from workshops data
   const facultyOptions = useMemo(() => {
@@ -81,8 +92,53 @@ export default function WorkshopApprovals() {
     return Array.from(uniqueFaculties).sort();
   }, [allWorkshops]);
 
+  // Client-side search
+  const performSearch = useCallback(
+    (query: string, workshopsToSearch: any[]) => {
+      if (!query.trim()) {
+        return workshopsToSearch;
+      }
+
+      const lowerQuery = query.toLowerCase();
+      return workshopsToSearch.filter((w) => {
+        const nameMatch = w.name?.toLowerCase().includes(lowerQuery);
+        const creatorMatch =
+          `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
+            .toLowerCase()
+            .includes(lowerQuery);
+        return nameMatch || creatorMatch;
+      });
+    },
+    []
+  );
+
+  // Apply status, faculty filters, and search to workshops
+  const applyFilters = useCallback(
+    (
+      workshops: any[],
+      statuses: string[],
+      faculty: string,
+      search: string = ""
+    ) => {
+      let filtered = workshops.filter((w) => {
+        const statusMatch =
+          statuses.includes("all") || statuses.includes(w.status);
+        const facultyMatch = faculty === "all" || w.faculty === faculty;
+        return statusMatch && facultyMatch;
+      });
+
+      // Apply search filter
+      if (search.trim()) {
+        filtered = performSearch(search, filtered);
+      }
+
+      setFilteredWorkshops(filtered);
+    },
+    [performSearch]
+  );
+
   // Fetch all workshops
-  const fetchAllWorkshops = async () => {
+  const fetchAllWorkshops = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -100,7 +156,11 @@ export default function WorkshopApprovals() {
 
       const workshops = res.data?.data ?? res.data ?? [];
       setAllWorkshops(workshops);
-      applyFilters(workshops, statusFilter, facultyFilter);
+      applyFilters(
+        workshops,
+        statusFilterRef.current,
+        facultyFilterRef.current
+      );
     } catch (err: any) {
       logger.error("Error fetching workshops:", err);
       setAllWorkshops([]);
@@ -108,52 +168,12 @@ export default function WorkshopApprovals() {
     } finally {
       setLoading(false);
     }
-  };
-
-  // Client-side search
-  const performSearch = (query: string, workshopsToSearch: any[]) => {
-    if (!query.trim()) {
-      return workshopsToSearch;
-    }
-
-    const lowerQuery = query.toLowerCase();
-    return workshopsToSearch.filter((w) => {
-      const nameMatch = w.name?.toLowerCase().includes(lowerQuery);
-      const creatorMatch =
-        `${w.createdBy?.firstName || ""} ${w.createdBy?.lastName || ""}`
-          .toLowerCase()
-          .includes(lowerQuery);
-      return nameMatch || creatorMatch;
-    });
-  };
-
-  // Apply status, faculty filters, and search to workshops
-  const applyFilters = (
-    workshops: any[],
-    statuses: string[],
-    faculty: string,
-    search: string = ""
-  ) => {
-    let filtered = workshops.filter((w) => {
-      const statusMatch =
-        statuses.includes("all") || statuses.includes(w.status);
-      const facultyMatch = faculty === "all" || w.faculty === faculty;
-      return statusMatch && facultyMatch;
-    });
-
-    // Apply search filter
-    if (search.trim()) {
-      filtered = performSearch(search, filtered);
-    }
-
-    setFilteredWorkshops(filtered);
-  };
+  }, [apiBase, applyFilters]);
 
   // Initial load
   useEffect(() => {
     fetchAllWorkshops();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchAllWorkshops]);
 
   // Debounced search - applies search on top of existing filters
   useEffect(() => {
@@ -170,8 +190,7 @@ export default function WorkshopApprovals() {
         window.clearTimeout(searchTimerRef.current);
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchInput, allWorkshops, statusFilter, facultyFilter]);
+  }, [searchInput, allWorkshops, statusFilter, facultyFilter, applyFilters]);
 
   // Handle status filter change
   const handleStatusFilterChange = (status: string, checked: boolean) => {

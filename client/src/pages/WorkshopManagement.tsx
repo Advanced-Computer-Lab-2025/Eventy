@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Calendar, MapPin, Users, DollarSign, Edit, Plus } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
@@ -33,7 +33,7 @@ interface Workshop {
 
 export default function WorkshopManagement() {
   const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -77,11 +77,7 @@ export default function WorkshopManagement() {
     }
   };
 
-  useEffect(() => {
-    fetchMyWorkshops();
-  }, []);
-
-  const fetchMyWorkshops = async () => {
+  const fetchMyWorkshops = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -105,7 +101,11 @@ export default function WorkshopManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, setLocation]);
+
+  useEffect(() => {
+    fetchMyWorkshops();
+  }, [fetchMyWorkshops]);
 
   const getStatusBadge = (status: string) => {
     const variants: Record<string, { className: string; label: string }> = {
@@ -190,7 +190,7 @@ export default function WorkshopManagement() {
               <Calendar className="h-12 w-12 text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No workshops yet</h3>
               <p className="text-muted-foreground">
-                You haven't created any workshops yet
+                You haven&apos;t created any workshops yet
               </p>
             </CardContent>
           </Card>

@@ -194,8 +194,7 @@ export const useFavorites = () => {
       setFavorites(sharedFavorites);
       setInitialLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchFavorites]);
 
   return {
     favorites,

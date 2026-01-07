@@ -27,7 +27,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -190,7 +190,7 @@ export default function VendorRequests() {
     }
   }, []);
 
-  const fetchApplications = async () => {
+  const fetchApplications = useCallback(async () => {
     if (!token) return;
     try {
       setLoading(true);
@@ -226,13 +226,12 @@ export default function VendorRequests() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
   useEffect(() => {
     if (!token) return; // Wait for token to be loaded
     fetchApplications();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [fetchApplications, token]);
 
   // Helper function to get event name from request
   const getEventName = (request: VendorRequest): string => {
@@ -394,7 +393,7 @@ export default function VendorRequests() {
         title: "Download successful",
         description: "ID card downloaded successfully.",
       });
-    } catch (error) {
+    } catch {
       toast({
         title: "Download failed",
         description: "Failed to download the document. Please try again.",

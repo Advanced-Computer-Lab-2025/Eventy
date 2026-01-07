@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 import {
@@ -14,7 +14,7 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 export default function EmailVerified() {
   const [, params] = useRoute("/verify-email/:token");
   const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [status, setStatus] = useState<"loading" | "success" | "error">(
     "loading"
   );
@@ -50,14 +50,14 @@ export default function EmailVerified() {
           setStatus("error");
           setMessage(data.message || "Verification failed");
         }
-      } catch (error) {
+      } catch {
         setStatus("error");
         setMessage("An error occurred during verification");
       }
     };
 
     verifyEmail();
-  }, [params]);
+  }, [API_BASE_URL, params?.token]);
 
   // Auto-redirect to login after 4 seconds
   useEffect(() => {

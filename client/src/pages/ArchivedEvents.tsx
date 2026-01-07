@@ -36,7 +36,7 @@ export default function ArchivedEvents() {
       if (!res.ok) throw new Error("Failed to fetch event details");
       const data = await res.json();
       setSelectedEvent(data.data);
-    } catch (err) {
+    } catch {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);

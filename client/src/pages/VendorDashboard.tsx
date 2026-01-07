@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Store,
   Calendar,
@@ -66,7 +66,7 @@ interface Attendee {
 }
 
 export default function VendorDashboard() {
-  const [location, setLocation] = useLocation();
+  const [_location, _setLocation] = useLocation();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
@@ -93,9 +93,9 @@ export default function VendorDashboard() {
   >([{ name: "", email: "" }]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [durationWeeks, setDurationWeeks] = useState<number>(1);
-  const [locationPreference, setLocationPreference] = useState<string>("");
+  const [_locationPreference, _setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
-  const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
+  const [_isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
     useState(false);
 
   // Booth application dialog state
@@ -150,7 +150,7 @@ export default function VendorDashboard() {
   };
 
   // Handle search functionality
-  const handleSearch = (query: string) => {
+  const _handleSearch = (query: string) => {
     setSearchTerm(query);
   };
 
@@ -271,7 +271,7 @@ export default function VendorDashboard() {
       : 0;
 
   // Fetch company name from localStorage
-  const fetchCompanyName = () => {
+  const fetchCompanyName = useCallback(() => {
     try {
       const user = localStorage.getItem("user");
       if (!user) {
@@ -285,10 +285,10 @@ export default function VendorDashboard() {
       logger.warn("Unable to read vendor name from storage", error);
       setCompanyName("Vendor");
     }
-  };
+  }, []);
 
   // Fetch upcoming bazaars
-  const fetchUpcomingBazaars = async () => {
+  const fetchUpcomingBazaars = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -306,10 +306,10 @@ export default function VendorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Fetch applications data
-  const fetchApplicationsData = async () => {
+  const fetchApplicationsData = useCallback(async () => {
     try {
       logger.info("=== Starting application fetch ===");
 
@@ -356,13 +356,13 @@ export default function VendorDashboard() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchCompanyName();
     fetchUpcomingBazaars();
     fetchApplicationsData();
-  }, []);
+  }, [fetchApplicationsData, fetchCompanyName, fetchUpcomingBazaars]);
 
   // Listen for hash changes to update active tab
   useEffect(() => {
@@ -586,7 +586,7 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleShare = (bazaarId: string) => {
+  const handleShare = (_bazaarId: string) => {
     if (navigator.share) {
       navigator.share({
         title: "Check out this bazaar!",

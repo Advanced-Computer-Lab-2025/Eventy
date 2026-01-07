@@ -24,7 +24,7 @@ export default function VendorHeader({
     if (typeof window === "undefined") return false;
     return window.location.hash.substring(1) === "loyalty-program";
   });
-  const [user, setUser] = useState<{
+  const [user] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;

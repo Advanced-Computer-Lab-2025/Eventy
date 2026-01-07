@@ -27,7 +27,7 @@ import { useState } from "react";
 
 export default function EventsOfficeHeader() {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<{
+  const [user] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;

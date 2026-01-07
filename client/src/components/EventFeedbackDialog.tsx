@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -35,12 +35,6 @@ interface Comment {
   createdAt: string;
 }
 
-interface FeedbackResponse {
-  feedback: Comment[];
-  averageRating: number;
-  totalReviews: number;
-}
-
 export default function EventFeedbackDialog({
   open,
   onOpenChange,
@@ -60,7 +54,7 @@ export default function EventFeedbackDialog({
   const [ratingError, setRatingError] = useState("");
   const [commentError, setCommentError] = useState("");
 
-  const fetchUserFeedback = async () => {
+  const fetchUserFeedback = useCallback(async () => {
     try {
       setCheckingSubmission(true);
       const token = localStorage.getItem("token");
@@ -92,9 +86,9 @@ export default function EventFeedbackDialog({
     } finally {
       setCheckingSubmission(false);
     }
-  };
+  }, [eventId, toast]);
 
-  const fetchFeedback = async () => {
+  const fetchFeedback = useCallback(async () => {
     try {
       setLoading(true);
       const token = localStorage.getItem("token");
@@ -122,7 +116,7 @@ export default function EventFeedbackDialog({
     } finally {
       setLoading(false);
     }
-  };
+  }, [eventId, toast]);
 
   useEffect(() => {
     if (open && eventId) {
@@ -139,7 +133,7 @@ export default function EventFeedbackDialog({
       setRatingError("");
       setCommentError("");
     }
-  }, [open, eventId]);
+  }, [open, eventId, fetchUserFeedback, fetchFeedback]);
 
   const validateForm = () => {
     let isValid = true;
@@ -273,7 +267,7 @@ export default function EventFeedbackDialog({
                   }`}
                 >
                   <div className="text-lg font-medium">
-                    You've already rated this event
+                    You&apos;ve already rated this event
                   </div>
                   <div className="space-y-1">
                     <div className="flex items-center justify-center gap-1 text-yellow-400">
@@ -290,7 +284,7 @@ export default function EventFeedbackDialog({
                     </div>
                     {userFeedback.comment && (
                       <p className="text-sm text-muted-foreground italic">
-                        "{userFeedback.comment}"
+                        &ldquo;{userFeedback.comment}&rdquo;
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">

@@ -100,7 +100,7 @@ export default function CreateConference() {
           <h1 className="text-4xl font-bold mb-2">Create Conference</h1>
           <p className="text-muted-foreground">
             Create a new conference. The conference website will contain all the
-            conference's details.
+            conference&apos;s details.
           </p>
         </div>
 

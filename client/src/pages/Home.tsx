@@ -8,7 +8,6 @@ import MobileNav from "@/components/MobileNav";
 import CreateEventDialog from "@/components/CreateEventDialog";
 import EmptyState from "@/components/EmptyState";
 import Recommendations from "@/components/Recommendations";
-import { useToast } from "@/hooks/use-toast";
 import { getEventImage } from "@/lib/eventImages";
 import { logger } from "@/lib/logger";
 import { getApiBaseUrl } from "@/lib/apiBase";
@@ -64,7 +63,6 @@ export default function Home() {
     showPast: true,
   });
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-  const { toast } = useToast();
 
   const safeProfessorForLocationOptions = useMemo(() => {
     if (!filters.professor) return "";

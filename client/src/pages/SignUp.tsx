@@ -49,8 +49,8 @@ export default function SignUp() {
 
   const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [isUploadingTax, setIsUploadingTax] = useState(false);
-  const [logoFile, setLogoFile] = useState<File | null>(null);
-  const [taxFile, setTaxFile] = useState<File | null>(null);
+  const [_logoFile, setLogoFile] = useState<File | null>(null);
+  const [_taxFile, setTaxFile] = useState<File | null>(null);
 
   const validateStudentId = (id: string): boolean => {
     const studentIdPattern = /^\d{2}-\d{4}$/;

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   Loader2,
@@ -89,7 +89,7 @@ function LiveEventCard({ event }: { event: Event }) {
   }, [event]);
 
   // Fetch images for this event
-  const fetchImages = async () => {
+  const fetchImages = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       const response = await fetch(
@@ -111,11 +111,11 @@ function LiveEventCard({ event }: { event: Event }) {
     } finally {
       setLoadingImages(false);
     }
-  };
+  }, [event._id]);
 
   useEffect(() => {
     fetchImages();
-  }, [event._id]);
+  }, [fetchImages]);
 
   // Handle file upload
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -459,7 +459,7 @@ export default function LiveMoments() {
       return null;
     }
   });
-  const [eventImageCounts, setEventImageCounts] = useState<
+  const [_eventImageCounts, setEventImageCounts] = useState<
     Record<string, number>
   >({});
   const [currentUserId] = useState<string | null>(() => {

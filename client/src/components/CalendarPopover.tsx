@@ -40,7 +40,7 @@ export default function CalendarPopover() {
         const data = await res.json();
         setEvents(data.data || []);
       }
-    } catch (err) {
+    } catch {
       // Error is expected when user is not logged in or has no events
     }
   };
@@ -51,12 +51,10 @@ export default function CalendarPopover() {
 
     // Listen for registration and cancellation events to keep calendar in sync
     const handleRegistration = () => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 
     const handleCancellation = () => {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchUserEvents();
     };
 

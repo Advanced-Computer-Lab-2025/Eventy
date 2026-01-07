@@ -83,8 +83,7 @@ export default function RestrictAccessDialog({
           );
         }
       }
-
-      const data = await res.json();
+      await res.json();
 
       toast({
         title: "Access restrictions updated",
@@ -119,9 +118,9 @@ export default function RestrictAccessDialog({
           <DialogHeader>
             <DialogTitle>Restrict Access</DialogTitle>
             <DialogDescription>
-              Select which roles should be restricted from accessing "
-              {eventName}
-              ". Users with restricted roles won't be able to view or register
+              Select which roles should be restricted from accessing{" "}
+              <span className="font-medium">&ldquo;{eventName}&rdquo;</span>.{" "}
+              Users with restricted roles won&apos;t be able to view or register
               for this event.
             </DialogDescription>
           </DialogHeader>

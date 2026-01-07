@@ -8,7 +8,7 @@ interface LogoProps {
 
 export default function Logo({
   size = "md",
-  showText = false,
+  showText: _showText = false,
   className = "",
 }: LogoProps) {
   const { theme } = useTheme();

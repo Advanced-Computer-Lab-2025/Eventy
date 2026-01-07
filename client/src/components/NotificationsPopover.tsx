@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell, Trash2, ArrowUpDown, AlertTriangle, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -53,19 +53,7 @@ export default function NotificationsPopover() {
   >(null);
   const { toast } = useToast();
 
-  // Fetch notifications on mount to show badge count immediately
-  useEffect(() => {
-    fetchNotifications();
-  }, []);
-
-  // Refetch when popover opens to ensure data is fresh
-  useEffect(() => {
-    if (open) {
-      fetchNotifications();
-    }
-  }, [open]);
-
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -81,7 +69,7 @@ export default function NotificationsPopover() {
       } else {
         throw new Error("Failed to fetch notifications");
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to load notifications",
@@ -90,7 +78,19 @@ export default function NotificationsPopover() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
+
+  // Fetch notifications on mount to show badge count immediately
+  useEffect(() => {
+    fetchNotifications();
+  }, [fetchNotifications]);
+
+  // Refetch when popover opens to ensure data is fresh
+  useEffect(() => {
+    if (open) {
+      fetchNotifications();
+    }
+  }, [open, fetchNotifications]);
 
   const markAsRead = async (notificationId: string) => {
     try {
@@ -157,7 +157,7 @@ export default function NotificationsPopover() {
           setSelectedNotification(null);
         }
       }
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to delete notification",

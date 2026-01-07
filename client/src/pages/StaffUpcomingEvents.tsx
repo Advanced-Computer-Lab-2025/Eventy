@@ -56,7 +56,7 @@ export default function StaffUpcomingEvents() {
     showUpcoming: true,
     showPast: true,
   });
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   const safeProfessorForLocationOptions = useMemo(() => {
     if (!eventFilters.professor) return "";

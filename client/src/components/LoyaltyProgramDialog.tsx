@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -53,14 +53,7 @@ export default function LoyaltyProgramDialog({
   const [vendorStatus, setVendorStatus] = useState<VendorStatus | null>(null);
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
-  // Fetch vendor status when dialog opens
-  useEffect(() => {
-    if (open) {
-      fetchVendorStatus();
-    }
-  }, [open]);
-
-  const fetchVendorStatus = async () => {
+  const fetchVendorStatus = useCallback(async () => {
     setIsLoadingStatus(true);
     try {
       const token = localStorage.getItem("token");
@@ -98,7 +91,14 @@ export default function LoyaltyProgramDialog({
     } finally {
       setIsLoadingStatus(false);
     }
-  };
+  }, [toast]);
+
+  // Fetch vendor status when dialog opens
+  useEffect(() => {
+    if (open) {
+      fetchVendorStatus();
+    }
+  }, [open, fetchVendorStatus]);
 
   const handleCancel = async () => {
     setIsSubmitting(true);

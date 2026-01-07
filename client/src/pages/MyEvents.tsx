@@ -1,5 +1,4 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
+import { useEffect, useMemo, useState } from "react";
 
 import { EventCategory } from "@/components/CategoryBadge";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
@@ -32,8 +31,7 @@ interface RegisteredEvent {
 }
 
 export default function MyEvents() {
-  const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [registeredEvents, setRegisteredEvents] = useState<RegisteredEvent[]>(
     []
   );
@@ -81,10 +79,10 @@ export default function MyEvents() {
 
     fetchEvents();
 
-    const onRegistered = (e: any) => {
+    const onRegistered = () => {
       try {
         fetchEvents();
-      } catch (err) {
+      } catch {
         // ignore
       }
     };
@@ -94,7 +92,7 @@ export default function MyEvents() {
     return () => {
       window.removeEventListener("event:registered", onRegistered as any);
     };
-  }, []);
+  }, [API_BASE_URL]);
 
   const formatEventDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -139,7 +137,7 @@ export default function MyEvents() {
       if (!res.ok) throw new Error("Failed to fetch event details");
       const data = await res.json();
       setSelectedEvent(data.data);
-    } catch (err) {
+    } catch {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);

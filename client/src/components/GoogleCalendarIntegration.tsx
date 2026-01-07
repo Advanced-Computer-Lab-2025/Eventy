@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Calendar, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
@@ -21,6 +21,24 @@ export default function GoogleCalendarIntegration() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
   const { toast } = useToast();
+
+  const checkConnectionStatus = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`${API_BASE_URL}/api/calendar/status`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setIsConnected(data.data.connected);
+      }
+    } catch (error) {
+      logger.error("Error checking calendar status:", error);
+    }
+  }, []);
 
   // Check connection status on mount
   useEffect(() => {
@@ -45,25 +63,7 @@ export default function GoogleCalendarIntegration() {
       // Clean up URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
-  }, []);
-
-  const checkConnectionStatus = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/calendar/status`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setIsConnected(data.data.connected);
-      }
-    } catch (error) {
-      logger.error("Error checking calendar status:", error);
-    }
-  };
+  }, [checkConnectionStatus, toast]);
 
   const handleConnect = async () => {
     setIsLoading(true);

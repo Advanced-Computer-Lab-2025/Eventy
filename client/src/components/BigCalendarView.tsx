@@ -41,7 +41,6 @@ interface BigCalendarViewProps {
 export default function BigCalendarView({
   events,
   onEventClick,
-  onUnregister,
   defaultDate,
   defaultView = "month",
   className = "",

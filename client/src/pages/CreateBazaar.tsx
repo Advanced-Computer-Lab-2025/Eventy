@@ -263,7 +263,7 @@ export default function CreateBazaar() {
       }
     };
     fetchExisting();
-  }, []);
+  }, [API_BASE_URL]);
 
   return (
     <div className="min-h-screen bg-background">

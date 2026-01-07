@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import {
   Clock,
@@ -56,7 +56,7 @@ export default function EditWorkshop() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
   const workshopId = params?.id;
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
 
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
@@ -86,14 +86,7 @@ export default function EditWorkshop() {
   const [workshopStatus, setWorkshopStatus] = useState<string>("");
   const [revisionComments, setRevisionComments] = useState<string>("");
 
-  useEffect(() => {
-    fetchProfessors();
-    if (workshopId) {
-      fetchWorkshopDetails();
-    }
-  }, [workshopId]);
-
-  const fetchProfessors = async () => {
+  const fetchProfessors = useCallback(async () => {
     const token = localStorage.getItem("token");
     if (!token) return;
 
@@ -117,9 +110,9 @@ export default function EditWorkshop() {
     } catch (err) {
       logger.error("Failed to fetch professors", err);
     }
-  };
+  }, [API_BASE_URL]);
 
-  const fetchWorkshopDetails = async () => {
+  const fetchWorkshopDetails = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -190,7 +183,14 @@ export default function EditWorkshop() {
     } finally {
       setFetchingWorkshop(false);
     }
-  };
+  }, [API_BASE_URL, setLocation, toast, workshopId]);
+
+  useEffect(() => {
+    fetchProfessors();
+    if (workshopId) {
+      fetchWorkshopDetails();
+    }
+  }, [fetchProfessors, fetchWorkshopDetails, workshopId]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

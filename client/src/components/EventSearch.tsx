@@ -72,7 +72,7 @@ export default function EventSearch({
     };
 
     fetchInitialEvents();
-  }, []); // Only run once on mount
+  }, [API_URL, onError, onLoading, onSearchResults, token]);
 
   const hasSearchQuery = useMemo(() => !!searchQuery.trim(), [searchQuery]);
   const hasFilterParams = useMemo(() => {
@@ -84,9 +84,9 @@ export default function EventSearch({
 
     return Boolean(
       (filters as any).type ||
-        (filters as any).location ||
-        hasValidProfessor ||
-        hasDateRange
+      (filters as any).location ||
+      hasValidProfessor ||
+      hasDateRange
     );
   }, [filters]);
 
@@ -175,6 +175,10 @@ export default function EventSearch({
     hasFilterParams,
     debounceMs,
     token,
+    API_URL,
+    SEARCH_URL,
+    onError,
+    onSearchResults,
   ]);
 
   return (

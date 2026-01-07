@@ -13,8 +13,6 @@ interface PlatformMapProps {
 const PlatformMap: React.FC<PlatformMapProps> = ({
   selectedLocation,
   onLocationSelect,
-  attendees,
-  boothSize,
   onBoothApplication,
 }) => {
   const { toast } = useToast();

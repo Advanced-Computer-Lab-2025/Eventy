@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import axios from "axios";
 import {
   Plus,
@@ -72,33 +72,21 @@ export default function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
   const [assigningRole, setAssigningRole] = useState<string | null>(null);
-  const [newAdmin, setNewAdmin] = useState({
-    name: "",
-    email: "",
-    password: "",
-    role: "admin",
-  });
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   // Derive current user identity from localStorage or JWT token as fallback
   const token = localStorage.getItem("token");
   let tokenUserId: string | null = null;
-  let tokenUserEmail: string | null = null;
   if (token) {
     try {
       const [, payloadBase64] = token.split(".");
       const payloadJson = JSON.parse(atob(payloadBase64));
       tokenUserId = payloadJson.id || null;
-      tokenUserEmail = payloadJson.email || null;
-    } catch (_e) {
+    } catch {
       // ignore decode errors
     }
   }
   const currentUserId =
     localStorage.getItem("userId") || localStorage.getItem("id") || tokenUserId;
-  const currentUserEmail =
-    localStorage.getItem("userEmail") ||
-    localStorage.getItem("email") ||
-    tokenUserEmail;
 
   const handleBlockUser = async (
     userId: string,
@@ -170,13 +158,7 @@ export default function AdminUsers() {
     }
   };
 
-  // Fetch users when component mounts
-  useEffect(() => {
-    fetchUsers();
-    fetchPendingUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -193,9 +175,9 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
 
-  const fetchPendingUsers = async () => {
+  const fetchPendingUsers = useCallback(async () => {
     try {
       setPendingLoading(true);
       const response = await axios.get(`${API_BASE_URL}/api/users/pending`, {
@@ -210,7 +192,13 @@ export default function AdminUsers() {
     } finally {
       setPendingLoading(false);
     }
-  };
+  }, [API_BASE_URL]);
+
+  // Fetch users when component mounts
+  useEffect(() => {
+    fetchUsers();
+    fetchPendingUsers();
+  }, [fetchPendingUsers, fetchUsers]);
 
   const handleAssignRole = async (userId: string, role: string) => {
     try {

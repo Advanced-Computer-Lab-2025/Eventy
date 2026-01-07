@@ -20,7 +20,6 @@ import { getApiBaseUrl } from "@/lib/apiBase";
 import { setAuthToken } from "@/lib/authToken";
 
 export default function Login() {
-  const [location] = useLocation();
   const [, setLocation] = useLocation();
   const { toast } = useToast();
 
@@ -209,7 +208,7 @@ export default function Login() {
             </form>
 
             <div className="mt-6 text-center text-sm">
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href="/signup"
                 className="text-primary hover:underline"

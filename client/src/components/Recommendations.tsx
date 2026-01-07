@@ -283,7 +283,6 @@ function CompactEventCard({ event }: { event: any }) {
 export default function Recommendations() {
   const [data, setData] = useState<RecommendationResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
 
   // Reset recommendations is disabled to avoid accidental data loss during testing.
   // const handleReset = async () => {
