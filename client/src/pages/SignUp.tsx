@@ -53,7 +53,7 @@ export default function SignUp() {
   const [_taxFile, setTaxFile] = useState<File | null>(null);
 
   const validateStudentId = (id: string): boolean => {
-    const studentIdPattern = /^\d{2}-\d{4}$/;
+    const studentIdPattern = /^\d{2}-\d{4,5}$/;
     return studentIdPattern.test(id);
   };
 
@@ -82,7 +82,7 @@ export default function SignUp() {
         variant: "destructive",
         title: "Invalid Student ID",
         description:
-          "Student ID must follow the format XX-XXXX (e.g., 58-1001)",
+          "Student ID must follow the format XX-XXXX or XX-XXXXX (e.g., 58-1001 or 58-10012)",
       });
       return;
     }
@@ -298,7 +298,7 @@ export default function SignUp() {
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    Format: XX-XXXX (e.g., 58-1001)
+                    Format: XX-XXXX or XX-XXXXX (e.g., 58-1001 or 58-10012)
                   </p>
                 </div>
 
@@ -331,6 +331,7 @@ export default function SignUp() {
                     <Input
                       id="student-password"
                       type="password"
+                      placeholder="Enter your password"
                       className="pl-10"
                       value={studentForm.password}
                       onChange={(e) =>
@@ -454,6 +455,7 @@ export default function SignUp() {
                     <Input
                       id="staff-password"
                       type="password"
+                      placeholder="Enter your password"
                       className="pl-10"
                       value={staffForm.password}
                       onChange={(e) =>
@@ -527,6 +529,7 @@ export default function SignUp() {
                     <Input
                       id="vendor-password"
                       type="password"
+                      placeholder="Enter your password"
                       className="pl-10"
                       value={vendorForm.password}
                       onChange={(e) =>
