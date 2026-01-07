@@ -17,6 +17,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getCurrentYear = () => new Date().getFullYear();
+
 dotenv.config();
 
 // Canonical frontend base URL for links embedded in emails.
@@ -252,7 +254,7 @@ export const sendVerificationEmail = async (user) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -470,7 +472,7 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -756,7 +758,7 @@ export const sendGymSessionUpdateEmail = async (
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -978,7 +980,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                   <td style="background-color:#f7fafc;padding:32px 40px;border-top:1px solid #e2e8f0;">
                     <p style="margin:0 0 16px;font-size:13px;color:#718096;line-height:1.6;text-align:center;">If you have any questions or concerns please contact the Events Office.</p>
                     <div style="text-align:center;margin:20px 0;">
-                      <p style="margin:0;font-size:12px;color:#a0aec0;">© 2025 Eventy Platform. All rights reserved.</p>
+                      <p style="margin:0;font-size:12px;color:#a0aec0;">© ${getCurrentYear()} Eventy Platform. All rights reserved.</p>
                       <p style="margin:8px 0 0;font-size:11px;color:#cbd5e0;">Campus Event Management System</p>
                     </div>
                   </td>
@@ -1195,7 +1197,7 @@ export const sendVisitorQRCodesEmail = async (
                     <td style="background-color:#f7fafc;padding:32px 40px;border-top:1px solid #e2e8f0;">
                       <p style="margin:0 0 16px;font-size:13px;color:#718096;line-height:1.6;text-align:center;">If you have any questions please contact the Events Office.</p>
                       <div style="text-align:center;margin:20px 0;">
-                        <p style="margin:0;font-size:12px;color:#a0aec0;">© 2025 Eventy Platform. All rights reserved.</p>
+                        <p style="margin:0;font-size:12px;color:#a0aec0;">© ${getCurrentYear()} Eventy Platform. All rights reserved.</p>
                         <p style="margin:8px 0 0;font-size:11px;color:#cbd5e0;">Campus Event Management System</p>
                       </div>
                     </td>
@@ -1394,7 +1396,7 @@ export const sendAttendeeQRCodeEmail = async (
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                           Campus Event Management System
@@ -1628,7 +1630,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -1776,7 +1778,7 @@ export const sendStudentEmailVerification = async (user) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -2055,7 +2057,7 @@ export const sendVendorPaymentReceipt = async (
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -2308,7 +2310,7 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #d1d5db;">
                           Campus Event Management System
@@ -2725,7 +2727,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                           Campus Event Management System

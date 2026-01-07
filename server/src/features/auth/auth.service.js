@@ -339,7 +339,7 @@ export const logoutUser = async () => {
 
 export const confirmEmailVerification = async (token) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     const user = await User.findById(decoded.id);
     if (!user) throw new Error("User not found");

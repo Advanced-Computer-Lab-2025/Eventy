@@ -135,7 +135,7 @@ export default function CreatePrivilegedUserForm({
           placeholder="ex: username@guc.edu.eg"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          pattern="^[A-Za-z0-9._%+-]+@guc\.edu\.eg$"
+          pattern="^[A-Za-z0-9._%\-]+@guc\\.edu\\.eg$"
           title="Email must be in the format username@guc.edu.eg"
           required
         />

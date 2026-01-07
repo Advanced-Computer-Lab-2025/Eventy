@@ -388,6 +388,7 @@ export default function Home() {
                         durationWeeks={event.durationWeeks}
                         capacity={event.capacity}
                         registrationDeadline={event.registrationDeadline}
+                        vendors={event.vendors || []}
                         eventData={event}
                         onRegister={() => logger.info("Register:", event._id)}
                         showDetailedView={true}
