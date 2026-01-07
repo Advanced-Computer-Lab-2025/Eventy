@@ -20,6 +20,7 @@ export interface BazaarCardProps {
   attendees?: number;
   capacity?: number;
   bannerImage?: string;
+  isRegistered?: boolean;
   onRegister?: () => void;
   onShare?: () => void;
   onEdit?: () => void;
@@ -39,6 +40,7 @@ export default function BazaarCard({
   attendees = 0,
   capacity,
   bannerImage,
+  isRegistered = false,
   onRegister,
   onShare,
   onEdit,
@@ -125,6 +127,7 @@ export default function BazaarCard({
 
   // Check if registration is still open
   const isRegistrationOpen = new Date(registrationDeadline) > new Date();
+  const isRegisterDisabled = !isRegistrationOpen || isRegistered;
 
   const handleRegister = () => {
     if (onRegister) {
@@ -229,10 +232,14 @@ export default function BazaarCard({
           <Button
             onClick={handleRegister}
             className="flex-1"
-            disabled={!isRegistrationOpen}
+            disabled={isRegisterDisabled}
             data-testid={`button-register-${id}`}
           >
-            {isRegistrationOpen ? "Register" : "Registration Closed"}
+            {isRegistered
+              ? "Registered"
+              : isRegistrationOpen
+                ? "Register"
+                : "Registration Closed"}
           </Button>
           <Button
             variant="outline"

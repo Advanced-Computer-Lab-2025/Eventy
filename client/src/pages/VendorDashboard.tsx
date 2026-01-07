@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Store,
   Calendar,
@@ -187,6 +187,19 @@ export default function VendorDashboard() {
     "event.name",
     "type",
   ]);
+
+  const registeredBazaarIds = useMemo(() => {
+    // A vendor is considered "registered" for a bazaar if they have an
+    // active application (pending/approved). Rejected applications can reapply.
+    const activeApplications = [
+      ...pendingApplications,
+      ...approvedApplications,
+    ];
+
+    return activeApplications
+      .filter((app) => app.type === "bazaar" && app.event?._id)
+      .map((app) => app.event!._id);
+  }, [pendingApplications, approvedApplications]);
 
   // Calculate vendor statistics
   const getVendorStats = () => {
@@ -653,7 +666,9 @@ export default function VendorDashboard() {
                   ) : (
                     <>
                       <ResponsiveContainer width="100%" height={280}>
-                        <PieChart>
+                        <PieChart
+                          margin={{ left: 18, right: 18, top: 0, bottom: 0 }}
+                        >
                           <Pie
                             data={applicationStatusData}
                             cx="50%"
@@ -672,7 +687,8 @@ export default function VendorDashboard() {
                             }) => {
                               if (value === 0) return null;
                               const RADIAN = Math.PI / 180;
-                              const radius = outerRadius + 25; // Add distance from chart for spacing
+                              // Keep labels inside the viewBox to avoid clipping.
+                              const radius = outerRadius + 14;
                               const x =
                                 cx + radius * Math.cos(-midAngle * RADIAN);
                               const y =
@@ -697,14 +713,33 @@ export default function VendorDashboard() {
                             }}
                             labelLine={(props: any) => {
                               if (props.value === 0) return <g />;
+                              const points = props.points;
+                              if (!Array.isArray(points) || points.length < 2) {
+                                return <g />;
+                              }
+
+                              // Recharts places the final line point at the label position.
+                              // Shorten the last segment so the line doesn't overlap the text.
+                              const shortenedPoints = [...points];
+                              const end = points[points.length - 1];
+                              const prev = points[points.length - 2];
+                              const dx = end.x - prev.x;
+                              const dy = end.y - prev.y;
+                              const length = Math.hypot(dx, dy) || 1;
+                              const shortenBy = 12;
+
+                              shortenedPoints[shortenedPoints.length - 1] = {
+                                x: end.x - (dx / length) * shortenBy,
+                                y: end.y - (dy / length) * shortenBy,
+                              };
+
                               return (
                                 <path
-                                  d={props.points?.reduce(
-                                    (acc: string, point: any, i: number) => {
-                                      return i === 0
+                                  d={shortenedPoints.reduce(
+                                    (acc: string, point: any, i: number) =>
+                                      i === 0
                                         ? `M${point.x},${point.y}`
-                                        : `${acc}L${point.x},${point.y}`;
-                                    },
+                                        : `${acc}L${point.x},${point.y}`,
                                     ""
                                   )}
                                   stroke="#666"
@@ -924,6 +959,7 @@ export default function VendorDashboard() {
                 bazaars={filteredUpcomingBazaars}
                 onRegister={handleRegister}
                 onShare={handleShare}
+                registeredBazaarIds={registeredBazaarIds}
                 showFilters={false}
               />
             )}
