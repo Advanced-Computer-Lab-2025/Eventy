@@ -103,64 +103,59 @@ jobs:
               });
             }
 
-      - name: Setup reviewdog
+      - name: Comment Vercel preview link
         if: ${{ github.event_name == 'pull_request' && success() }}
-        uses: reviewdog/action-setup@v1
+        uses: actions/github-script@v7
         with:
-          reviewdog_version: latest
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const marker = '<!-- vercel-preview-link -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.payload.pull_request.number;
 
-      - name: Comment Vercel preview link (reviewdog)
-        if: ${{ github.event_name == 'pull_request' && success() }}
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PREVIEW_URL: ${{ steps.vercel_deploy.outputs.preview-url }}
-          DEPLOYMENT_URL: ${{ steps.vercel_deploy.outputs.deployment-url }}
-          PROD_URL: ${{ steps.vercel_deploy.outputs.prod-url }}
-        run: |
-          set -euo pipefail
+            const previewUrl = '${{ steps.vercel_deploy.outputs.preview-url }}' || '';
+            const deploymentUrl = '${{ steps.vercel_deploy.outputs.deployment-url }}' || '';
+            const prodUrl = '${{ steps.vercel_deploy.outputs.prod-url }}' || '';
 
-          URL="${PREVIEW_URL:-}"
-          if [ -z "$URL" ]; then URL="${DEPLOYMENT_URL:-}"; fi
-          if [ -z "$URL" ]; then URL="${PROD_URL:-}"; fi
+            const url = previewUrl || deploymentUrl || prodUrl;
 
-          # If the action didn't provide a URL (e.g., secrets missing, deploy skipped), don't comment.
-          if [ -z "$URL" ]; then
-            echo "No Vercel URL output found; skipping comment."
-            exit 0
-          fi
+            if (!url) {
+              core.info('No Vercel URL output found; skipping comment.');
+              return;
+            }
 
-          BODY=$(cat <<EOF
-          <!-- vercel-preview-link -->
-          ### Vercel Preview ✅
-          - **Preview URL:** ${URL}
-          - **Commit:** ${GITHUB_SHA}
+            const body = [
+              marker,
+              '### Vercel Preview ✅',
+              `- **Preview URL:** ${url}`,
+              `- **Commit:** ${process.env.GITHUB_SHA}`,
+              '',
+              '_This comment is posted automatically after a successful Vercel deployment._',
+            ].join('\n');
 
-          _This comment is posted automatically after a successful Vercel deployment._
-          EOF
-          )
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
 
-          export BODY
-          python3 - <<'PY' | reviewdog -f=rdjson -reporter=github-pr-review -filter-mode=nofilter -name="vercel-preview"
-          import json
-          import os
+            const existing = comments.find(
+              (c) => c?.user?.type === 'Bot' && typeof c.body === 'string' && c.body.includes(marker)
+            );
 
-          body = os.environ.get("BODY", "")
-          payload = {
-            "source": {"name": "vercel-preview"},
-            "diagnostics": [
-              {
-                "message": body,
-                "location": {
-                  "path": "README.md",
-                  "range": {
-                    "start": {"line": 1, "column": 1},
-                    "end": {"line": 1, "column": 1},
-                  },
-                },
-                "severity": "INFO",
-              }
-            ],
-          }
-
-          print(json.dumps(payload))
-          PY
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
