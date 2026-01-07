@@ -84,9 +84,9 @@ export default function EventSearch({
 
     return Boolean(
       (filters as any).type ||
-      (filters as any).location ||
-      hasValidProfessor ||
-      hasDateRange
+        (filters as any).location ||
+        hasValidProfessor ||
+        hasDateRange
     );
   }, [filters]);
 
