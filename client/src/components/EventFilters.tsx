@@ -70,12 +70,6 @@ export default function EventFilters({
   onClear,
   events,
 }: EventFiltersProps) {
-  const today = useMemo(() => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    return now.toISOString().split("T")[0];
-  }, []);
-
   // ------------------------------------------------------------------
   // 1. FILTER LOCATIONS (based on selected Professor)
   // ------------------------------------------------------------------

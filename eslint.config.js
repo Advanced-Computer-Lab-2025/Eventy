@@ -3,7 +3,6 @@ import typescript from "@typescript-eslint/eslint-plugin";
 import typescriptParser from "@typescript-eslint/parser";
 import react from "eslint-plugin-react";
 import reactHooks from "eslint-plugin-react-hooks";
-import prettier from "eslint-plugin-prettier";
 import prettierConfig from "eslint-config-prettier";
 import unusedImports from "eslint-plugin-unused-imports";
 
@@ -96,39 +95,29 @@ export default [
     plugins: {
       react,
       "react-hooks": reactHooks,
-      prettier,
       "unused-imports": unusedImports,
     },
     rules: {
-      "prettier/prettier": "error",
+      ...react.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "no-unused-vars": "off",
-      "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
+      "no-unused-vars": [
         "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
+      "unused-imports/no-unused-imports": "error",
       // Disabled - using professional logger (consola) instead
       // "no-console": ["warn", { allow: ["warn", "error"] }],
-      ...reactHooks.configs.recommended.rules,
     },
     settings: {
       react: {
         version: "detect",
       },
-    },
-  },
-
-  // Config files - allow require()
-  {
-    files: ["**/*.config.{js,ts}", "**/tailwind.config.{js,ts}"],
-    rules: {
-      "@typescript-eslint/no-require-imports": "off",
-      "no-undef": "off",
     },
   },
 
@@ -184,35 +173,43 @@ export default [
       "@typescript-eslint": typescript,
       react,
       "react-hooks": reactHooks,
-      prettier,
       "unused-imports": unusedImports,
     },
     rules: {
       ...typescript.configs.recommended.rules,
-      "prettier/prettier": "error",
+      ...react.configs.recommended.rules,
+      ...reactHooks.configs.recommended.rules,
+      "@typescript-eslint/no-explicit-any": "off",
       "react/react-in-jsx-scope": "off",
       "react/prop-types": "off",
-      "@typescript-eslint/no-unused-vars": "off",
-      "unused-imports/no-unused-imports": "error",
-      "unused-imports/no-unused-vars": [
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": [
         "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          caughtErrorsIgnorePattern: "^_",
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
+      "unused-imports/no-unused-imports": "error",
       "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-require-imports": "warn",
       // Disabled - using professional logger (consola) instead
       // "no-console": ["warn", { allow: ["warn", "error"] }],
-      "no-undef": "warn",
-      ...reactHooks.configs.recommended.rules,
+      "no-undef": "off",
     },
     settings: {
       react: {
         version: "detect",
       },
+    },
+  },
+
+  // Config files - allow require() / Node globals
+  {
+    files: ["**/*.config.{js,ts}", "**/tailwind.config.{js,ts}"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+      "no-undef": "off",
     },
   },
 

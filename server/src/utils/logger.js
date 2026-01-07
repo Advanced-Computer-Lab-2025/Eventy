@@ -45,7 +45,7 @@ export const logger =
 
 if (!logger || typeof logger.info !== "function") {
   // Extremely defensive fallback
-  // eslint-disable-next-line no-console
+
   console.warn("Logger initialization fell back to console");
 }
 

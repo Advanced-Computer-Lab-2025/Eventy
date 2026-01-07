@@ -81,7 +81,7 @@ export const triggerCertificateJobManually = async () => {
 /**
  * Get the next scheduled run time
  */
-const getNextRunTime = () => {
+const _getNextRunTime = () => {
   const now = new Date();
   const next = new Date(now.getTime() + 5 * 60 * 1000); // 5 minutes later
   return next.toLocaleString();

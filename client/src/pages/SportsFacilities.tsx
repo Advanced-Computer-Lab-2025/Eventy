@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Calendar, ChevronLeft, ChevronRight, Dumbbell } from "lucide-react";
 import ProfessorHeader from "@/components/ProfessorHeader";
@@ -43,7 +43,7 @@ const COURT_IMAGES: Record<CourtType, string> = {
 };
 
 // Helper to format 24h time into 12h AM/PM
-const formatTimeToAMPM = (time: string) => {
+const _formatTimeToAMPM = (time: string) => {
   const [hour, minute] = time.split(":").map(Number);
   const period = hour >= 12 ? "PM" : "AM";
   const hour12 = hour % 12 || 12;
@@ -51,8 +51,8 @@ const formatTimeToAMPM = (time: string) => {
 };
 
 export default function SportsFacilities() {
-  const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const [, _setLocation] = useLocation();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [courtSchedules, setCourtSchedules] = useState<
     Record<CourtType, CourtSchedule[]>
   >({
@@ -79,7 +79,7 @@ export default function SportsFacilities() {
   });
   const { toast } = useToast();
 
-  const ymdLocal = (d: string | Date | undefined | null) => {
+  const ymdLocal = useCallback((d: string | Date | undefined | null) => {
     if (!d) return undefined;
     const dateObj = typeof d === "string" ? new Date(d) : d;
     if (Number.isNaN(dateObj.getTime())) return undefined;
@@ -87,9 +87,9 @@ export default function SportsFacilities() {
     const m = String(dateObj.getMonth() + 1).padStart(2, "0");
     const day = String(dateObj.getDate()).padStart(2, "0");
     return `${y}-${m}-${day}`;
-  };
+  }, []);
 
-  const fetchCourtSchedules = async () => {
+  const fetchCourtSchedules = useCallback(async () => {
     const token = localStorage.getItem("token");
     try {
       setLoading(true);
@@ -130,7 +130,7 @@ export default function SportsFacilities() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, toast, ymdLocal]);
 
   useEffect(() => {
     // Fetch user role from token and localStorage
@@ -165,7 +165,7 @@ export default function SportsFacilities() {
 
     // Fetch court schedules
     fetchCourtSchedules();
-  }, []);
+  }, [fetchCourtSchedules]);
 
   // Save tab selection to localStorage when it changes
   useEffect(() => {

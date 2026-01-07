@@ -28,7 +28,7 @@ export default function Header({
   hideBottomNav = false,
 }: HeaderProps) {
   const [location, setLocation] = useLocation();
-  const [user, setUser] = useState<{
+  const [user] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;
@@ -40,13 +40,6 @@ export default function Header({
       return null;
     }
   });
-
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
-    setUser(null);
-    setLocation("/login");
-  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">

@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from "react";
 import { Calendar, Users, TrendingUp } from "lucide-react";
 import Header from "@/components/AdminHeader";
 import StatCard from "@/components/StatCard";
-import { useLocation } from "wouter";
 import EventSearch from "@/components/EventSearch";
 import EventCard from "@/components/EventCard";
 import EmptyState from "@/components/EmptyState";
@@ -29,10 +28,9 @@ interface Conference {
 }
 
 export default function AdminDashboardPage() {
-  const [, setLocation] = useLocation();
-  const [creating, setCreating] = useState(false);
-  const [conferences, setConferences] = useState<Conference[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [_creating, _setCreating] = useState(false);
+  const [_conferences, setConferences] = useState<Conference[]>([]);
+  const [_loading, setLoading] = useState(true);
   const [eventsLoading, setEventsLoading] = useState(true);
   const [eventsError, setEventsError] = useState<string | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -57,7 +55,7 @@ export default function AdminDashboardPage() {
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [activeUsersCount, setActiveUsersCount] = useState<number>(0); // ✅ Add this
   const [activeUsersLoading, setActiveUsersLoading] = useState<boolean>(true); // ✅ Add this
-  const [eventTypeFilter, setEventTypeFilter] = useState<
+  const [_eventTypeFilter, _setEventTypeFilter] = useState<
     "all" | "bazaar" | "trip" | "workshop" | "conference" | "platform_booth"
   >("all");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -145,7 +143,7 @@ export default function AdminDashboardPage() {
       if (!res.ok) throw new Error("Failed to fetch event details");
       const data = await res.json();
       setSelectedEvent(data.data);
-    } catch (err) {
+    } catch {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);
@@ -299,7 +297,7 @@ export default function AdminDashboardPage() {
     fetchActiveUsersCount();
   }, []);
 
-  const formatDate = (dateString: string) => {
+  const _formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
   };
 
@@ -408,12 +406,7 @@ export default function AdminDashboardPage() {
     if (needsUpdate) {
       setFilters(newFilters);
     }
-  }, [
-    locationOptions,
-    computedProfessorOptions,
-    filters.location,
-    filters.professor,
-  ]);
+  }, [locationOptions, computedProfessorOptions, filters]);
 
   const appliedFilters = useMemo(() => {
     const next: any = {};
@@ -433,7 +426,7 @@ export default function AdminDashboardPage() {
     return next;
   }, [filters]);
 
-  const formatTime = (dateString: string) => {
+  const _formatTime = (dateString: string) => {
     return new Date(dateString).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",

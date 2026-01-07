@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -78,7 +78,7 @@ export default function SalesReport() {
   const [page, setPage] = useState(1);
   const limit = 10;
 
-  const fetchReport = async () => {
+  const fetchReport = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
@@ -128,11 +128,11 @@ export default function SalesReport() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [endDate, eventType, page, sortOrder, startDate]);
 
   useEffect(() => {
     fetchReport();
-  }, [page, eventType, startDate, endDate, sortOrder]);
+  }, [fetchReport]);
 
   const handleClearFilters = () => {
     setEventType("all");

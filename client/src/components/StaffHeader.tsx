@@ -16,7 +16,7 @@ import NotificationsPopover from "./NotificationsPopover";
 import WalletPopover from "./WalletPopover";
 import CalendarPopover from "./CalendarPopover";
 import { useLocation } from "wouter";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getApiBaseUrl } from "@/lib/apiBase";
 import { logger } from "@/lib/logger";
 
@@ -51,7 +51,7 @@ export default function StaffHeader({
   const apiBase = getApiBaseUrl();
 
   // 2. Fetch User Profile Logic
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       let token: string | null = null;
       try {
@@ -80,13 +80,13 @@ export default function StaffHeader({
     } catch (err) {
       logger.error("Failed to fetch user profile", err);
     }
-  };
+  }, [apiBase]);
 
   useEffect(() => {
     // Fetch fresh data immediately
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">

@@ -195,8 +195,6 @@ export default function EventCard({
   showAttendees = true,
   showRegisterButton = true,
   hideRegisterButton = false,
-  onRegister,
-  onSave,
   onShare,
   onDelete,
   onViewDetails,
@@ -311,7 +309,7 @@ export default function EventCard({
             setIsProfessorInWorkshop(false);
           }
         }
-      } catch (err) {
+      } catch {
         setIsProfessorInWorkshop(false);
       }
     } else {
@@ -381,7 +379,7 @@ export default function EventCard({
       if (!res.ok) throw new Error("Failed to fetch details");
       const data = await res.json();
       setInternalEventDetails(data.data);
-    } catch (err) {
+    } catch {
       toast({
         title: "Error",
         description: "Could not load event details.",
@@ -558,7 +556,7 @@ export default function EventCard({
             detail: { eventId: id },
           })
         );
-      } catch (e) {
+      } catch {
         // ignore if dispatch not supported
       }
     } catch (error: any) {
@@ -1762,7 +1760,7 @@ export default function EventCard({
                   detail: { eventId: id },
                 })
               );
-            } catch (e) {
+            } catch {
               // ignore if dispatch not supported
             }
           }}

@@ -3,7 +3,7 @@ import { LoyaltyPartnerService } from "./loyaltyPartner.service.js";
 import { applyLoyaltyProgramSchema } from "./loyaltyPartner.validation.js";
 
 export const LoyaltyPartnerController = {
-  async getStatus(req, res, next) {
+  async getStatus(req, res, _next) {
     try {
       const vendorId = req.user.id;
       const status =
@@ -26,7 +26,7 @@ export const LoyaltyPartnerController = {
     }
   },
 
-  async apply(req, res, next) {
+  async apply(req, res, _next) {
     try {
       // Step 1: Validate request body
       const { error } = applyLoyaltyProgramSchema.validate(req.body, {
@@ -117,7 +117,7 @@ export const LoyaltyPartnerController = {
     }
   },
 
-  async getPartners(req, res, next) {
+  async getPartners(req, res, _next) {
     try {
       const partners = await LoyaltyPartnerService.getApprovedLoyaltyPartners();
 

@@ -136,15 +136,6 @@ export default function CreateEventForm({
     })();
   }, [includeProfessors]);
 
-  // Helper: today's date in local timezone as YYYY-MM-DD
-  const todayLocal = () => {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  };
-
   function validate(): boolean {
     const nextErrors: Record<string, string> = {};
     if (!values.name.trim()) nextErrors.name = "Name is required";

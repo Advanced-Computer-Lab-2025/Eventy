@@ -14,7 +14,7 @@ import pollRoutes from "../features/polls/poll.route.js";
 import calendarRoutes from "../features/calendar/calendar.route.js";
 import recommendationRoutes from "../features/recommendations/recommendation.route.js";
 
-const PORT = process.env.PORT || 4000;
+const _PORT = process.env.PORT || 4000;
 const router = express.Router();
 
 // Placeholder route to confirm the API is working

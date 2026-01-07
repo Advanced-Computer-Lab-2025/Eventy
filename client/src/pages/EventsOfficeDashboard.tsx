@@ -66,11 +66,11 @@ export default function EventsOfficeDashboard() {
   const { toast } = useToast();
   const [, setLocation] = useLocation();
   const [bazaars, setBazaars] = useState<Bazaar[]>([]);
-  const [loadingBazaars, setLoadingBazaars] = useState(true);
+  const [_loadingBazaars, setLoadingBazaars] = useState(true);
   const [conferences, setConferences] = useState<any[]>([]);
-  const [loadingConfs, setLoadingConfs] = useState(true);
-  const [confSearch, setConfSearch] = useState("");
-  const [filteredConfs, setFilteredConfs] = useState<any[]>([]);
+  const [_loadingConfs, setLoadingConfs] = useState(true);
+  const [confSearch, _setConfSearch] = useState("");
+  const [_filteredConfs, setFilteredConfs] = useState<any[]>([]);
   const [pendingWorkshops, setPendingWorkshops] = useState(0);
   const [showWorkshopNotif, setShowWorkshopNotif] = useState(false);
   const [reminderTime, setReminderTime] = useState<NodeJS.Timeout | null>(null);
@@ -82,7 +82,7 @@ export default function EventsOfficeDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
+  const [_viewMode, _setViewMode] = useState<"list" | "calendar">("list");
   const [isCreateGymDialogOpen, setIsCreateGymDialogOpen] = useState(false);
   const [isCreateEventDialogOpen, setIsCreateEventDialogOpen] = useState(false);
   const [restrictAccessDialogOpen, setRestrictAccessDialogOpen] =
@@ -95,7 +95,7 @@ export default function EventsOfficeDashboard() {
   const [pastEventsLoading, setPastEventsLoading] = useState(false);
   const [pastEventsError, setPastEventsError] = useState("");
   const [archivingId, setArchivingId] = useState<string | null>(null);
-  const [pastEventSearch, setPastEventSearch] = useState("");
+  const [pastEventSearch, _setPastEventSearch] = useState("");
 
   // Combined filter states
   const [selectedEventTypes, setSelectedEventTypes] = useState<string[]>([
@@ -122,9 +122,9 @@ export default function EventsOfficeDashboard() {
   });
 
   // Extra totals
-  const [totalTrips, setTotalTrips] = useState<number | null>(null);
-  const [totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
-  const [totalBooths, setTotalBooths] = useState<number | null>(null);
+  const [_totalTrips, setTotalTrips] = useState<number | null>(null);
+  const [_totalWorkshops, setTotalWorkshops] = useState<number | null>(null);
+  const [_totalBooths, setTotalBooths] = useState<number | null>(null);
 
   // Combined filtered events
   const combinedEvents = [...upcomingEvents, ...pastEvents].filter(
@@ -209,7 +209,7 @@ export default function EventsOfficeDashboard() {
     );
   });
 
-  const toggleEventType = (type: string) => {
+  const _toggleEventType = (type: string) => {
     setSelectedEventTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
@@ -236,7 +236,7 @@ export default function EventsOfficeDashboard() {
   const [applications, setApplications] = useState<any[]>([]);
   const [loadingCharts, setLoadingCharts] = useState(true);
 
-  const filteredPastEvents = pastEvents.filter((event: any) => {
+  const _filteredPastEvents = pastEvents.filter((event: any) => {
     const q = pastEventSearch.trim().toLowerCase();
     if (!q) return true;
     return (
@@ -261,7 +261,7 @@ export default function EventsOfficeDashboard() {
       if (!res.ok) throw new Error("Failed to fetch event details");
       const data = await res.json();
       setSelectedEvent(data.data);
-    } catch (err) {
+    } catch {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);
@@ -282,7 +282,7 @@ export default function EventsOfficeDashboard() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Failed to fetch bazaars");
       setBazaars(data.data || []);
-    } catch (e: any) {
+    } catch {
       setBazaars([]);
     } finally {
       setLoadingBazaars(false);
@@ -311,7 +311,7 @@ export default function EventsOfficeDashboard() {
           setShowWorkshopNotif(true);
         }
       }
-    } catch (e: any) {
+    } catch {
       logger.error("Failed to fetch pending workshops");
     }
   };
@@ -334,7 +334,7 @@ export default function EventsOfficeDashboard() {
       const items = Array.isArray(data.data) ? data.data : [];
       if (type === "trip") setTotalTrips(items.length);
       if (type === "platform_booth") setTotalBooths(items.length);
-    } catch (e) {
+    } catch {
       if (type === "trip") setTotalTrips(0);
       if (type === "platform_booth") setTotalBooths(0);
     }
@@ -614,7 +614,7 @@ export default function EventsOfficeDashboard() {
       }
 
       setAllEvents(allEventsData);
-    } catch (e) {
+    } catch {
       setAllEvents([]);
     }
   };
@@ -670,7 +670,7 @@ export default function EventsOfficeDashboard() {
       } else {
         setApplications([]);
       }
-    } catch (e) {
+    } catch {
       setApplications([]);
     }
   };
@@ -710,18 +710,20 @@ export default function EventsOfficeDashboard() {
         if (!res.ok)
           throw new Error(data.message || "Failed to fetch conferences");
         setConferences(Array.isArray(data.data) ? data.data : data);
-      } catch (e) {
+      } catch {
         setConferences([]);
       } finally {
         setLoadingConfs(false);
       }
     };
     fetchConferences();
+  }, []);
 
+  useEffect(() => {
     return () => {
       if (reminderTime) clearTimeout(reminderTime);
     };
-  }, []);
+  }, [reminderTime]);
 
   // Fetch professors for dropdown
   useEffect(() => {
@@ -770,7 +772,7 @@ export default function EventsOfficeDashboard() {
   }, [filters, selectedEventTypes, eventSearch]);
 
   // Prepare bazaars for BazaarList component (adds required fields and sane defaults)
-  const formattedBazaars = bazaars.map((b) => ({
+  const _formattedBazaars = bazaars.map((b) => ({
     _id: b._id,
     name: b.name,
     description: b.description,

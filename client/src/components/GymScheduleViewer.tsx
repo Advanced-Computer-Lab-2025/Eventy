@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronLeft, ChevronRight, Plus, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -85,18 +85,7 @@ export default function GymScheduleViewer({
   const month = currentDate.getMonth() + 1; // JavaScript months are 0-indexed
   const year = currentDate.getFullYear();
 
-  useEffect(() => {
-    fetchGymSessions();
-  }, [month, year]);
-
-  // Navigate to the specified date when provided
-  useEffect(() => {
-    if (navigateToDate) {
-      setCurrentDate(navigateToDate);
-    }
-  }, [navigateToDate]);
-
-  const fetchGymSessions = async () => {
+  const fetchGymSessions = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -125,7 +114,18 @@ export default function GymScheduleViewer({
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, month, toast, year]);
+
+  useEffect(() => {
+    fetchGymSessions();
+  }, [fetchGymSessions]);
+
+  // Navigate to the specified date when provided
+  useEffect(() => {
+    if (navigateToDate) {
+      setCurrentDate(navigateToDate);
+    }
+  }, [navigateToDate]);
 
   const handlePreviousMonth = () => {
     setCurrentDate((prev) => {

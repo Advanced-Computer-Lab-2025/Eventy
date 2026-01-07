@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import {
   Users,
@@ -44,16 +44,16 @@ interface MyEvent {
 
 export default function StaffTADashboard() {
   const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [events, setEvents] = useState<RegisteredEvent[]>([]);
-  const [registeredEvents, setRegisteredEvents] = useState<MyEvent[]>([]);
+  const [_registeredEvents, setRegisteredEvents] = useState<MyEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
   const [userRole, setUserRole] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const { toast } = useToast();
+  const { toast: _toast } = useToast();
 
   // Upcoming events states
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
@@ -74,22 +74,16 @@ export default function StaffTADashboard() {
     showPast: true,
   });
 
-  useEffect(() => {
-    fetchUserData();
-    fetchEventStats();
-    fetchRegisteredEvents();
-  }, []);
-
-  const fetchUserData = () => {
+  const fetchUserData = useCallback(() => {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
       setUserName(userData.firstName);
       setUserRole(userData.role);
     }
-  };
+  }, []);
 
-  const fetchEventStats = async () => {
+  const fetchEventStats = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -110,9 +104,9 @@ export default function StaffTADashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, setLocation]);
 
-  const fetchRegisteredEvents = async () => {
+  const fetchRegisteredEvents = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -131,9 +125,15 @@ export default function StaffTADashboard() {
     } catch (err) {
       logger.error("Error fetching registered events:", err);
     }
-  };
+  }, [API_BASE_URL]);
 
-  const getTypeIcon = (type: string) => {
+  useEffect(() => {
+    fetchUserData();
+    fetchEventStats();
+    fetchRegisteredEvents();
+  }, [fetchEventStats, fetchRegisteredEvents, fetchUserData]);
+
+  const _getTypeIcon = (type: string) => {
     switch (type) {
       case "bazaar":
         return Store;
@@ -162,14 +162,14 @@ export default function StaffTADashboard() {
       if (!res.ok) throw new Error("Failed to fetch event details");
       const data = await res.json();
       setSelectedEvent(data.data);
-    } catch (err) {
+    } catch {
       setSelectedEvent(null);
     } finally {
       setDetailsLoading(false);
     }
   };
 
-  const getStatusClasses = (status: string) => {
+  const _getStatusClasses = (status: string) => {
     switch (status) {
       case "approved":
         return "bg-green-500/15 text-green-600 dark:text-green-400 border border-green-500/20";
@@ -214,7 +214,7 @@ export default function StaffTADashboard() {
     fetchEventStats();
     fetchRegisteredEvents();
     fetchProfessors();
-  }, []);
+  }, [API_BASE_URL, fetchEventStats, fetchRegisteredEvents]);
 
   const getEventStats = () => {
     const total = events.length;
@@ -366,12 +366,7 @@ export default function StaffTADashboard() {
     if (needsUpdate) {
       setEventFilters(newFilters);
     }
-  }, [
-    availableLocations,
-    filteredProfessorOptions,
-    eventFilters.location,
-    eventFilters.professor,
-  ]);
+  }, [availableLocations, filteredProfessorOptions, eventFilters]);
 
   if (loading) {
     return (

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Clock, Users, DollarSign, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -47,7 +47,7 @@ interface WorkshopFormData {
 
 export default function CreateWorkshop() {
   const [, setLocation] = useLocation();
-  const apiBaseUrl = getApiBaseUrl();
+  const apiBaseUrl = useMemo(() => getApiBaseUrl(), []);
 
   const [formData, setFormData] = useState<WorkshopFormData>({
     name: "",
@@ -77,9 +77,6 @@ export default function CreateWorkshop() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) return;
-
     // Get current user ID from localStorage
     try {
       const userStr = localStorage.getItem("user");
@@ -88,29 +85,23 @@ export default function CreateWorkshop() {
         const userId = user._id || user.id;
         setCurrentUserId(userId);
         // Auto-select current user in professors list
-        if (userId && !selectedProfessors.includes(userId)) {
-          setSelectedProfessors([userId]);
+        if (userId) {
+          setSelectedProfessors((prev) =>
+            prev.includes(userId) ? prev : [userId]
+          );
         }
       }
     } catch (err) {
       logger.error("Failed to parse user from localStorage", err);
     }
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
     (async () => {
       try {
-        // Validate registration deadline (must be today or in the future)
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        if (formData.deadline && formData.deadline < today) {
-          toast({
-            title: "Invalid registration deadline",
-            description:
-              "Registration deadline must be today or a future date.",
-            variant: "destructive",
-          });
-          setLoading(false);
-          return;
-        }
         const res = await fetch(`${apiBaseUrl}/api/users/professors`, {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -131,7 +122,7 @@ export default function CreateWorkshop() {
         logger.error("Failed to fetch professors", err);
       }
     })();
-  }, []);
+  }, [apiBaseUrl]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();

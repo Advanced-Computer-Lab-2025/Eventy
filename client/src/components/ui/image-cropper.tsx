@@ -121,8 +121,7 @@ export function ImageCropper({
               src={image}
               alt="Crop preview"
               className="max-w-full h-auto"
-              onLoad={(e) => {
-                const { width, height } = e.currentTarget;
+              onLoad={() => {
                 const crop: Crop = {
                   unit: "%",
                   width: 90,

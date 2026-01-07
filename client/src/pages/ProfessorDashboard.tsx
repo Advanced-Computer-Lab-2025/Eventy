@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import {
   GraduationCap,
@@ -14,7 +14,6 @@ import EventSearch, { EventSearchFilters } from "@/components/EventSearch";
 import EventSort from "@/components/EventSort";
 import EventCard from "@/components/EventCard";
 import EmptyState from "@/components/EmptyState";
-import { useToast } from "@/hooks/use-toast";
 import { logger } from "@/lib/logger";
 import { getApiBaseUrl } from "@/lib/apiBase";
 
@@ -27,7 +26,7 @@ interface Workshop {
 
 export default function ProfessorDashboard() {
   const [, setLocation] = useLocation();
-  const API_BASE_URL = getApiBaseUrl();
+  const API_BASE_URL = useMemo(() => getApiBaseUrl(), []);
   const [workshops, setWorkshops] = useState<Workshop[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState("");
@@ -48,7 +47,6 @@ export default function ProfessorDashboard() {
     showUpcoming: true,
     showPast: true,
   });
-  const { toast } = useToast();
 
   const appliedFilters: EventSearchFilters = useMemo(() => {
     const next: EventSearchFilters = {};
@@ -70,21 +68,15 @@ export default function ProfessorDashboard() {
     return next;
   }, [filters]);
 
-  useEffect(() => {
-    fetchUserData();
-    fetchWorkshopStats();
-    fetchProfessors();
-  }, []);
-
-  const fetchUserData = () => {
+  const fetchUserData = useCallback(() => {
     const user = localStorage.getItem("user");
     if (user) {
       const userData = JSON.parse(user);
       setUserName(userData.firstName);
     }
-  };
+  }, []);
 
-  const fetchWorkshopStats = async () => {
+  const fetchWorkshopStats = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) {
@@ -105,9 +97,9 @@ export default function ProfessorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [API_BASE_URL, setLocation]);
 
-  const fetchProfessors = async () => {
+  const fetchProfessors = useCallback(async () => {
     try {
       const token = localStorage.getItem("token");
       if (!token) return;
@@ -126,7 +118,13 @@ export default function ProfessorDashboard() {
     } catch (err) {
       logger.error("Failed to fetch professors", err);
     }
-  };
+  }, [API_BASE_URL]);
+
+  useEffect(() => {
+    fetchUserData();
+    fetchWorkshopStats();
+    fetchProfessors();
+  }, [fetchProfessors, fetchUserData, fetchWorkshopStats]);
 
   // Compute unique locations dynamically based on current filters
   const computedLocationOptions = useMemo(() => {
@@ -218,12 +216,7 @@ export default function ProfessorDashboard() {
     if (needsUpdate) {
       setFilters(newFilters);
     }
-  }, [
-    computedLocationOptions,
-    computedProfessorOptions,
-    filters.location,
-    filters.professor,
-  ]);
+  }, [computedLocationOptions, computedProfessorOptions, filters]);
 
   const getWorkshopStats = () => {
     const total = workshops.length;

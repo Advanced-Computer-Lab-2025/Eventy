@@ -182,10 +182,6 @@ export default function EditConference() {
     }
   };
 
-  const formatDateForInput = (dateString: string) => {
-    return new Date(dateString).toISOString().split("T")[0];
-  };
-
   const formatTimeForInput = (dateString: string) => {
     if (!dateString) return "";
     // Extract HH:mm from ISO string (format: "2025-11-26T16:26:00.000Z")
@@ -262,7 +258,7 @@ export default function EditConference() {
           <h1 className="text-4xl font-bold mb-2">Edit Conference</h1>
           <p className="text-muted-foreground">
             Update conference details. The conference website will contain all
-            the conference's details.
+            the conference&apos;s details.
           </p>
         </div>
 

@@ -12,7 +12,7 @@ export default function AdminHeader() {
   const [location, setLocation] = useLocation();
 
   // Initialize state directly from localStorage to avoid setState in useEffect
-  const [user, setUser] = useState<{
+  const [user] = useState<{
     firstName?: string;
     lastName?: string;
     email?: string;

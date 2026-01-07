@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import {
   Home,
@@ -52,7 +52,7 @@ export default function StudentHeader({
   const apiBase = getApiBaseUrl();
 
   // Function to fetch fresh user data (including walletBalance)
-  const fetchUserProfile = async () => {
+  const fetchUserProfile = useCallback(async () => {
     try {
       let token: string | null = null;
       try {
@@ -85,13 +85,13 @@ export default function StudentHeader({
     } catch (err) {
       logger.error("Failed to fetch user profile", err);
     }
-  };
+  }, [apiBase]);
 
   useEffect(() => {
     // Fetch fresh data from API (accurate balance)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     fetchUserProfile();
-  }, []);
+  }, [fetchUserProfile]);
 
   return (
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Store,
   Calendar,
@@ -66,7 +66,7 @@ interface Attendee {
 }
 
 export default function VendorDashboard() {
-  const [location, setLocation] = useLocation();
+  const [_location, _setLocation] = useLocation();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
@@ -93,9 +93,9 @@ export default function VendorDashboard() {
   >([{ name: "", email: "" }]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [durationWeeks, setDurationWeeks] = useState<number>(1);
-  const [locationPreference, setLocationPreference] = useState<string>("");
+  const [_locationPreference, _setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
-  const [isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
+  const [_isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
     useState(false);
 
   // Booth application dialog state
@@ -150,7 +150,7 @@ export default function VendorDashboard() {
   };
 
   // Handle search functionality
-  const handleSearch = (query: string) => {
+  const _handleSearch = (query: string) => {
     setSearchTerm(query);
   };
 
@@ -187,6 +187,19 @@ export default function VendorDashboard() {
     "event.name",
     "type",
   ]);
+
+  const registeredBazaarIds = useMemo(() => {
+    // A vendor is considered "registered" for a bazaar if they have an
+    // active application (pending/approved). Rejected applications can reapply.
+    const activeApplications = [
+      ...pendingApplications,
+      ...approvedApplications,
+    ];
+
+    return activeApplications
+      .filter((app) => app.type === "bazaar" && app.event?._id)
+      .map((app) => app.event!._id);
+  }, [pendingApplications, approvedApplications]);
 
   // Calculate vendor statistics
   const getVendorStats = () => {
@@ -271,7 +284,7 @@ export default function VendorDashboard() {
       : 0;
 
   // Fetch company name from localStorage
-  const fetchCompanyName = () => {
+  const fetchCompanyName = useCallback(() => {
     try {
       const user = localStorage.getItem("user");
       if (!user) {
@@ -285,10 +298,10 @@ export default function VendorDashboard() {
       logger.warn("Unable to read vendor name from storage", error);
       setCompanyName("Vendor");
     }
-  };
+  }, []);
 
   // Fetch upcoming bazaars
-  const fetchUpcomingBazaars = async () => {
+  const fetchUpcomingBazaars = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -306,10 +319,10 @@ export default function VendorDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast]);
 
   // Fetch applications data
-  const fetchApplicationsData = async () => {
+  const fetchApplicationsData = useCallback(async () => {
     try {
       logger.info("=== Starting application fetch ===");
 
@@ -356,13 +369,13 @@ export default function VendorDashboard() {
         variant: "destructive",
       });
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchCompanyName();
     fetchUpcomingBazaars();
     fetchApplicationsData();
-  }, []);
+  }, [fetchApplicationsData, fetchCompanyName, fetchUpcomingBazaars]);
 
   // Listen for hash changes to update active tab
   useEffect(() => {
@@ -586,7 +599,7 @@ export default function VendorDashboard() {
     }
   };
 
-  const handleShare = (bazaarId: string) => {
+  const handleShare = (_bazaarId: string) => {
     if (navigator.share) {
       navigator.share({
         title: "Check out this bazaar!",
@@ -653,7 +666,9 @@ export default function VendorDashboard() {
                   ) : (
                     <>
                       <ResponsiveContainer width="100%" height={280}>
-                        <PieChart>
+                        <PieChart
+                          margin={{ left: 18, right: 18, top: 0, bottom: 0 }}
+                        >
                           <Pie
                             data={applicationStatusData}
                             cx="50%"
@@ -672,7 +687,8 @@ export default function VendorDashboard() {
                             }) => {
                               if (value === 0) return null;
                               const RADIAN = Math.PI / 180;
-                              const radius = outerRadius + 25; // Add distance from chart for spacing
+                              // Keep labels inside the viewBox to avoid clipping.
+                              const radius = outerRadius + 14;
                               const x =
                                 cx + radius * Math.cos(-midAngle * RADIAN);
                               const y =
@@ -697,14 +713,33 @@ export default function VendorDashboard() {
                             }}
                             labelLine={(props: any) => {
                               if (props.value === 0) return <g />;
+                              const points = props.points;
+                              if (!Array.isArray(points) || points.length < 2) {
+                                return <g />;
+                              }
+
+                              // Recharts places the final line point at the label position.
+                              // Shorten the last segment so the line doesn't overlap the text.
+                              const shortenedPoints = [...points];
+                              const end = points[points.length - 1];
+                              const prev = points[points.length - 2];
+                              const dx = end.x - prev.x;
+                              const dy = end.y - prev.y;
+                              const length = Math.hypot(dx, dy) || 1;
+                              const shortenBy = 12;
+
+                              shortenedPoints[shortenedPoints.length - 1] = {
+                                x: end.x - (dx / length) * shortenBy,
+                                y: end.y - (dy / length) * shortenBy,
+                              };
+
                               return (
                                 <path
-                                  d={props.points?.reduce(
-                                    (acc: string, point: any, i: number) => {
-                                      return i === 0
+                                  d={shortenedPoints.reduce(
+                                    (acc: string, point: any, i: number) =>
+                                      i === 0
                                         ? `M${point.x},${point.y}`
-                                        : `${acc}L${point.x},${point.y}`;
-                                    },
+                                        : `${acc}L${point.x},${point.y}`,
                                     ""
                                   )}
                                   stroke="#666"
@@ -763,12 +798,12 @@ export default function VendorDashboard() {
 
               {/* Application Type Bar Chart */}
               <Card>
-                <CardHeader>
+                <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-semibold">
                     Applications by Type
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="pt-0 px-4">
                   {applicationTypeData.length === 0 ||
                   applicationTypeData.every((item) => item.value === 0) ? (
                     <div className="h-[280px] flex flex-col items-center justify-center">
@@ -924,6 +959,7 @@ export default function VendorDashboard() {
                 bazaars={filteredUpcomingBazaars}
                 onRegister={handleRegister}
                 onShare={handleShare}
+                registeredBazaarIds={registeredBazaarIds}
                 showFilters={false}
               />
             )}

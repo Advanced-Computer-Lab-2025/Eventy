@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
 import api from "@/lib/api";
 import EventCard from "@/components/EventCard";
@@ -60,7 +60,7 @@ export default function FeedbackDashboard() {
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [ratings, setRatings] = useState<RatingItem[]>([]);
-  const [allRatings, setAllRatings] = useState<RatingItem[]>([]);
+  const [_allRatings, setAllRatings] = useState<RatingItem[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingRatings, setLoadingRatings] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -149,15 +149,7 @@ export default function FeedbackDashboard() {
       .finally(() => setLoadingEvents(false));
   }, []);
 
-  useEffect(() => {
-    if (!selectedEvent) {
-      setRatings([]);
-      return;
-    }
-    fetchEventRatings();
-  }, [selectedEvent]);
-
-  const fetchEventRatings = async () => {
+  const fetchEventRatings = useCallback(async () => {
     if (!selectedEvent) return;
 
     setLoadingRatings(true);
@@ -193,7 +185,15 @@ export default function FeedbackDashboard() {
     } finally {
       setLoadingRatings(false);
     }
-  };
+  }, [selectedEvent]);
+
+  useEffect(() => {
+    if (!selectedEvent) {
+      setRatings([]);
+      return;
+    }
+    fetchEventRatings();
+  }, [fetchEventRatings, selectedEvent]);
 
   const handleDeleteCommentClick = (ratingId: string) => {
     setRatingToDelete(ratingId);

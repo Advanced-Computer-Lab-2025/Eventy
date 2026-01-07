@@ -153,7 +153,6 @@ export function ResalePurchaseDialog({
   onOpenChange,
   selectedTicket,
   eventId,
-  eventName,
   onPurchaseSuccess,
 }: ResalePurchaseDialogProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);

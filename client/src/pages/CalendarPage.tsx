@@ -106,7 +106,7 @@ export default function CalendarPage() {
       try {
         const userData = JSON.parse(user);
         setUserRole(userData.role);
-      } catch (e) {
+      } catch {
         setUserRole(null);
       }
     }

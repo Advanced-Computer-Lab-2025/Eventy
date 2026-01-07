@@ -70,7 +70,7 @@ class NotificationController {
 
       // For other updates, use the regular update method
       // Remove isRead from updateData since it's now handled separately
-      const { isRead, ...updateData } = req.body;
+      const { isRead: _isRead, ...updateData } = req.body;
       const { error, value } = updateNotificationSchema.validate(updateData);
       if (error) {
         return res

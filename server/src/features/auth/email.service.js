@@ -17,6 +17,8 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getCurrentYear = () => new Date().getFullYear();
+
 dotenv.config();
 
 // Canonical frontend base URL for links embedded in emails.
@@ -252,7 +254,7 @@ export const sendVerificationEmail = async (user) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -470,7 +472,7 @@ export const sendGymSessionCancellationEmail = async (user, session) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -756,7 +758,7 @@ export const sendGymSessionUpdateEmail = async (
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -978,7 +980,7 @@ export const sendVendorApplicationStatusEmail = async (vendor, application) => {
                   <td style="background-color:#f7fafc;padding:32px 40px;border-top:1px solid #e2e8f0;">
                     <p style="margin:0 0 16px;font-size:13px;color:#718096;line-height:1.6;text-align:center;">If you have any questions or concerns please contact the Events Office.</p>
                     <div style="text-align:center;margin:20px 0;">
-                      <p style="margin:0;font-size:12px;color:#a0aec0;">© 2025 Eventy Platform. All rights reserved.</p>
+                      <p style="margin:0;font-size:12px;color:#a0aec0;">© ${getCurrentYear()} Eventy Platform. All rights reserved.</p>
                       <p style="margin:8px 0 0;font-size:11px;color:#cbd5e0;">Campus Event Management System</p>
                     </div>
                   </td>
@@ -1195,7 +1197,7 @@ export const sendVisitorQRCodesEmail = async (
                     <td style="background-color:#f7fafc;padding:32px 40px;border-top:1px solid #e2e8f0;">
                       <p style="margin:0 0 16px;font-size:13px;color:#718096;line-height:1.6;text-align:center;">If you have any questions please contact the Events Office.</p>
                       <div style="text-align:center;margin:20px 0;">
-                        <p style="margin:0;font-size:12px;color:#a0aec0;">© 2025 Eventy Platform. All rights reserved.</p>
+                        <p style="margin:0;font-size:12px;color:#a0aec0;">© ${getCurrentYear()} Eventy Platform. All rights reserved.</p>
                         <p style="margin:8px 0 0;font-size:11px;color:#cbd5e0;">Campus Event Management System</p>
                       </div>
                     </td>
@@ -1256,21 +1258,22 @@ export const sendAttendeeQRCodeEmail = async (
     // Determine application type and details
     const applicationType =
       application.type === "bazaar" ? "Bazaar" : "Platform Booth";
-    const eventName = event?.name || "Platform Booth";
-    const location = event?.location || application.locationPreference || "N/A";
+    const _eventName = event?.name || "Platform Booth";
+    const _location =
+      event?.location || application.locationPreference || "N/A";
 
     // Calculate duration
-    let durationText = "";
+    let _durationText = "";
     if (application.type === "booth" && application.durationWeeks) {
-      durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
+      _durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
     } else if (event && event.startDate && event.endDate) {
       const startDate = new Date(event.startDate);
       const endDate = new Date(event.endDate);
       const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
+      _durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
     } else {
-      durationText = "N/A";
+      _durationText = "N/A";
     }
 
     // Generate JWT token for attendee verification
@@ -1280,7 +1283,7 @@ export const sendAttendeeQRCodeEmail = async (
     const verificationUrl = `${emailFrontendBaseUrl}/attendee/${token}`;
 
     let qrCodeBuffer;
-    let qrCodeDataUrl;
+    let _qrCodeDataUrl;
     try {
       // Generate QR code as buffer (for attachment)
       qrCodeBuffer = await QRCode.toBuffer(verificationUrl, {
@@ -1294,7 +1297,7 @@ export const sendAttendeeQRCodeEmail = async (
       });
 
       // Also generate as data URL for direct embedding in email HTML (backup)
-      qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
+      _qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
         width: 400,
         margin: 2,
         errorCorrectionLevel: "M",
@@ -1393,7 +1396,7 @@ export const sendAttendeeQRCodeEmail = async (
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                           Campus Event Management System
@@ -1627,7 +1630,7 @@ export const sendPaymentReceipt = async (user, transaction, event) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -1775,7 +1778,7 @@ export const sendStudentEmailVerification = async (user) => {
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -1850,7 +1853,7 @@ export const sendVendorPaymentReceipt = async (
   // Get event/bazaar name
   const eventName = application.event?.name || "Platform Booth";
 
-  const formattedDate = format(
+  const _formattedDate = format(
     new Date(transaction.createdAt),
     "MMMM d, yyyy h:mm a"
   );
@@ -2054,7 +2057,7 @@ export const sendVendorPaymentReceipt = async (
                     </p>
                     <div style="text-align: center; margin: 20px 0;">
                       <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                        © 2025 Eventy Platform. All rights reserved.
+                        © ${getCurrentYear()} Eventy Platform. All rights reserved.
                       </p>
                       <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                         Campus Event Management System
@@ -2307,7 +2310,7 @@ export const sendWorkshopCertificateEmail = async (attendee, workshop) => {
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #9ca3af;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #d1d5db;">
                           Campus Event Management System
@@ -2558,7 +2561,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
 
     // Format dates
     const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
+    const _endDate = new Date(event.endDate);
     const formattedStartDate = startDate.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",
@@ -2724,7 +2727,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
                       </p>
                       <div style="text-align: center; margin: 20px 0;">
                         <p style="margin: 0; font-size: 12px; color: #a0aec0;">
-                          © 2025 Eventy Platform. All rights reserved.
+                          © ${getCurrentYear()} Eventy Platform. All rights reserved.
                         </p>
                         <p style="margin: 8px 0 0; font-size: 11px; color: #cbd5e0;">
                           Campus Event Management System

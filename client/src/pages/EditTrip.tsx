@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { MapPin, Users, DollarSign, CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -61,104 +61,107 @@ export default function EditTrip() {
     { value: "professor", label: "Professors" },
   ];
 
+  const fetchTrip = useCallback(
+    async (tripId: string) => {
+      setLoading(true);
+      try {
+        const token = localStorage.getItem("token");
+        const res = await fetch(`${API_BASE_URL}/api/events/${tripId}`, {
+          headers: {
+            "Content-Type": "application/json",
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          throw new Error("Failed to fetch trip details");
+        }
+
+        const data = await res.json();
+        const tripData = data.data;
+
+        if (tripData.eventType !== "trip") {
+          toast({
+            title: "Error",
+            description: "This event is not a trip",
+            variant: "destructive",
+          });
+          setLocation("/events-office");
+          return;
+        }
+
+        setTrip(tripData);
+
+        const parseDateOrNull = (value: unknown) => {
+          if (typeof value !== "string" || !value) return null;
+          const d = new Date(value);
+          return Number.isNaN(d.getTime()) ? null : d;
+        };
+
+        // Check if trip has already started and show toast, then redirect
+        const now = new Date();
+        const tripStartDate = parseDateOrNull(tripData.startDate);
+        if (tripStartDate && tripStartDate <= now) {
+          toast({
+            title: "Cannot Edit Trip",
+            description: "Cannot edit a trip that has already started.",
+            variant: "destructive",
+          });
+          // Redirect back immediately
+          setLocation("/events-office/dashboard");
+          return;
+        }
+
+        const getTimeFromDate = (dateStr: string) => {
+          if (!dateStr) return "";
+          const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
+          return timeMatch ? timeMatch[1] : "";
+        };
+
+        setFormData({
+          name: tripData.name || "",
+          location: tripData.location || "",
+          price: tripData.price?.toString() || "",
+          startDate: (() => {
+            const d = parseDateOrNull(tripData.startDate);
+            return d ?? undefined;
+          })(),
+          startTime:
+            tripData.startTime || getTimeFromDate(tripData.startDate || ""),
+          endDate: (() => {
+            const d = parseDateOrNull(tripData.endDate);
+            return d ?? undefined;
+          })(),
+          endTime: tripData.endTime || getTimeFromDate(tripData.endDate || ""),
+          description: tripData.description || "",
+          capacity: tripData.capacity?.toString() || "",
+          registrationDeadline: (() => {
+            const d = parseDateOrNull(tripData.registrationDeadline);
+            return d ?? undefined;
+          })(),
+        });
+        setRestrictedRoles(tripData.restrictedRoles || []);
+      } catch (error) {
+        logger.error("Error fetching trip:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load trip details",
+          variant: "destructive",
+        });
+        setLocation("/events-office");
+      } finally {
+        setLoading(false);
+      }
+    },
+    [setLocation, toast]
+  );
+
   useEffect(() => {
     if (params?.id) {
       fetchTrip(params.id);
     }
-  }, [params?.id]);
-
-  const fetchTrip = async (tripId: string) => {
-    setLoading(true);
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/api/events/${tripId}`, {
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-        credentials: "include",
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to fetch trip details");
-      }
-
-      const data = await res.json();
-      const tripData = data.data;
-
-      if (tripData.eventType !== "trip") {
-        toast({
-          title: "Error",
-          description: "This event is not a trip",
-          variant: "destructive",
-        });
-        setLocation("/events-office");
-        return;
-      }
-
-      setTrip(tripData);
-
-      const parseDateOrNull = (value: unknown) => {
-        if (typeof value !== "string" || !value) return null;
-        const d = new Date(value);
-        return Number.isNaN(d.getTime()) ? null : d;
-      };
-
-      // Check if trip has already started and show toast, then redirect
-      const now = new Date();
-      const tripStartDate = parseDateOrNull(tripData.startDate);
-      if (tripStartDate && tripStartDate <= now) {
-        toast({
-          title: "Cannot Edit Trip",
-          description: "Cannot edit a trip that has already started.",
-          variant: "destructive",
-        });
-        // Redirect back immediately
-        setLocation("/events-office/dashboard");
-        return;
-      }
-
-      const getTimeFromDate = (dateStr: string) => {
-        if (!dateStr) return "";
-        const timeMatch = dateStr.match(/T(\d{2}:\d{2})/);
-        return timeMatch ? timeMatch[1] : "";
-      };
-
-      setFormData({
-        name: tripData.name || "",
-        location: tripData.location || "",
-        price: tripData.price?.toString() || "",
-        startDate: (() => {
-          const d = parseDateOrNull(tripData.startDate);
-          return d ?? undefined;
-        })(),
-        startTime:
-          tripData.startTime || getTimeFromDate(tripData.startDate || ""),
-        endDate: (() => {
-          const d = parseDateOrNull(tripData.endDate);
-          return d ?? undefined;
-        })(),
-        endTime: tripData.endTime || getTimeFromDate(tripData.endDate || ""),
-        description: tripData.description || "",
-        capacity: tripData.capacity?.toString() || "",
-        registrationDeadline: (() => {
-          const d = parseDateOrNull(tripData.registrationDeadline);
-          return d ?? undefined;
-        })(),
-      });
-      setRestrictedRoles(tripData.restrictedRoles || []);
-    } catch (error) {
-      logger.error("Error fetching trip:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load trip details",
-        variant: "destructive",
-      });
-      setLocation("/events-office");
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [fetchTrip, params?.id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

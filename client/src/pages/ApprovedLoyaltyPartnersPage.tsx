@@ -1,5 +1,4 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
+import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -39,7 +38,6 @@ interface Partner {
 }
 
 export default function ApprovedLoyaltyPartnersPage() {
-  const [, setLocation] = useLocation();
   const { toast } = useToast();
   const API_BASE_URL = getApiBaseUrl();
   const [partners, setPartners] = useState<Partner[]>([]);
@@ -78,7 +76,7 @@ export default function ApprovedLoyaltyPartnersPage() {
     }
   };
 
-  const fetchPartners = async () => {
+  const fetchPartners = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
@@ -120,11 +118,11 @@ export default function ApprovedLoyaltyPartnersPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [API_BASE_URL, toast]);
 
   useEffect(() => {
     fetchPartners();
-  }, []);
+  }, [fetchPartners]);
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();

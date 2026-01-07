@@ -1,6 +1,13 @@
 // 🔹 Validation for Students / Staff / TA / Professors
 export const validateAcademicSignUp = (data) => {
-  let { email, password, firstName, lastName, studentStaffId, role } = data;
+  let {
+    email,
+    password,
+    firstName,
+    lastName,
+    studentStaffId: _studentStaffId,
+    role,
+  } = data;
 
   // Normalize email
   email = email.toLowerCase().trim();

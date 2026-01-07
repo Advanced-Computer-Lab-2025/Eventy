@@ -115,7 +115,7 @@ class ApplicationServiceClass {
       }
 
       // Format application date
-      const appDate = new Date(application.createdAt).toLocaleDateString(
+      const _appDate = new Date(application.createdAt).toLocaleDateString(
         "en-US",
         {
           year: "numeric",
@@ -308,7 +308,7 @@ class ApplicationServiceClass {
     let objectId;
     try {
       objectId = new mongoose.Types.ObjectId(applicationId);
-    } catch (e) {
+    } catch {
       throw new Error("Invalid application ID format");
     }
 
@@ -474,7 +474,7 @@ class ApplicationServiceClass {
         durationWeeks: durationWeeks,
       });
       return true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

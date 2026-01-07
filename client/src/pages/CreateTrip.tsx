@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Edit2, Plus, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,10 +17,10 @@ export default function TripManagement() {
   const [showDescriptionModal, setShowDescriptionModal] = useState(false);
   const [selectedTrip, setSelectedTrip] = useState<any>(null);
 
-  const apiBase = getApiBaseUrl();
+  const apiBase = useMemo(() => getApiBaseUrl(), []);
 
   // Fetch trips from the backend admin trips endpoint and handle ApiResponse wrapper
-  const fetchTrips = async () => {
+  const fetchTrips = useCallback(async () => {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
@@ -51,10 +51,10 @@ export default function TripManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiBase]);
   useEffect(() => {
     fetchTrips();
-  }, []);
+  }, [fetchTrips]);
 
   const handleCreateTrip = () => {
     setLocation("/events-office/create/trip");

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Popover,
   PopoverContent,
@@ -42,7 +42,7 @@ export default function WalletPopover({
     setCurrentBalance(initialBalance);
   }, [initialBalance]);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
     const token = localStorage.getItem("token");
 
@@ -83,7 +83,7 @@ export default function WalletPopover({
     } finally {
       setLoading(false);
     }
-  };
+  }, [apiBase]);
 
   // Fetch data whenever the popover opens
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function WalletPopover({
       // is now self-sufficient.
       if (onRefreshBalance) onRefreshBalance();
     }
-  }, [popoverOpen]);
+  }, [fetchData, onRefreshBalance, popoverOpen]);
 
   return (
     <>

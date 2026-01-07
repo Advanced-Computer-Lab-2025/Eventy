@@ -31,6 +31,7 @@ interface BazaarListProps {
   onRegister?: (bazaarId: string) => void;
   onShare?: (bazaarId: string) => void;
   onEdit?: (bazaarId: string) => void;
+  registeredBazaarIds?: string[];
   showFilters?: boolean;
   className?: string;
 }
@@ -40,6 +41,7 @@ export default function BazaarList({
   onRegister,
   onShare,
   onEdit,
+  registeredBazaarIds = [],
   showFilters = true,
   className = "",
 }: BazaarListProps) {
@@ -104,6 +106,10 @@ export default function BazaarList({
         bazaar.location.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [bazaars, searchTerm]);
+
+  const registeredBazaarIdSet = useMemo(() => {
+    return new Set(registeredBazaarIds);
+  }, [registeredBazaarIds]);
 
   const handleRegister = (bazaarId: string) => {
     if (onRegister) {
@@ -222,6 +228,7 @@ export default function BazaarList({
               attendees={bazaar.attendees?.length ?? 0}
               capacity={bazaar.capacity}
               bannerImage={bazaar.bannerImage}
+              isRegistered={registeredBazaarIdSet.has(bazaar._id)}
               onRegister={() => handleRegister(bazaar._id)}
               onShare={() => handleShare(bazaar._id)}
               {...(onEdit && { onEdit: () => handleEdit(bazaar._id) })}

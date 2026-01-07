@@ -160,19 +160,32 @@ export const loginUser = async (data) => {
   if (!user) {
     throw new Error("No account found with this email.");
   }
-  switch (user.status) {
-    case "blocked":
-      throw new Error("You are currently a blocked user");
-    case "deleted":
-      throw new Error("This account has been deleted.");
-    case "pending":
+
+  // ✅ Step 2.5: Block non-active accounts with role-aware messaging
+  if (user.status === "blocked") {
+    throw new Error("You are currently a blocked user");
+  }
+
+  if (user.status === "deleted") {
+    throw new Error("This account has been deleted.");
+  }
+
+  if (user.status === "pending") {
+    // Students: pending means email verification flow
+    if (user.role === "student") {
       throw new Error(
-        "Your account is pending verification. Please check your email."
+        "Your email is not verified. Please check your inbox for the verification link."
       );
-    case "active":
-      break; // Continue with login process
-    default:
-      throw new Error("Invalid account status.");
+    }
+
+    // Staff/TA/Professor: role is assigned by admin later (role may be null)
+    throw new Error(
+      "Your account is pending admin verification. Please wait for admin verification."
+    );
+  }
+
+  if (user.status !== "active") {
+    throw new Error("Invalid account status.");
   }
   // ✅ Step 3: GUC email check (for non-vendor users)
   if (
@@ -192,16 +205,6 @@ export const loginUser = async (data) => {
   if (user.role === "student" && !user.isVerified) {
     throw new Error(
       "Your email is not verified. Please check your inbox for the verification link."
-    );
-  }
-
-  // 📌 BLOCK: Academic roles requiring admin approval
-  if (
-    ["staff", "ta", "professor", "student"].includes(user.role.toLowerCase()) &&
-    user.status !== "active"
-  ) {
-    throw new Error(
-      "Your account has not been verified yet. Please check your email for the verification link."
     );
   }
 
@@ -268,7 +271,7 @@ export const refreshAuthSession = async (refreshToken) => {
   let decoded;
   try {
     decoded = jwt.verify(refreshToken, getRefreshJwtSecret());
-  } catch (_e) {
+  } catch {
     throw new Error("Invalid or expired refresh token");
   }
 
@@ -323,7 +326,7 @@ export const revokeRefreshToken = async (refreshToken) => {
     if (!user) return;
     user.refreshTokenVersion = Number(user.refreshTokenVersion || 0) + 1;
     await user.save();
-  } catch (_e) {
+  } catch {
     // ignore invalid/expired refresh tokens
   }
 };
@@ -339,7 +342,7 @@ export const logoutUser = async () => {
 
 export const confirmEmailVerification = async (token) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
 
     const user = await User.findById(decoded.id);
     if (!user) throw new Error("User not found");
@@ -349,7 +352,7 @@ export const confirmEmailVerification = async (token) => {
     await user.save();
 
     return { message: "Email verified successfully" };
-  } catch (error) {
+  } catch {
     throw new Error("Invalid or expired verification link");
   }
 };

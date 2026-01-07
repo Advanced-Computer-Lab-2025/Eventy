@@ -10,7 +10,7 @@ import {
 } from "../auth/email.service.js";
 import NotificationService from "../notifications/notification.service.js";
 
-const stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
+const _stripe = new Stripe({ apiKey: process.env.STRIPE_SECRET_KEY });
 
 export class TransactionService {
   // We use a "getter" instead of a constructor.
@@ -485,7 +485,7 @@ export class TransactionService {
           }
 
           return { message: "Resale successful via Card", transaction };
-        } catch (error) {
+        } catch {
           await this.stripe.refunds.create({ payment_intent: paymentIntentId });
           transaction.status = "failed";
           await transaction.save();

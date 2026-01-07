@@ -28,7 +28,7 @@ async function getVercelPut() {
   try {
     const mod = await import("@vercel/blob");
     return mod.put;
-  } catch (err) {
+  } catch {
     throw new ApiError(
       500,
       "Vercel Blob is not available on this server. Ensure '@vercel/blob' is installed and included in the Azure deployment package."
@@ -1391,7 +1391,7 @@ export class EventsController {
     }
   }
 
-  async recordView(req, res, next) {
+  async recordView(req, res, _next) {
     try {
       const { eventId } = req.params;
       const userId = req.user._id;

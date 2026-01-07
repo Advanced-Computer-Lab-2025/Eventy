@@ -5,7 +5,6 @@ import { Button } from "../components/ui/button";
 import { Heart, Loader2, AlertCircle } from "lucide-react";
 import { Link } from "wouter";
 import { Alert, AlertDescription } from "../components/ui/alert";
-import { useToast } from "../hooks/use-toast";
 import Header from "../components/Header";
 import ProfessorHeader from "../components/ProfessorHeader";
 import StaffHeader from "../components/StaffHeader";
@@ -14,15 +13,7 @@ import EventCard from "../components/EventCard";
 import type { EventCategory } from "../components/CategoryBadge";
 
 export default function FavoritesPage() {
-  const {
-    favorites,
-    loading,
-    error,
-    removeFromFavorites,
-    isEventLoading,
-    refetch,
-  } = useFavorites();
-  const { toast } = useToast();
+  const { favorites, loading, error, refetch } = useFavorites();
   const [userRole] = useState<string | null>(() => {
     try {
       const user = localStorage.getItem("user");

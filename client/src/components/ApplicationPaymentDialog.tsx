@@ -155,7 +155,6 @@ export default function ApplicationPaymentDialog({
   application,
   onPaymentSuccess,
 }: ApplicationPaymentDialogProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [stripePromise, setStripePromise] = useState<Promise<any> | null>(null);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [actualFee, setActualFee] = useState<number | null>(null);
