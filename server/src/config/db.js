@@ -7,7 +7,7 @@ const maskCredentials = (uri) => {
       /(\/\/)(.*?):(.*?)@/,
       (m, p1, user) => `${p1}${user}:******@`
     );
-  } catch (e) {
+  } catch {
     return uri;
   }
 };

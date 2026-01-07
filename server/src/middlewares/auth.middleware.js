@@ -21,7 +21,7 @@ const getCookieValue = (cookieHeader, name) => {
 export const validateToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
-  } catch (err) {
+  } catch {
     return null;
   }
 };
@@ -65,13 +65,13 @@ const authMiddleware = async (req, res, next) => {
 
     req.user = user; // Now req.user has _id, role, etc.
     next();
-  } catch (err) {
+  } catch {
     return res.status(401).json({ message: "Invalid or expired token" });
   }
 };
 
 export default authMiddleware;
-const verifyToken = async (req, res, next, decoded) => {
+const _verifyToken = async (req, res, next, decoded) => {
   try {
     // ...existing token verification...
 
@@ -90,7 +90,7 @@ const verifyToken = async (req, res, next, decoded) => {
 
     req.user = user;
     next();
-  } catch (error) {
+  } catch {
     res.status(401).json({ message: "Invalid token" });
   }
 };

@@ -401,7 +401,7 @@ export async function editWorkshop(workshopId, updateData, user) {
   return workshop;
 }
 
-export const updateTripService = async (tripId, updateData, user) => {
+export const updateTripService = async (tripId, updateData, _user) => {
   // 1. Fetch trip
   const trip = await Event.findById(tripId);
   if (!trip || trip.eventType !== "trip") {
@@ -511,7 +511,7 @@ export const getEventsByUser = async (userId) => {
 };
 
 export const getUpcomingEventsService = async (
-  includeVendors = false,
+  _includeVendors = false,
   userRole = null
 ) => {
   // Use start of today for comparison so events starting today are included
@@ -542,7 +542,7 @@ export const getUpcomingEventsService = async (
  * @returns {Promise<Array>} Array of event objects with vendors array.
  */
 export const getUpcomingEventsWithVendors = async (
-  includeVendors = true,
+  _includeVendors = true,
   userRole = null
 ) => {
   // Use start of today for comparison so events starting today are included
@@ -642,7 +642,7 @@ export const getOngoingEvents = async (userRole = null) => {
   return events;
 };
 
-export async function deleteEvent(eventId, user) {
+export async function deleteEvent(eventId, _user) {
   // Ensure event exists
   const event = await Event.findById(eventId);
   if (!event) throw new ApiError(404, "Event not found");
@@ -954,7 +954,7 @@ export const getAllTripsService = async () => {
   return trips;
 };
 
-export const getAllWorkshopsService = async (userRole) => {
+export const getAllWorkshopsService = async (_userRole) => {
   // ✅ 3. Fetch all workshops from the database
   const workshops = await Event.find({ eventType: "workshop" })
     .populate("createdBy", "firstName lastName email")
@@ -971,7 +971,7 @@ export async function getAllEvents() {
   try {
     const events = await Event.find({ deletedAt: null }); // exclude soft-deleted ones
     return events;
-  } catch (err) {
+  } catch {
     throw new ApiError(500, "Error fetching events");
   }
 }
@@ -1505,7 +1505,7 @@ export const exportEventRegisteredUsers = async (eventId, format = "xlsx") => {
       const logoDarkAsset = resolvePublicAsset("/images/logo-dark.png");
 
       const logoLightBuffer = await loadAssetBuffer(logoLightAsset);
-      const logoDarkBuffer = await loadAssetBuffer(logoDarkAsset);
+      const _logoDarkBuffer = await loadAssetBuffer(logoDarkAsset);
 
       // Watermark
       if (logoLightBuffer) {
@@ -2650,7 +2650,7 @@ async function sendEventReminder(event, reminderTime, reminderType) {
 
     // Calculate time until event
     const eventStart = new Date(event.startDate);
-    const timeUntilEvent = differenceInHours(eventStart, reminderTime);
+    const _timeUntilEvent = differenceInHours(eventStart, reminderTime);
     // Use reminderType for message
     await NotificationService.createNotification({
       title: `⏰ Event Reminder: ${event.name}`,

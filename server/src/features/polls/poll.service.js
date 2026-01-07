@@ -49,7 +49,7 @@ class PollServiceClass {
 
     try {
       await poll.save();
-    } catch (err) {
+    } catch {
       throw new ApiError(
         500,
         "Failed to save vote to database. Please try again later."
@@ -70,7 +70,7 @@ class PollServiceClass {
     for (const id of applicationIds) {
       try {
         objectIds.push(new mongoose.Types.ObjectId(id));
-      } catch (e) {
+      } catch {
         throw new ApiError(400, `Invalid application ID: ${id}`);
       }
     }
@@ -202,7 +202,7 @@ class PollServiceClass {
     let objectId;
     try {
       objectId = new mongoose.Types.ObjectId(pollId);
-    } catch (e) {
+    } catch {
       throw new ApiError(400, "Invalid poll ID");
     }
 

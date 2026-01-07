@@ -1256,21 +1256,22 @@ export const sendAttendeeQRCodeEmail = async (
     // Determine application type and details
     const applicationType =
       application.type === "bazaar" ? "Bazaar" : "Platform Booth";
-    const eventName = event?.name || "Platform Booth";
-    const location = event?.location || application.locationPreference || "N/A";
+    const _eventName = event?.name || "Platform Booth";
+    const _location =
+      event?.location || application.locationPreference || "N/A";
 
     // Calculate duration
-    let durationText = "";
+    let _durationText = "";
     if (application.type === "booth" && application.durationWeeks) {
-      durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
+      _durationText = `${application.durationWeeks} week${application.durationWeeks > 1 ? "s" : ""}`;
     } else if (event && event.startDate && event.endDate) {
       const startDate = new Date(event.startDate);
       const endDate = new Date(event.endDate);
       const diffTime = Math.abs(endDate - startDate);
       const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
+      _durationText = `${diffDays} day${diffDays > 1 ? "s" : ""}`;
     } else {
-      durationText = "N/A";
+      _durationText = "N/A";
     }
 
     // Generate JWT token for attendee verification
@@ -1280,7 +1281,7 @@ export const sendAttendeeQRCodeEmail = async (
     const verificationUrl = `${emailFrontendBaseUrl}/attendee/${token}`;
 
     let qrCodeBuffer;
-    let qrCodeDataUrl;
+    let _qrCodeDataUrl;
     try {
       // Generate QR code as buffer (for attachment)
       qrCodeBuffer = await QRCode.toBuffer(verificationUrl, {
@@ -1294,7 +1295,7 @@ export const sendAttendeeQRCodeEmail = async (
       });
 
       // Also generate as data URL for direct embedding in email HTML (backup)
-      qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
+      _qrCodeDataUrl = await QRCode.toDataURL(verificationUrl, {
         width: 400,
         margin: 2,
         errorCorrectionLevel: "M",
@@ -1850,7 +1851,7 @@ export const sendVendorPaymentReceipt = async (
   // Get event/bazaar name
   const eventName = application.event?.name || "Platform Booth";
 
-  const formattedDate = format(
+  const _formattedDate = format(
     new Date(transaction.createdAt),
     "MMMM d, yyyy h:mm a"
   );
@@ -2558,7 +2559,7 @@ export const sendEventRegistrationWithCalendar = async (user, event) => {
 
     // Format dates
     const startDate = new Date(event.startDate);
-    const endDate = new Date(event.endDate);
+    const _endDate = new Date(event.endDate);
     const formattedStartDate = startDate.toLocaleDateString("en-US", {
       weekday: "long",
       year: "numeric",

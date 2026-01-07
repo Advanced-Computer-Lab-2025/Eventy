@@ -311,7 +311,7 @@ export class ApplicationController {
       let decoded;
       try {
         decoded = jwt.verify(token, process.env.JWT_SECRET || "supersecretkey");
-      } catch (error) {
+      } catch {
         return res.status(401).json({
           success: false,
           message: "Invalid or expired token",

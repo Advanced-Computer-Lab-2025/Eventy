@@ -66,7 +66,7 @@ router.get("/verify", async (req, res) => {
       "email verification redirect"
     );
     res.redirect(`${frontendBaseUrl}/login`);
-  } catch (error) {
+  } catch {
     res.status(400).json({ message: "Invalid or expired verification link." });
   }
 });

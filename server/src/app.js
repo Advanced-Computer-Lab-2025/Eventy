@@ -38,7 +38,7 @@ const vercelProjectSlug = (() => {
     const { hostname } = new URL(first);
     if (!hostname.endsWith(".vercel.app")) return null;
     return hostname.replace(/\.vercel\.app$/i, "");
-  } catch (_e) {
+  } catch {
     return null;
   }
 })();
@@ -67,7 +67,7 @@ app.use(
           ) {
             return callback(null, true);
           }
-        } catch (_e) {
+        } catch {
           // ignore invalid origin
         }
       }
@@ -78,7 +78,7 @@ app.use(
           if (protocol === "https:" && hostname.endsWith(".vercel.app")) {
             return callback(null, true);
           }
-        } catch (_e) {
+        } catch {
           // ignore invalid origin
         }
       }

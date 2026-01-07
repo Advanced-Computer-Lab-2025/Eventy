@@ -268,7 +268,7 @@ export const refreshAuthSession = async (refreshToken) => {
   let decoded;
   try {
     decoded = jwt.verify(refreshToken, getRefreshJwtSecret());
-  } catch (_e) {
+  } catch {
     throw new Error("Invalid or expired refresh token");
   }
 
@@ -323,7 +323,7 @@ export const revokeRefreshToken = async (refreshToken) => {
     if (!user) return;
     user.refreshTokenVersion = Number(user.refreshTokenVersion || 0) + 1;
     await user.save();
-  } catch (_e) {
+  } catch {
     // ignore invalid/expired refresh tokens
   }
 };
@@ -349,7 +349,7 @@ export const confirmEmailVerification = async (token) => {
     await user.save();
 
     return { message: "Email verified successfully" };
-  } catch (error) {
+  } catch {
     throw new Error("Invalid or expired verification link");
   }
 };
