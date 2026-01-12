@@ -40,7 +40,7 @@
     "mongoose": "^8.4.0",
     "multer": "^2.0.2",
     "node-cron": "^4.2.1",
-    "nodemailer": "^7.0.9",
+    "nodemailer": "^7.0.11",
     "pdfkit": "^0.17.2",
     "qrcode": "^1.5.4",
     "qrcode.react": "^4.2.0",
