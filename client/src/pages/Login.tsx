@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { Mail, Lock, Info, X, Users } from "lucide-react";
+import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,6 +31,10 @@ const DEMO_ACCOUNTS_STORAGE_KEY = "eventy_demo_dismissed";
 export default function Login() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const [sentryTestStep, setSentryTestStep] = useState<"frontend" | "backend">(
+    "frontend"
+  );
 
   const [formData, setFormData] = useState({
     email: "",
@@ -250,6 +255,68 @@ export default function Login() {
                 data-testid="button-login"
               >
                 Login
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={async () => {
+                  const frontendDsn = import.meta.env.VITE_SENTRY_DSN as
+                    | string
+                    | undefined;
+
+                  if (!frontendDsn) {
+                    toast({
+                      variant: "destructive",
+                      title: "Sentry not configured",
+                      description:
+                        "Missing VITE_SENTRY_DSN. Add it in your Vercel environment variables and redeploy.",
+                    });
+                    return;
+                  }
+
+                  if (sentryTestStep === "frontend") {
+                    Sentry.captureException(
+                      new Error("Eventy frontend Sentry test error!")
+                    );
+                    toast({
+                      title: "Frontend Sentry event sent",
+                      description:
+                        "Check your Frontend Sentry project (may take ~10–60s). Click again to test backend.",
+                    });
+                    setSentryTestStep("backend");
+                    return;
+                  }
+
+                  try {
+                    await fetch(`${getApiBaseUrl()}/api/debug-sentry`, {
+                      method: "GET",
+                      credentials: "include",
+                    });
+
+                    toast({
+                      title: "Backend Sentry test triggered",
+                      description:
+                        "The endpoint should error (500) and create an issue in the Backend Sentry project.",
+                    });
+                  } catch (err) {
+                    toast({
+                      variant: "destructive",
+                      title: "Backend test request failed",
+                      description:
+                        err instanceof Error
+                          ? err.message
+                          : "Could not reach backend.",
+                    });
+                  } finally {
+                    setSentryTestStep("frontend");
+                  }
+                }}
+              >
+                {sentryTestStep === "frontend"
+                  ? "Test Sentry (Frontend)"
+                  : "Test Sentry (Backend)"}
               </Button>
             </form>
 
