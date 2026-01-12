@@ -2,11 +2,29 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
+import { sentryVitePlugin } from "@sentry/vite-plugin";
 
 export default defineConfig({
   plugins: [
     react(),
     runtimeErrorOverlay(),
+    ...(process.env.SENTRY_AUTH_TOKEN &&
+    process.env.SENTRY_ORG &&
+    process.env.SENTRY_PROJECT
+      ? [
+          sentryVitePlugin({
+            authToken: process.env.SENTRY_AUTH_TOKEN,
+            org: process.env.SENTRY_ORG,
+            project: process.env.SENTRY_PROJECT,
+            release: {
+              name: process.env.SENTRY_RELEASE,
+            },
+            sourcemaps: {
+              assets: "./dist/public/assets/**",
+            },
+          }),
+        ]
+      : []),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
@@ -30,6 +48,7 @@ export default defineConfig({
   build: {
     outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
+    sourcemap: true,
   },
   server: {
     fs: {
