@@ -16,6 +16,8 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@sentry/node": "^10.12.0",
+    "@sentry/react": "^10.12.0",
     "@emailjs/browser": "^4.4.1",
     "@emailjs/nodejs": "^5.0.2",
     "@hookform/resolvers": "^3.10.0",
@@ -103,6 +105,7 @@
     "zod-validation-error": "^3.4.0"
   },
   "devDependencies": {
+    "@sentry/vite-plugin": "^4.4.2",
     "@eslint/js": "^9.39.1",
     "@replit/vite-plugin-cartographer": "^0.3.1",
     "@replit/vite-plugin-dev-banner": "^0.1.1",

@@ -1,5 +1,6 @@
 import logger from "./utils/logger.js";
 import "dotenv/config"; // Make sure this is at the very top
+import "./instrument.js";
 import app from "./app.js";
 import connectDB from "./config/db.js";
 import { startReminderScheduler } from "./features/events/event.service.js";

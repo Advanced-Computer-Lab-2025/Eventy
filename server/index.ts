@@ -1,3 +1,7 @@
+// Sentry initialization should be imported first!
+import "./instrument";
+
+import * as Sentry from "@sentry/node";
 import logger from "./src/utils/logger.js";
 import express, { type Request, Response, NextFunction } from "express";
 import { createServer } from "http";
@@ -97,7 +101,15 @@ app.use((req, res, next) => {
     });
   });
 
+  // Sentry test route
+  app.get("/api/debug-sentry", function mainHandler(_req, _res) {
+    throw new Error("Eventy backend Sentry test error!");
+  });
+
   const server = createServer(app);
+
+  // Add this after all routes, but before any other error-handling middleware.
+  Sentry.setupExpressErrorHandler(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
     const status = err.status || err.statusCode || 500;

@@ -1,3 +1,6 @@
+// Sentry initialization should be imported first!
+import "./instrument";
+
 import { createRoot } from "react-dom/client";
 import { SpeedInsights } from "@vercel/speed-insights/react";
 import { logger } from "@/lib/logger";

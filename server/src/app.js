@@ -4,6 +4,7 @@ import cors from "cors";
 import path from "path";
 import session from "express-session";
 import allRoutes from "./routes/index.js";
+import * as Sentry from "@sentry/node";
 
 import dotenv from "dotenv";
 import { errorMiddleware } from "./middlewares/error.middleware.js";
@@ -119,6 +120,9 @@ app.use((req, res, next) => {
 
 // Mount all API routes from routes/index.js under the /api path
 app.use("/api", allRoutes);
+
+// Add this after all routes, but before any other error-handling middleware.
+Sentry.setupExpressErrorHandler(app);
 
 // Global Error Handler Middleware
 app.use(errorMiddleware);
