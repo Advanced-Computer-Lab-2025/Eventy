@@ -31,6 +31,11 @@ router.get("/health", (_req, res) => {
   });
 });
 
+// Sentry test route
+router.get("/debug-sentry", function mainHandler(_req, _res) {
+  throw new Error("Eventy backend Sentry test error!");
+});
+
 // import authRoutes from '../features/auth/auth.route.js';
 router.use("/auth", authRoutes);
 
