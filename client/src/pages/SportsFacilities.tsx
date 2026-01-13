@@ -315,6 +315,19 @@ export default function SportsFacilities() {
 
   const renderCourtContent = () => {
     const bodyDate = getBodyDateFromIndex(currentDayIndex);
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    const isSlotPast = (slotTime: string) => {
+      if (currentDayIndex > 0) return false;
+      const [timeStr, period] = slotTime.split(" ");
+      let [hoursStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr);
+      if (period === "PM" && hours !== 12) hours += 12;
+      if (period === "AM" && hours === 12) hours = 0;
+      return hours <= currentHour;
+    };
+
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-center gap-4 my-6">
@@ -399,12 +412,14 @@ export default function SportsFacilities() {
                             slot.startTime
                           );
                           const isReserving = reservingKeys.includes(slotKey);
+                          const isPast = isSlotPast(slot.startTime);
+
                           return (
                             <Button
                               key={slotKey}
                               variant="outline"
                               className="w-full justify-start gap-2 min-h-12 py-3"
-                              disabled={isReserving}
+                              disabled={isReserving || isPast}
                               onClick={() =>
                                 handleReserveCourt(
                                   type as CourtType,
@@ -420,7 +435,16 @@ export default function SportsFacilities() {
                                   </div>
                                 </div>
                                 <div>
-                                  <Badge>Available</Badge>
+                                  <Badge
+                                    variant={isPast ? "secondary" : "default"}
+                                    className={
+                                      isPast
+                                        ? "bg-muted text-muted-foreground hover:bg-muted"
+                                        : "hover:bg-primary/80"
+                                    }
+                                  >
+                                    {isPast ? "Unavailable" : "Available"}
+                                  </Badge>
                                 </div>
                               </div>
                             </Button>
