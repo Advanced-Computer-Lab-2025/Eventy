@@ -171,6 +171,7 @@ export default function CreatePrivilegedUserForm({
         <Input
           id="password"
           type="password"
+          placeholder="Enter your password"
           value={form.password}
           onChange={(e) => setForm({ ...form, password: e.target.value })}
           minLength={8}

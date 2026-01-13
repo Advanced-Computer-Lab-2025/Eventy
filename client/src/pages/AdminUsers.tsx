@@ -291,6 +291,7 @@ export default function AdminUsers() {
             <Button
               onClick={() => setShowCreateDialog(true)}
               data-testid="button-create-admin"
+              variant="default"
             >
               <Plus className="h-4 w-4 mr-2" />
               Create Admin/Event Office
