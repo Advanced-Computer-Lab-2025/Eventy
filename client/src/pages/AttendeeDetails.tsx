@@ -188,8 +188,8 @@ export default function AttendeeDetails() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
       {/* Header */}
       <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <Logo size="sm" />
+        <div className="max-w-7xl mx-auto px-4 py-2 flex items-center justify-between">
+          <Logo size="lg" />
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <QrCode className="h-4 w-4" />
             <span>QR Code Verification</span>
@@ -348,7 +348,7 @@ export default function AttendeeDetails() {
         {/* Footer */}
         <div className="mt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            © 2025 Eventy Platform. All rights reserved.
+            © {new Date().getFullYear()} Eventy Platform. All rights reserved.
           </p>
         </div>
       </div>
