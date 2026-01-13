@@ -132,13 +132,16 @@ export default function CreatePrivilegedUserForm({
         <Input
           id="email"
           type="email"
-          placeholder="ex: username@guc.edu.eg"
+          placeholder="ex: admin@guc.edu.eg"
           value={form.email}
           onChange={(e) => setForm({ ...form, email: e.target.value })}
-          pattern="^[A-Za-z0-9._%\-]+@guc\\.edu\\.eg$"
-          title="Email must be in the format username@guc.edu.eg"
+          pattern="^[A-Za-z0-9._%-]+@guc\.edu\.eg$"
+          title="Email must end with @guc.edu.eg (e.g., admin@guc.edu.eg or john.smith@guc.edu.eg)"
           required
         />
+        <p className="text-xs text-muted-foreground">
+          Any valid email ending with @guc.edu.eg
+        </p>
       </div>
 
       <div className="space-y-2">
