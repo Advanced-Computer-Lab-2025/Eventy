@@ -207,18 +207,18 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-secondary/10 flex items-center justify-center p-2 sm:p-4">
       <Card className="w-full max-w-2xl">
-        <CardHeader className="text-center">
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <Logo size="xxl" />
+        <CardHeader className="text-center p-3 pb-2 space-y-0.5">
+          <div className="flex items-center justify-center gap-2 mt-0">
+            <Logo size="lg" />
           </div>
-          <CardTitle className="text-3xl">Create Account</CardTitle>
-          <CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">Create Account</CardTitle>
+          <CardDescription className="hidden sm:block">
             Join our university event management platform
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 pt-0">
           <Tabs defaultValue="student" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="student" data-testid="tab-student">
@@ -232,17 +232,17 @@ export default function SignUp() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="student" className="mt-6">
-              <form onSubmit={handleStudentSignUp} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+            <TabsContent value="student" className="mt-3">
+              <form onSubmit={handleStudentSignUp} className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <Label htmlFor="student-firstName">First Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="student-firstName"
                         placeholder="John"
-                        className="pl-10"
+                        className="h-9 pl-10"
                         value={studentForm.firstName}
                         onChange={(e) =>
                           setStudentForm({
@@ -256,14 +256,14 @@ export default function SignUp() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="student-lastName">Last Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="student-lastName"
                         placeholder="Doe"
-                        className="pl-10"
+                        className="h-9 pl-10"
                         value={studentForm.lastName}
                         onChange={(e) =>
                           setStudentForm({
@@ -278,14 +278,14 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="student-id">Student ID</Label>
                   <div className="relative">
                     <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="student-id"
                       placeholder="58-1001"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={studentForm.studentStaffId}
                       onChange={(e) =>
                         setStudentForm({
@@ -297,12 +297,12 @@ export default function SignUp() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
                     Format: XX-XXXX or XX-XXXXX (e.g., 58-1001 or 58-10012)
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="student-email">GUC Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -310,7 +310,7 @@ export default function SignUp() {
                       id="student-email"
                       type="email"
                       placeholder="john.doe@student.guc.edu.eg"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={studentForm.email}
                       onChange={(e) =>
                         setStudentForm({
@@ -324,7 +324,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="student-password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -332,7 +332,7 @@ export default function SignUp() {
                       id="student-password"
                       type="password"
                       placeholder="Enter your password"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={studentForm.password}
                       onChange={(e) =>
                         setStudentForm({
@@ -344,7 +344,7 @@ export default function SignUp() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
                     Password must be at least 8 characters.
                   </p>
                 </div>
@@ -359,17 +359,17 @@ export default function SignUp() {
               </form>
             </TabsContent>
 
-            <TabsContent value="staff" className="mt-6">
-              <form onSubmit={handleStaffSignUp} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
+            <TabsContent value="staff" className="mt-3">
+              <form onSubmit={handleStaffSignUp} className="space-y-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  <div className="space-y-1">
                     <Label htmlFor="staff-firstName">First Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="staff-firstName"
                         placeholder="John"
-                        className="pl-10"
+                        className="h-9 pl-10"
                         value={staffForm.firstName}
                         onChange={(e) =>
                           setStaffForm({
@@ -383,14 +383,14 @@ export default function SignUp() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
+                  <div className="space-y-1">
                     <Label htmlFor="staff-lastName">Last Name</Label>
                     <div className="relative">
                       <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         id="staff-lastName"
                         placeholder="Doe"
-                        className="pl-10"
+                        className="h-9 pl-10"
                         value={staffForm.lastName}
                         onChange={(e) =>
                           setStaffForm({
@@ -405,14 +405,14 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="staff-id">Staff ID</Label>
                   <div className="relative">
                     <IdCard className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="staff-id"
                       placeholder="1234"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={staffForm.studentStaffId}
                       onChange={(e) =>
                         setStaffForm({
@@ -424,12 +424,12 @@ export default function SignUp() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
                     Format: 4 digits (e.g., 1234)
                   </p>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="staff-email">GUC Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -437,7 +437,7 @@ export default function SignUp() {
                       id="staff-email"
                       type="email"
                       placeholder="john.doe@guc.edu.eg"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={staffForm.email}
                       onChange={(e) =>
                         setStaffForm({ ...staffForm, email: e.target.value })
@@ -448,7 +448,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="staff-password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -456,7 +456,7 @@ export default function SignUp() {
                       id="staff-password"
                       type="password"
                       placeholder="Enter your password"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={staffForm.password}
                       onChange={(e) =>
                         setStaffForm({ ...staffForm, password: e.target.value })
@@ -465,7 +465,7 @@ export default function SignUp() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
                     Password must be at least 8 characters.
                   </p>
                 </div>
@@ -480,16 +480,16 @@ export default function SignUp() {
               </form>
             </TabsContent>
 
-            <TabsContent value="vendor" className="mt-6">
-              <form onSubmit={handleVendorSignUp} className="space-y-4">
-                <div className="space-y-2">
+            <TabsContent value="vendor" className="mt-3">
+              <form onSubmit={handleVendorSignUp} className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="vendor-companyName">Company Name</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="vendor-companyName"
                       placeholder="Acme Inc."
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={vendorForm.companyName}
                       onChange={(e) =>
                         setVendorForm({
@@ -503,7 +503,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="vendor-email">Email</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -511,7 +511,7 @@ export default function SignUp() {
                       id="vendor-email"
                       type="email"
                       placeholder="contact@company.com"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={vendorForm.email}
                       onChange={(e) =>
                         setVendorForm({ ...vendorForm, email: e.target.value })
@@ -522,7 +522,7 @@ export default function SignUp() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1">
                   <Label htmlFor="vendor-password">Password</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -530,7 +530,7 @@ export default function SignUp() {
                       id="vendor-password"
                       type="password"
                       placeholder="Enter your password"
-                      className="pl-10"
+                      className="h-9 pl-10"
                       value={vendorForm.password}
                       onChange={(e) =>
                         setVendorForm({
@@ -542,7 +542,7 @@ export default function SignUp() {
                       required
                     />
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="hidden text-xs text-muted-foreground sm:block">
                     Password must be at least 8 characters.
                   </p>
                 </div>
@@ -646,7 +646,7 @@ export default function SignUp() {
             </TabsContent>
           </Tabs>
 
-          <div className="mt-6 text-center text-sm">
+          <div className="mt-3 text-center text-sm">
             Already have an account?{" "}
             <Link
               href="/login"
