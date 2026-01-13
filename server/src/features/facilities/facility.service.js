@@ -19,11 +19,10 @@ class FacilitiesServiceClass {
     if (foundUser.status === "blocked") {
       throw new Error("User account is blocked");
     }
-    // Validate availability
-    const schedules = await this.getCourtSchedules();
-    const courtSchedule = schedules[courtType];
 
-    if (!courtSchedule) {
+    // Check if courtType is valid
+    const courtTypes = ["basketball", "tennis", "football"];
+    if (!courtTypes.includes(courtType)) {
       throw new Error(`Invalid court type: ${courtType}`);
     }
 
@@ -35,20 +34,56 @@ class FacilitiesServiceClass {
 
     const formattedDate = this.getLocalDateString(bookingDate);
 
-    const daySchedule = courtSchedule.find((d) => d.date === formattedDate);
-    if (!daySchedule) {
-      throw new Error("Date is not available for booking");
-    }
+    // Check availability directly
+    const existingBooking = await CourtBooking.findOne({
+      courtType,
+      date: bookingDate,
+      startTime,
+      endTime,
+      status: "active",
+    });
 
-    const slot = daySchedule.slots.find(
-      (s) => s.startTime === startTime && s.endTime === endTime
-    );
-    if (!slot) {
-      throw new Error("Invalid time slot");
-    }
-
-    if (slot.status !== "available") {
+    if (existingBooking) {
       throw new Error("This time slot is already booked");
+    }
+
+    // Check if user already has a booking at this time (any court)
+    const userConflict = await CourtBooking.findOne({
+      bookedBy: userId,
+      date: bookingDate,
+      startTime,
+      endTime,
+      status: "active",
+    });
+
+    if (userConflict) {
+      throw new Error("You cannot book multiple courts at the same time");
+    }
+
+    // Verify time slot validity
+    const startHour = 10;
+    const endHour = 17;
+    // Check if startTime/endTime match our generated slots
+    let isValidSlot = false;
+    for (let hour = startHour; hour < endHour; hour++) {
+      const hour24 = hour;
+      const endHour24 = hour + 1;
+      const startAMPM = hour24 >= 12 ? "PM" : "AM";
+      const endAMPM = endHour24 >= 12 ? "PM" : "AM";
+      const startHour12 = hour24 % 12 === 0 ? 12 : hour24 % 12;
+      const endHour12 = endHour24 % 12 === 0 ? 12 : endHour24 % 12;
+
+      const sTime = `${startHour12}:00 ${startAMPM}`;
+      const eTime = `${endHour12}:00 ${endAMPM}`;
+
+      if (sTime === startTime && eTime === endTime) {
+        isValidSlot = true;
+        break;
+      }
+    }
+
+    if (!isValidSlot) {
+      throw new Error("Invalid time slot");
     }
 
     // Create the booking
