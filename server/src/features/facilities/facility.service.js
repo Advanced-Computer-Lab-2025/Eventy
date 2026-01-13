@@ -1,3 +1,4 @@
+import ApiError from "../../utils/ApiError.js";
 import logger from "../../utils/logger.js";
 import { CourtBooking, GymSession } from "./facility.model.js";
 import {
@@ -57,7 +58,10 @@ class FacilitiesServiceClass {
     });
 
     if (userConflict) {
-      throw new Error("You cannot book multiple courts at the same time");
+      throw new ApiError(
+        409,
+        "You cannot book multiple courts at the same time"
+      );
     }
 
     // Verify time slot validity
