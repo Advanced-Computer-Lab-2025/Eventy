@@ -1900,7 +1900,7 @@ export default function EventCard({
                 e.preventDefault();
                 executeCancellation();
               }}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white focus-visible:ring-0 border-0"
             >
               {isCanceling ? "Canceling..." : "Yes, Cancel"}
             </AlertDialogAction>
