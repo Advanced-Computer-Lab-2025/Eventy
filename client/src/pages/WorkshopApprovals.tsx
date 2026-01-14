@@ -326,14 +326,27 @@ export default function WorkshopApprovals() {
   const endDateStr = selectedWorkshop
     ? formatWorkshopDate(selectedWorkshop.endDate)
     : "";
+  const formatStringTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hoursStr, minutesStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const suffix = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutesStr} ${suffix}`;
+    }
+    return timeStr;
+  };
+
   const startTimeStr = selectedWorkshop
-    ? selectedWorkshop.startTime ||
+    ? formatStringTime(selectedWorkshop.startTime) ||
       (selectedWorkshop.startDate
         ? formatWorkshopTime(selectedWorkshop.startDate)
         : "")
     : "";
   const endTimeStr = selectedWorkshop
-    ? selectedWorkshop.endTime ||
+    ? formatStringTime(selectedWorkshop.endTime) ||
       (selectedWorkshop.endDate
         ? formatWorkshopTime(selectedWorkshop.endDate)
         : "")
