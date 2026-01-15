@@ -79,8 +79,21 @@ export default function EventDetailsDialog({
     });
   };
 
+  const formatStringTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hoursStr, minutesStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const suffix = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutesStr} ${suffix}`;
+    }
+    return timeStr;
+  };
+
   const startTime =
-    event.startTime ||
+    formatStringTime(event.startTime) ||
     (event.startDate
       ? new Date(event.startDate).toLocaleTimeString("en-US", {
           hour: "2-digit",
@@ -88,7 +101,7 @@ export default function EventDetailsDialog({
         })
       : null);
   const endTime =
-    event.endTime ||
+    formatStringTime(event.endTime) ||
     (event.endDate
       ? new Date(event.endDate).toLocaleTimeString("en-US", {
           hour: "2-digit",

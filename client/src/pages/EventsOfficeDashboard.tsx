@@ -1433,6 +1433,32 @@ export default function EventsOfficeDashboard() {
                             eventEndDate &&
                             eventEndDate.getTime() < now.getTime();
 
+                          // Check if event has started (for disabling edit)
+                          let isStarted = false;
+                          if (event.eventType === "trip" && event.startDate) {
+                            const tripStartDate = new Date(event.startDate);
+                            if (tripStartDate <= now) {
+                              isStarted = true;
+                            }
+                          } else if (
+                            event.eventType === "bazaar" &&
+                            event.startDate
+                          ) {
+                            const bazaarStart = new Date(event.startDate);
+                            if (
+                              event.startTime &&
+                              /^\d{1,2}:\d{2}$/.test(event.startTime)
+                            ) {
+                              const [h, m] = event.startTime
+                                .split(":")
+                                .map(Number);
+                              bazaarStart.setHours(h, m, 0, 0);
+                            }
+                            if (bazaarStart <= now) {
+                              isStarted = true;
+                            }
+                          }
+
                           return (
                             <div key={event._id || index} className="h-full">
                               <EventCard
@@ -1514,6 +1540,7 @@ export default function EventsOfficeDashboard() {
                                 onDelete={() => handleDeleteEvent(event._id)}
                                 hideRegisterButton={true}
                                 onViewDetails={() => handleCardClick(event._id)}
+                                editDisabled={isStarted}
                                 {...(isPastEvent
                                   ? {
                                       onArchive: () =>
@@ -1525,7 +1552,8 @@ export default function EventsOfficeDashboard() {
                                         "conference",
                                         "bazaar",
                                         "workshop",
-                                      ].includes(event.eventType)
+                                      ].includes(event.eventType) &&
+                                      userRole === "events_office"
                                     ? {
                                         onEdit: () => {
                                           if (event.eventType === "workshop") {
@@ -1554,13 +1582,51 @@ export default function EventsOfficeDashboard() {
                                             setLocation(
                                               `/events-office/events/trip/edit/${event._id}`
                                             );
+                                          } else if (
+                                            event.eventType === "bazaar"
+                                          ) {
+                                            if (event.startDate) {
+                                              const now = new Date();
+                                              const bazaarStart = new Date(
+                                                event.startDate
+                                              );
+
+                                              if (
+                                                event.startTime &&
+                                                /^\d{1,2}:\d{2}$/.test(
+                                                  event.startTime
+                                                )
+                                              ) {
+                                                const [h, m] = event.startTime
+                                                  .split(":")
+                                                  .map(Number);
+                                                bazaarStart.setHours(
+                                                  h,
+                                                  m,
+                                                  0,
+                                                  0
+                                                );
+                                              }
+
+                                              if (bazaarStart <= now) {
+                                                toast({
+                                                  title: "Cannot Edit Bazaar",
+                                                  description:
+                                                    "Cannot edit a bazaar that has already started.",
+                                                  variant: "destructive",
+                                                });
+                                                return;
+                                              }
+                                            }
+                                            setLocation(
+                                              `/create/bazaar?id=${event._id}`
+                                            );
                                           } else {
                                             const editRoutes: Record<
                                               string,
                                               string
                                             > = {
                                               conference: `/events-office/events/conference/edit/${event._id}`,
-                                              bazaar: `/create/bazaar?id=${event._id}`,
                                             };
                                             const route =
                                               editRoutes[event.eventType];

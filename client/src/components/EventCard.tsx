@@ -160,6 +160,7 @@ export interface EventCardProps {
   onUnarchive?: () => void;
   isUnarchiving?: boolean;
   onEdit?: () => void;
+  editDisabled?: boolean;
   canDelete?: boolean;
   className?: string;
   allowCancellation?: boolean;
@@ -205,6 +206,7 @@ export default function EventCard({
   onUnarchive,
   isUnarchiving = false,
   onEdit,
+  editDisabled = false,
   canDelete = false,
   status,
   className,
@@ -1069,6 +1071,7 @@ export default function EventCard({
                       <Button
                         className="flex-1 order-2"
                         onClick={() => onEdit()}
+                        disabled={editDisabled}
                         data-testid={`button-edit-${id}`}
                       >
                         <Edit className="h-4 w-4 mr-1" />
@@ -1897,7 +1900,7 @@ export default function EventCard({
                 e.preventDefault();
                 executeCancellation();
               }}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white focus-visible:ring-0 border-0"
             >
               {isCanceling ? "Canceling..." : "Yes, Cancel"}
             </AlertDialogAction>
