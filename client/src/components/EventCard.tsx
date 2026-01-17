@@ -1002,6 +1002,7 @@ export default function EventCard({
                       {onUnarchive && (
                         <Button
                           variant="outline"
+                          className="bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
                           onClick={async (e) => {
                             e.stopPropagation();
                             try {
@@ -1261,7 +1262,9 @@ export default function EventCard({
                     )}
                     <Button
                       variant="outline"
-                      className={onViewDetails ? "flex-1" : "w-full"}
+                      className={`${
+                        onViewDetails ? "flex-1" : "w-full"
+                      } bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700`}
                       onClick={async (e) => {
                         e.stopPropagation();
                         try {
@@ -1400,7 +1403,7 @@ export default function EventCard({
                       {onUnarchive && (
                         <Button
                           variant="outline"
-                          className="w-full"
+                          className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
                           onClick={async (e) => {
                             e.stopPropagation();
                             try {
@@ -1490,7 +1493,7 @@ export default function EventCard({
                         {onUnarchive && (
                           <Button
                             variant="outline"
-                            className="w-full"
+                            className="w-full bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
@@ -1544,7 +1547,7 @@ export default function EventCard({
                         {onUnarchive && (
                           <Button
                             variant="outline"
-                            className="flex-1 order-5"
+                            className="flex-1 order-5 bg-purple-600 hover:bg-purple-700 text-white border-purple-600 hover:border-purple-700"
                             onClick={async (e) => {
                               e.stopPropagation();
                               try {
