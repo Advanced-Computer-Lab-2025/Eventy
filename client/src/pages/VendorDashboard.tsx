@@ -57,7 +57,6 @@ import ApplicationPaymentDialog from "@/components/ApplicationPaymentDialog";
 import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 
 interface Attendee {
   name: string;
@@ -66,7 +65,6 @@ interface Attendee {
 }
 
 export default function VendorDashboard() {
-  const [_location, _setLocation] = useLocation();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
@@ -84,7 +82,7 @@ export default function VendorDashboard() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, _setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
 
   // Platform booth form state
@@ -93,10 +91,8 @@ export default function VendorDashboard() {
   >([{ name: "", email: "" }]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [durationWeeks, setDurationWeeks] = useState<number>(1);
-  const [_locationPreference, _setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
-  const [_isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
-    useState(false);
+  const [, setIsSubmittingPlatformBooth] = useState(false);
 
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
@@ -150,10 +146,6 @@ export default function VendorDashboard() {
   };
 
   // Handle search functionality
-  const _handleSearch = (query: string) => {
-    setSearchTerm(query);
-  };
-
   // Filter data based on search term
   const getFilteredData = (data: any[], searchFields: string[]) => {
     if (!searchTerm) return data;
@@ -190,7 +182,7 @@ export default function VendorDashboard() {
 
   const registeredBazaarIds = useMemo(() => {
     // A vendor is considered "registered" for a bazaar if they have an
-    // active application (pending/approved). Rejected applications can reapply.
+    // active application (pending/approved).
     const activeApplications = [
       ...pendingApplications,
       ...approvedApplications,
@@ -389,7 +381,6 @@ export default function VendorDashboard() {
 
   const handleRegister = (bazaarId: string) => {
     // Check if user has already applied to this bazaar (excluding rejected applications)
-    // Users should be able to reapply if their application was rejected
     const activeApplications = [
       ...pendingApplications,
       ...approvedApplications,
@@ -1395,8 +1386,7 @@ export default function VendorDashboard() {
                 <h1 className="text-4xl font-bold">Rejected Applications</h1>
               </div>
               <p className="text-muted-foreground">
-                Applications that were not approved. You can review and reapply
-                if needed.
+                Applications that were not approved.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1479,13 +1469,7 @@ export default function VendorDashboard() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        data-testid={`button-reapply-${application._id}`}
-                      >
-                        Reapply
-                      </Button>
+                      {/* Reapply action intentionally removed */}
                     </CardContent>
                   </Card>
                 ))

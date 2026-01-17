@@ -709,6 +709,41 @@ export default function EventCard({
   };
 
   const now = new Date();
+
+  const parseEventDateForComparison = (
+    dateString?: string,
+    boundary: "start" | "end" = "start"
+  ) => {
+    if (!dateString) return null;
+
+    const ymdMatch = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+    if (ymdMatch) {
+      const year = Number(ymdMatch[1]);
+      const monthIndex = Number(ymdMatch[2]) - 1;
+      const day = Number(ymdMatch[3]);
+      const hours = boundary === "end" ? 23 : 0;
+      const minutes = boundary === "end" ? 59 : 0;
+      const seconds = boundary === "end" ? 59 : 0;
+      const ms = boundary === "end" ? 999 : 0;
+      return new Date(year, monthIndex, day, hours, minutes, seconds, ms);
+    }
+
+    const parsed = new Date(dateString);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
+  };
+
+  // Feedback should only be available for past events.
+  // Prefer endDate when available; for date-only strings, compare against end-of-day.
+  const feedbackComparisonDate =
+    parseEventDateForComparison(endDate ?? startDate, "end") ??
+    parseEventDateForComparison(startDate, "end");
+  const canShowFeedbackAction = Boolean(
+    onFeedback &&
+      registered &&
+      feedbackComparisonDate &&
+      now > feedbackComparisonDate
+  );
+
   const deadline = registrationDeadline ? new Date(registrationDeadline) : null;
   const isBeforeDeadline = !deadline || now <= deadline;
   const hasCapacity = !capacity || localAttendeeCount < capacity;
@@ -989,7 +1024,7 @@ export default function EventCard({
 
               {/* ACTION BUTTONS (Detailed View) */}
               <div className="flex gap-2 mt-auto w-full">
-                {registered && startDate && new Date() > new Date(startDate) ? (
+                {canShowFeedbackAction ? (
                   <>
                     <div className="flex gap-2 flex-1 justify-center">
                       <Button
@@ -1386,9 +1421,7 @@ export default function EventCard({
 
               {showActions && (
                 <div className="flex flex-col gap-2 pt-2 mt-auto">
-                  {registered &&
-                  startDate &&
-                  new Date() > new Date(startDate) ? (
+                  {canShowFeedbackAction ? (
                     <>
                       <div className="flex gap-2 w-full items-center">
                         <Button
