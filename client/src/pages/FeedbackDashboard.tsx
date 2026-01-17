@@ -296,6 +296,7 @@ export default function FeedbackDashboard() {
                   id={ev.id}
                   title={ev.title || `Event ${ev.id}`}
                   category={(ev.category as EventCategory) || "academic"}
+                  categoryBadgeTone="prominent"
                   date={
                     ev.startDate
                       ? new Date(ev.startDate).toLocaleDateString(undefined, {

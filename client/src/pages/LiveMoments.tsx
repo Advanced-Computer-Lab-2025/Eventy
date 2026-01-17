@@ -16,7 +16,7 @@ import EventsOfficeHeader from "@/components/EventsOfficeHeader";
 import AdminHeader from "@/components/AdminHeader";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import CategoryBadge from "@/components/CategoryBadge";
 import {
   Dialog,
   DialogContent,
@@ -289,11 +289,7 @@ function LiveEventCard({ event }: { event: Event }) {
         <CardContent className="p-4 space-y-3">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-lg line-clamp-2">{event.name}</h3>
-            <Badge variant="default" className="capitalize">
-              {event.eventType === "platform_booth"
-                ? "Platform Booth"
-                : event.eventType.replace(/_/g, " ")}
-            </Badge>
+            <CategoryBadge category={event.eventType} />
           </div>
 
           <div className="space-y-1 text-sm">

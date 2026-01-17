@@ -17,7 +17,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FavoriteButton } from "./FavoriteButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import CategoryBadge, { type EventCategory } from "./CategoryBadge";
+import CategoryBadge, {
+  type CategoryBadgeTone,
+  type EventCategory,
+} from "./CategoryBadge";
 import { getEventImage } from "@/lib/eventImages";
 import { logger } from "@/lib/logger";
 import { useToast } from "@/hooks/use-toast";
@@ -170,6 +173,7 @@ export interface EventCardProps {
   inlinePriceWithLocation?: boolean;
   eventData?: any;
   inlineShareButton?: boolean;
+  categoryBadgeTone?: CategoryBadgeTone;
 }
 
 export default function EventCard({
@@ -217,6 +221,7 @@ export default function EventCard({
   inlinePriceWithLocation = false,
   eventData,
   inlineShareButton = false,
+  categoryBadgeTone = "default",
 }: EventCardProps & { price?: number }) {
   const { toast } = useToast();
   const [expandedVendors, setExpandedVendors] = useState(false);
@@ -820,7 +825,10 @@ export default function EventCard({
           />
           {!showDetailedView && (
             <div className="absolute top-3 left-3">
-              <CategoryBadge category={badgeCategory} />
+              <CategoryBadge
+                category={badgeCategory}
+                tone={categoryBadgeTone}
+              />
             </div>
           )}
         </div>
@@ -833,7 +841,10 @@ export default function EventCard({
                 <CardTitle className="text-xl break-words whitespace-normal">
                   {title}
                 </CardTitle>
-                <CategoryBadge category={badgeCategory} />
+                <CategoryBadge
+                  category={badgeCategory}
+                  tone={categoryBadgeTone}
+                />
               </div>
             </CardHeader>
 

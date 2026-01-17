@@ -178,6 +178,7 @@ export default function MyEvents() {
                     id={event._id}
                     title={event.name}
                     category={event.eventType}
+                    categoryBadgeTone="prominent"
                     date={
                       isBoothEvent
                         ? formatBoothDate(event)

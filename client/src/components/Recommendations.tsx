@@ -3,13 +3,13 @@ import { createPortal } from "react-dom";
 import { Sparkles, TrendingUp, Calendar, MapPin } from "lucide-react";
 import { getEventImage } from "@/lib/eventImages";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import EventDetailsDialog from "@/components/EventsDetailsDialog";
 import { useToast } from "@/hooks/use-toast";
 import { EventPaymentDialog } from "./EventPaymentDialog";
 import { logger } from "@/lib/logger";
 import { getApiBaseUrl } from "@/lib/apiBase";
+import CategoryBadge from "@/components/CategoryBadge";
 
 interface RecommendationResponse {
   type: "popular" | "personalized";
@@ -143,14 +143,11 @@ function CompactEventCard({ event }: { event: any }) {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           <div className="absolute top-2 right-2">
-            <Badge
-              variant="default"
-              className="capitalize text-xs font-semibold shadow-sm"
-            >
-              {event.eventType === "platform_booth"
-                ? "Platform Booth"
-                : String(event.eventType).replace(/_/g, " ")}
-            </Badge>
+            <CategoryBadge
+              category={event.eventType}
+              tone="prominent"
+              className="shadow-sm"
+            />
           </div>
         </div>
         <CardContent className="p-3 flex flex-col flex-1">

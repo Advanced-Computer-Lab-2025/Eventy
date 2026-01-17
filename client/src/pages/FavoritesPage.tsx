@@ -202,6 +202,7 @@ export default function FavoritesPage() {
                   id={event._id}
                   title={event.name}
                   category={getCategoryFromEvent(event)}
+                  categoryBadgeTone="prominent"
                   date={
                     isBoothEvent
                       ? formatBoothDate(event)
