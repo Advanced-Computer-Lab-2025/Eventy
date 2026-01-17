@@ -57,7 +57,6 @@ import ApplicationPaymentDialog from "@/components/ApplicationPaymentDialog";
 import IdUploadButton from "@/components/IdUploadButton";
 import { bazaarApiService, Application, Bazaar } from "@/lib/bazaarApi";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
 
 interface Attendee {
   name: string;
@@ -66,7 +65,6 @@ interface Attendee {
 }
 
 export default function VendorDashboard() {
-  const [_location, _setLocation] = useLocation();
   const [showApplyDialog, setShowApplyDialog] = useState(false);
   const [selectedBazaar, setSelectedBazaar] = useState<Bazaar | null>(null);
   const [upcomingBazaars, setUpcomingBazaars] = useState<Bazaar[]>([]);
@@ -84,7 +82,7 @@ export default function VendorDashboard() {
   >([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, _setSearchTerm] = useState("");
   const [companyName, setCompanyName] = useState("");
 
   // Platform booth form state
@@ -93,10 +91,8 @@ export default function VendorDashboard() {
   >([{ name: "", email: "" }]);
   const [boothSize, setBoothSize] = useState<"2x2" | "4x4">("2x2");
   const [durationWeeks, setDurationWeeks] = useState<number>(1);
-  const [_locationPreference, _setLocationPreference] = useState<string>("");
   const [selectedMapLocation, setSelectedMapLocation] = useState<string>("");
-  const [_isSubmittingPlatformBooth, setIsSubmittingPlatformBooth] =
-    useState(false);
+  const [, setIsSubmittingPlatformBooth] = useState(false);
 
   // Booth application dialog state
   const [boothApplicationOpen, setBoothApplicationOpen] = useState(false);
@@ -150,10 +146,6 @@ export default function VendorDashboard() {
   };
 
   // Handle search functionality
-  const _handleSearch = (query: string) => {
-    setSearchTerm(query);
-  };
-
   // Filter data based on search term
   const getFilteredData = (data: any[], searchFields: string[]) => {
     if (!searchTerm) return data;
