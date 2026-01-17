@@ -293,7 +293,7 @@ export default function Login() {
                     Explore Eventy
                   </DialogTitle>
                   <DialogDescription className="text-sm">
-                    Select a persona to auto-fill credentials
+                    Select a persona to auto-fill login fields
                   </DialogDescription>
                 </div>
               </div>
@@ -312,8 +312,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "student@student.guc.edu.eg",
-                    password: "password123",
+                    email: "yehia.rasheed@student.guc.edu.eg",
+                    password: "123456789",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -331,7 +331,7 @@ export default function Login() {
                     Student
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    student@student.guc.edu.eg
+                    yehia.rasheed@student.guc.edu.eg
                   </div>
                 </div>
               </button>
@@ -340,8 +340,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "prof@guc.edu.eg",
-                    password: "password123",
+                    email: "jomana.tantawy@guc.edu.eg",
+                    password: "123456789",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -359,7 +359,7 @@ export default function Login() {
                     Professor
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    prof@guc.edu.eg
+                    jomana.tantawy@guc.edu.eg
                   </div>
                 </div>
               </button>
@@ -368,8 +368,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "staff@guc.edu.eg",
-                    password: "password123",
+                    email: "rana.tamer@guc.edu.eg",
+                    password: "123456",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -387,7 +387,7 @@ export default function Login() {
                     Staff / TA
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    staff@guc.edu.eg
+                    rana.tamer@guc.edu.eg
                   </div>
                 </div>
               </button>
@@ -396,8 +396,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "vendor@company.com",
-                    password: "password123",
+                    email: "yehiarasheed@gmail.com",
+                    password: "123456789",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -415,7 +415,7 @@ export default function Login() {
                     Vendor
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    vendor@company.com
+                    yehiarasheed@gmail.com
                   </div>
                 </div>
               </button>
@@ -424,8 +424,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "events@guc.edu.eg",
-                    password: "password123",
+                    email: "event@guc.edu.eg",
+                    password: "123456789",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -443,7 +443,7 @@ export default function Login() {
                     Events Office
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    events@guc.edu.eg
+                    event@guc.edu.eg
                   </div>
                 </div>
               </button>
@@ -452,8 +452,8 @@ export default function Login() {
               <button
                 onClick={() => {
                   setFormData({
-                    email: "admin@guc.edu.eg",
-                    password: "password123",
+                    email: "admin2@guc.edu.eg",
+                    password: "123456789",
                   });
                   handleDismissDemoGuide();
                   toast({
@@ -471,19 +471,13 @@ export default function Login() {
                     Admin
                   </div>
                   <div className="text-xs text-muted-foreground truncate">
-                    admin@guc.edu.eg
+                    admin2@guc.edu.eg
                   </div>
                 </div>
               </button>
             </div>
 
-            <div className="mt-6 pt-4 border-t flex items-center justify-between text-xs text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <span>Password for all:</span>
-                <code className="bg-muted px-2 py-0.5 rounded font-mono font-bold text-foreground">
-                  password123
-                </code>
-              </div>
+            <div className="mt-6 pt-4 border-t flex items-center justify-end text-xs text-muted-foreground">
               <button
                 onClick={handleDismissDemoGuide}
                 className="hover:text-foreground hover:underline transition-colors"
