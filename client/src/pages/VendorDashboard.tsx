@@ -190,7 +190,7 @@ export default function VendorDashboard() {
 
   const registeredBazaarIds = useMemo(() => {
     // A vendor is considered "registered" for a bazaar if they have an
-    // active application (pending/approved). Rejected applications can reapply.
+    // active application (pending/approved).
     const activeApplications = [
       ...pendingApplications,
       ...approvedApplications,
@@ -389,7 +389,6 @@ export default function VendorDashboard() {
 
   const handleRegister = (bazaarId: string) => {
     // Check if user has already applied to this bazaar (excluding rejected applications)
-    // Users should be able to reapply if their application was rejected
     const activeApplications = [
       ...pendingApplications,
       ...approvedApplications,
@@ -1395,8 +1394,7 @@ export default function VendorDashboard() {
                 <h1 className="text-4xl font-bold">Rejected Applications</h1>
               </div>
               <p className="text-muted-foreground">
-                Applications that were not approved. You can review and reapply
-                if needed.
+                Applications that were not approved.
               </p>
             </div>
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -1479,13 +1477,7 @@ export default function VendorDashboard() {
                           )}
                         </div>
                       </div>
-                      <Button
-                        variant="outline"
-                        className="w-full"
-                        data-testid={`button-reapply-${application._id}`}
-                      >
-                        Reapply
-                      </Button>
+                      {/* Reapply action intentionally removed */}
                     </CardContent>
                   </Card>
                 ))
