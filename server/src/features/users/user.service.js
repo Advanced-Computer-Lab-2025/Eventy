@@ -284,7 +284,7 @@ class UserService {
         .populate({
           path: "favoriteEvents",
           select:
-            "name description location locationPreference startDate endDate bannerImage status eventType type category durationWeeks attendees attendeesCount application archivedAt", // Added archivedAt
+            "name description location locationPreference startDate endDate startTime endTime bannerImage status eventType type category durationWeeks attendees attendeesCount application archivedAt", // Added archivedAt
           match: {
             deletedAt: null,
             archivedAt: null, // ✅ Exclude archived events

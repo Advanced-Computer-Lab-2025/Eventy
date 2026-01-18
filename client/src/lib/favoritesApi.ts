@@ -8,6 +8,8 @@ export interface FavoriteEvent {
   location: string;
   startDate: string;
   endDate: string;
+  startTime?: string;
+  endTime?: string;
   bannerImage?: string;
   status: string;
   eventType?: string;

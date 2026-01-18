@@ -33,8 +33,6 @@ class FacilitiesServiceClass {
 
     if (bookingDate < today) throw new Error("Cannot book a past date");
 
-    const formattedDate = this.getLocalDateString(bookingDate);
-
     // Check availability directly
     const existingBooking = await CourtBooking.findOne({
       courtType,

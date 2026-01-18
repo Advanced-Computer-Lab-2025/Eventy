@@ -83,6 +83,47 @@ export default function FavoritesPage() {
     });
   };
 
+  // Convert a stored 24-hour time string (e.g. "14:05") to 12-hour ("2:05 PM")
+  const formatStringTime = (timeStr?: string) => {
+    if (!timeStr) return null;
+    if (/^\d{1,2}:\d{2}$/.test(timeStr)) {
+      const [hoursStr, minutesStr] = timeStr.split(":");
+      let hours = parseInt(hoursStr, 10);
+      const suffix = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutesStr} ${suffix}`;
+    }
+    return timeStr;
+  };
+
+  const getEventTimeLabel = (event: any) => {
+    const start = formatStringTime(event?.startTime);
+    const end = formatStringTime(event?.endTime);
+
+    // If we don't have explicit times, only derive a time from Date fields
+    // when the Date actually contains a non-midnight time component.
+    const deriveTimeFromDateIfMeaningful = (dateString?: string) => {
+      if (!dateString) return null;
+      const date = new Date(dateString);
+      if (
+        date.getHours() === 0 &&
+        date.getMinutes() === 0 &&
+        date.getSeconds() === 0
+      ) {
+        return null;
+      }
+      return formatEventTime(dateString);
+    };
+
+    const startLabel =
+      start || deriveTimeFromDateIfMeaningful(event?.startDate);
+    const endLabel = end || deriveTimeFromDateIfMeaningful(event?.endDate);
+
+    if (startLabel && endLabel) return `${startLabel} - ${endLabel}`;
+    return startLabel || "";
+  };
+
   const formatBoothDate = (event: any) => {
     // If platform booth has startDate and endDate, show dates
     if (event.startDate && event.endDate) {
@@ -211,7 +252,7 @@ export default function FavoritesPage() {
                   time={
                     isBoothEvent && !event.startDate
                       ? ""
-                      : formatEventTime(event.startDate)
+                      : getEventTimeLabel(event)
                   }
                   location={
                     event.location ||
@@ -225,6 +266,8 @@ export default function FavoritesPage() {
                   description={event.description}
                   startDate={event.startDate}
                   endDate={event.endDate}
+                  dbStartTime={event.startTime}
+                  dbEndTime={event.endTime}
                   durationWeeks={event.durationWeeks}
                   showActions={true}
                   showDetailedView={false}

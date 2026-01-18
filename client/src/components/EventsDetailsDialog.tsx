@@ -94,20 +94,40 @@ export default function EventDetailsDialog({
 
   const startTime =
     formatStringTime(event.startTime) ||
-    (event.startDate
-      ? new Date(event.startDate).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : null);
+    (() => {
+      if (!event.startDate) return null;
+      const date = new Date(event.startDate);
+      if (
+        date.getHours() === 0 &&
+        date.getMinutes() === 0 &&
+        date.getSeconds() === 0
+      ) {
+        return null;
+      }
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    })();
   const endTime =
     formatStringTime(event.endTime) ||
-    (event.endDate
-      ? new Date(event.endDate).toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })
-      : null);
+    (() => {
+      if (!event.endDate) return null;
+      const date = new Date(event.endDate);
+      if (
+        date.getHours() === 0 &&
+        date.getMinutes() === 0 &&
+        date.getSeconds() === 0
+      ) {
+        return null;
+      }
+      return date.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: true,
+      });
+    })();
 
   const startDateStr = formatDate(event.startDate);
   const endDateStr = formatDate(event.endDate);
