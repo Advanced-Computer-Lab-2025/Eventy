@@ -204,6 +204,7 @@ export default function MyEvents() {
                     endDate={event.endDate}
                     durationWeeks={event.durationWeeks}
                     showActions={true}
+                    showShareButton={false}
                     isRegistered={true}
                     hideRegisterButton={
                       userRole === "student" ||

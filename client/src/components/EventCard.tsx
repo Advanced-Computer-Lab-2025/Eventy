@@ -147,6 +147,7 @@ export interface EventCardProps {
   vendors?: Vendor[];
   price?: number;
   showActions?: boolean;
+  showShareButton?: boolean;
   showDetailedView?: boolean;
   showAttendees?: boolean;
   showRegisterButton?: boolean;
@@ -196,6 +197,7 @@ export default function EventCard({
   registrationDeadline,
   vendors = [],
   showActions = true,
+  showShareButton = true,
   showDetailedView = false,
   showAttendees = true,
   showRegisterButton = true,
@@ -1685,7 +1687,7 @@ export default function EventCard({
                               <FavoriteButton eventId={id} />
                             </div>
                           )}
-                          {inlineShareButton && (
+                          {showShareButton && inlineShareButton && (
                             <div className="order-4">
                               <ShareButton />
                             </div>
@@ -1742,7 +1744,7 @@ export default function EventCard({
                     </Button>
                   )}
 
-                  {!inlineShareButton && (
+                  {showShareButton && !inlineShareButton && (
                     <div className="flex items-center gap-2 ml-auto">
                       <ShareButton />
                     </div>
