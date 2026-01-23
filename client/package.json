@@ -87,7 +87,7 @@
     "react-icons": "^5.4.0",
     "react-image-crop": "^11.0.10",
     "react-resizable-panels": "^2.1.7",
-    "react-router-dom": "^6.30.1",
+    "react-router-dom": "^6.30.3",
     "recharts": "^2.15.2",
     "stripe": "^19.3.0",
     "tailwind-merge": "^2.6.0",
