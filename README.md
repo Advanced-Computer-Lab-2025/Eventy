@@ -75,7 +75,8 @@ The platform was built to modernize campus event management, reduce administrati
 
 User authentication system supporting multi-role access (Student, Vendor, Admin) with secure session management.
 
-<img src="https://github.com/user-attachments/assets/ef1ba7fd-10ab-4469-9cd6-1405eeed070b" width="800" alt="Login Page" />
+<img src="https://github.com/user-attachments/assets/ca95eeaa-84eb-416d-a2fe-9d3b13e1baf7" width="800" alt="Login Page"/>
+<img src="https://github.com/user-attachments/assets/a8003713-21de-4b79-b674-1dbe18cc3a77" width="800" alt="Choose Persona"/>
 
 <br>
 
@@ -681,7 +682,7 @@ const bazaarResult = validateBazaarApplication.validate(bazaarData);
 console.log("Bazaar validation:", bazaarResult.error ? "Failed" : "Passed");
 ```
 
-## 🤝 How to Contribute
+## How to Contribute
 
 We welcome contributions from the community! Whether you're fixing bugs, adding features, improving documentation, or suggesting enhancements, your help is appreciated.
 
@@ -705,7 +706,7 @@ We welcome contributions from the community! Whether you're fixing bugs, adding 
 
 For detailed guidelines on contributing, including code style, issue creation, and the review process, please see our [**Contributing Guide**](CONTRIBUTING.md).
 
-## 🙏 Credits & Resources
+## Credits & Resources
 
 ### Documentation References
 
@@ -750,4 +751,4 @@ For a complete list of dependencies and their licenses, see `package.json` and `
 
 ---
 
-**Eventy** © 2025 - Advanced Computer Lab Project
+**Eventy** © 2026 - Advanced Computer Lab Project
