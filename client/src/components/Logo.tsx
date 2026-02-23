@@ -17,7 +17,7 @@ export default function Logo({
     sm: "h-20 w-20",
     md: "h-24 w-24",
     lg: "h-32 w-32",
-    xl: "h-32 w-32",
+    xl: "h-16 w-auto md:h-32 md:w-32",
     xxl: "w-40",
   };
 

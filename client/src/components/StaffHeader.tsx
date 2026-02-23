@@ -7,8 +7,16 @@ import {
   Star,
   Store,
   Camera,
+  Menu,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
@@ -38,6 +46,7 @@ export default function StaffHeader({
   homeHref = "/staff-ta",
 }: StaffHeaderProps) {
   const [location, setLocation] = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [user, setUser] = useState<UserData | null>(() => {
     try {
       const raw = localStorage.getItem("user");
@@ -92,11 +101,22 @@ export default function StaffHeader({
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => setLocation("/staff-ta")}
-          >
-            <Logo size="xl" />
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div
+              className="cursor-pointer"
+              onClick={() => setLocation("/staff-ta")}
+            >
+              <Logo size="xl" />
+            </div>
           </div>
 
           <div className="flex items-center gap-1 md:gap-2 relative">
@@ -110,6 +130,120 @@ export default function StaffHeader({
             <NotificationsPopover />
             <ThemeToggle />
             <ProfileMenu />
+
+            {/* Mobile navigation drawer */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetContent side="left" className="w-72 p-0">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col py-2">
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === homeHref ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => setLocation(homeHref)}
+                    >
+                      <Home className="h-5 w-5" />
+                      Dashboard
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/my-events" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => setLocation("/my-events")}
+                    >
+                      <Calendar className="h-5 w-5" />
+                      My Events
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/live-moments"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={() => setLocation("/live-moments")}
+                    >
+                      <Camera className="h-5 w-5" />
+                      Live Moments
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/sports" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => setLocation("/sports")}
+                    >
+                      <Dumbbell className="h-5 w-5" />
+                      Sports Facilities
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/booth-vote"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={() => setLocation("/booth-vote")}
+                    >
+                      <Store className="h-5 w-5" />
+                      Booth Voting
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/favorites" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => setLocation("/favorites")}
+                    >
+                      <Heart className="h-5 w-5" />
+                      Favorites
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/loyalty-partners"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={() => setLocation("/loyalty-partners")}
+                    >
+                      <Gift className="h-5 w-5" />
+                      Loyalty Partners
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        location === "/feedback" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => setLocation("/feedback")}
+                    >
+                      <Star className="h-5 w-5" />
+                      Feedback
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+
             {user?.role && user?.firstName && (
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <span className="text-sm font-medium text-foreground">

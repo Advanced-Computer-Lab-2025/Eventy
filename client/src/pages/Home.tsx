@@ -50,7 +50,6 @@ export default function Home() {
     { id: string; name: string }[]
   >([]);
   const [showCreateDialog, setShowCreateDialog] = useState(false);
-  const [activeTab, setActiveTab] = useState("discover");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [filters, setFilters] = useState<EventFilterState>({
@@ -403,7 +402,7 @@ export default function Home() {
         </div>
       </main>
 
-      <MobileNav activeTab={activeTab} onTabChange={setActiveTab} />
+      <MobileNav onCreateEvent={() => setShowCreateDialog(true)} />
       <CreateEventDialog
         open={showCreateDialog}
         onOpenChange={setShowCreateDialog}

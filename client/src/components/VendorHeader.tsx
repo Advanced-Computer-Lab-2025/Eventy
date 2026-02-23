@@ -1,5 +1,12 @@
-import { Home, Store, CheckCircle, Clock, XCircle } from "lucide-react";
+import { Home, Store, CheckCircle, Clock, XCircle, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetClose,
+} from "@/components/ui/sheet";
 import ThemeToggle from "./ThemeToggle";
 import Logo from "./Logo";
 import ProfileMenu from "./ProfileMenu";
@@ -19,6 +26,7 @@ export default function VendorHeader({
   onTabChange,
 }: VendorHeaderProps) {
   const [location, setLocation] = useLocation();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const [isLoyaltyDialogOpen, setIsLoyaltyDialogOpen] = useState(() => {
     if (typeof window === "undefined") return false;
@@ -55,23 +63,124 @@ export default function VendorHeader({
     <header className="sticky top-0 z-50 w-full border-b backdrop-blur-xl bg-background/80 supports-[backdrop-filter]:bg-background/60">
       <div className="max-w-7xl mx-auto px-4 md:px-6">
         <div className="flex h-16 items-center justify-between gap-4">
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => {
-              if (location !== "/vendor/dashboard") {
-                setLocation("/vendor/dashboard");
-              } else {
-                window.location.hash = "upcoming";
-              }
-            }}
-          >
-            <Logo size="xl" />
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setMobileMenuOpen(true)}
+              aria-label="Open navigation menu"
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div
+              className="cursor-pointer"
+              onClick={() => {
+                if (location !== "/vendor/dashboard") {
+                  setLocation("/vendor/dashboard");
+                } else {
+                  window.location.hash = "upcoming";
+                }
+              }}
+            >
+              <Logo size="xl" />
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
             <CalendarPopover />
             <ThemeToggle />
             <ProfileMenu />
+
+            {/* Mobile navigation drawer */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetContent side="left" className="w-72 p-0">
+                <SheetHeader className="p-4 border-b">
+                  <SheetTitle>Navigation</SheetTitle>
+                </SheetHeader>
+                <div className="flex flex-col py-2">
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "upcoming" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => handleTabClick("upcoming")}
+                    >
+                      <Home className="h-5 w-5" />
+                      Dashboard
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "platform-booths"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={() => handleTabClick("platform-booths")}
+                    >
+                      <Store className="h-5 w-5" />
+                      Platform Booths
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "participating"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={() => handleTabClick("participating")}
+                    >
+                      <CheckCircle className="h-5 w-5" />
+                      My Participations
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "pending" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => handleTabClick("pending")}
+                    >
+                      <Clock className="h-5 w-5" />
+                      Pending Requests
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "rejected" ? "bg-accent font-medium" : ""
+                      }`}
+                      onClick={() => handleTabClick("rejected")}
+                    >
+                      <XCircle className="h-5 w-5" />
+                      Rejected Requests
+                    </Button>
+                  </SheetClose>
+                  <SheetClose asChild>
+                    <Button
+                      variant="ghost"
+                      className={`w-full justify-start gap-3 px-4 h-12 rounded-none ${
+                        activeTab === "loyalty-program"
+                          ? "bg-accent font-medium"
+                          : ""
+                      }`}
+                      onClick={handleLoyaltyProgramClick}
+                    >
+                      <Gift className="h-5 w-5" />
+                      Loyalty Program
+                    </Button>
+                  </SheetClose>
+                </div>
+              </SheetContent>
+            </Sheet>
+
             {user?.role && user?.companyName && (
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <span className="text-sm font-medium text-foreground">
