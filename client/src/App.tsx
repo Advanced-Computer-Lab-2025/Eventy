@@ -4,6 +4,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { Github } from "lucide-react";
 import Home from "@/pages/Home";
 import Dashboard from "@/pages/Dashboard";
 import SignUp from "@/pages/SignUp";
@@ -278,10 +279,52 @@ function Router() {
 }
 
 function App() {
+  const isDisrupted =
+    import.meta.env.VITE_DB_DISRUPTED === "true" ||
+    import.meta.env.VITE_DB_DISRUPTED === "1";
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
+          {isDisrupted && (
+            <div className="bg-red-600 text-white p-4 text-center z-[100] relative">
+              <p className="font-semibold text-sm md:text-base">
+                Database is disrupted due to ongoing issue in UAE/Bahrain and
+                we're working on a migration.
+              </p>
+              <p className="text-sm mt-1 flex items-center justify-center gap-2">
+                For the meantime view the repository:
+                <a
+                  href="https://github.com/Advanced-Computer-Lab-2025/Eventy"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 underline hover:text-red-200 font-medium"
+                >
+                  <Github className="w-4 h-4" />
+                  GitHub Repository
+                </a>
+              </p>
+              <div className="mt-2 space-x-4 text-sm">
+                <a
+                  href="https://status.mongodb.com/incidents/7g5qmxgkc2y4"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-red-200"
+                >
+                  MongoDB Status
+                </a>
+                <a
+                  href="https://health.aws.amazon.com/health/status"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline hover:text-red-200"
+                >
+                  AWS Status
+                </a>
+              </div>
+            </div>
+          )}
           <Toaster />
           <Router />
         </TooltipProvider>
